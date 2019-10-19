@@ -94,14 +94,15 @@ def get_token(exp):
 
     for i in range(1, len(exp)):
         char = exp[i]
-        if char.isspace() or \
-        (type == 'number' and char not in '1234567890.') or \
-        (type == 'name' and not (char.isalnum() or char in '_?')) or \
-        (type == 'paren' and track_parens == 0):
-            token = exp[:i]
-            if token in special_words:
-                return token, token, exp[i:]
+        if type == 'paren' and track_parens == 0:
             return type, token, exp[i:]
+        elif char.isspace() or \
+        (type == 'number' and char not in '1234567890.') or \
+        (type == 'name' and not (char.isalnum() or char in '_?')):
+            token, rest = exp[:i], exp[i:]
+            if token in special_words:
+                return token, token, rest
+            return type, token, rest
         if char == '(': track_parens += 1
         elif char == ')': track_parens -= 1
     return type, exp, ''
