@@ -1,4 +1,5 @@
 from operator import *
+import math
 
 
 class Stack:
@@ -14,6 +15,10 @@ class Stack:
 
     def empty(self):
         return self.s == []
+
+    def clear(self):
+        self.s = []
+
 
 class Env:
     def __init__(self, bindings={}, parent=None):
@@ -32,6 +37,7 @@ class Env:
             else:
                 raise KeyError('unbound symbol')
 
+
 class Function:
     def __init__(self, args, body, env):
         self.args = args
@@ -48,12 +54,20 @@ py_eval = eval
 global_env = Env()
 valStack = Stack()
 opStack = Stack()
+
 binary_ops = {'+':(add, 1), '-':(sub, 1), '*':(mul, 2), '/':(truediv, 2),
 '//':(floordiv, 2), '^':(pow, 3), '%':(mod, 2), '&':(and_, -1), '|':(or_, -2),
 '=':(eq, 0), '!=':(ne, 0), '<':(lt, 0), '>':(gt, 0), '<=':(le, 0), '>=':(ge, 0)}
 unitary_ops = {'-':(neg, 4), '!':(not_, 4)}
+
 op_list = list(binary_ops) + list(unitary_ops)
+
 special_words = set(['if', 'else'])
+
+builtins = {'sin':math.sin, 'cos':math.cos, 'tan':math.tan, 
+'asin':math.asin, 'acos':math.acos, 'atan':math.atan,
+'abs':abs, 'sqrt':math.sqrt, 'floor':math.floor, 'ceil':math.ceil,
+'log':math.log, 'E':math.e, 'Pi':math.pi,}
 
 
 def get_token(exp):
@@ -127,16 +141,22 @@ def eval_pure(exp, env=global_env):
                 except AssertionError:
                     raise SyntaxError
         opStack.push(op)
+    
+    valStack.clear()
+    opStack.clear()
     prev_type = None
     set_stop_mark = lambda : push_op((None, -10))  # set a mark to stop calc
     set_stop_mark()  # mark the beginning of evaluation
     while exp:
         type, token, exp = get_token(exp)
-        if type != 'paren' and prev_type in ('number', 'name', 'paren'):
+        if type in ('number', 'name') and \
+        prev_type in ('number', 'name', 'paren'):
             push_op(binary_ops['*'])
         if type == 'number':
             valStack.push(py_eval(token))
         elif type == 'name':
+            if token in builtins:
+                valStack.push(builtins[token])
             valStack.push(env[token])
         elif type == 'op':
             if (prev_type in (None, 'op')) and token in unitary_ops:
@@ -156,6 +176,8 @@ def eval_pure(exp, env=global_env):
         elif type == 'else':
             push_op((lambda x, y: y if x is None else x, -5))
         elif type == 'lambda':  # eg: ('x, y' x^2-3*y)
+            if prev_type is not None:
+                raise SyntaxError('invalid lambda expression!')
             args = [get_name(seg) for seg in token[1:-1].split(',')]
             valStack.push(Function(args, exp, env))
             break
@@ -175,8 +197,8 @@ def eval(exp):
         return eval_pure(exp)
     else:
         name, rest = get_name(exp[:assign_mark], False)
-        if name in special_words:
-            raise SyntaxError('the special word %s cannot be assigned!'%name)
+        if name in special_words or name in builtins:
+            raise SyntaxError('word %s protected!'%name)
         r_exp = exp[assign_mark+2:]
         if not rest:  # assignment of a variable
             value = eval_pure(r_exp)
@@ -197,7 +219,7 @@ def repl():
             if val is not None: print(val)
         except KeyboardInterrupt:
             return
-        except (ValueError, SyntaxError, ArithmeticError, KeyError) as err:
+        except Exception as err:
             print(err)
 
 
