@@ -1,20 +1,19 @@
 from operator import *
-from queue import LifoQueue
 
 
 class Stack:
     def __init__(self):
-        self.s = LifoQueue()
+        self.s = []
 
     def push(self, obj):
-        self.s.put(obj)
+        self.s.append(obj)
     
     def pop(self):
-        assert(not self.s.empty())
-        return self.s.get()
+        assert(not self.s)
+        return self.s.pop()
 
     def empty(self):
-        return self.s.empty()
+        return self.s == []
 
 class Env:
     def __init__(self, bindings={}, parent=None):
@@ -81,7 +80,7 @@ def get_token(exp):
     for i in range(1, len(exp)):
         char = exp[i]
         if char.isspace() or \
-        (type == 'number' and not char in '1234567890.') or \
+        (type == 'number' and char not in '1234567890.') or \
         (type == 'name' and not (char.isalnum() or char in '_?')) or \
         (type == 'paren' and track_parens == 0):
              return type, exp[:i], exp[i:]
