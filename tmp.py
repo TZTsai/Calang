@@ -39,7 +39,7 @@ class Function:
         self.parent_env = env
 
     def __call__(self, *args):
-        new_env = Env(dict(zip(self.args, args), self.parent_env))
+        new_env = Env(dict(zip(self.args, args)), self.parent_env)
         return eval_pure(self.body, new_env)
 
 
@@ -48,11 +48,12 @@ py_eval = eval
 global_env = Env()
 valStack = Stack()
 opStack = Stack()
-binary_ops = {'+':(add, 1), '-':(sub, 1), '*':(mul, 2), '/':(truediv, 2), '//':(floordiv, 2),
-'^':(pow, 3), '%':(mod, 2), '&':(and_, -1), '|':(or_, -2), '=':(eq, 0), '!=':(ne, 0),
-'<':(lt, 0), '>':(gt, 0), '<=':(le, 0), '>=':(ge, 0)}
+binary_ops = {'+':(add, 1), '-':(sub, 1), '*':(mul, 2), '/':(truediv, 2),
+'//':(floordiv, 2), '^':(pow, 3), '%':(mod, 2), '&':(and_, -1), '|':(or_, -2),
+'=':(eq, 0), '!=':(ne, 0), '<':(lt, 0), '>':(gt, 0), '<=':(le, 0), '>=':(ge, 0)}
 unitary_ops = {'-':(neg, 4), '!':(not_, 4)}
 op_list = list(binary_ops) + list(unitary_ops)
+special_words = set(['if', 'else'])
 
 
 def get_token(exp):
@@ -64,9 +65,9 @@ def get_token(exp):
         return 'op', exp[:2], exp[2:]
     elif first_char in op_list:
         return 'op', first_char, exp[1:]
-    elif first_char == '<':
-        close_pos = exp.find('>')
-        return 'func', exp[:close_pos+1], exp[close_pos+1:]
+    elif first_char == "'":
+        close_pos = exp[1:].find("'")
+        return 'lambda', exp[:close_pos+1], exp[close_pos+1:]
     elif first_char.isdigit():
         type = 'number'
     elif first_char.isalpha() or first_char == '_':
@@ -83,18 +84,21 @@ def get_token(exp):
         (type == 'number' and char not in '1234567890.') or \
         (type == 'name' and not (char.isalnum() or char in '_?')) or \
         (type == 'paren' and track_parens == 0):
-             return type, exp[:i], exp[i:]
+            token = exp[:i]
+            if token in special_words:
+                return token, token, exp[i:]
+            return type, token, exp[i:]
         if char == '(': track_parens += 1
         elif char == ')': track_parens -= 1
     return type, exp, ''
 
 
-def get_name(exp):  
-    # strip the spaces in exp, check if it is a valid name and return it
+def get_name(exp, no_rest=True):  
     type, name, rest = get_token(exp)
-    if not(type == 'name' and rest == ''):
+    if not type == 'name' or (no_rest and rest):
         raise SyntaxError('invalid variable name!')
-    return name
+    if no_rest: return name
+    return name, rest
 
 
 def eval_pure(exp, env=global_env):
@@ -106,23 +110,30 @@ def eval_pure(exp, env=global_env):
             n2 = valStack.pop()
             n1 = valStack.pop()
             valStack.push(op[0](n1, n2))
+    def complete_calc():
+        # calc until meets a stop_mark in opStack and remove it
+        while not opStack.empty():
+            op = opStack.pop()
+            if op[0]: calc(op)
+            else: return
     def push_op(op):
         while not opStack.empty():
             last_op = opStack.pop()
-            if op[1] > last_op[1]:
+            if op[0] is None or op[1] > last_op[1]:
                 opStack.push(last_op)
                 break
             else:
-                if not last_op[0]:
-                    return
                 try: calc(last_op)
                 except AssertionError:
-                    raise SyntaxError('invalid syntax')
+                    raise SyntaxError
         opStack.push(op)
     prev_type = None
-    push_op((None, -10))  # mark the beginning of evaluation
+    set_stop_mark = lambda : push_op((None, -10))  # set a mark to stop calc
+    set_stop_mark()  # mark the beginning of evaluation
     while exp:
         type, token, exp = get_token(exp)
+        if type != 'paren' and prev_type in ('number', 'name', 'paren'):
+            push_op(binary_ops['*'])
         if type == 'number':
             valStack.push(py_eval(token))
         elif type == 'name':
@@ -132,19 +143,26 @@ def eval_pure(exp, env=global_env):
                 push_op(unitary_ops[token])
             else: push_op(binary_ops[token])
         elif type == 'paren':
-            if prev_type == 'name':  # applying a function
+            if prev_type in ('name', 'lambda'):  # applying a function
                 args = [eval_pure(arg) for arg in token[1:-1].split(',')]
                 f = valStack.pop()
                 valStack.push(f(*args))
             else:
+                if prev_type in ('number', 'paren'):
+                    push_op(binary_ops['*'])
                 valStack.push(eval_pure(token[1:-1], env))
-        elif type == 'func':
+        elif type == 'if':
+            push_op((lambda x, y: x if y else None, -5))
+        elif type == 'else':
+            push_op((lambda x, y: y if x is None else x, -5))
+        elif type == 'lambda':  # eg: ('x, y' x^2-3*y)
             args = [get_name(seg) for seg in token[1:-1].split(',')]
             valStack.push(Function(args, exp, env))
             break
-        else: pass  # perhaps add more functionality here
+        else:
+            pass  # perhaps add more functionality here
         prev_type = type
-    push_op((None, -10))  # force to complete calculation
+    complete_calc()
     result = valStack.pop()
     return result
 
@@ -156,8 +174,18 @@ def eval(exp):
     if assign_mark < 0:
         return eval_pure(exp)
     else:
-        name = get_name(exp[:assign_mark])
-        value = eval_pure(exp[assign_mark+2:])
+        name, rest = get_name(exp[:assign_mark], False)
+        if name in special_words:
+            raise SyntaxError('the special word %s cannot be assigned!'%name)
+        r_exp = exp[assign_mark+2:]
+        if not rest:  # assignment of a variable
+            value = eval_pure(r_exp)
+        else:  # assignment of a function
+            rest = rest.strip()
+            if rest[0] != '(' or rest[-1] != ')':
+                raise SyntaxError('invalid variable name!')
+            args = [get_name(seg) for seg in rest[1:-1].split(',')]
+            value = Function(args, r_exp, global_env)
         global_env[name] = value
 
 
