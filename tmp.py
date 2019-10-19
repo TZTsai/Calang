@@ -9,7 +9,7 @@ class Stack:
         self.s.append(obj)
     
     def pop(self):
-        assert(not self.s)
+        assert(not self.empty())
         return self.s.pop()
 
     def empty(self):
@@ -109,15 +109,12 @@ def eval_pure(exp, env=global_env):
     def push_op(op):
         while not opStack.empty():
             last_op = opStack.pop()
-            if not op[0]:
-                if last_op[0]:
-                    opStack.push(last_op)
-                    break
-                else: return
             if op[1] > last_op[1]:
                 opStack.push(last_op)
                 break
             else:
+                if not last_op[0]:
+                    return
                 try: calc(last_op)
                 except AssertionError:
                     raise SyntaxError('invalid syntax')
