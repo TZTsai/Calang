@@ -13,11 +13,59 @@ class Stack:
         assert(not self.empty())
         return self.s.pop()
 
+    def peek(self):
+        assert(not self.empty())
+        top = self.s.pop()
+        self.s.append(top)
+        return top
+
     def empty(self):
         return self.s == []
 
     def clear(self):
         self.s = []
+
+
+class calcMachine:
+    def __init__(self):
+        self.vals = Stack()
+        self.ops = Stack()
+
+    def __calc(self, op):  # carry out a single operation
+        if op[1] >= 4:  # unitary op
+            self.vals.push(op[0](self.vals.pop()))
+        else:
+            n2 = self.vals.pop()
+            n1 = self.vals.pop()
+            self.vals.push(op[0](n1, n2))
+
+    def set_out(self):  # mark the beginning of calculation
+        self.ops.push((None, -10))  # add a stop_mark in op_stack
+
+    def reset(self):
+        self.ops.clear()
+        self.vals.clear()
+
+    def calc(self): # calculate the whole stack and return the result
+        while not self.ops.empty():
+            op = self.ops.pop()
+            if op[0]: self.__calc(op)
+            else: break
+        return self.vals.pop()
+
+    def push_val(self, val):
+        self.vals.push(val)
+
+    def push_op(self, op):
+        while not self.ops.empty():
+            last_op = self.ops.pop()
+            if op[0] is None or op[1] > last_op[1]:
+                break
+            else:
+                try: self.__calc(last_op)
+                except AssertionError:
+                    raise SyntaxError
+        self.ops.push(op)
 
 
 class Env:
@@ -52,8 +100,7 @@ class Function:
 py_eval = eval
 
 global_env = Env()
-valStack = Stack()
-opStack = Stack()
+CM = calcMachine()
 
 binary_ops = {'+':(add, 1), '-':(sub, 1), '*':(mul, 2), '/':(truediv, 2),
 '//':(floordiv, 2), '^':(pow, 3), '%':(mod, 2), '&':(and_, -1), '|':(or_, -2),
@@ -62,12 +109,21 @@ unitary_ops = {'-':(neg, 4), '!':(not_, 4)}
 
 op_list = list(binary_ops) + list(unitary_ops)
 
-special_words = set(['if', 'else'])
+special_words = set(['if', 'else', 'cases'])
+
+def cases(*args):
+    arg_num = len(args)
+    if arg_num % 2 == 0:
+        raise SyntaxError('cases requires an odd number of args')
+    for i in range(arg_num):
+        if i == arg_num-1: return args[i]
+        if i % 2 == 1:
+            if args[i]: return args[i-1]
 
 builtins = {'sin':math.sin, 'cos':math.cos, 'tan':math.tan, 
 'asin':math.asin, 'acos':math.acos, 'atan':math.atan,
 'abs':abs, 'sqrt':math.sqrt, 'floor':math.floor, 'ceil':math.ceil,
-'log':math.log, 'E':math.e, 'Pi':math.pi,}
+'log':math.log, 'E':math.e, 'Pi':math.pi}
 
 
 def get_token(exp):
@@ -80,7 +136,7 @@ def get_token(exp):
     elif first_char in op_list:
         return 'op', first_char, exp[1:]
     elif first_char == "'":
-        close_pos = exp[1:].find("'")
+        close_pos = exp[1:].find("'") + 1
         return 'lambda', exp[:close_pos+1], exp[close_pos+1:]
     elif first_char.isdigit():
         type = 'number'
@@ -118,76 +174,55 @@ def get_name(exp, no_rest=True):
 
 def eval_pure(exp, env=global_env):
     # inner evaluation, without assignment
-    def calc(op):
-        if op[1] >= 4:  # unitary op
-            valStack.push(op[0](valStack.pop()))
-        else:
-            n2 = valStack.pop()
-            n1 = valStack.pop()
-            valStack.push(op[0](n1, n2))
-    def complete_calc():
-        # calc until meets a stop_mark in opStack and remove it
-        while not opStack.empty():
-            op = opStack.pop()
-            if op[0]: calc(op)
-            else: return
-    def push_op(op):
-        while not opStack.empty():
-            last_op = opStack.pop()
-            if op[0] is None or op[1] > last_op[1]:
-                opStack.push(last_op)
-                break
-            else:
-                try: calc(last_op)
-                except AssertionError:
-                    raise SyntaxError
-        opStack.push(op)
-    
-    valStack.clear()
-    opStack.clear()
     prev_type = None
-    set_stop_mark = lambda : push_op((None, -10))  # set a mark to stop calc
-    set_stop_mark()  # mark the beginning of evaluation
+    CM.set_out()
     while exp:
         type, token, exp = get_token(exp)
         if type in ('number', 'name') and \
         prev_type in ('number', 'name', 'paren'):
-            push_op(binary_ops['*'])
+            CM.push_op(binary_ops['*'])
         if type == 'number':
-            valStack.push(py_eval(token))
+            CM.push_val(py_eval(token))
         elif type == 'name':
             if token in builtins:
-                valStack.push(builtins[token])
-            valStack.push(env[token])
+                CM.push_val(builtins[token])
+            else:
+                CM.push_val(env[token])
         elif type == 'op':
             if (prev_type in (None, 'op')) and token in unitary_ops:
-                push_op(unitary_ops[token])
-            else: push_op(binary_ops[token])
-        elif type == 'paren':
-            if prev_type in ('name', 'lambda'):  # applying a function
-                args = [eval_pure(arg) for arg in token[1:-1].split(',')]
-                f = valStack.pop()
-                valStack.push(f(*args))
+                CM.push_op(unitary_ops[token])
             else:
-                if prev_type in ('number', 'paren'):
-                    push_op(binary_ops['*'])
-                valStack.push(eval_pure(token[1:-1], env))
+                prev_val = CM.vals.peek()
+                if (callable(prev_val)):
+                    raise SyntaxError('cannot add an operation after a function!')
+                CM.push_op(binary_ops[token])
+        elif type == 'paren':
+            prev_val = CM.vals.pop()
+            if callable(prev_val):  # applying a function
+                args = [eval_pure(arg, env) for arg in token[1:-1].split(',')]
+                CM.push_val(prev_val(*args))
+            else:
+                if prev_type in ('number', 'name', 'paren'):
+                    CM.push_op(binary_ops['*'])
+                CM.push_val(prev_val)
+                CM.push_val(eval_pure(token[1:-1], env))
         elif type == 'if':
-            push_op((lambda x, y: x if y else None, -5))
+            CM.push_op((lambda x, y: x if y else None, -5))
         elif type == 'else':
-            push_op((lambda x, y: y if x is None else x, -5))
+            prev_val = CM.vals.peek()
+            if prev_val is None:
+                CM.push_op((lambda x, y: y, -5))
+            else: break  # short circuit
         elif type == 'lambda':  # eg: ('x, y' x^2-3*y)
             if prev_type is not None:
                 raise SyntaxError('invalid lambda expression!')
             args = [get_name(seg) for seg in token[1:-1].split(',')]
-            valStack.push(Function(args, exp, env))
+            CM.push_val(Function(args, exp, env))
             break
         else:
             pass  # perhaps add more functionality here
         prev_type = type
-    complete_calc()
-    result = valStack.pop()
-    return result
+    return CM.calc()
 
 
 def eval(exp):
@@ -220,7 +255,8 @@ def repl():
             if val is not None: print(val)
         except KeyboardInterrupt:
             return
-        except Exception as err:
+        except (ValueError, SyntaxError, ArithmeticError, KeyError) as err:
+            CM.reset()
             print(err)
 
 
