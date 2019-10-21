@@ -1,7 +1,11 @@
-import math
+### Builtin Functions
+from operator import *
+from math import *
+from functools import reduce
 
-builtins = {'sin':math.sin, 'cos':math.cos, 'tan':math.tan, 
-'asin':math.asin, 'acos':math.acos, 'atan':math.atan,
-'abs':abs, 'sqrt':math.sqrt, 'floor':math.floor, 'ceil':math.ceil,
-'log':math.log, 'E':math.e, 'Pi':math.pi, 'range':range,
-'sum':lambda f, l: sum(f(x) for x in l), }
+builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos, 
+'atan':atan, 'abs':abs, 'sqrt':sqrt, 'floor':floor, 'ceil':ceil, 'log':log,
+'E':e, 'Pi':pi, 'range':range, 'max':max, 'min':min, 'reduce':reduce,
+'binom':lambda n, m: factorial(n) / factorial(m),
+'sum': lambda f, l: reduce(add, (f(x) for x in l)),
+'prod':lambda f, l: reduce(mul, (f(x) for x in l))}

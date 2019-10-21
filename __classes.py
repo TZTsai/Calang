@@ -1,5 +1,3 @@
-from calc import eval_pure
-
 class Stack:
     def __init__(self):
         self.pbtrack = []
@@ -80,13 +78,5 @@ class Env:
             else:
                 raise KeyError('unbound symbol')
 
-
-class Function:
-    def __init__(self, args, body, env):
-        self.args = args
-        self.body = body
-        self.parent_env = env
-
-    def __call__(self, *args):
-        new_env = Env(dict(zip(self.args, args)), self.parent_env)
-        return eval_pure(self.body, new_env)
+    def make_subEnv(self, args=[], vals=[]):
+        return Env(dict(zip(args, vals)), self)

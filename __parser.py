@@ -11,7 +11,6 @@ op_list = list(binary_ops) + list(unitary_ops)
 special_words = set(['ans', 'if', 'else', 'cases'])
 
 
-
 def get_token(exp):
     exp = exp.strip()
     pbtrack = lambda p, b: p == 0 and b == 0
@@ -22,9 +21,11 @@ def get_token(exp):
         return 'op', exp[:2], exp[2:]
     elif first_char in op_list:
         return 'op', first_char, exp[1:]
-    elif first_char == '"':
-        second_quote = exp[1:].find('"') + 1
-        return 'lambda', exp[:second_quote+1], exp[second_quote+1:]
+    elif first_char == ',':
+        return 'comma', ',', exp[1:]
+    elif first_char == '{':
+        close_brace = exp[1:].find('}') + 1
+        return 'lambda', exp[:close_brace+1], exp[close_brace+1:]
     elif first_char.isdigit():
         type = 'number'
     elif first_char.isalpha() or first_char == '_':

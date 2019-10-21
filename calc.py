@@ -9,14 +9,44 @@ CM = calcMachine()
 ans_records = []
 
 
-def map_list(f, list_str):
-    return [f(arg) for arg in list_str[1:-1].split(',')]
+def map_list(proc, list_str):
+    content = list_str[1:-1]
+    l = []
+    while content:
+        item = ''
+        while content:
+            type, token, content = get_token(content)
+            if type == 'comma': break
+            item += token
+        l.append(item)
+    return [proc(arg) for arg in l]
 
 def get_params(list_str):
     return map_list(get_name, list_str)
 
 def eval_list(list_str, env):
     return map_list(lambda exp: eval_pure(exp, env), list_str)
+
+def eval_list_comprehension(list_str, env):
+    def gen_range(ran, conds):
+        for val in eval_pure(ran, local_env):
+            local_env[params[i]] = val
+            for test in (eval_pure(c, local_env) for c in conds):
+                if test: yield val
+    def gen_vals(ranges):
+        if len(ranges) == 0: yield ()
+        else:
+            segs = ranges[0].split('if')
+            head_range = gen_range(segs[0], segs[1:])
+            for v in head_range:
+                for rest_vals in gen_vals(ranges[1:]):
+                    yield (v,)+rest_vals
+    segs = list_str[1:-1].split('for')
+    exp, param_ranges = segs[0], segs[1:]
+    params, ranges = zip(*[pr.split('in') for pr in param_ranges])
+    local_env = env.make_subEnv()
+    return [function(params, exp, env)(*args) for args in gen_vals(ranges)]
+
 
 def eval_number(exp):
     if 'e' in exp:
@@ -39,6 +69,11 @@ def eval_cases(exp, env):
     else_case = cases[-1]
     if len(else_case) != 1: error()
     CM.push_val(eval_pure(else_case[0], env))
+
+def function(params, body, env=global_env):
+    def apply(*args):
+        return eval_pure(body, env.make_subEnv(params, args))
+    return apply
 
 
 def eval_pure(exp, env):
@@ -81,16 +116,19 @@ def eval_pure(exp, env):
             if CM.vals.peek() != 'false':
                 CM.ops.pop()
                 break  # short circuit
-        elif type == 'lambda':  # eg: ("x, y" x^2-3*y)
+        elif type == 'lambda':  # eg: ({x, y} x^2-3*y)
             if prev_type is not None:
                 raise SyntaxError('invalid lambda expression!')
-            CM.push_val(Function(get_params(token), exp, env))
+            CM.push_val(function(get_params(token), exp, env))
             break
         elif type == 'cases':  # eg: cases: 1, x>0; 0, x=0; -1
             eval_cases(exp, env)
             break
         elif type == 'list':
-            CM.push_val(eval_list(token, env))
+            if token.find('for'):
+                CM.push_val(eval_list_comprehension(token, env))
+            else:
+                CM.push_val(eval_list(token, env))
         else:
             pass  # perhaps add more functionality here
         prev_type = type
@@ -114,7 +152,7 @@ def eval(exp):
             type, para_str, rest = get_token(rest)
             if type != 'paren' or rest != '':
                 raise SyntaxError('invalid variable name!')
-            value = Function(get_params(para_str), right_exp, global_env)
+            value = function(get_params(para_str), right_exp)
             # a function is regarded as a special value
         global_env[name] = value
         result = None
@@ -129,28 +167,33 @@ def repl(test=False, cases=loop()):
     for case in cases:
         try:
             prompt = '[{n}]> '.format(n=count)
+            # test below
             if test:
-                if exp.find('#') > 0:
+                if case.find('#') > 0:
                     exp, ans = case.split('#')
                 else:
                     exp, ans = case, None
                 print(prompt+exp)
+            # test above
             else: exp = input(prompt)
             val = eval(exp)
             if val is not None:
                 print(val)
-                if test and ans is not None:
-                    if val == py_eval(ans):
-                        print('^ OK!')
-                    else:
-                        print('^ Fail!')
-                        return
+            # test below
+            if test and ans is not None:
+                if val == py_eval(ans):
+                    print('OK!')
+                else:
+                    print('Fail! Expect %s' % ans)
+                    return
+            # test above
             count += 1
         except KeyboardInterrupt: return
         except (ValueError, SyntaxError, ArithmeticError,
         KeyError, IndexError, TypeError) as err:
-            CM.reset()
             print(err)
+            if test: return
+            CM.reset()
     print('\nCongratulations, tests all passed!')
 
 
@@ -159,8 +202,16 @@ tests = """s := 1
 [1, 2, 3] #[1,2,3]
 ans #[1,2,3]
 ans@2 #3
-ans.0 #[1,2,3]
+ans.2 #[1,2,3]
 s #1
+f(x) := x+1
+f(s) #2
+f := {x, y} x*(1+y)
+f(s, 2*(1+s)) #5
+l := [1,max(1,2),3]
+l = ans.1 #True
+sum({i} i^2, l) #14
+sum({i,j} i*j)
 """.splitlines()
 ### TEST ###
 
