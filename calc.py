@@ -28,24 +28,25 @@ def eval_list(list_str, env):
     return map_list(lambda exp: eval_pure(exp, env), list_str)
 
 def eval_list_comprehension(list_str, env):
-    def gen_range(ran, conds):
+    def gen_range(param, ran, conds):
         for val in eval_pure(ran, local_env):
-            local_env[params[i]] = val
+            local_env[param] = val
             for test in (eval_pure(c, local_env) for c in conds):
                 if test: yield val
-    def gen_vals(ranges):
+    def gen_vals(params, ranges):
         if len(ranges) == 0: yield ()
         else:
             segs = ranges[0].split('if')
-            head_range = gen_range(segs[0], segs[1:])
+            head_range = gen_range(params[0], segs[0], segs[1:])
             for v in head_range:
-                for rest_vals in gen_vals(ranges[1:]):
+                for rest_vals in gen_vals(params[1:], ranges[1:]):
                     yield (v,)+rest_vals
     segs = list_str[1:-1].split('for')
     exp, param_ranges = segs[0], segs[1:]
     params, ranges = zip(*[pr.split('in') for pr in param_ranges])
     local_env = env.make_subEnv()
-    return [function(params, exp, env)(*args) for args in gen_vals(ranges)]
+    return [function(params, exp, env)(*args)
+        for args in gen_vals(params, ranges)]
 
 
 def eval_number(exp):
@@ -125,7 +126,7 @@ def eval_pure(exp, env):
             eval_cases(exp, env)
             break
         elif type == 'list':
-            if token.find('for'):
+            if token.find('for') > 0:
                 CM.push_val(eval_list_comprehension(token, env))
             else:
                 CM.push_val(eval_list(token, env))
@@ -211,7 +212,9 @@ f(s, 2*(1+s)) #5
 l := [1,max(1,2),3]
 l = ans.1 #True
 sum({i} i^2, l) #14
-sum({i,j} i*j)
+[i for i in range(3)] # [0,1,2]
+[i for i in range(4) if i%2] #[1,3]
+[[i,j] for i in range(3) if i%2 for j in range(5) if j%2==0 if j <3] #[[1, 0], [1,2]]
 """.splitlines()
 ### TEST ###
 
