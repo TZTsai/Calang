@@ -15,9 +15,7 @@ class Stack:
 
     def peek(self):
         assert(not self.empty())
-        top = self.s.pop()
-        self.s.append(top)
-        return top
+        return self.s[-1]
 
     def empty(self):
         return self.s == []
@@ -31,8 +29,10 @@ class calcMachine:
         self.vals = Stack()
         self.ops = Stack()
 
-    def __calc(self, op):  # carry out a single operation
-        if op[1] >= 4:  # unitary op
+    def __calc(self):  # carry out a single operation
+        op = self.ops.pop()
+        if op[0] is None: return 'stop'
+        elif op[1] >= 4:  # unitary op
             self.vals.push(op[0](self.vals.pop()))
         else:
             n2 = self.vals.pop()
@@ -47,22 +47,19 @@ class calcMachine:
         self.vals.clear()
 
     def calc(self): # calculate the whole stack and return the result
-        while not self.ops.empty():
-            op = self.ops.pop()
-            if op[0]: self.__calc(op)
-            else: break
+        while not self.ops.empty() and self.__calc() != 'stop':
+            pass
         return self.vals.pop()
 
     def push_val(self, val):
         self.vals.push(val)
 
     def push_op(self, op):
-        while not self.ops.empty():
-            last_op = self.ops.pop()
-            if op[0] is None or op[1] > last_op[1]:
-                break
+        while not (self.ops.empty() or op[0] is None):
+            last_op = self.ops.peek()
+            if op[1] > last_op[1]: break
             else:
-                try: self.__calc(last_op)
+                try: self.__calc()
                 except AssertionError:
                     raise SyntaxError
         self.ops.push(op)
@@ -127,8 +124,8 @@ def get_token(exp):
     elif first_char in op_list:
         return 'op', first_char, exp[1:]
     elif first_char == "'":
-        close_pos = exp[1:].find("'") + 1
-        return 'lambda', exp[:close_pos+1], exp[close_pos+1:]
+        second_quote = exp[1:].find("'") + 1
+        return 'lambda', exp[:second_quote+1], exp[second_quote+1:]
     elif first_char.isdigit():
         type = 'number'
     elif first_char.isalpha() or first_char == '_':
@@ -164,7 +161,7 @@ def get_name(exp, no_rest=True):
 
 
 def map_args(f, argstr):
-    return (f(arg) for arg in argstr[1:-1].split(','))
+    return [f(arg) for arg in argstr[1:-1].split(',')]
 
 
 def get_params(argstr):
@@ -177,7 +174,7 @@ def eval_cases(exp, env):
     if exp[0] != ':': error()
     cases = [case.split(',') for case in exp[1:].split(';')]
     try:
-        for val_exp, cond_exp in cases[:-1]:
+        for cond_exp, val_exp in cases[:-1]:
             if eval_pure(cond_exp, env):
                 CM.push_val(eval_pure(val_exp, env))
                 return
@@ -195,7 +192,7 @@ def eval_pure(exp, env):
         type, token, exp = get_token(exp)
         prev_val = None if CM.vals.empty() else CM.vals.peek()
         if callable(prev_val):  # applying a function
-            if type != 'paren':
+            if type != 'paren' and prev_type is not None:
                 raise SyntaxError('invalid function application!')
             args = map_args(lambda arg: eval_pure(arg, env), token)
             CM.push_val(CM.vals.pop()(*args))
@@ -215,10 +212,11 @@ def eval_pure(exp, env):
             CM.push_val(eval_pure(token[1:-1], env))
         elif type == 'if':
             CM.push_op((lambda x, y: x if y else 'false', -5))
-            # push a temporary mark 'false' if the condition is false
         elif type == 'else':
-            if prev_val == 'false': CM.push_op((lambda x, y: y, -5))
-            else: break  # short circuit
+            CM.push_op((lambda x, y: y, -5))
+            if CM.vals.peek() != 'false':
+                CM.ops.pop()
+                break  # short circuit
         elif type == 'lambda':  # eg: ('x, y' x^2-3*y)
             if prev_type is not None:
                 raise SyntaxError('invalid lambda expression!')
@@ -242,7 +240,7 @@ def eval(exp):
     else:
         name, rest = get_name(exp[:assign_mark], False)
         if name in special_words or name in builtins:
-            raise SyntaxError('word %s is protected!'%name)
+            raise SyntaxError('word "%s" is protected!'%name)
         right_exp = exp[assign_mark+2:]
         if not rest:  # assignment of a variable
             value = eval_pure(right_exp, global_env)
@@ -268,4 +266,21 @@ def repl():
             print(err)
 
 
-repl()
+tests = """f(x) := x+1 ;None
+f(3) ;4
+1+(2+3) ;6
+f := 6 ;None
+f ;6""".splitlines()
+
+def test():
+    for exp, ans in (case.split(';') for case in tests):
+        print('>', exp, '(expect: %s)'%ans)
+        result = str(eval(exp))
+        print(result, '<-', 'OK!' if result == ans else 'Fail!')
+
+
+from sys import argv
+if len(argv) > 1 and argv[1] == '-t':
+    test()
+else:
+    repl()
