@@ -1,116 +1,236 @@
 from operator import *
-from queue import LifoQueue
+import math
 
-class stack:
+
+class Stack:
     def __init__(self):
-        self.s = LifoQueue()
+        self.s = []
 
     def push(self, obj):
-        self.s.put(obj)
+        self.s.append(obj)
     
     def pop(self):
-        assert(not self.s.empty())
-        return self.s.get()
+        assert(not self.empty())
+        return self.s.pop()
+
+    def peek(self):
+        assert(not self.empty())
+        top = self.s.pop()
+        self.s.append(top)
+        return top
 
     def empty(self):
-        return self.s.empty()
+        return self.s == []
 
-binary_ops = {'+':(add, 1), '-':(sub, 1), '*':(mul, 2), '/':(truediv, 2), '//':(floordiv, 2),
-'^':(pow, 3), '%':(mod, 2), '&':(and_, -1), '|':(or_, -2), '=':(eq, 0), '!=':(ne, 0),
-'<':(lt, 0), '>':(gt, 0), '<=':(le, 0), '>=':(ge, 0)}
-parens = {'(':(_, -10), ')':(_, -10)}
-unitary_ops = {'-':(neg, 4), '!':(not_, 4)}
+    def clear(self):
+        self.s = []
+
+
+class calcMachine:
+    def __init__(self):
+        self.vals = Stack()
+        self.ops = Stack()
+
+    def __calc(self, op):  # carry out a single operation
+        if op[1] >= 4:  # unitary op
+            self.vals.push(op[0](self.vals.pop()))
+        else:
+            n2 = self.vals.pop()
+            n1 = self.vals.pop()
+            self.vals.push(op[0](n1, n2))
+
+    def set_out(self):  # mark the beginning of calculation
+        self.ops.push((None, -10))  # add a stop_mark in op_stack
+
+    def reset(self):
+        self.ops.clear()
+        self.vals.clear()
+
+    def calc(self): # calculate the whole stack and return the result
+        while not self.ops.empty():
+            op = self.ops.pop()
+            if op[0]: self.__calc(op)
+            else: break
+        return self.vals.pop()
+
+    def push_val(self, val):
+        self.vals.push(val)
+
+    def push_op(self, op):
+        while not self.ops.empty():
+            last_op = self.ops.pop()
+            if op[0] is None or op[1] > last_op[1]:
+                break
+            else:
+                try: self.__calc(last_op)
+                except AssertionError:
+                    raise SyntaxError
+        self.ops.push(op)
+
+
+class Env:
+    def __init__(self, bindings={}, parent=None):
+        self.bindings = bindings
+        self.parent = parent
+
+    def __setitem__(self, name, val):
+        self.bindings[name] = val
+
+    def __getitem__(self, name):
+        try:
+            return self.bindings[name]
+        except KeyError:
+            if self.parent:
+                return self.parent[name]
+            else:
+                raise KeyError('unbound symbol')
+
+
+class Function:
+    def __init__(self, args, body, env):
+        self.args = args
+        self.body = body
+        self.parent_env = env
+
+    def __call__(self, *args):
+        new_env = Env(dict(zip(self.args, args)), self.parent_env)
+        return eval_pure(self.body, new_env)
+
 
 py_eval = eval
 
-global_env = {}
+global_env = Env()
+CM = calcMachine()
+
+binary_ops = {'+':(add, 1), '-':(sub, 1), '*':(mul, 2), '/':(truediv, 2),
+'//':(floordiv, 2), '^':(pow, 3), '%':(mod, 2), '&':(and_, -1), '|':(or_, -2),
+'=':(eq, 0), '!=':(ne, 0), '<':(lt, 0), '>':(gt, 0), '<=':(le, 0), '>=':(ge, 0)}
+unitary_ops = {'-':(neg, 4), '!':(not_, 4)}
+
+op_list = list(binary_ops) + list(unitary_ops)
+
+special_words = set(['if', 'else', 'cases'])
+
+builtins = {'sin':math.sin, 'cos':math.cos, 'tan':math.tan, 
+'asin':math.asin, 'acos':math.acos, 'atan':math.atan,
+'abs':abs, 'sqrt':math.sqrt, 'floor':math.floor, 'ceil':math.ceil,
+'log':math.log, 'E':math.e, 'Pi':math.pi}
 
 
 def get_token(exp):
-    first_char = exp[0]
+    exp = exp.strip()
     track_parens = 0
-    ops = list(binary_ops) + list(unitary_ops) + list(parens)
+    first_char = exp[0]
 
-    if first_char.isspace():
-        return get_token(exp[1:])
-    elif exp[:2] in ops:
+    if exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
-    elif first_char in ops:
+    elif first_char in op_list:
         return 'op', first_char, exp[1:]
+    elif first_char == "'":
+        close_pos = exp[1:].find("'") + 1
+        return 'lambda', exp[:close_pos+1], exp[close_pos+1:]
     elif first_char.isdigit():
         type = 'number'
     elif first_char.isalpha() or first_char == '_':
         type = 'name'
     elif first_char == '(':
         type = 'paren'
-        track_parens = 1
+        track_parens += 1
     else:
         raise SyntaxError('unknown symbol!')
 
-    i = 1
     for i in range(1, len(exp)):
         char = exp[i]
-        if char.isspace() or \
-        (type == 'number' and not char.isdigit()) or \
-        (type == 'name' and not (char.isalnum() or char == '_')) or \
-        (type == 'paren' and track_parens == 0):
-            return type, exp[:i], exp[i:]
+        if type == 'paren' and track_parens == 0:
+            return type, token, exp[i:]
+        elif char.isspace() or \
+        (type == 'number' and char not in '1234567890.') or \
+        (type == 'name' and not (char.isalnum() or char in '_?')):
+            token, rest = exp[:i], exp[i:]
+            if token in special_words:
+                return token, token, rest
+            return type, token, rest
         if char == '(': track_parens += 1
         elif char == ')': track_parens -= 1
-
-    if track_parens != 0: raise SyntaxError('unpaired parenthesis!')
-    return type, exp[:i], exp[i:]
+    return type, exp, ''
 
 
-def check_valid_name(exp):
-    type, _, rest = get_token(exp.strip())
-    if not(type == 'name' and rest == ''):
-        raise SyntaxError('invalid variable name')
+def get_name(exp, no_rest=True):  
+    type, name, rest = get_token(exp)
+    if not type == 'name' or (no_rest and rest):
+        raise SyntaxError('invalid variable name!')
+    if no_rest: return name
+    return name, rest
 
 
-numStack = stack()
-opStack = stack()
+def map_args(f, argstr):
+    return (f(arg) for arg in argstr[1:-1].split(','))
 
 
-def eval_pure(exp, env=global_env):
-    def calc(op):
-        if op[1] >= 4:  # unitary op
-            numStack.push(op[0](numStack.pop()))
-        else:
-            n2 = numStack.pop()
-            n1 = numStack.pop()
-            numStack.push(op[0](n1, n2))
-    def push_op(op):
-        while not opStack.empty():
-            last_op = opStack.pop()
-            if op[1] > last_op[1]:
-                opStack.push(last_op)
-                break
-            elif op[1] == last_op[1] == -10:
+def get_params(argstr):
+    return map_args(get_name, argstr)
+
+
+def eval_cases(exp, env):
+    def error():
+        raise SyntaxError('invalid cases expression!')
+    if exp[0] != ':': error()
+    cases = [case.split(',') for case in exp[1:].split(';')]
+    try:
+        for val_exp, cond_exp in cases[:-1]:
+            if eval_pure(cond_exp, env):
+                CM.push_val(eval_pure(val_exp, env))
                 return
-            else:
-                try: calc(last_op)
-                except AssertionError:
-                    raise SyntaxError('invalid syntax')
-        opStack.push(op)
+    except ValueError: error()
+    else_case = cases[-1]
+    if len(else_case) != 1: error()
+    CM.push_val(eval_pure(else_case[0], env))
+
+
+def eval_pure(exp, env):
+    # inner evaluation, without assignment
     prev_type = None
-    opStack.push(('begin', -10))
+    CM.set_out()
     while exp:
         type, token, exp = get_token(exp)
-        if type == 'number': numStack.push(py_eval(token))
-        elif type == 'name': numStack.push(env[token])
+        prev_val = None if CM.vals.empty() else CM.vals.peek()
+        if callable(prev_val):  # applying a function
+            if type != 'paren':
+                raise SyntaxError('invalid function application!')
+            args = map_args(lambda arg: eval_pure(arg, env), token)
+            CM.push_val(CM.vals.pop()(*args))
+            continue
+        if all(t in ('number', 'name', 'paren') for t in (type, prev_type)):
+            CM.push_op(binary_ops['*'])
+        if type == 'number':
+            CM.push_val(py_eval(token))
+        elif type == 'name':
+            CM.push_val(builtins[token] if token in builtins else env[token])
         elif type == 'op':
-            if (prev_type in (None, 'op')):
-                if token in unitary_ops: 
-                    push_op(unitary_ops[token])
-                else: raise SyntaxError('invalid syntax')
-            else: push_op(binary_ops[token])
-        elif type == 'paren': numStack.push(eval_pure(token[1:-1], env))
-        else: pass  # perhaps add more functionality here
+            if (prev_type in (None, 'op')) and token in unitary_ops:
+                CM.push_op(unitary_ops[token])
+            else:
+                CM.push_op(binary_ops[token])
+        elif type == 'paren':
+            CM.push_val(eval_pure(token[1:-1], env))
+        elif type == 'if':
+            CM.push_op((lambda x, y: x if y else 'false', -5))
+            # push a temporary mark 'false' if the condition is false
+        elif type == 'else':
+            if prev_val == 'false': CM.push_op((lambda x, y: y, -5))
+            else: break  # short circuit
+        elif type == 'lambda':  # eg: ('x, y' x^2-3*y)
+            if prev_type is not None:
+                raise SyntaxError('invalid lambda expression!')
+            CM.push_val(Function(get_params(token), exp, env))
+            break
+        elif type == 'cases':  # eg: cases: 1, x>0; 0, x=0; -1
+            eval_cases(exp, env)
+            break
+        else:
+            pass  # perhaps add more functionality here
         prev_type = type
-    push_op(('end', -10))
-    result = numStack.pop()
-    return result
+    return CM.calc()
 
 
 def eval(exp):
@@ -118,11 +238,20 @@ def eval(exp):
     # two cases: assignment and evaluation
     assign_mark = exp.find(':=')
     if assign_mark < 0:
-        return eval_pure(exp)
+        return eval_pure(exp, global_env)
     else:
-        name = exp[:assign_mark]
-        check_valid_name(name)
-        value = eval_pure(exp[assign_mark+2:])
+        name, rest = get_name(exp[:assign_mark], False)
+        if name in special_words or name in builtins:
+            raise SyntaxError('word %s is protected!'%name)
+        right_exp = exp[assign_mark+2:]
+        if not rest:  # assignment of a variable
+            value = eval_pure(right_exp, global_env)
+        else:  # assignment of a function
+            type, para_str, rest = get_token(rest)
+            if type != 'paren' or rest != '':
+                raise SyntaxError('invalid variable name!')
+            value = Function(get_params(para_str), right_exp, global_env)
+            # a function is regarded as a special value
         global_env[name] = value
 
 
@@ -130,10 +259,12 @@ def repl():
     while True:
         exp = input('> ')
         try:
-            print(eval(exp))
+            val = eval(exp)
+            if val is not None: print(val)
         except KeyboardInterrupt:
             return
         except (ValueError, SyntaxError, ArithmeticError, KeyError) as err:
+            CM.reset()
             print(err)
 
 
