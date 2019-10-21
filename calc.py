@@ -1,98 +1,6 @@
-from operator import *
-import math
-
-
-class Stack:
-    def __init__(self):
-        self.pbtrack = []
-
-    def push(self, obj):
-        self.pbtrack.append(obj)
-    
-    def pop(self):
-        assert(not self.empty())
-        return self.pbtrack.pop()
-
-    def peek(self):
-        assert(not self.empty())
-        return self.pbtrack[-1]
-
-    def empty(self):
-        return self.pbtrack == []
-
-    def clear(self):
-        self.pbtrack = []
-
-
-class calcMachine:
-    def __init__(self):
-        self.vals = Stack()
-        self.ops = Stack()
-
-    def __calc(self):  # carry out a single operation
-        op = self.ops.pop()
-        if op[0] is None: return 'stop'
-        elif op[1] == 4:  # unitary op
-            self.vals.push(op[0](self.vals.pop()))
-        else:
-            n2 = self.vals.pop()
-            n1 = self.vals.pop()
-            self.vals.push(op[0](n1, n2))
-
-    def set_out(self):  # mark the beginning of calculation
-        self.ops.push((None, -10))  # add a stop_mark in op_stack
-
-    def reset(self):
-        self.ops.clear()
-        self.vals.clear()
-
-    def calc(self): # calculate the whole stack and return the result
-        while not self.ops.empty() and self.__calc() != 'stop':
-            pass
-        return self.vals.pop() if not self.vals.empty() else None
-
-    def push_val(self, val):
-        self.vals.push(val)
-
-    def push_op(self, op):
-        while not (self.ops.empty() or op[0] is None):
-            last_op = self.ops.peek()
-            if op[1] > last_op[1]: break
-            else:
-                try: self.__calc()
-                except AssertionError:
-                    raise SyntaxError
-        self.ops.push(op)
-
-
-class Env:
-    def __init__(self, bindings={}, parent=None):
-        self.bindings = bindings
-        self.parent = parent
-
-    def __setitem__(self, name, val):
-        self.bindings[name] = val
-
-    def __getitem__(self, name):
-        try:
-            return self.bindings[name]
-        except KeyError:
-            if self.parent:
-                return self.parent[name]
-            else:
-                raise KeyError('unbound symbol')
-
-
-class Function:
-    def __init__(self, args, body, env):
-        self.args = args
-        self.body = body
-        self.parent_env = env
-
-    def __call__(self, *args):
-        new_env = Env(dict(zip(self.args, args)), self.parent_env)
-        return eval_pure(self.body, new_env)
-
+from __classes import *
+from __parser import *
+from __builtins import builtins
 
 py_eval = eval
 
@@ -100,89 +8,15 @@ global_env = Env({'ans':[]})
 CM = calcMachine()
 ans_records = []
 
-binary_ops = {'+':(add, 1), '-':(sub, 1), '*':(mul, 2), '/':(truediv, 2),
-'//':(floordiv, 2), '^':(pow, 3), '%':(mod, 2), '&':(and_, -1), '|':(or_, -2),
-'=':(eq, 0), '!=':(ne, 0), '<':(lt, 0), '>':(gt, 0), '<=':(le, 0), '>=':(ge, 0),
-'@':(lambda l, i: l[i], 5)}
-unitary_ops = {'-':(neg, 4), '!':(not_, 4)}
-
-op_list = list(binary_ops) + list(unitary_ops)
-
-special_words = set(['ans', 'if', 'else', 'cases'])
-
-builtins = {'sin':math.sin, 'cos':math.cos, 'tan':math.tan, 
-'asin':math.asin, 'acos':math.acos, 'atan':math.atan,
-'abs':abs, 'sqrt':math.sqrt, 'floor':math.floor, 'ceil':math.ceil,
-'log':math.log, 'E':math.e, 'Pi':math.pi}
-
-
-def get_token(exp):
-    exp = exp.strip()
-    pbtrack = lambda p, b: p == 0 and b == 0
-    pbtrack.parens, pbtrack.brackets = 0, 0
-    first_char = exp[0]
-
-    if exp[:2] in op_list:
-        return 'op', exp[:2], exp[2:]
-    elif first_char in op_list:
-        return 'op', first_char, exp[1:]
-    elif first_char == '"':
-        second_quote = exp[1:].find('"') + 1
-        return 'lambda', exp[:second_quote+1], exp[second_quote+1:]
-    elif first_char.isdigit():
-        type = 'number'
-    elif first_char.isalpha() or first_char == '_':
-        type = 'name'
-    elif first_char == '(':
-        type = 'paren'
-        pbtrack.parens = 1
-    elif first_char == '[':
-        type = 'list'
-        pbtrack.brackets = 1
-    else:
-        raise SyntaxError('unknown symbol!')
-
-    i = 1   
-    while i < len(exp):
-        char = exp[i]
-        if type in ('paren', 'list'):
-            if pbtrack(pbtrack.parens, pbtrack.brackets): break
-        elif char.isspace() or \
-        (type == 'number' and char not in '1234567890.') or \
-        (type == 'name' and not (char.isalnum() or char in '_?')):
-            break
-        if char == '(': pbtrack.parens += 1
-        elif char == ')': pbtrack.parens -= 1
-        elif char == '[': pbtrack.brackets += 1
-        elif char == ']': pbtrack.brackets -= 1
-        i += 1
-    if pbtrack.parens != 0 or pbtrack.brackets != 0:
-        raise SyntaxError('unpaired parentheses or brackets!')
-    token, rest = exp[:i], exp[i:]
-    if token in special_words:
-        return token, token, rest
-    return type, token, rest
-
-
-def get_name(exp, no_rest=True):  
-    type, name, rest = get_token(exp)
-    if not type == 'name' or (no_rest and rest):
-        raise SyntaxError('invalid variable name!')
-    if no_rest: return name
-    return name, rest
-
 
 def map_list(f, list_str):
     return [f(arg) for arg in list_str[1:-1].split(',')]
 
-
 def get_params(list_str):
     return map_list(get_name, list_str)
 
-
 def eval_list(list_str, env):
     return map_list(lambda exp: eval_pure(exp, env), list_str)
-
 
 def eval_number(exp):
     if 'e' in exp:
@@ -190,7 +24,6 @@ def eval_number(exp):
         return py_eval(num) * 10**py_eval(power)
     else:
         return py_eval(exp)
-
 
 def eval_cases(exp, env):
     def error():
@@ -288,46 +121,52 @@ def eval(exp):
     global_env['ans'].append(result)
     return result
 
+def loop():
+    while True: yield None
 
-def repl():
+def repl(test=False, cases=loop()):
     count = 0
-    while True:
+    for case in cases:
         try:
-            exp = input('[{n}]> '.format(n=count))
+            prompt = '[{n}]> '.format(n=count)
+            if test:
+                if exp.find('#') > 0:
+                    exp, ans = case.split('#')
+                else:
+                    exp, ans = case, None
+                print(prompt+exp)
+            else: exp = input(prompt)
             val = eval(exp)
-            if val is not None: print(val)
+            if val is not None:
+                print(val)
+                if test and ans is not None:
+                    if val == py_eval(ans):
+                        print('^ OK!')
+                    else:
+                        print('^ Fail!')
+                        return
             count += 1
         except KeyboardInterrupt: return
         except (ValueError, SyntaxError, ArithmeticError,
-        KeyError, IndexError) as err:
+        KeyError, IndexError, TypeError) as err:
             CM.reset()
             print(err)
+    print('\nCongratulations, tests all passed!')
 
 
 ### TEST ###
-tests = """[1, 2, 3] #[1,2,3]
+tests = """s := 1
+[1, 2, 3] #[1,2,3]
 ans #[1,2,3]
 ans@2 #3
 ans.0 #[1,2,3]
+s #1
 """.splitlines()
-
-def test():
-    for exp, ans in (case.split('#') for case in tests):
-        result = eval(exp)
-        print('>', exp, '' if ans == '' else '(expect: %s)'%ans)
-        if result is not None:
-            print(result)
-            if ans != '' and result == py_eval(ans):
-                print('^ OK!')
-            else:
-                print('^ Fail!')
-                return
-    print('\nCongratulations, tests all passed!')
 ### TEST ###
 
 
 from sys import argv
 if len(argv) > 1 and argv[1] == '-t':
-    test()
+    repl(True, tests)
 else:
     repl()
