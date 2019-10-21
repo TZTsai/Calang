@@ -1,0 +1,1 @@
+python "E:\Computer & Programming\Playground\calc\calc.py"

@@ -123,8 +123,8 @@ def get_token(exp):
         return 'op', exp[:2], exp[2:]
     elif first_char in op_list:
         return 'op', first_char, exp[1:]
-    elif first_char == "'":
-        second_quote = exp[1:].find("'") + 1
+    elif first_char == '"':
+        second_quote = exp[1:].find('"') + 1
         return 'lambda', exp[:second_quote+1], exp[second_quote+1:]
     elif first_char.isdigit():
         type = 'number'
@@ -133,12 +133,15 @@ def get_token(exp):
     elif first_char == '(':
         type = 'paren'
         track_parens += 1
+    elif first_char == '[':
+        type = 'list'
+        track_parens += 1
     else:
         raise SyntaxError('unknown symbol!')
 
     for i in range(1, len(exp)):
         char = exp[i]
-        if type == 'paren' and track_parens == 0:
+        if type in ('paren', 'list') and track_parens == 0:
             return type, token, exp[i:]
         elif char.isspace() or \
         (type == 'number' and char not in '1234567890.') or \
@@ -147,8 +150,8 @@ def get_token(exp):
             if token in special_words:
                 return token, token, rest
             return type, token, rest
-        if char == '(': track_parens += 1
-        elif char == ')': track_parens -= 1
+        if char in '([': track_parens += 1
+        elif char in ')]': track_parens -= 1
     return type, exp, ''
 
 
@@ -160,12 +163,24 @@ def get_name(exp, no_rest=True):
     return name, rest
 
 
-def map_args(f, argstr):
-    return [f(arg) for arg in argstr[1:-1].split(',')]
+def map_list(f, list_str):
+    return [f(arg) for arg in list_str[1:-1].split(',')]
 
 
-def get_params(argstr):
-    return map_args(get_name, argstr)
+def get_params(list_str):
+    return map_list(get_name, list_str)
+
+
+def eval_list(list_str, env):
+    return map_list(lambda exp: eval_pure(exp, env), list_str)
+
+
+def eval_number(exp):
+    if 'e' in exp:
+        num, power = exp.split('e')
+        return py_eval(num) * 10**py_eval(power)
+    else:
+        return py_eval(exp)
 
 
 def eval_cases(exp, env):
@@ -174,7 +189,7 @@ def eval_cases(exp, env):
     if exp[0] != ':': error()
     cases = [case.split(',') for case in exp[1:].split(';')]
     try:
-        for cond_exp, val_exp in cases[:-1]:
+        for val_exp, cond_exp in cases[:-1]:
             if eval_pure(cond_exp, env):
                 CM.push_val(eval_pure(val_exp, env))
                 return
@@ -194,13 +209,12 @@ def eval_pure(exp, env):
         if callable(prev_val):  # applying a function
             if type != 'paren' and prev_type is not None:
                 raise SyntaxError('invalid function application!')
-            args = map_args(lambda arg: eval_pure(arg, env), token)
-            CM.push_val(CM.vals.pop()(*args))
+            CM.push_val(CM.vals.pop()(*(eval_list(token, env))))
             continue
         if all(t in ('number', 'name', 'paren') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
         if type == 'number':
-            CM.push_val(py_eval(token))
+            CM.push_val(eval_number(token))
         elif type == 'name':
             CM.push_val(builtins[token] if token in builtins else env[token])
         elif type == 'op':
@@ -217,7 +231,7 @@ def eval_pure(exp, env):
             if CM.vals.peek() != 'false':
                 CM.ops.pop()
                 break  # short circuit
-        elif type == 'lambda':  # eg: ('x, y' x^2-3*y)
+        elif type == 'lambda':  # eg: ("x, y" x^2-3*y)
             if prev_type is not None:
                 raise SyntaxError('invalid lambda expression!')
             CM.push_val(Function(get_params(token), exp, env))
@@ -225,6 +239,8 @@ def eval_pure(exp, env):
         elif type == 'cases':  # eg: cases: 1, x>0; 0, x=0; -1
             eval_cases(exp, env)
             break
+        elif type == 'list':
+            CM.push_val(eval_list(token, env))
         else:
             pass  # perhaps add more functionality here
         prev_type = type
@@ -266,17 +282,21 @@ def repl():
             print(err)
 
 
-tests = """f(x) := x+1 ;None
-f(3) ;4
-1+(2+3) ;6
-f := 6 ;None
-f ;6""".splitlines()
+tests = """[1,2,3] #[1,2,3]
+""".splitlines()
 
 def test():
-    for exp, ans in (case.split(';') for case in tests):
-        print('>', exp, '(expect: %s)'%ans)
-        result = str(eval(exp))
-        print(result, '<-', 'OK!' if result == ans else 'Fail!')
+    for exp, ans in (case.split('#') for case in tests):
+        result = eval(exp)
+        print('>', exp, '' if ans == '' else '(expect: %s)'%ans)
+        if result is not None:
+            print(result)
+            if result == py_eval(ans):
+                print('^ OK!')
+            else:
+                print('^ Fail!')
+                return
+    print('\nCongratulations, tests all passed!')
 
 
 from sys import argv
