@@ -1,6 +1,6 @@
 from __classes import *
 from __parser import *
-from __builtins import builtins
+from __builtins import *
 
 py_eval = eval
 
@@ -9,45 +9,33 @@ CM = calcMachine()
 ans_records = []
 
 
-def map_list(proc, list_str):
-    content = list_str[1:-1]
-    l = []
-    while content:
-        item = ''
-        while content:
-            type, token, content = get_token(content)
-            if type == 'comma': break
-            item += token
-        l.append(item)
-    return [proc(arg) for arg in l]
-
-def get_params(list_str):
-    return map_list(get_name, list_str)
-
 def eval_list(list_str, env):
-    return map_list(lambda exp: eval_pure(exp, env), list_str)
+    lst, comprehension = get_list(list_str, True)
+    if comprehension:
+        if len(lst) > 1:
+            raise SyntaxError('invalid list comprehension syntax!')
+        result = eval_comprehension(lst[0], env)
+    else:
+        result = [eval_pure(exp, env) for exp in lst]
+    return toList(result)
 
-def eval_list_comprehension(list_str, env):
-    def gen_range(param, ran, conds):
-        for val in eval_pure(ran, local_env):
-            local_env[param] = val
-            for test in (eval_pure(c, local_env) for c in conds):
-                if test: yield val
-    def gen_vals(params, ranges):
-        if len(ranges) == 0: yield ()
-        else:
+def eval_comprehension(exp, env):
+    def gen_vals(exp, params, ranges):
+        if params:
             segs = ranges[0].split('if')
-            head_range = gen_range(params[0], segs[0], segs[1:])
-            for v in head_range:
-                for rest_vals in gen_vals(params[1:], ranges[1:]):
-                    yield (v,)+rest_vals
-    segs = list_str[1:-1].split('for')
+            ran, conds = segs[0], segs[1:]
+            for parvalue in eval_pure(ran, local_env):
+                local_env[params[0]] = parvalue
+                if all(eval_pure(cond, local_env) for cond in conds):
+                     yield from gen_vals(exp, params[1:], ranges[1:])
+        else:
+            yield eval_pure(exp, local_env)
+    segs = exp.split('for')
     exp, param_ranges = segs[0], segs[1:]
     params, ranges = zip(*[pr.split('in') for pr in param_ranges])
+    params = [get_name(par) for par in params]
     local_env = env.make_subEnv()
-    return [function(params, exp, env)(*args)
-        for args in gen_vals(params, ranges)]
-
+    return gen_vals(exp, params, ranges)
 
 def eval_number(exp):
     if 'e' in exp:
@@ -126,10 +114,7 @@ def eval_pure(exp, env):
             eval_cases(exp, env)
             break
         elif type == 'list':
-            if token.find('for') > 0:
-                CM.push_val(eval_list_comprehension(token, env))
-            else:
-                CM.push_val(eval_list(token, env))
+            CM.push_val(eval_list(token, env))
         else:
             pass  # perhaps add more functionality here
         prev_type = type
@@ -210,11 +195,16 @@ f(s) #2
 f := {x, y} x*(1+y)
 f(s, 2*(1+s)) #5
 l := [1,max(1,2),3]
-l = ans.1 #True
+l = ans.1 #1
 sum({i} i^2, l) #14
 [i for i in range(3)] # [0,1,2]
 [i for i in range(4) if i%2] #[1,3]
-[[i,j] for i in range(3) if i%2 for j in range(5) if j%2==0 if j <3] #[[1, 0], [1,2]]
+2 IN range(3) #1
+list(l@1~2) #[2,3]
+m := [[1,2,3],[3,4,5],[5,6,7]]
+m@[2,1] #6
+mm := m@[range(2),[i for i in range(3) if i%2]]
+list(mm) #[[2],[4]]
 """.splitlines()
 ### TEST ###
 

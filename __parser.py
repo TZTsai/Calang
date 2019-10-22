@@ -1,14 +1,4 @@
-from operator import *
-
-binary_ops = {'+':(add, 1), '-':(sub, 1), '*':(mul, 2), '/':(truediv, 2),
-'//':(floordiv, 2), '^':(pow, 3), '%':(mod, 2), '&':(and_, -1), '|':(or_, -2),
-'=':(eq, 0), '!=':(ne, 0), '<':(lt, 0), '>':(gt, 0), '<=':(le, 0), '>=':(ge, 0),
-'@':(lambda l, i: l[i], 5)}
-unitary_ops = {'-':(neg, 4), '!':(not_, 4)}
-
-op_list = list(binary_ops) + list(unitary_ops)
-
-special_words = set(['ans', 'if', 'else', 'cases'])
+from __builtins import op_list, special_words
 
 
 def get_token(exp):
@@ -67,3 +57,26 @@ def get_name(exp, no_rest=True):
         raise SyntaxError('invalid variable name!')
     if no_rest: return name
     return name, rest
+
+
+def get_list(list_exp, comprehension_possible=False):
+    content = list_exp[1:-1]
+    l = []
+    comprehension = False
+    while content:
+        item = ''
+        while content:
+            type, token, content = get_token(content)
+            if type == 'comma':
+                break
+            elif comprehension_possible and type == 'for':
+                comprehension = True
+            item += token
+        l.append(item)
+    if comprehension_possible:
+        return l, comprehension
+    return l
+
+
+def get_params(list_str):
+    return [get_name(s) for s in get_list(list_str)]

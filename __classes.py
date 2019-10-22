@@ -76,7 +76,7 @@ class Env:
             if self.parent:
                 return self.parent[name]
             else:
-                raise KeyError('unbound symbol')
+                raise KeyError('unbound symbol: %s' % name)
 
     def make_subEnv(self, args=[], vals=[]):
         return Env(dict(zip(args, vals)), self)
