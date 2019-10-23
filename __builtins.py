@@ -8,22 +8,21 @@ def nVal(bool_op):
         return 1 if bool_op(a, b) else 0
     return apply
 
-def get_items(lst, indices, in_rec=False):
-    def get_from_indexList(lst, indices):
-        if indices == []: return lst
-        items = get_items(lst, indices[0], True)
-        if hasattr(indices[0], '__iter__'):
-            return (get_from_indexList(item, indices[1:]) for item in items)
-        else:
-            return get_from_indexList(items, indices[1:])
-    if not hasattr(lst, '__getitem__'):
-        raise SyntaxError('{} is not subscriptable'.format(lst))
-    if not in_rec and isinstance(indices, list):
-        get_from_indexList(lst, indices)
-    if hasattr(indices, '__iter__'):
-        return (lst[i] for i in indices)
+def get_items(lst, indices):
+    def get_from_index(lst, index):
+        if not hasattr(lst, '__getitem__'):
+            raise SyntaxError('{} is not subscriptable'.format(lst))
+        if hasattr(index, '__iter__'):
+            return (lst[i] for i in index)
+        return lst[index]
+    if not hasattr(indices, '__iter__'):
+        raise SyntaxError('subscripting indices must be iterable!')
+    if indices == []: return lst
+    items = get_from_index(lst, indices[0])
+    if hasattr(indices[0], '__iter__'):
+        return (get_items(item, indices[1:]) for item in items)
     else:
-        return lst[indices]
+        return get_items(items, indices[1:])
 
 
 def toList(lst):
