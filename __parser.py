@@ -7,11 +7,7 @@ def get_token(exp):
     pbtrack.parens, pbtrack.brackets = 0, 0
     first_char = exp[0]
 
-    if exp[:2] in op_list:
-        return 'op', exp[:2], exp[2:]
-    elif first_char in op_list:
-        return 'op', first_char, exp[1:]
-    elif first_char == ',':
+    if first_char == ',':
         return 'comma', ',', exp[1:]
     elif first_char == '{':
         close_brace = exp[1:].find('}') + 1
@@ -26,6 +22,10 @@ def get_token(exp):
     elif first_char == '[':
         type = 'list'
         pbtrack.brackets = 1
+    elif exp[:2] in op_list:
+        return 'op', exp[:2], exp[2:]
+    elif first_char in op_list:
+        return 'op', first_char, exp[1:]
     else:
         raise SyntaxError('unknown symbol!')
 
@@ -57,7 +57,9 @@ def get_token(exp):
         raise SyntaxError('unpaired parentheses or brackets!')
 
     token, rest = exp[:i], exp[i:]
-    if token in special_words:
+    if token in op_list:
+        return 'op', token, rest
+    elif token in special_words:
         return token, token, rest
     return type, token, rest
 

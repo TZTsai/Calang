@@ -68,7 +68,7 @@ def function(params, body, env=global_env):
 def eval_pure(exp, env):
     # inner evaluation, without assignment
     prev_type = None
-    CM.set_out()
+    CM.begin()
     while exp:
         type, token, exp = get_token(exp)
         prev_val = None if CM.vals.empty() else CM.vals.peek()
@@ -129,7 +129,7 @@ def eval(exp):
         result = eval_pure(exp, global_env)
     else:
         name, rest = get_name(exp[:assign_mark], False)
-        if name in special_words or name in builtins:
+        if name in special_words or name in builtins or name in op_list:
             raise SyntaxError('word "%s" is protected!'%name)
         right_exp = exp[assign_mark+2:]
         if not rest:  # assignment of a variable
@@ -168,9 +168,9 @@ def repl(test=False, cases=loop()):
             # test below
             if test and ans is not None:
                 if val == py_eval(ans):
-                    print('OK!')
+                    print('--- OK! ---')
                 else:
-                    print('Fail! Expect %s' % ans)
+                    print('--- Fail! Expect %s ---' % ans)
                     return
             # test above
             count += 1
@@ -185,22 +185,26 @@ def repl(test=False, cases=loop()):
 
 ### TEST ###
 tests = """s := 1
+5*2/(10-9) #10
+.5*2^2 + log10(100+10*90) #5
+log2(4^ans) #10
 [1, 2, 3] #[1,2,3]
 ans #[1,2,3]
-ans@[2] #3
-ans.2 #[1,2,3]
+ans@2 #3
+ans.2 #5
 s #1
 f(x) := x+1
 f(s) #2
 f := {x, y} x*(1+y)
 f(s, 2*(1+s)) #5
 l := [1,max(1,2),3]
-l = ans.1 #1
+l = ans.5 #1
 sum({i} i^2, l) #14
 [i for i in range(3)] # [0,1,2]
 [i for i in range(4) if i%2] #[1,3]
-2 IN range(3) #1
-list(l@[1~2]) #[2,3]
+2 in range(3) #1
+3 in 2~3 #1
+list(l@(1~2)) #[2,3]
 m := [[1,2,3],[3,4,5],[5,6,7]]
 m@[2,1] #6
 mm := m@[range(2),[i for i in range(3) if i%2]]
@@ -209,6 +213,9 @@ list(mm) #[[2],[4]]
 1e2 #100.0
 1+3e-2 #1.03
 2e3*7e-2 #140.0
+-2^4 #-16
+-.5+3 #2.5
+not 3+3 = 3 #1
 """.splitlines()
 ### TEST ###
 

@@ -20,6 +20,19 @@ class Stack:
         self.pbtrack = []
 
 
+class Op:
+    def __init__(self, type, function, priority):
+        self.type = type
+        self.function = function
+        self.priority = priority
+
+    def isStopMark(self):
+        return self.type == 'stop'
+
+    def __call__(self, *args):
+        return self.function(*args)
+
+
 class calcMachine:
     def __init__(self):
         self.vals = Stack()
@@ -27,16 +40,17 @@ class calcMachine:
 
     def __calc(self):  # carry out a single operation
         op = self.ops.pop()
-        if op[0] is None: return 'stop'
-        elif op[1] == 4:  # unitary op
-            self.vals.push(op[0](self.vals.pop()))
+        if op.isStopMark():
+            return 'stop'
+        elif op.type == 'uni':  # unitary op
+            self.vals.push(op(self.vals.pop()))
         else:
             n2 = self.vals.pop()
             n1 = self.vals.pop()
-            self.vals.push(op[0](n1, n2))
+            self.vals.push(op(n1, n2))
 
-    def set_out(self):  # mark the beginning of calculation
-        self.ops.push((None, -10))  # add a stop_mark in op_stack
+    def begin(self):  # mark the beginning of calculation
+        self.ops.push(Op('stop', None, -100))  # add a stop_mark in op_stack
 
     def reset(self):
         self.ops.clear()
@@ -51,9 +65,10 @@ class calcMachine:
         self.vals.push(val)
 
     def push_op(self, op):
-        while not (self.ops.empty() or op[0] is None):
+        while not (self.ops.empty() or op.isStopMark()):
             last_op = self.ops.peek()
-            if op[1] > last_op[1]: break
+            if op.priority > last_op.priority:
+                break
             else:
                 try: self.__calc()
                 except AssertionError:
