@@ -77,15 +77,15 @@ def get_list(list_exp, comprehension_possible=False):
     l = []
     comprehension = False
     while content:
-        item = ''
+        tokens = []
         while content:
             type, token, content = get_token(content)
             if type == 'comma':
                 break
             elif comprehension_possible and type == 'for':
                 comprehension = True
-            item += token
-        l.append(item)
+            tokens.append(token)
+        l.append(' '.join(tokens))
     if comprehension_possible:
         return l, comprehension
     return l

@@ -99,9 +99,9 @@ def eval_pure(exp, env):
         elif type == 'paren':
             CM.push_val(eval_pure(token[1:-1], env))
         elif type == 'if':
-            CM.push_op((lambda x, y: x if y else 'false', -5))
+            CM.push_op(Op('bin', lambda x, y: x if y else 'false', -5))
         elif type == 'else':
-            CM.push_op((lambda x, y: y, -5))
+            CM.push_op(Op('bin', lambda x, y: y, -5))
             if CM.vals.peek() != 'false':
                 CM.ops.pop()
                 break  # short circuit
@@ -195,6 +195,7 @@ ans.2 #5
 s #1
 f(x) := x+1
 f(s) #2
+1 if s=2 else 3 #3
 f := {x, y} x*(1+y)
 f(s, 2*(1+s)) #5
 l := [1,max(1,2),3]
@@ -216,6 +217,7 @@ list(mm) #[[2],[4]]
 -2^4 #-16
 -.5+3 #2.5
 not 3+3 = 3 #1
+[i if i%2 else 0 for i in range(10) if i%3] #[1,0,0,5,7,0]
 """.splitlines()
 ### TEST ###
 
