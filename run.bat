@@ -1,1 +1,1 @@
-python "E:\Computer & Programming\Playground\calc\calc.py"
+python "E:\Computer & Programming\MyCalculator\calc.py"
