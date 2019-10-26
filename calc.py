@@ -146,7 +146,7 @@ def eval(exp):
     return result
 
 def loop():
-    while True: yield None
+    while True: yield
 
 def repl(test=False, cases=loop()):
     count = 0
