@@ -43,10 +43,10 @@ Every evaluation will return a value of one of these four types.
     The "range" function, however, is identical to the python function "range", which excludes the second argument from the range. Besides, you can use a third argument in the function "range" to specify the step of the range.  
     If a range is used as the index of a list, a sub-list containing elements whose indices lies in this range will be returned.  
     **Examples**: r := 1~4, list(r) (note: list is a builtin function which converts a range to a list, this expression evaluates to [1, 2, 3, 4]), r := range(1, 4), list(r) (note: [1, 2, 3]), r := range(9, 2, -2) (note: [9, 7, 5, 3])
-- List comprehension
+- List comprehension  
     Use the same syntax as in python: [\<exp> for \<arg1> in \<range1> if \<cond1> for \<arg2> in \<range2> if \<cond2> ...]  
     Note that \<range> does not necessarily have to be a range type value - it can also be a list.  
-    **Examples**: [i for i in range(4) if i%2], m := [[1, 2, 3],[3, 4, 5],[5, 6, 7]], m@[range(2), [i for i in range(3) if i%2]] (note: What is its value? Answer: [[2],[4]]), [i if i%2 else 0 for i in range(10) if i%3] (note: [1, 0, 0, 5, 7, 0]).  
+    **Examples**: [i for i in range(4) if i%2], m := [[1, 2, 3],[3, 4, 5],[5, 6, 7]], m@[range(2), [i for i in [0, 1, 2] if i%2]] (note: What is its value? Answer: [[2],[4]]), [i*j for i in range(10) if i%3 for j in range(10) if i+j>6]
 
 ## Builtins
 
