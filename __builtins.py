@@ -62,10 +62,9 @@ op_list = list(binary_ops) + list(unitary_ops)
 
 special_words = set(['ans', 'if', 'else', 'cases', 'for', 'in'])
 
-builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos, 
+builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'atan':atan, 'abs':abs, 'sqrt':sqrt, 'floor':floor, 'ceil':ceil, 'log':log,
-'E':e, 'Pi':pi, 'range':range, 'max':max, 'min':min, 'reduce':reduce,
+'E':e, 'PI':pi, 'I':1j, 'range':range, 'max':max, 'min':min, 'reduce':reduce,
 'list':toList, 'binom':lambda n, m: factorial(n) / factorial(m), 'log10':log10,
-'log2':log2, 'exp':exp, 
-'sum': lambda f, l: reduce(add, (f(x) for x in l)),
-'prod':lambda f, l: reduce(mul, (f(x) for x in l))}
+'log2':log2, 'exp':exp,
+'sum': lambda l: reduce(add, l), 'prod':lambda l: reduce(mul, l)}

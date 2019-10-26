@@ -200,7 +200,7 @@ f := {x, y} x*(1+y)
 f(s, 2*(1+s)) #5
 l := [1,max(1,2),3]
 l = ans.5 #1
-sum({i} i^2, l) #14
+sum([i^2 for i in l]) #14
 [i for i in range(3)] # [0,1,2]
 [i for i in range(4) if i%2] #[1,3]
 2 in range(3) #1
@@ -218,6 +218,17 @@ list(mm) #[[2],[4]]
 -.5+3 #2.5
 not 3+3 = 3 #1
 [i if i%2 else 0 for i in range(10) if i%3] #[1,0,0,5,7,0]
+compose := {f, g} {x} f(g(x))
+inc(x) := x+1
+sqr(x) := x^2
+compose(inc, sqr)(3) #10
+compose(sqr, inc)(3) #16
+max3(x, y, z) := cases: x, x > y and x > z; y, y > z; z
+max3(3, 4, 2) #4
+max3(1, 2, 2) #2
+[1,2]++[3,4] #[1,2,3,4]
+1+I #1+1j
+(1-I)(1+I) #2
 """.splitlines()
 ### TEST ###
 
