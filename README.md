@@ -1,6 +1,6 @@
 # A small but powerful calculator
 
-Run "python calc.py" to start the program
+Run "python calc.py" to start the program.
 
 In this calculator, there are four types of values: Number, List, Range and Function.
 Every evaluation will return a value of one of these four types.  
