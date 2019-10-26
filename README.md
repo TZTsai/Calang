@@ -38,8 +38,8 @@ Every evaluation will return a value of one of these four types.
     **Examples**: l := [1, 2, 3], 3 in l, l@1, m := [[1, 2], [3, 4]], m@[0, 1] (note: will return 2), [1, 2]++[3, 4], sum([1, 2, 3, 4]) (note: the builtin function "sum" will return the sum of all elements of a list)  
 - Range  
     A range is a different type from list. A value of type "range" is an instance of the python class range.  
-    There are two ways to generate a "range" type value: by using the symbol "~" or by the builtin function "range".  
-    The expression "a~b" evaluates to a range including all integers from a to b.  
+    There are two ways to generate a "range" type value: by using the symbol "\~" or by the builtin function "range".  
+    The expression "a\~b" evaluates to a range including all integers from a to b.  
     The "range" function, however, is identical to the python function "range", which excludes the second argument from the range. Besides, you can use a third argument in the function "range" to specify the step of the range.  
     If a range is used as the index of a list, a sub-list containing elements whose indices lies in this range will be returned.  
     **Examples**: r := 1~4, list(r) (note: list is a builtin function which converts a range to a list, this expression evaluates to [1, 2, 3, 4]), r := range(1, 4), list(r) (note: [1, 2, 3]), r := range(9, 2, -2) (note: [9, 7, 5, 3])
