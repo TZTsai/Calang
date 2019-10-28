@@ -33,10 +33,6 @@ def subscript(lst, index):
     return lst[index]
 
 
-def get_tail(lst, start=1):
-    return lst[start:]
-
-
 def toList(lst):
     def ifIter_toList(obj):
         if hasattr(obj, '__iter__'):
@@ -63,7 +59,7 @@ binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(truediv, 8),
 '=':(booltobin(eq), 0), '!=':(booltobin(ne), 0), '<':(booltobin(lt), 0),
 '>':(booltobin(gt), 0), '<=':(booltobin(le), 0), '>=':(booltobin(ge), 0),
 'in': (lambda x, l: 1 if x in l else 0, -2), 'xor': (booltobin(xor), 3),
-'@':(subscript, 16), '++': (concatLists, 10),
+'@':(subscript, 16),
 '~': (lambda a, b: range(a, b+1), 7),
 'and': (booltobin(lambda a, b: a and b), -5),
 'or': (booltobin(lambda a, b: a or b), -6)}
@@ -86,7 +82,7 @@ special_words = set(['ans', 'if', 'else', 'cases', 'for', 'in', 'ENV', 'let'])
 
 builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'atan':atan, 'abs':abs, 'sqrt':sqrt, 'floor':floor, 'ceil':ceil, 'log':log,
-'E':e, 'PI':pi, 'I':1j, 'range':range, 'max':max, 'min':min, 'reduce':reduce,
+'E':e, 'PI':pi, 'I':1j, 'range':range, 'max':max, 'min':min,
 'list':toList, 'binom': lambda n, m: factorial(n) / factorial(m), 'log10':log10,
 'log2':log2, 'exp':exp, 'fact':factorial, 'factorial':factorial, 'len':len,
 'empty?': lambda l: 0 if len(l) else 1, 'number?': booltobin(isNumber),
@@ -94,4 +90,4 @@ builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'list?': lambda l: 1 if isinstance(l, list) else 0, 
 'range?': lambda l: 1 if isinstance(l, range) else 0,
 'sum': lambda l: reduce(add, l), 'prod': lambda l: reduce(mul, l),
-'head': lambda l: l[0], 'tail': get_tail}
+'car': lambda l: l[0], 'cdr': lambda l: l[1:]}

@@ -2,6 +2,7 @@ from __classes import *
 from __parser import *
 from __builtins import *
 
+
 py_eval = eval
 
 global_env = Env({'ans':[]})
@@ -101,6 +102,7 @@ def eval_pure(exp, env):
     # inner evaluation, without assignment
     prev_type = None
     CM.begin()
+    is_replacable = lambda t, t_src: t == t_src or t in ['name','paren','ans']
     while exp:
         type, token, exp = get_token(exp)
         prev_val = None if CM.vals.empty() else CM.vals.peek()
@@ -109,7 +111,7 @@ def eval_pure(exp, env):
                 raise SyntaxError('invalid function application!')
             CM.push_val(CM.vals.pop()(*(eval_list(token, env))))
             continue
-        if all(t in ('number', 'name', 'paren') for t in (type, prev_type)):
+        if all(is_replacable(t, 'number') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
         if type == 'ans':
             exp = eval_ans(exp, env)
@@ -144,12 +146,15 @@ def eval_pure(exp, env):
             eval_cases(exp, env); break
         elif type == 'list':
             val = eval_list(token, env)
-            if prev_type == 'list':
+            if isIterable(prev_val) and is_replacable(prev_type, 'list'):
                 CM.push_val(eval_subscription(CM.vals.pop(), val))
             else: CM.push_val(val)
         elif type == 'ENV':
             if exp: raise SyntaxError
-            return str(global_env.bindings)[1:-1]
+            for name in global_env.bindings:
+                if name == 'ans': continue
+                print("{}: {}".format(name, global_env[name]))
+            break
         else:
             pass  # perhaps add more functionality here
         prev_type = type
@@ -178,13 +183,10 @@ def eval(exp):
         global_env[name] = value
         result = None
     if not CM.vals.empty() or not CM.ops.empty():
-        raise SyntaxError
+        raise SyntaxError('incomplete expression!')
     global_env['ans'].append(result)
     return result
 
-
-def loop():
-    while True: yield
 
 def display(val):
     def sci_repr(x):
@@ -196,31 +198,38 @@ def display(val):
         print(sci_repr(val))
     else: print(val)
 
-def repl(test=False, cases=loop()):
+def run(filename=None, test=False):
+    def loop():
+        while True: yield
+    if filename:
+        file = open(filename, 'r')
+        lines = file.readlines()
+    else:
+        lines = loop()
     count = 0
-    for case in cases:
+    for line in lines:
         try:
-            prompt = '[{n}]> '.format(n=count)
-            # test below
+            prompt = '[{}]> '.format(count)
+            ### test
             if test:
-                if case.find('#') > 0:
-                    exp, ans = case.split('#')
+                if line.find('#') > 0:
+                    exp, ans = line.split('#')
                 else:
-                    exp, ans = case, None
+                    exp, ans = line, None
                 print(prompt+exp)
-            # test above
+            ########
             else: exp = input(prompt)
             val = eval(exp)
             if val is not None:
                 display(val)
-            # test below
+            ### test
             if test and ans is not None:
                 if val == py_eval(ans):
                     print('--- OK! ---')
                 else:
                     print('--- Fail! Expect %s ---' % ans)
                     return
-            # test above
+            ########
             count += 1
         except KeyboardInterrupt: return
         except Exception as err:
@@ -230,72 +239,11 @@ def repl(test=False, cases=loop()):
     print('\nCongratulations, tests all passed!')
 
 
-### TEST ###
-tests = """s := 1
-5*2/(10-9) #10
-.5*2^2 + log10(100+10*90) #5
-5!/3! #20
-[1, 2, 3] #[1,2,3]
-ans #[1,2,3]
-ans@2 #3
-ans.2 #5
-s #1
-f(x) := x+1
-f(s) #2
-1 if s=2 else 3 #3
-f := {x, y} x*(1+y)
-f(s, 2*(1+s)) #5
-l := [1,max(1,2),3]
-l = ans.5 #1
-sum([i^2 for i in l]) #14
-[i for i in range(3)] # [0,1,2]
-[i for i in range(4) if i%2] #[1,3]
-2 in range(3) #1
-3 in 2~3 #1
-l@(1~:) #[2,3]
-l@(:~1) #[1,2]
-l@(:~1)++[4,5]@(1~:) #[1,2,5]
-list(l@(1~2)) #[2,3]
-m := [[1,2,3],[3,4,5],[5,6,7]]
-m[2,1] #6
-mm := m[range(2),[i for i in range(3) if i%2]]
-list(mm) #[[2],[4]]
-2*.4 #0.8
-1e2 #100.0
-1+3e-2 #1.03
-2e3*7e-2 #140.0
--2^4 #-16
--.5+3 #2.5
-not 3+3 = 3 #1
-[i if i%2 else 0 for i in range(10) if i%3] #[1,0,0,5,7,0]
-compose := {f, g} {x} f(g(x))
-inc(x) := x+1
-sqr(x) := x^2
-compose(inc, sqr)(3) #10
-compose(sqr, inc)(3) #16
-max3(x, y, z) := cases: x, x > y and x > z; y, y > z; z
-max3(3, 4, 2) #4
-max3(1, 2, 2) #2
-[1,2]++[3,4] #[1,2,3,4]
-1+I #1+1j
-(1-I)(1+I) #2
-11062274001.181583
-let {x=1} x+3 #4
-tail([1,2,3]) #[2,3]
-tail([1,2,3],2) #[3]
-merge(l1, l2) := cases: l1, empty?(l2); l2, empty?(l1); [l1@0]++merge(tail(l1),l2), l1@0 < l2@0; [l2@0]++merge(l1, tail(l2))
-merge([1,3,5],[1,2,3,4]) #[1,1,2,3,3,4,5]
-sort(l) := l if len(l)<2 else let {halflen = len(l)//2} merge(sort(l@range(halflen)), sort(tail(l, halflen)))
-sort([1,4,3,7,5,2,6]) #[1,2,3,4,5,6,7]
-sin_approx(n) := {x} sum([(-1)^(i // 2)*x^i/fact(i) for i in 1~n if i%2])
-my_sin := sin_approx(10)
-abs(sin(PI/3)-my_sin(PI/3)) < 0.0001 #1
-""".splitlines()
-### TEST ###
-
-
 from sys import argv
-if len(argv) > 1 and argv[1] == '-t':
-    repl(True, tests)
+if len(argv) > 1:
+    if argv[1] == '-t':
+        run("tests.txt", True)
+    else:
+        run(argv[1])
 else:
-    repl()
+    run()
