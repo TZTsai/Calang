@@ -9,21 +9,32 @@ def booltobin(bool_op):
         return 1 if bool_op(a, b) else 0
     return apply
 
-def get_items(lst, indices):
-    def get_from_index(lst, index):
-        if not hasattr(lst, '__getitem__'):
-            raise SyntaxError('{} is not subscriptable'.format(lst))
-        if hasattr(index, '__iter__'):
-            return (lst[i] for i in index)
-        return lst[index]
-    if not hasattr(indices, '__iter__') or isinstance(indices, range):
-        return get_from_index(lst, indices)
-    if indices == []: return lst
-    items = get_from_index(lst, indices[0])
-    if hasattr(indices[0], '__iter__'):
-        return (get_items(item, indices[1:]) for item in items)
-    else:
-        return get_items(items, indices[1:])
+
+def isNumber(value):
+    t = type(value)
+    return t is int or t is float or t is complex
+
+
+def isIterable(value):
+    return hasattr(value, "__iter__")
+
+
+def isFunction(value):
+    return callable(value)
+
+
+def subscript(lst, index):
+    if not hasattr(lst, '__getitem__'):
+        raise SyntaxError('{} is not subscriptable'.format(lst))
+    if isIterable(index):
+        if len(index) == 2 and index[0] == 'tail':
+            return lst[index[1]:]
+        return [lst[i] for i in index]
+    return lst[index]
+
+
+def get_tail(lst, start=1):
+    return lst[start:]
 
 
 def toList(lst):
@@ -36,6 +47,11 @@ def toList(lst):
     return ifIter_toList(lst)
 
 
+def concatLists(l1, l2):
+    l1.extend(l2)
+    return l1
+
+
 def reconstruct(op_dict, type):
     for op in op_dict:
         info = op_dict[op]
@@ -46,25 +62,36 @@ binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(truediv, 8),
 '//':(floordiv, 8), '^':(pow, 14), '%':(mod, 8), '&':(and_, 4), '|':(or_, 2),
 '=':(booltobin(eq), 0), '!=':(booltobin(ne), 0), '<':(booltobin(lt), 0),
 '>':(booltobin(gt), 0), '<=':(booltobin(le), 0), '>=':(booltobin(ge), 0),
-'in':(lambda x, l: 1 if x in l else 0, -2), 'xor': (booltobin(xor), 3),
-'@':(get_items, 16), '++': (concat, 10), '~':(lambda a, b: range(a, b+1), 6),
-'and':(booltobin(lambda a, b: a and b), -5),
+'in': (lambda x, l: 1 if x in l else 0, -2), 'xor': (booltobin(xor), 3),
+'@':(subscript, 16), '++': (concatLists, 10),
+'~': (lambda a, b: range(a, b+1), 7),
+'and': (booltobin(lambda a, b: a and b), -5),
 'or': (booltobin(lambda a, b: a or b), -6)}
 
 reconstruct(binary_ops, 'bin')
 
-unitary_ops = {'-':(neg, 10), 'not':(lambda n: 1 if n == 0 else 1, -4),
-'!': (inv, 12)}
+unitary_l_ops = {'-':(neg, 10), 'not':(lambda n: 1 if n == 0 else 1, -4),
+':~':(lambda n: range(n+1), 7)}
 
-reconstruct(unitary_ops, 'uni')
+reconstruct(unitary_l_ops, 'uni_l')
 
-op_list = list(binary_ops) + list(unitary_ops)
+unitary_r_ops = {'~:':(lambda n: ('tail', n), 99), '!': (factorial, 99)}
+# actually a unitary op on the right will always be immediately carried out
 
-special_words = set(['ans', 'if', 'else', 'cases', 'for', 'in'])
+reconstruct(unitary_r_ops, 'uni_r')
+
+op_list = list(binary_ops) + list(unitary_l_ops) + list(unitary_r_ops)
+
+special_words = set(['ans', 'if', 'else', 'cases', 'for', 'in', 'ENV', 'let'])
 
 builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'atan':atan, 'abs':abs, 'sqrt':sqrt, 'floor':floor, 'ceil':ceil, 'log':log,
 'E':e, 'PI':pi, 'I':1j, 'range':range, 'max':max, 'min':min, 'reduce':reduce,
-'list':toList, 'binom':lambda n, m: factorial(n) / factorial(m), 'log10':log10,
-'log2':log2, 'exp':exp,
-'sum': lambda l: reduce(add, l), 'prod':lambda l: reduce(mul, l)}
+'list':toList, 'binom': lambda n, m: factorial(n) / factorial(m), 'log10':log10,
+'log2':log2, 'exp':exp, 'fact':factorial, 'factorial':factorial, 'len':len,
+'empty?': lambda l: 0 if len(l) else 1, 'number?': booltobin(isNumber),
+'iter?': booltobin(isIterable), 'function?': booltobin(isFunction),
+'list?': lambda l: 1 if isinstance(l, list) else 0, 
+'range?': lambda l: 1 if isinstance(l, range) else 0,
+'sum': lambda l: reduce(add, l), 'prod': lambda l: reduce(mul, l),
+'head': lambda l: l[0], 'tail': get_tail}

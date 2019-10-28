@@ -27,7 +27,7 @@ def get_token(exp):
     elif first_char in op_list:
         return 'op', first_char, exp[1:]
     else:
-        raise SyntaxError('unknown symbol!')
+        raise SyntaxError('unknown symbol: {}'.format(first_char))
 
     i = 1   
     while i < len(exp):

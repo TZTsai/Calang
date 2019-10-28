@@ -42,7 +42,7 @@ class calcMachine:
         op = self.ops.pop()
         if op.isStopMark():
             return 'stop'
-        elif op.type == 'uni':  # unitary op
+        elif op.type == 'uni_l':
             self.vals.push(op(self.vals.pop()))
         else:
             n2 = self.vals.pop()
@@ -59,12 +59,18 @@ class calcMachine:
     def calc(self): # calculate the whole stack and return the result
         while not self.ops.empty() and self.__calc() != 'stop':
             pass
-        return self.vals.pop() if not self.vals.empty() else None
+        if not self.vals.empty():
+            return self.vals.pop()
 
     def push_val(self, val):
         self.vals.push(val)
 
     def push_op(self, op):
+        if op.type == 'uni_r':
+            if self.vals.empty():
+                raise SyntaxError
+            self.vals.push(op(self.vals.pop()))
+            return
         while not (self.ops.empty() or op.isStopMark()):
             last_op = self.ops.peek()
             if op.priority > last_op.priority:
@@ -91,7 +97,7 @@ class Env:
             if self.parent:
                 return self.parent[name]
             else:
-                raise KeyError('unbound symbol: %s' % name)
+                raise KeyError('unbound symbol: \'{}\''.format(name))
 
-    def make_subEnv(self, args=[], vals=[]):
-        return Env(dict(zip(args, vals)), self)
+    def make_subEnv(self, bindings={}):
+        return Env(bindings, self)

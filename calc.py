@@ -14,10 +14,18 @@ def eval_list(list_str, env):
     if comprehension:
         if len(lst) > 1:
             raise SyntaxError('invalid list comprehension syntax!')
-        result = eval_comprehension(lst[0], env)
+        result = toList(eval_comprehension(lst[0], env))
     else:
         result = [eval_pure(exp, env) for exp in lst]
-    return toList(result)
+    return result
+
+def eval_subscription(lst, indices):
+    if indices == []: return lst
+    items = subscript(lst, indices[0])
+    if isIterable(indices[0]):
+        return [eval_subscription(item, indices[1:]) for item in items]
+    else:
+        return eval_subscription(items, indices[1:])
 
 def eval_comprehension(exp, env):
     def gen_vals(exp, params, ranges):
@@ -48,7 +56,7 @@ def eval_cases(exp, env):
     def error():
         raise SyntaxError('invalid cases expression!')
     if exp[0] != ':': error()
-    cases = [case.split(',') for case in exp[1:].split(';')]
+    cases = [get_list('(%s)'%case) for case in exp[1:].split(';')]
     try:
         for val_exp, cond_exp in cases[:-1]:
             if eval_pure(cond_exp, env):
@@ -59,9 +67,33 @@ def eval_cases(exp, env):
     if len(else_case) != 1: error()
     CM.push_val(eval_pure(else_case[0], env))
 
+def eval_ans(exp, env):
+    if len(global_env['ans']) > 0:
+        if exp and exp[0] == '.':
+            _, index, exp = get_token(exp[1:])
+            index = eval_pure(index, env)
+        else: index = -1
+        CM.push_val(global_env['ans'][index])
+        return exp
+    else: raise ValueError('No previous result!')
+
+def eval_let(exp, env):
+    type, bindings, body = get_token(exp)
+    if type != 'lambda':
+        raise SyntaxError('invalid let expression!')
+    def parse_pair(s):
+        eq = s.find('=')
+        return s[:eq], s[eq+1:]
+    bindings = [parse_pair(s) for s in get_list(bindings)]
+    bindings = [(get_name(s1), eval_pure(s2, env)) for s1, s2 in bindings]
+    new_env = env.make_subEnv(dict(bindings))
+    return eval_pure(body, new_env)
+
+
 def function(params, body, env=global_env):
     def apply(*args):
-        return eval_pure(body, env.make_subEnv(params, args))
+        bindings = dict(zip(params, args))
+        return eval_pure(body, env.make_subEnv(bindings))
     return apply
 
 
@@ -72,7 +104,7 @@ def eval_pure(exp, env):
     while exp:
         type, token, exp = get_token(exp)
         prev_val = None if CM.vals.empty() else CM.vals.peek()
-        if callable(prev_val):  # applying a function
+        if isFunction(prev_val):  # applying a function
             if type != 'paren' and prev_type is not None:
                 raise SyntaxError('invalid function application!')
             CM.push_val(CM.vals.pop()(*(eval_list(token, env))))
@@ -80,20 +112,16 @@ def eval_pure(exp, env):
         if all(t in ('number', 'name', 'paren') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
         if type == 'ans':
-            if len(global_env['ans']) > 0:
-                if exp and exp[0] == '.':
-                    _, index, exp = get_token(exp[1:])
-                    index = eval_pure(index, env)
-                else: index = -1
-                CM.push_val(global_env['ans'][index])
-            else: raise ValueError('No previous result!')
+            exp = eval_ans(exp, env)
         elif type == 'number':
             CM.push_val(eval_number(token))
         elif type == 'name':
             CM.push_val(builtins[token] if token in builtins else env[token])
         elif type == 'op':
-            if (prev_type in (None, 'op')) and token in unitary_ops:
-                CM.push_op(unitary_ops[token])
+            if (prev_type in (None, 'op')) and token in unitary_l_ops:
+                CM.push_op(unitary_l_ops[token])
+            elif token in unitary_r_ops:
+                CM.push_op(unitary_r_ops[token])
             else:
                 CM.push_op(binary_ops[token])
         elif type == 'paren':
@@ -103,18 +131,25 @@ def eval_pure(exp, env):
         elif type == 'else':
             CM.push_op(Op('bin', lambda x, y: y, -5))
             if CM.vals.peek() != 'false':
-                CM.ops.pop()
-                break  # short circuit
-        elif type == 'lambda':  # eg: ({x, y} x^2-3*y)
+                CM.ops.pop(); break  # short circuit
+        elif type == 'lambda':  # eg: {x, y} x^2-3*y
             if prev_type is not None:
                 raise SyntaxError('invalid lambda expression!')
             CM.push_val(function(get_params(token), exp, env))
             break
-        elif type == 'cases':  # eg: cases: 1, x>0; 0, x=0; -1
-            eval_cases(exp, env)
+        elif type == 'let':  # eg: let {x=1, y=2} x+y
+            CM.push_val(eval_let(exp, env))
             break
+        elif type == 'cases':  # eg: cases: 1, x>0; 0, x=0; -1
+            eval_cases(exp, env); break
         elif type == 'list':
-            CM.push_val(eval_list(token, env))
+            val = eval_list(token, env)
+            if prev_type == 'list':
+                CM.push_val(eval_subscription(CM.vals.pop(), val))
+            else: CM.push_val(val)
+        elif type == 'ENV':
+            if exp: raise SyntaxError
+            return str(global_env.bindings)[1:-1]
         else:
             pass  # perhaps add more functionality here
         prev_type = type
@@ -142,8 +177,11 @@ def eval(exp):
             # a function is regarded as a special value
         global_env[name] = value
         result = None
+    if not CM.vals.empty() or not CM.ops.empty():
+        raise SyntaxError
     global_env['ans'].append(result)
     return result
+
 
 def loop():
     while True: yield
@@ -154,10 +192,8 @@ def display(val):
         e = floor(log10(x))
         b = x/10**e
         return '{} E {}'.format(b, e)
-    t = type(val)
-    if (t is int or t is float or t is complex) and \
-    (abs(val) <= 0.001 or abs(val) >= 10000):
-            print(sci_repr(val))
+    if isNumber(val) and (abs(val) <= 0.001 or abs(val) >= 10000):
+        print(sci_repr(val))
     else: print(val)
 
 def repl(test=False, cases=loop()):
@@ -198,7 +234,7 @@ def repl(test=False, cases=loop()):
 tests = """s := 1
 5*2/(10-9) #10
 .5*2^2 + log10(100+10*90) #5
-log2(4^ans) #10
+5!/3! #20
 [1, 2, 3] #[1,2,3]
 ans #[1,2,3]
 ans@2 #3
@@ -216,10 +252,13 @@ sum([i^2 for i in l]) #14
 [i for i in range(4) if i%2] #[1,3]
 2 in range(3) #1
 3 in 2~3 #1
+l@(1~:) #[2,3]
+l@(:~1) #[1,2]
+l@(:~1)++[4,5]@(1~:) #[1,2,5]
 list(l@(1~2)) #[2,3]
 m := [[1,2,3],[3,4,5],[5,6,7]]
-m@[2,1] #6
-mm := m@[range(2),[i for i in range(3) if i%2]]
+m[2,1] #6
+mm := m[range(2),[i for i in range(3) if i%2]]
 list(mm) #[[2],[4]]
 2*.4 #0.8
 1e2 #100.0
@@ -241,6 +280,16 @@ max3(1, 2, 2) #2
 1+I #1+1j
 (1-I)(1+I) #2
 11062274001.181583
+let {x=1} x+3 #4
+tail([1,2,3]) #[2,3]
+tail([1,2,3],2) #[3]
+merge(l1, l2) := cases: l1, empty?(l2); l2, empty?(l1); [l1@0]++merge(tail(l1),l2), l1@0 < l2@0; [l2@0]++merge(l1, tail(l2))
+merge([1,3,5],[1,2,3,4]) #[1,1,2,3,3,4,5]
+sort(l) := l if len(l)<2 else let {halflen = len(l)//2} merge(sort(l@range(halflen)), sort(tail(l, halflen)))
+sort([1,4,3,7,5,2,6]) #[1,2,3,4,5,6,7]
+sin_approx(n) := {x} sum([(-1)^(i // 2)*x^i/fact(i) for i in 1~n if i%2])
+my_sin := sin_approx(10)
+abs(sin(PI/3)-my_sin(PI/3)) < 0.0001 #1
 """.splitlines()
 ### TEST ###
 
