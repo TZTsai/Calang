@@ -11,7 +11,7 @@ Every evaluation will return a value of one of these four types.
     **Examples**: 1+3, .5*2, -8^(4-2), 147 % 43 (modular arithmetic), 52 // 17 (integer division), 8 & 3 (bitwise and operation), 1e10 \* 3e-5 (support scientific notation)
 - History  
     Use keyword "ans" to represent the result of the last calculation.  
-    Use keyword "ans.\<n>" to represent the result of the \<n>th calculation.
+    Use keyword "ans.\<n>" to represent the result of the \<n>th calculation.  
     Use keyword "ENV" to let the calculator print all variable bindings in the global environment.
 - Complex numbers  
     The keyword "I" represents the imaginary number "i" in mathematics.  
@@ -76,6 +76,6 @@ Every evaluation will return a value of one of these four types.
 
 ## Builtins
 
-- Operations: +, -, *, /, //, ^, %, &, |, =, !=, <, >, <=, >=, in, xor, @, ~, and, or, not, :~, ~:, !
+- Operations: +, -, *, /, //, ^, %, &, |, =, !=, <, >, <=, >=, in, xor, @, \~, and, or, not, :\~, \~:, !
 - Functions: sin, cos, tan, asin, acos, atan, abs, sqrt, floor, ceil, log, range, max, min, list, binom, log10, log2, exp, sum, prod, fact(factorial), empty? (tell whether a list or a range is empty), len (the length of a list or a range), number? (tell whether a value is a number), iter? (tell whether a value is a list or a range (both are iterables)), function?, list?, range?, car (the first element of a list), cdr (the sub-list except the first element)
 - Constants: E, PI, I  
