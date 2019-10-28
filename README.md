@@ -44,12 +44,15 @@ Every evaluation will return a value of one of these four types.
   - l := [1, 2, 3], 3 in l
   - [1, 2]+[3, 4]
   - sum([1, 2, 3, 4]) (the builtin function "sum" will return the sum of all elements of a list)  
-- List subscription
-    **Syntax 1**: \<list>@\<index>
-    You can use either an unsigned integer or a range as the index of the list. When using a range, you will get a sub-list containing the elements whose indices lie in this range.
-    **Syntax 2**: \<list>[\<i1>, \<i2>, ..., \<in>]
-    This syntax is equivalent to sequentially subscripting \<list> by \<i1>, \<i2>, ...
-    **Examples**: [1, 2, 3]@1, [1, 2, 3]@(1~:), m := [[1, 2, 3], [3, 4, 5]], m[0, 1] (will return 2), m[:~:, 1] (the same as [r[1] for r in m])
+- List subscription  
+    **Syntax 1**: \<list>@\<index>  
+    You can use either an unsigned integer or a range as the index of the list. When using a range, you will get a sub-list containing the elements whose indices lie in this range.  
+    **Syntax 2**: \<list>[\<i1>, \<i2>, ..., \<in>]  
+    This syntax is equivalent to sequentially subscripting \<list> by \<i1>, \<i2>, ...  
+    **Examples**:  
+  - [1, 2, 3]@1
+  - [1, 2, 3]@(1~:) (the symbol ':' can represent the start or the end of a list)
+  - m := [[1, 2, 3], [3, 4, 5]], m[0, 1] (will return 2), m[:~:, 1]
 - Range  
     A range is a different type from list. A value of type "range" is an instance of the python class range.  
     There are two ways to generate a "range" type value: by using the symbol "\~" or by the builtin function "range".  
