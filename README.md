@@ -74,6 +74,10 @@ Every evaluation will return a value of one of these four types.
   - [i\*j for i in range(10) if i%3 for j in range(10) if i+j>6]
   - sum([i^2 for i in 1~10])
 
+## More Examples
+![merge_sort](merge_sort_example.png)
+![depth_first_traverse](depth_first_traverse_example.png)
+
 ## Builtins
 
 - Operations: +, -, *, /, //, ^, %, &, |, =, !=, <, >, <=, >=, in, xor, @, \~, and, or, not, :\~, \~:, !
