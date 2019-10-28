@@ -148,6 +148,18 @@ def eval(exp):
 def loop():
     while True: yield
 
+def display(val):
+    def sci_repr(x):
+        if x == 0: return 0
+        e = floor(log10(x))
+        b = x/10**e
+        return '{} E {}'.format(b, e)
+    t = type(val)
+    if (t is int or t is float or t is complex) and \
+    (abs(val) <= 0.001 or abs(val) >= 10000):
+            print(sci_repr(val))
+    else: print(val)
+
 def repl(test=False, cases=loop()):
     count = 0
     for case in cases:
@@ -164,7 +176,7 @@ def repl(test=False, cases=loop()):
             else: exp = input(prompt)
             val = eval(exp)
             if val is not None:
-                print(val)
+                display(val)
             # test below
             if test and ans is not None:
                 if val == py_eval(ans):
@@ -175,8 +187,7 @@ def repl(test=False, cases=loop()):
             # test above
             count += 1
         except KeyboardInterrupt: return
-        except (ValueError, SyntaxError, ArithmeticError,
-        KeyError, IndexError, TypeError) as err:
+        except Exception as err:
             print(err)
             if test: return
             CM.reset()
@@ -229,6 +240,7 @@ max3(1, 2, 2) #2
 [1,2]++[3,4] #[1,2,3,4]
 1+I #1+1j
 (1-I)(1+I) #2
+11062274001.181583
 """.splitlines()
 ### TEST ###
 
