@@ -56,8 +56,7 @@ def eval_number(exp):
 def eval_cases(exp, env):
     def error():
         raise SyntaxError('invalid cases expression!')
-    if exp[0] != ':': error()
-    cases = [get_list('(%s)'%case) for case in exp[1:].split(';')]
+    cases = [get_list('(%s)'%case) for case in exp.split(';')]
     try:
         for val_exp, cond_exp in cases[:-1]:
             if eval_pure(cond_exp, env):
@@ -122,10 +121,10 @@ def eval_pure(exp, env):
         elif type == 'op':
             if (prev_type in (None, 'op')) and token in unitary_l_ops:
                 CM.push_op(unitary_l_ops[token])
-            elif token in unitary_r_ops:
-                CM.push_op(unitary_r_ops[token])
-            else:
+            elif exp and token in binary_ops:
                 CM.push_op(binary_ops[token])
+            else:
+                CM.push_op(unitary_r_ops[token])
         elif type == 'paren':
             CM.push_val(eval_pure(token[1:-1], env))
         elif type == 'if':
@@ -155,6 +154,12 @@ def eval_pure(exp, env):
                 if name == 'ans': continue
                 print("{}: {}".format(name, global_env[name]))
             break
+        elif type == 'load':
+            filename, rest = get_name(exp, False)
+            if rest:
+                raise SyntaxError('invalid import syntax!')
+            run(filename)
+            break
         else:
             pass  # perhaps add more functionality here
         prev_type = type
@@ -167,6 +172,8 @@ def eval(exp):
     assign_mark = exp.find(':=')
     if assign_mark < 0:
         result = eval_pure(exp, global_env)
+        if isinstance(result, tuple):
+            raise SyntaxError('invalid expression!')
     else:
         name, rest = get_name(exp[:assign_mark], False)
         if name in special_words or name in builtins or name in op_list:
@@ -199,26 +206,42 @@ def display(val):
     else: print(val)
 
 def run(filename=None, test=False):
-    def loop():
-        while True: yield
+    def prompt(seq):
+        count = 0
+        print('[{}]> '.format(count), end='')
+        for exp in seq:
+            yield exp
+            count += 1
+            print('[{}]> '.format(count), end='')
+    def interactive():
+        while True: yield input()
     if filename:
-        file = open(filename, 'r')
-        lines = file.readlines()
-    else:
-        lines = loop()
-    count = 0
-    for line in lines:
         try:
-            prompt = '[{}]> '.format(count)
-            ### test
-            if test:
+            file = open(filename, 'r')
+            lines = file.readlines()
+        except FileNotFoundError:
+            print('File not found: %s' % filename)
+            return
+    else:
+        lines = interactive()
+    buffer = ''
+    for line in prompt(lines):
+        try:
+            if line[-1] == '\\':
+                buffer += line[:-1]
+                continue  # join multiple lines
+            elif buffer:
+                line, buffer = buffer, ''
+
+            if filename and test:
                 if line.find('#') > 0:
                     exp, ans = line.split('#')
                 else:
                     exp, ans = line, None
-                print(prompt+exp)
-            ########
-            else: exp = input(prompt)
+            else:
+                exp = line
+            if filename: print(exp)
+
             val = eval(exp)
             if val is not None:
                 display(val)
@@ -230,19 +253,24 @@ def run(filename=None, test=False):
                     print('--- Fail! Expect %s ---' % ans)
                     return
             ########
-            count += 1
-        except KeyboardInterrupt: return
+        except KeyboardInterrupt:
+            return
         except Exception as err:
             print(err)
             if test: return
             CM.reset()
-    print('\nCongratulations, tests all passed!')
+    print()
+    if test:
+        print('Congratulations, tests all passed!')
+    else:
+        run()
 
 
 from sys import argv
 if len(argv) > 1:
     if argv[1] == '-t':
-        run("tests.txt", True)
+        run("tests", True)
+        #run("temptest", True)
     else:
         run(argv[1])
 else:

@@ -1,23 +1,23 @@
 class Stack:
     def __init__(self):
-        self.pbtrack = []
+        self.lst = []
 
     def push(self, obj):
-        self.pbtrack.append(obj)
+        self.lst.append(obj)
     
     def pop(self):
         assert(not self.empty())
-        return self.pbtrack.pop()
+        return self.lst.pop()
 
     def peek(self):
         assert(not self.empty())
-        return self.pbtrack[-1]
+        return self.lst[-1]
 
     def empty(self):
-        return self.pbtrack == []
+        return self.lst == []
 
     def clear(self):
-        self.pbtrack = []
+        self.lst = []
 
 
 class Op:

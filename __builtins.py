@@ -60,25 +60,26 @@ binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(truediv, 8),
 '>':(booltobin(gt), 0), '<=':(booltobin(le), 0), '>=':(booltobin(ge), 0),
 'in': (lambda x, l: 1 if x in l else 0, -2), 'xor': (booltobin(xor), 3),
 '@':(subscript, 16),
-'~': (lambda a, b: range(a, b+1), 7),
+'~': (lambda a, b: range(a, b+1), 5),
 'and': (booltobin(lambda a, b: a and b), -5),
 'or': (booltobin(lambda a, b: a or b), -6)}
 
 reconstruct(binary_ops, 'bin')
 
 unitary_l_ops = {'-':(neg, 10), 'not':(lambda n: 1 if n == 0 else 1, -4),
-':~':(lambda n: range(n+1), 7)}
+'~':(lambda n: range(n+1), 5)}
 
 reconstruct(unitary_l_ops, 'uni_l')
 
-unitary_r_ops = {'~:':(lambda n: ('tail', n), 99), '!': (factorial, 99)}
+unitary_r_ops = {'~':(lambda n: ('tail', n), 99), '!': (factorial, 99)}
 # actually a unitary op on the right will always be immediately carried out
 
 reconstruct(unitary_r_ops, 'uni_r')
 
 op_list = list(binary_ops) + list(unitary_l_ops) + list(unitary_r_ops)
 
-special_words = set(['ans', 'if', 'else', 'cases', 'for', 'in', 'ENV', 'let'])
+special_words = set(['ans', 'if', 'else', 'cases', 'for', 'in', 'ENV',
+'let', 'load'])
 
 builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'atan':atan, 'abs':abs, 'sqrt':sqrt, 'floor':floor, 'ceil':ceil, 'log':log,

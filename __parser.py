@@ -3,25 +3,28 @@ from __builtins import op_list, special_words
 
 def get_token(exp):
     exp = exp.strip()
-    pbtrack = lambda p, b: p == 0 and b == 0
-    pbtrack.parens, pbtrack.brackets = 0, 0
+
+    balanced = lambda counts: all(counts[b] == 0 for b in counts)
+    brackets = {'paren':0, 'list':0, 'lambda':0}
+    def update_brackets(char):
+        bracket_cnt = ('paren', 1 if char == '(' else -1) if char in '()' \
+        else ('list', 1 if char == '[' else -1) if char in '[]' else \
+        ('lambda', 1 if char == '{' else -1)
+        brackets[bracket_cnt[0]] += bracket_cnt[1]
+
     first_char = exp[0]
 
     if first_char == ',':
         return 'comma', ',', exp[1:]
-    elif first_char == '{':
-        close_brace = exp[1:].find('}') + 1
-        return 'lambda', exp[:close_brace+1], exp[close_brace+1:]
     elif first_char.isdigit() or first_char in '.':
-        type = 'number'; e = 0
+        type = 'number'
+        e = 0  # for scientific notation
     elif first_char.isalpha() or first_char == '_':
         type = 'name'
-    elif first_char == '(':
-        type = 'paren'
-        pbtrack.parens = 1
-    elif first_char == '[':
-        type = 'list'
-        pbtrack.brackets = 1
+    elif first_char in '([{':
+        type = 'paren' if first_char == '(' else 'list' \
+            if first_char == '[' else 'lambda'
+        brackets[type] = 1
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     elif first_char in op_list:
@@ -33,28 +36,24 @@ def get_token(exp):
     while i < len(exp):
         char = exp[i]
 
-        if type in ('paren', 'list'):
-            if pbtrack(pbtrack.parens, pbtrack.brackets): break
-
-        elif char.isspace() or \
-        (type == 'number' and
+        if type in brackets:
+            if balanced(brackets): break
+        elif char.isspace() or (type == 'number' and
             (char not in '1234567890.e' and not (e and char == '-'))) or \
         (type == 'name' and not (char.isalnum() or char in '_?')):
             break
 
         if type == 'number' and char == 'e':
             if e > 0: raise SyntaxError
-            e += 1
+            e = 1
 
-        if char == '(': pbtrack.parens += 1
-        elif char == ')': pbtrack.parens -= 1
-        elif char == '[': pbtrack.brackets += 1
-        elif char == ']': pbtrack.brackets -= 1
+        if char in r'()[]{}':
+            update_brackets(char)
 
         i += 1
 
-    if pbtrack.parens != 0 or pbtrack.brackets != 0:
-        raise SyntaxError('unpaired parentheses or brackets!')
+    if not balanced(brackets):
+        raise SyntaxError('unpaired brackets!')
 
     token, rest = exp[:i], exp[i:]
     if token in op_list:

@@ -36,8 +36,8 @@ Every evaluation will return a value of one of these four types.
 - Conditional expression  
     **Syntax 1**: \<exp1> if \<cond> else \<exp2> (if \<cond> holds then the expression is evaluated as \<exp1>, otherwise as \<exp2>)  
     **Examples**: step(x) := 0 if x<0 else 1, ramp(x) := 0 if x<0 else x  
-    **Syntax 2**: cases: \<exp1>, \<cond1>; \<exp2>, \<cond2>; ... ; \<expElse> (note that for the lase expression there is no condition to examine)  
-    **Examples**: max(x, y, z) := cases: x, x > y and x > z; y, y > z; z
+    **Syntax 2**: cases \<exp1>, \<cond1>; \<exp2>, \<cond2>; ... ; \<expElse> (note that for the lase expression there is no condition to examine)  
+    **Examples**: max(x, y, z) := cases x, x > y and x > z; y, y > z; z
 - List  
     **Syntax**: [\<exp1>, \<exp2>, ...]  
     The keyword "in" can examine whether an element is contained in a list.  
@@ -77,6 +77,7 @@ Every evaluation will return a value of one of these four types.
 ## More Examples
 ![merge_sort](merge_sort_example.png)
 ![depth_first_traverse](depth_first_traverse_example.png)
+(Oops! These two examples use the previous version of my calculator, where '++' produces the concatenation of two lists, but now I choose to use '+', resembling python)
 
 ## Builtins
 
