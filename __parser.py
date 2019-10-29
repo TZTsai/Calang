@@ -40,7 +40,7 @@ def get_token(exp):
         if type is 'number' and char is 'e':
             if i == len(exp)-1:
                 raise SyntaxError('invalid scientific notation!')
-            elif exp[i+1] == '-':
+            elif exp[i+1] is '-':
                 i += 1
             elif not exp[i+1].isdigit():
                 break
