@@ -13,19 +13,20 @@ def get_token(exp):
         brackets[bracket_cnt[0]] += bracket_cnt[1]
 
     first_char = exp[0]
-
-    if first_char == ',':
+    if first_char is ',':
         return 'comma', ',', exp[1:]
     elif first_char.isdigit() or first_char in '.':
         type = 'number'
-    elif first_char.isalpha() or first_char == '_':
+    elif first_char.isalpha() or first_char is '_':
         type = 'name'
     elif first_char in '([{':
-        type = 'paren' if first_char == '(' else 'list' \
-            if first_char == '[' else 'lambda'
+        type = 'paren' if first_char is '(' else 'list' \
+            if first_char is '[' else 'lambda'
         brackets[type] = 1
     elif first_char in ')]}':
         raise SyntaxError('unpaired brackets!')
+    elif first_char is ',':
+        return 'comma', ',', exp[1:]
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     elif first_char in op_list:
@@ -36,18 +37,23 @@ def get_token(exp):
     i = 1   
     while i < len(exp):
         char = exp[i]
-        if type == 'number' and char == 'e':
+        if type is 'number' and char is 'e':
             if i == len(exp)-1:
                 raise SyntaxError('invalid scientific notation!')
-            if exp[i+1].isalpha():
+            elif exp[i+1] == '-':
+                i += 1
+            elif not exp[i+1].isdigit():
                 break
+        elif type in brackets:
+            if balanced(brackets): break
         elif char.isspace() or\
-        (type == 'number' and (char not in '1234567890.')) or \
-        (type == 'name' and not (char.isalnum() or char in '_?')) or\
-        (type in brackets and balanced(brackets)):
+        (type is 'number' and not (char in '1234567890.')) or \
+        (type is 'name' and not (char.isalnum() or char in '_?')):
             break
-        elif char in r'()[]{}':
+
+        if char in r'()[]{}':
             update_brackets(char)
+
         i += 1
 
     if not balanced(brackets):
