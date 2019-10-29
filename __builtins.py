@@ -83,7 +83,7 @@ special_words = set(['ans', 'if', 'else', 'cases', 'for', 'in', 'ENV',
 
 builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'atan':atan, 'abs':abs, 'sqrt':sqrt, 'floor':floor, 'ceil':ceil, 'log':log,
-'E':e, 'PI':pi, 'I':1j, 'range':range, 'max':max, 'min':min,
+'E':e, 'PI':pi, 'I':1j, 'range':range, 'max':max, 'min':min, 'gcd':gcd,
 'list':toList, 'binom': lambda n, m: factorial(n) / factorial(m), 'log10':log10,
 'log2':log2, 'exp':exp, 'fact':factorial, 'factorial':factorial, 'len':len,
 'empty?': lambda l: 0 if len(l) else 1, 'number?': booltobin(isNumber),
@@ -91,4 +91,5 @@ builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'list?': lambda l: 1 if isinstance(l, list) else 0, 
 'range?': lambda l: 1 if isinstance(l, range) else 0,
 'sum': lambda l: reduce(add, l), 'prod': lambda l: reduce(mul, l),
-'car': lambda l: l[0], 'cdr': lambda l: l[1:]}
+'car': lambda l: l[0], 'cdr': lambda l: l[1:],
+'sinh':sinh, 'cosh':cosh, 'tanh':tanh}
