@@ -117,7 +117,10 @@ def eval_pure(exp, env):
         if type == 'ans':
             exp = eval_ans(exp)
         elif type == 'number':
-            CM.push_val(py_eval(token))
+            try:
+                CM.push_val(py_eval(token))
+            except Exception:
+                raise SyntaxError('invalid number!')
         elif type == 'name':
             CM.push_val(builtins[token] if token in builtins else env[token])
         elif type == 'op':
