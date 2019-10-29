@@ -50,7 +50,7 @@ class calcMachine:
             self.vals.push(op(n1, n2))
 
     def begin(self):  # mark the beginning of calculation
-        self.ops.push(Op('stop', None, -100))  # add a stop_mark in op_stack
+        self.ops.push(Op('stop', None, -99))  # add a stop_mark in op_stack
 
     def reset(self):
         self.ops.clear()
@@ -97,7 +97,7 @@ class Env:
             if self.parent:
                 return self.parent[name]
             else:
-                raise KeyError('unbound symbol: \'{}\''.format(name))
+                raise KeyError('unbound symbol: {}'.format(name))
 
     def make_subEnv(self, bindings={}):
         return Env(bindings, self)

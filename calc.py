@@ -7,7 +7,6 @@ py_eval = eval
 
 global_env = Env({'ans':[]})
 CM = calcMachine()
-ans_records = []
 
 
 def eval_list(list_str, env):
@@ -46,13 +45,6 @@ def eval_comprehension(exp, env):
     local_env = env.make_subEnv()
     return gen_vals(exp, params, ranges)
 
-def eval_number(exp):
-    if 'e' in exp:
-        num, power = exp.split('e')
-        return py_eval(num) * 10**py_eval(power)
-    else:
-        return py_eval(exp)
-
 def eval_cases(exp, env):
     def error():
         raise SyntaxError('invalid cases expression!')
@@ -67,11 +59,11 @@ def eval_cases(exp, env):
     if len(else_case) != 1: error()
     CM.push_val(eval_pure(else_case[0], env))
 
-def eval_ans(exp, env):
+def eval_ans(exp):
     if len(global_env['ans']) > 0:
         if exp and exp[0] == '.':
             _, index, exp = get_token(exp[1:])
-            index = eval_pure(index, env)
+            index = py_eval(index)
         else: index = -1
         CM.push_val(global_env['ans'][index])
         return exp
@@ -90,16 +82,26 @@ def eval_let(exp, env):
     return eval_pure(body, new_env)
 
 
-def function(params, body, env=global_env):
-    def apply(*args):
-        bindings = dict(zip(params, args))
-        return eval_pure(body, env.make_subEnv(bindings))
-    return apply
+class function:
+    def __init__(self, params, body, env=global_env):
+        self.params = params
+        self.body = body.strip()
+        self.env = env
+    
+    def __call__(self, *args):
+        bindings = dict(zip(self.params, args))
+        return eval_pure(self.body, self.env.make_subEnv(bindings))
+
+    def __str__(self):
+        return 'function of {}: {}'.format(', '.join(self.params), self.body)
 
 
 def eval_pure(exp, env):
     # inner evaluation, without assignment
     prev_type = None
+    def check_at_beginning(type):
+        if prev_type is not None:
+            raise SyntaxError('%s must be at the beginning!'%type)
     CM.begin()
     is_replacable = lambda t, t_src: t == t_src or t in ['name','paren','ans']
     while exp:
@@ -113,9 +115,9 @@ def eval_pure(exp, env):
         if all(is_replacable(t, 'number') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
         if type == 'ans':
-            exp = eval_ans(exp, env)
+            exp = eval_ans(exp)
         elif type == 'number':
-            CM.push_val(eval_number(token))
+            CM.push_val(py_eval(token))
         elif type == 'name':
             CM.push_val(builtins[token] if token in builtins else env[token])
         elif type == 'op':
@@ -134,8 +136,7 @@ def eval_pure(exp, env):
             if CM.vals.peek() != 'false':
                 CM.ops.pop(); break  # short circuit
         elif type == 'lambda':  # eg: {x, y} x^2-3*y
-            if prev_type is not None:
-                raise SyntaxError('invalid lambda expression!')
+            check_at_beginning(type)
             CM.push_val(function(get_params(token), exp, env))
             break
         elif type == 'let':  # eg: let {x=1, y=2} x+y
@@ -148,33 +149,29 @@ def eval_pure(exp, env):
             if isIterable(prev_val) and is_replacable(prev_type, 'list'):
                 CM.push_val(eval_subscription(CM.vals.pop(), val))
             else: CM.push_val(val)
-        elif type == 'ENV':
-            if exp: raise SyntaxError
-            for name in global_env.bindings:
-                if name == 'ans': continue
-                print("{}: {}".format(name, global_env[name]))
-            break
-        elif type == 'load':
-            filename, rest = get_name(exp, False)
-            if rest:
-                raise SyntaxError('invalid import syntax!')
-            run(filename)
-            break
         else:
-            pass  # perhaps add more functionality here
+            pass  # add more functionality here
         prev_type = type
     return CM.calc()
 
 
 def eval(exp):
-    # outer evaluation
-    # two cases: assignment and evaluation
     assign_mark = exp.find(':=')
-    if assign_mark < 0:
+    words = exp.split()
+    if words[0] == 'ENV':
+        for name in global_env.bindings:
+            if name == 'ans': continue
+            print("{}: {}".format(name, global_env[name]))
+        return
+    elif words[0] == 'load':
+        current_ans = global_env['ans'].copy()
+        for filename in words[1:]:
+            run(filename)
+        global_env['ans'] = current_ans
+        return
+    elif assign_mark < 0:
         result = eval_pure(exp, global_env)
-        if isinstance(result, tuple):
-            raise SyntaxError('invalid expression!')
-    else:
+    else:  # an assignment
         name, rest = get_name(exp[:assign_mark], False)
         if name in special_words or name in builtins or name in op_list:
             raise SyntaxError('word "%s" is protected!'%name)
@@ -188,9 +185,10 @@ def eval(exp):
             value = function(get_params(para_str), right_exp)
             # a function is regarded as a special value
         global_env[name] = value
-        result = None
-    if not CM.vals.empty() or not CM.ops.empty():
-        raise SyntaxError('incomplete expression!')
+        result = value
+
+    if not CM.vals.empty() or not CM.ops.empty() or isinstance(result, tuple):
+        raise SyntaxError('invalid expression!')
     global_env['ans'].append(result)
     return result
 
@@ -206,71 +204,73 @@ def display(val):
     else: print(val)
 
 def run(filename=None, test=False):
-    def prompt(seq):
-        count = 0
-        print('[{}]> '.format(count), end='')
-        for exp in seq:
-            yield exp
-            count += 1
-            print('[{}]> '.format(count), end='')
-    def interactive():
-        while True: yield input()
+    def loop():
+        while True: yield
+
     if filename:
         try:
             file = open(filename, 'r')
             lines = file.readlines()
         except FileNotFoundError:
-            print('File not found: %s' % filename)
+            print('file not found: %s' % filename)
             return
     else:
-        lines = interactive()
+        lines = loop()
+
     buffer = ''
-    for line in prompt(lines):
+    count = 0
+    for line in lines:
         try:
-            if line[-1] == '\\':
+            print('[{}]> '.format(count), end='')
+            if filename: print(line.strip())
+            else: line = input()
+
+            if line and line[-1] == '\\':
                 buffer += line[:-1]
                 continue  # join multiple lines
             elif buffer:
                 line, buffer = buffer, ''
 
+            ### test ###
             if filename and test:
                 if line.find('#') > 0:
                     exp, ans = line.split('#')
                 else:
                     exp, ans = line, None
             else:
+            ############
                 exp = line
-            if filename: print(exp)
 
+            if not exp: continue
             val = eval(exp)
-            if val is not None:
-                display(val)
-            ### test
+            if val is None: continue
+            display(val)
+
+            ### test ###
             if test and ans is not None:
                 if val == py_eval(ans):
                     print('--- OK! ---')
                 else:
                     print('--- Fail! Expect %s ---' % ans)
                     return
-            ########
+            ############
+            count += 1
+
         except KeyboardInterrupt:
             return
         except Exception as err:
-            print(err)
+            print('Error:', err)
             if test: return
             CM.reset()
-    print()
+            
     if test:
-        print('Congratulations, tests all passed!')
-    else:
-        run()
+        print('\nCongratulations, tests all passed!')
 
 
 from sys import argv
 if len(argv) > 1:
     if argv[1] == '-t':
         run("tests", True)
-        #run("temptest", True)
     else:
         run(argv[1])
 else:
