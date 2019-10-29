@@ -223,14 +223,15 @@ def run(filename=None, test=False):
     for line in lines:
         try:
             print('[{}]> '.format(count), end='')
-            if filename: print(line.strip())
-            else: line = input()
+            if not filename: line = input()
+            line = line.strip()
+            if filename: print(line)
 
             if line and line[-1] == '\\':
                 buffer += line[:-1]
                 continue  # join multiple lines
             elif buffer:
-                line, buffer = buffer, ''
+                line, buffer = buffer+line, ''
 
             ### test ###
             if filename and test:
