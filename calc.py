@@ -11,13 +11,8 @@ CM = calcMachine()
 
 def eval_list(list_str, env):
     lst, comprehension = get_list(list_str, True)
-    if comprehension:
-        if len(lst) > 1:
-            raise SyntaxError('invalid list comprehension syntax!')
-        result = toList(eval_comprehension(lst[0], env))
-    else:
-        result = [eval_pure(exp, env) for exp in lst]
-    return result
+    return toList(eval_comprehension(lst[0], env)) if comprehension \
+        else [eval_pure(exp, env) for exp in lst]
 
 def eval_subscription(lst, indices):
     if indices == []: return lst
@@ -28,9 +23,12 @@ def eval_subscription(lst, indices):
         return eval_subscription(items, indices[1:])
 
 def eval_comprehension(exp, env):
+    def split(exp, delimiter):
+        tokens_group = gen_divided_tokens(exp, delimiter)
+        return [' '.join(tokens) for tokens in tokens_group]
     def gen_vals(exp, params, ranges):
         if params:
-            segs = ranges[0].split('if')
+            segs = split(ranges[0], 'if')
             ran, conds = segs[0], segs[1:]
             for parvalue in eval_pure(ran, local_env):
                 local_env[params[0]] = parvalue
@@ -38,9 +36,9 @@ def eval_comprehension(exp, env):
                      yield from gen_vals(exp, params[1:], ranges[1:])
         else:
             yield eval_pure(exp, local_env)
-    segs = exp.split('for')
+    segs = split(exp, 'for')
     exp, param_ranges = segs[0], segs[1:]
-    params, ranges = zip(*[pr.split('in') for pr in param_ranges])
+    params, ranges = zip(*[split(pr, 'in') for pr in param_ranges])
     params = [get_name(par) for par in params]
     local_env = env.make_subEnv()
     return gen_vals(exp, params, ranges)

@@ -8,8 +8,8 @@ def get_token(exp):
     brackets = {'paren':0, 'list':0, 'lambda':0}
     def update_brackets(char):
         bracket_cnt = ('paren', 1 if char == '(' else -1) if char in '()' \
-        else ('list', 1 if char == '[' else -1) if char in '[]' else \
-        ('lambda', 1 if char == '{' else -1)
+            else ('list', 1 if char == '[' else -1) if char in '[]' else \
+            ('lambda', 1 if char == '{' else -1)
         brackets[bracket_cnt[0]] += bracket_cnt[1]
 
     first_char = exp[0]
@@ -46,9 +46,9 @@ def get_token(exp):
                 break
         elif type in brackets:
             if balanced(brackets): break
-        elif char.isspace() or\
-        (type is 'number' and not (char in '1234567890.')) or \
-        (type is 'name' and not (char.isalnum() or char in '_?')):
+        elif char.isspace() or \
+            (type is 'number' and not (char in '1234567890.')) or \
+            (type is 'name' and not (char.isalnum() or char in '_?')):
             break
 
         if char in r'()[]{}':
@@ -67,6 +67,12 @@ def get_token(exp):
     return type, token, rest
 
 
+def tokenize(exp):
+    while exp:
+        _, token, exp = get_token(exp)
+        yield token
+
+
 def get_name(exp, no_rest=True):  
     type, name, rest = get_token(exp)
     if not type == 'name' or (no_rest and rest):
@@ -75,23 +81,31 @@ def get_name(exp, no_rest=True):
     return name, rest
 
 
+def gen_divided_tokens(exp, delimiter):
+    def gen():
+        while tokens:
+            tokens[:], token = tokens[1:], tokens[0]
+            if token == delimiter: return
+            yield token
+    tokens = list(tokenize(exp))
+    while tokens:
+        yield gen()
+
+
 def get_list(list_exp, comprehension_possible=False):
     content = list_exp[1:-1]
-    l = []
     comprehension = False
-    while content:
-        tokens = []
-        while content:
-            type, token, content = get_token(content)
-            if type == 'comma':
-                break
-            elif comprehension_possible and type == 'for':
-                comprehension = True
-            tokens.append(token)
-        l.append(' '.join(tokens))
+    lst = []
+    for tokens in gen_divided_tokens(content, ','):
+        if comprehension:
+            raise SyntaxError('invalid list comprehension syntax!')
+        segs = list(tokens)
+        if comprehension_possible and 'for' in segs:
+            comprehension = True
+        lst.append(' '.join(segs))
     if comprehension_possible:
-        return l, comprehension
-    return l
+        return lst, comprehension
+    return lst
 
 
 def get_params(list_str):
