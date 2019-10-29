@@ -61,5 +61,5 @@ load SciNums
 T #273.15
 ans.58 #[1,2,3,4]
 ans.59 #273.15
-perms(l) := [[]] if l=[] else sum([ [ [l[i]] + p for p in perms( l@[ j for j in range(len(l)) if j != i ] ) ] for i in range(len(l)) ])
+perms(l) := [[]] if l=[] else sum([[[l[i]] + p for p in perms(l@[j for j in range(len(l)) if j != i])] for i in range(len(l))])
 perms([1,2,3])
