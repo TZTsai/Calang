@@ -38,8 +38,8 @@ def get_token(exp):
     elif first_char.isalpha() or first_char is '_':
         type = 'name'
     elif first_char in '([{':
-        type = 'paren' if first_char is '(' else 'list' \
-            if first_char is '[' else 'lambda'
+        type = 'paren' if first_char is '(' else 'bracket' \
+            if first_char is '[' else 'brace'
         token, rest = get_bracketed_token(exp)
         return type, token, rest
     elif first_char in ')]}':
@@ -95,6 +95,7 @@ def split(exp, delimiter):
             stop = True
         stop = False
         while not stop: yield gen()
+    if not exp: return []
     token_groups = grouped_tokens(exp, delimiter)
     return [' '.join(group) for group in token_groups]
 

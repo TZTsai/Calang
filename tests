@@ -47,7 +47,7 @@ max3(1, 2, 2) #2
 1+I #1+1j
 (1-I)(1+I) #2
 11062274001.181583
-let {x=1} x+3 #4
+{x:1} x+3 #4
 cdr([1,2,3]) #[2,3]
 sin_approx(n) := {x} sum([(-1)^(i // 2)*x^i/fact(i) for i in 1~n if i%2])
 my_sin := sin_approx(10)
@@ -66,3 +66,5 @@ imag(z) #4
 abs(z) #5
 conj(z) #3-4j
 angle(z) #atan(4/3)
+load examples/perms -t
+load examples/impl_list -t

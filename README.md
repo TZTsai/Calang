@@ -49,12 +49,12 @@ Check the file "__builtins.py" to see the available builtin operations and funct
   - rect(x) := 0 if x<-1 else 1 if x<=1 else 0  
     **Syntax 2**: cases \<exp1>, \<cond1>; \<exp2>, \<cond2>; ... ; \<expElse> (note that for the lase expression there is no condition to examine)  
     **Examples**: max(x, y, z) := cases x, x > y and x > z; y, y > z; z
-- Let expression  
-    **Syntax**: let {\<par1> = \<val1>, \<par2> = \<val2>, ...} \<exp>
-    In fact, a let expression is another way of creating and applying a lambda expression. It is identical to **({\<par1>, \<par2>, ...} \<exp>)(\<val1>, \<val2>, ...)**.  
+- Local environment
+    **Syntax**: {\<par1>: \<val1>, \<par2>: \<val2>, ...} \<exp>
+    In fact, it is identical to **({\<par1>, \<par2>, ...} \<exp>)(\<val1>, \<val2>, ...)**.  
     **Examples**:  
-  - let {exp=a_very_long_expression} sqrt(exp) + exp + exp^2
-  - binomial(n, m) := 1 if (n=0 or m=0 or m=n) else let {b1=binomial(n-1, m-1), b2=binomial(n-1, m)} b1 + b2  
+  - {exp: a_very_long_expression} sqrt(exp) + exp + exp^2
+  - binomial(n, m) := 1 if (n=0 or m=0 or m=n) else {b1:binomial(n-1, m-1), b2:binomial(n-1,   m)} b1 + b2  
 - List  
     **Syntax**: [\<exp1>, \<exp2>, ...]  
     The keyword "in" can examine whether an element is contained in a list.  

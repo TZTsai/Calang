@@ -1,8 +1,8 @@
 l := [1,3,5,2,7,4,6,9,8,0]
 
-merge(l1,l2) := cases l1, l2=[]; l2, l1=[]; let {a1=l1@0, a2=l2@0} \
+merge(l1,l2) := cases l1, l2=[]; l2, l1=[]; {a1:l1@0, a2:l2@0} \
 [a1] + merge(l1[1:], l2) if a1<a2 else [a2] + merge(l1, l2[1:])
-merge_sort(l) := l if len(l) < 2 else let {halflen=len(l)//2} \
-let {ll=merge_sort(l@range(halflen)), rl=merge_sort(l[halflen:])} merge(ll, rl)
+merge_sort(l) := l if len(l) < 2 else {halflen:len(l)//2} \
+{ll:merge_sort(l@range(halflen)), rl:merge_sort(l[halflen:])} merge(ll, rl)
 
 merge_sort(l) #[0,1,2,3,4,5,6,7,8,9]

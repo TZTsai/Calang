@@ -21,7 +21,8 @@ class Stack:
 
 
 class Op:
-    def __init__(self, type, function, priority):
+    def __init__(self, symbol, type, function, priority):
+        self.symbol = symbol
         self.type = type
         self.function = function
         self.priority = priority
@@ -50,8 +51,8 @@ class calcMachine:
             self.vals.push(op(n1, n2))
 
     def begin(self):
-        # mark the beginning of calculation
-        self.ops.push(Op('stop', None, -99))  # add a stop_mark in op_stack
+        self.ops.push(Op('', 'stop', None, -99))
+        # add a stop_mark in op_stack
 
     def reset(self):
         self.ops.clear()
@@ -75,12 +76,11 @@ class calcMachine:
             return
         while not (self.ops.empty() or op.isStopMark()):
             last_op = self.ops.peek()
-            if op.priority > last_op.priority:
-                break
-            else:
+            if op.priority <= last_op.priority:
                 try: self.__calc()
                 except AssertionError:
                     raise SyntaxError
+            else: break
         self.ops.push(op)
 
 

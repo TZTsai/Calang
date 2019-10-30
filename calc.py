@@ -16,9 +16,6 @@ def eval_list(list_str, env):
         if len(comprehension) > 1:
             return toList(eval_comprehension(comprehension, env))
     lst = [eval_pure(exp, env) for exp in lst]
-    if any(x is None for x in lst):
-        if len(lst) == 1: return []
-        raise SyntaxError('invalid list syntax!')
     return lst
 
 def eval_subscription(lst, subscript_exp, env):
@@ -73,26 +70,27 @@ def eval_ans(exp):
         return exp
     else: raise ValueError('No previous result!')
 
-def eval_let(exp, env):
-    type, bindings, body = get_token(exp)
-    if type != 'lambda':
-        raise SyntaxError('invalid let expression!')
-    def parse_pair(s):
-        eq = s.find('=')
-        return s[:eq], s[eq+1:]
-    bindings = [parse_pair(s) for s in get_list(bindings)]
-    bindings = [(get_name(s1), eval_pure(s2, env)) for s1, s2 in bindings]
-    new_env = env.make_subEnv(dict(bindings))
-    return eval_pure(body, new_env)
-
 
 class function:
     def __init__(self, params, body, env=global_env):
-        self.params = params
+        if params and params[-1][0] == '*':
+            params[-1] = params[-1][1:]
+            self.least_argc = len(params)-1
+            self.fixed_argc = False
+        else:
+            self.least_argc = len(params)
+            self.fixed_argc = True
+        self.params = [get_name(s) for s in params]
         self.body = body.strip()
         self.env = env
     
     def __call__(self, *args):
+        if not self.fixed_argc:
+            if len(args) < self.least_argc:
+                raise TypeError('inconsistent number of arguments!')
+            args = args[:self.least_argc] + [args[self.least_argc:]]
+        elif len(args) != self.least_argc:
+            raise TypeError('inconsistent number of arguments!')
         bindings = dict(zip(self.params, args))
         return eval_pure(self.body, self.env.make_subEnv(bindings))
 
@@ -100,18 +98,22 @@ class function:
         return 'function of {}: {}'.format(', '.join(self.params), self.body)
 
 
+def is_replacable(type, src_type):
+    return type == src_type or type in ['name','paren','ans']
+
+def is_applying(prev_val, prev_type, type):
+    return type == 'paren' and isFunction(prev_val) \
+        and is_replacable(prev_type, 'name')
+
 def eval_pure(exp, env):
     # inner evaluation, without assignment
     if exp == '': return
-    prev_type = None
     CM.begin()
-    is_replacable = lambda t, t_src: t == t_src or t in ['name','paren','ans']
+    prev_type = None
     while exp:
         type, token, exp = get_token(exp)
         prev_val = None if CM.vals.empty() else CM.vals.peek()
-        if isFunction(prev_val):  # applying a function
-            if type != 'paren' and prev_type is not None:
-                raise SyntaxError('invalid function application!')
+        if is_applying(prev_val, prev_type, type):
             CM.push_val(CM.vals.pop()(*eval_list(token, env)))
             continue
         if all(is_replacable(t, 'number') for t in (type, prev_type)):
@@ -132,29 +134,30 @@ def eval_pure(exp, env):
                 CM.push_op(binary_ops[token])
             else:
                 CM.push_op(unitary_r_ops[token])
-        elif type == 'paren':
-            CM.push_val(eval_pure(token[1:-1], env))
         elif type == 'if':
-            CM.push_op(Op('bin', lambda x, y: x if y else 'false', -5))
+            CM.push_op(Op('if', 'bin', lambda x, y: x if y else 'false', -5))
         elif type == 'else':
-            CM.push_op(Op('bin', lambda x, y: y, -5))
+            CM.push_op(Op('else', 'bin', lambda x, y: y, -5))
             if CM.vals.peek() != 'false':
                 CM.ops.pop(); break  # short circuit
-        elif type == 'lambda':  # eg: {x, y} x^2-3*y
-            if prev_type is not None:
-                raise SyntaxError('%s must be at the beginning!'%type)
-            CM.push_val(function(get_params(token), exp, env))
-            break
-        elif type == 'let':  # eg: let {x=1, y=2} x+y
-            CM.push_val(eval_let(exp, env))
-            break
-        elif type == 'cases':  # eg: cases: 1, x>0; 0, x=0; -1
+        elif type == 'cases':
             CM.push_val(eval_cases(exp, env)); break
-        elif type == 'list':
-            if isIterable(prev_val) and is_replacable(prev_type, 'list'):
+        elif type == 'paren':
+            CM.push_val(eval_pure(token[1:-1], env))
+        elif type == 'bracket':
+            if isIterable(prev_val) and is_replacable(prev_type, 'bracket'):
                 CM.push_val(eval_subscription(CM.vals.pop(), token, env))
             else: 
                 CM.push_val(eval_list(token, env))
+        elif type == 'brace':
+            segs = get_list(token)
+            if not segs or len(split(segs[0], ':')) == 1:  # lambda expression
+                CM.push_val(function(segs, exp, env))
+            else:  # local environment
+                bindings = [(get_name(s1), eval_pure(s2, env))
+                for s1, s2 in [split(seg, ':') for seg in segs]]
+                CM.push_val(eval_pure(exp, env.make_subEnv(dict(bindings))))
+            break
         else:
             raise SyntaxError('invalid token: %s' % token)
         prev_type = type
@@ -187,10 +190,10 @@ def eval(exp):
         if not rest:  # assignment of a variable
             value = eval_pure(right_exp, global_env)
         else:  # assignment of a function
-            type, param_str, rest = get_token(rest)
+            type, params_str, rest = get_token(rest)
             if type != 'paren' or rest != '':
                 raise SyntaxError('invalid variable name!')
-            value = function(get_params(param_str), right_exp)
+            value = function(get_list(params_str), right_exp)
         global_env[name] = value
         result = value
 

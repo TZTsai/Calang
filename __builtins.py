@@ -5,8 +5,8 @@ from  __classes import Op
 
 
 def booltobin(bool_op):
-    def apply(a, b):
-        return 1 if bool_op(a, b) else 0
+    def apply(*args):
+        return 1 if bool_op(*args) else 0
     return apply
 
 
@@ -47,7 +47,7 @@ def concatLists(l1, l2):
 def reconstruct(op_dict, type):
     for op in op_dict:
         info = op_dict[op]
-        op_dict[op] = Op(type, info[0], info[1])
+        op_dict[op] = Op(op, type, info[0], info[1])
 
 
 binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(truediv, 8),
@@ -74,7 +74,7 @@ reconstruct(unitary_r_ops, 'uni_r')
 op_list = list(binary_ops) + list(unitary_l_ops) + list(unitary_r_ops)
 
 special_words = set(['ans', 'if', 'else', 'cases', 'for', 'in', 'ENV',
-'let', 'load'])
+'load'])
 
 builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'atan':atan, 'abs':abs, 'sqrt':sqrt, 'floor':floor, 'ceil':ceil, 'log':log,
@@ -86,7 +86,8 @@ builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'list?': lambda l: 1 if isinstance(l, list) else 0, 
 'range?': lambda l: 1 if isinstance(l, range) else 0,
 'sum': lambda l: reduce(add, l), 'prod': lambda l: reduce(mul, l),
-'car': lambda l: l[0], 'cdr': lambda l: l[1:],
+'car': lambda l: l[0], 'cdr': lambda l: l[1:], 'all':all, 'any':any,
+'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),
 'sinh':sinh, 'cosh':cosh, 'tanh':tanh, 'degrees':degrees, 
 'real': lambda z: z.real, 'imag': lambda z: z.imag, 'conj': lambda z: z.conjugate(),
-'angle': lambda z: atan(z.imag/z.real)}
+'angle': lambda z: atan(z.imag/z.real), 'sort':sorted}

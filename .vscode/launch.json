@@ -8,8 +8,8 @@
             "name": "Python: 当前文件",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
             "args": ["-t"],
+            "program": "${file}",
             "console": "integratedTerminal"
         }
     ]
