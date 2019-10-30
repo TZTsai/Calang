@@ -5,6 +5,8 @@ Run "python calc.py" to start the program.
 In this calculator, there are four types of values: Number, List, Range and Function.
 Every evaluation will return a value of one of these four types.  
 
+Check the file "__builtins.py" to see the available builtin operations and functions.  
+
 ## Features
 
 - Evaluation of simple arithmetic expressions  
@@ -56,7 +58,7 @@ Every evaluation will return a value of one of these four types.
   - [1, 2, 3]@(1~2)
   - [1, 2, 3, 4, 5]@[i for i in range(5) if i%2]
   - m := [[1, 2, 3], [3, 4, 5]], m[0, 1] (will return 2)
-- List slicing
+- List slicing  
     **Syntax**: \<list>[\<start>:\<end>(:\<step>)]
     This syntax is identical to the list slicing syntax in python.
     The second colon can be omitted, when \<step> is 1 as default.
@@ -80,10 +82,8 @@ Every evaluation will return a value of one of these four types.
   - [i\*j for i in range(10) if i%3 for j in range(10) if i+j>6]
   - sum([i^2 for i in 1~10])
 - Load files
-    Use the keyword "load" appended by a sequence of file names to load these files.
+    Use the keyword "load" appended by a sequence of file names to load these files.  
     **Examples**:
   - load examples/merge_sort examples/btree
 
 You can find more examples in the "examples/" folder. You can also refer to the "tests" file (which I use to test my program) for the usage of this calculator.
-
-Check the file "__builtins.py" to see the available builtin operations and functions.
