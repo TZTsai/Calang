@@ -206,8 +206,14 @@ def display(val):
         e = floor(log10(x))
         b = x/10**e
         return '{} E {}'.format(b, e)
-    if isNumber(val) and (abs(val) <= 0.001 or abs(val) >= 10000):
-        print(sci_repr(val))
+    if isNumber(val):
+        if abs(val) <= 0.001 or abs(val) >= 10000:
+            print(sci_repr(val))
+        elif type(val) is complex:
+            re, im = val.real, val.imag
+            print('{}{}{}i'.format(re, '' if im<0 else '+', im))
+        else:
+            print(val)
     else: print(val)
 
 

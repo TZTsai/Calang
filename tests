@@ -60,3 +60,9 @@ ans.55 #273.15
 1 + \
 2 #3
 load examples/btree -t
+z:=3+4I
+real(z) #3
+imag(z) #4
+abs(z) #5
+conj(z) #3-4j
+angle(z) #atan(4/3)

@@ -87,4 +87,6 @@ builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'range?': lambda l: 1 if isinstance(l, range) else 0,
 'sum': lambda l: reduce(add, l), 'prod': lambda l: reduce(mul, l),
 'car': lambda l: l[0], 'cdr': lambda l: l[1:],
-'sinh':sinh, 'cosh':cosh, 'tanh':tanh}
+'sinh':sinh, 'cosh':cosh, 'tanh':tanh, 'degrees':degrees, 
+'real': lambda z: z.real, 'imag': lambda z: z.imag, 'conj': lambda z: z.conjugate(),
+'angle': lambda z: atan(z.imag/z.real)}
