@@ -4,17 +4,35 @@ from __builtins import op_list, special_words
 def get_token(exp):
     exp = exp.strip()
 
-    balanced = lambda counts: all(counts[b] == 0 for b in counts)
-    brackets = {'paren':0, 'list':0, 'lambda':0}
-    def update_brackets(char):
-        bracket_cnt = ('paren', 1 if char == '(' else -1) if char in '()' \
-            else ('list', 1 if char == '[' else -1) if char in '[]' else \
-            ('lambda', 1 if char == '{' else -1)
-        brackets[bracket_cnt[0]] += bracket_cnt[1]
+    def get_bracketed_token(exp):
+        def update(f):
+            def match(b):
+                def change(c):
+                    if b == c: cnt[0] = f(cnt[0])
+                return change
+            return match
+        inc_match = update(lambda n: n+1)
+        dec_match = update(lambda n: n-1)
+        cnt = [0]
+        if exp[0] is '(':
+            inc = inc_match('('); dec = dec_match(')')
+        elif exp[0] is '[':
+            inc = inc_match('['); dec = dec_match(']')
+        elif exp[0] is '{':
+            inc = inc_match('{'); dec = dec_match('}')
+
+        for i in range(len(exp)):
+            inc(exp[i]); dec(exp[i])
+            if cnt[0] == 0: break
+        return exp[:i+1], exp[i+1:]
 
     first_char = exp[0]
     if first_char is ',':
         return 'comma', ',', exp[1:]
+    if first_char is ':':
+        return 'colon', ':', exp[1:]
+    if first_char is ';':
+        return 'semicolon', ';', exp[1:]
     elif first_char.isdigit() or first_char in '.':
         type = 'number'
     elif first_char.isalpha() or first_char is '_':
@@ -22,11 +40,10 @@ def get_token(exp):
     elif first_char in '([{':
         type = 'paren' if first_char is '(' else 'list' \
             if first_char is '[' else 'lambda'
-        brackets[type] = 1
+        token, rest = get_bracketed_token(exp)
+        return type, token, rest
     elif first_char in ')]}':
         raise SyntaxError('unpaired brackets!')
-    elif first_char is ',':
-        return 'comma', ',', exp[1:]
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     elif first_char in op_list:
@@ -44,20 +61,12 @@ def get_token(exp):
                 i += 1
             elif not exp[i+1].isdigit():
                 break
-        elif type in brackets:
-            if balanced(brackets): break
         elif char.isspace() or \
             (type is 'number' and not (char in '1234567890.')) or \
             (type is 'name' and not (char.isalnum() or char in '_?')):
             break
 
-        if char in r'()[]{}':
-            update_brackets(char)
-
         i += 1
-
-    if not balanced(brackets):
-        raise SyntaxError('unpaired brackets!')
 
     token, rest = exp[:i], exp[i:]
     if token in op_list:
@@ -65,12 +74,6 @@ def get_token(exp):
     elif token in special_words:
         return token, token, rest
     return type, token, rest
-
-
-def tokenize(exp):
-    while exp:
-        _, token, exp = get_token(exp)
-        yield token
 
 
 def get_name(exp, no_rest=True):  
@@ -81,31 +84,23 @@ def get_name(exp, no_rest=True):
     return name, rest
 
 
-def gen_divided_tokens(exp, delimiter):
-    def gen():
-        while tokens:
-            tokens[:], token = tokens[1:], tokens[0]
-            if token == delimiter: return
-            yield token
-    tokens = list(tokenize(exp))
-    while tokens:
-        yield gen()
+def split(exp, delimiter):
+    def grouped_tokens(exp, delimiter):
+        def gen():
+            nonlocal exp, stop
+            while exp:
+                _, token, exp = get_token(exp)
+                if token == delimiter: return
+                yield token
+            stop = True
+        stop = False
+        while not stop: yield gen()
+    token_groups = grouped_tokens(exp, delimiter)
+    return [' '.join(group) for group in token_groups]
 
 
-def get_list(list_exp, comprehension_possible=False):
-    content = list_exp[1:-1]
-    comprehension = False
-    lst = []
-    for tokens in gen_divided_tokens(content, ','):
-        if comprehension:
-            raise SyntaxError('invalid list comprehension syntax!')
-        segs = list(tokens)
-        if comprehension_possible and 'for' in segs:
-            comprehension = True
-        lst.append(' '.join(segs))
-    if comprehension_possible:
-        return lst, comprehension
-    return lst
+def get_list(list_exp, delimiter=','):
+    return split(list_exp[1:-1], delimiter)
 
 
 def get_params(list_str):

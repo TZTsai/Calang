@@ -1,0 +1,17 @@
+tree(node, left, right) := [node, left, right]
+node(t) := t[0]
+left(t) := t[1]
+right(t) := t[2]
+
+traverse(t) := [] if empty?(t) else \
+traverse(left(t))+[node(t)]+traverse(right(t))
+
+orderedList_to_tree(l) := [] if l=[] else let {halflen = len(l)//2, \
+ltot = orderedList_to_tree} tree(l@halflen, ltot(l[:halflen]), \
+ltot(l[halflen+1:]))
+
+load examples/merge_sort
+ol := merge_sort(l)
+t := orderedList_to_tree(ol)
+ol1 := traverse(t)
+ol1 = ol

@@ -49,14 +49,16 @@ class calcMachine:
             n1 = self.vals.pop()
             self.vals.push(op(n1, n2))
 
-    def begin(self):  # mark the beginning of calculation
+    def begin(self):
+        # mark the beginning of calculation
         self.ops.push(Op('stop', None, -99))  # add a stop_mark in op_stack
 
     def reset(self):
         self.ops.clear()
         self.vals.clear()
 
-    def calc(self): # calculate the whole stack and return the result
+    def calc(self):
+        # calculate until the stack is empty or reaches a stop_mark
         while not self.ops.empty() and self.__calc() != 'stop':
             pass
         if not self.vals.empty():

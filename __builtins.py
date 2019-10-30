@@ -26,11 +26,7 @@ def isFunction(value):
 def subscript(lst, index):
     if not hasattr(lst, '__getitem__'):
         raise SyntaxError('{} is not subscriptable'.format(lst))
-    if isIterable(index):
-        if len(index) == 2 and index[0] == 'tail':
-            return lst[index[1]:]
-        return [lst[i] for i in index]
-    return lst[index]
+    return [lst[i] for i in index] if isIterable(index) else lst[index]
 
 
 def toList(lst):
@@ -55,23 +51,22 @@ def reconstruct(op_dict, type):
 
 
 binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(truediv, 8),
-'//':(floordiv, 8), '^':(pow, 14), '%':(mod, 8), '&':(and_, 4), '|':(or_, 2),
-'=':(booltobin(eq), 0), '!=':(booltobin(ne), 0), '<':(booltobin(lt), 0),
-'>':(booltobin(gt), 0), '<=':(booltobin(le), 0), '>=':(booltobin(ge), 0),
-'in': (lambda x, l: 1 if x in l else 0, -2), 'xor': (booltobin(xor), 3),
-'@':(subscript, 16),
-'~': (lambda a, b: range(a, b+1), 5),
+'//':(floordiv, 8), '^':(pow, 14), '%':(mod, 8), 
+'=':(lambda x, y: 1 if x == y else 0, 0), '!=':(booltobin(ne), 0),
+'<':(booltobin(lt), 0), '>':(booltobin(gt), 0), '<=':(booltobin(le), 0), 
+'>=':(booltobin(ge), 0), '&':(and_, 4), '|':(or_, 2),
+'in': (lambda x, l: 1 if x in l else 0, -2), 'xor': (booltobin(xor), 3), 
+'@':(subscript, 16), '~': (lambda a, b: range(a, b+1), 5),
 'and': (booltobin(lambda a, b: a and b), -5),
 'or': (booltobin(lambda a, b: a or b), -6)}
 
 reconstruct(binary_ops, 'bin')
 
-unitary_l_ops = {'-':(neg, 10), 'not':(lambda n: 1 if n == 0 else 1, -4),
-'~':(lambda n: range(n+1), 5)}
+unitary_l_ops = {'-':(neg, 10), 'not':(lambda n: 1 if n == 0 else 1, -4)}
 
 reconstruct(unitary_l_ops, 'uni_l')
 
-unitary_r_ops = {'~':(lambda n: ('tail', n), 99), '!': (factorial, 99)}
+unitary_r_ops = {'!': (factorial, 99)}
 # actually a unitary op on the right will always be immediately carried out
 
 reconstruct(unitary_r_ops, 'uni_r')

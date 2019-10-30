@@ -53,8 +53,14 @@ Every evaluation will return a value of one of these four types.
     This syntax is equivalent to sequentially subscripting \<list> by \<i1>, \<i2>, ...  
     **Examples**:  
   - [1, 2, 3]@1
-  - [1, 2, 3]@(1~:) (the symbol ':' can represent the start or the end of a list)
-  - m := [[1, 2, 3], [3, 4, 5]], m[0, 1] (will return 2), m[:~:, 1]
+  - [1, 2, 3]@(1~2)
+  - [1, 2, 3, 4, 5]@[i for i in range(5) if i%2]
+  - m := [[1, 2, 3], [3, 4, 5]], m[0, 1] (will return 2)
+- List slicing
+    **Syntax**: \<list>[\<start>:\<end>(:\<step>)]
+    This syntax is identical to the list slicing syntax in python.
+    The second colon can be omitted, when \<step> is 1 as default.
+    When \<start> is omitted, it is set to 0; when \<end> is omitted, it is set to the end of the list.
 - Range  
     A range is a different type from list. A value of type "range" is an instance of the python class range.  
     There are two ways to generate a "range" type value: by using the symbol "\~" or by the builtin function "range".  
@@ -73,14 +79,11 @@ Every evaluation will return a value of one of these four types.
   - m := [[1, 2, 3],[3, 4, 5],[5, 6, 7]], m@[range(2), [i for i in [0, 1, 2] if i%2]] (result: [[2],[4]])
   - [i\*j for i in range(10) if i%3 for j in range(10) if i+j>6]
   - sum([i^2 for i in 1~10])
+- Load files
+    Use the keyword "load" appended by a sequence of file names to load these files.
+    **Examples**:
+  - load examples/merge_sort examples/btree
 
-## More Examples
-![merge_sort](merge_sort_example.png)
-![depth_first_traverse](depth_first_traverse_example.png)
-(Oops! These two examples use the previous version of my calculator, where '++' produces the concatenation of two lists, but now I choose to use '+', resembling python)
+You can find more examples in the "examples/" folder. You can also refer to the "tests" file (which I use to test my program) for the usage of this calculator.
 
-## Builtins
-
-- Operations: +, -, *, /, //, ^, %, &, |, =, !=, <, >, <=, >=, in, xor, @, \~, and, or, not, :\~, \~:, !
-- Functions: sin, cos, tan, asin, acos, atan, abs, sqrt, floor, ceil, log, range, max, min, list, binom, log10, log2, exp, sum, prod, fact(factorial), empty? (tell whether a list or a range is empty), len (the length of a list or a range), number? (tell whether a value is a number), iter? (tell whether a value is a list or a range (both are iterables)), function?, list?, range?, car (the first element of a list), cdr (the sub-list except the first element)
-- Constants: E, PI, I  
+Check the file "__builtins.py" to see the available builtin operations and functions.

@@ -10,22 +10,33 @@ CM = calcMachine()
 
 
 def eval_list(list_str, env):
-    lst, comprehension = get_list(list_str, True)
-    return toList(eval_comprehension(lst[0], env)) if comprehension \
-        else [eval_pure(exp, env) for exp in lst]
+    lst = get_list(list_str)
+    if len(lst) == 1:
+        comprehension = get_list(list_str, 'for')
+        if len(comprehension) > 1:
+            return toList(eval_comprehension(comprehension, env))
+    lst = [eval_pure(exp, env) for exp in lst]
+    if any(x is None for x in lst):
+        if len(lst) == 1: return []
+        raise SyntaxError('invalid list syntax!')
+    return lst
 
-def eval_subscription(lst, indices):
-    if indices == []: return lst
-    items = subscript(lst, indices[0])
-    if isIterable(indices[0]):
-        return [eval_subscription(item, indices[1:]) for item in items]
+def eval_subscription(lst, subscript_exp, env):
+    def eval_listSubscript(lst, indices):
+        if indices == []: return lst
+        items = subscript(lst, indices[0])
+        if isIterable(indices[0]):
+            return [eval_listSubscript(item, indices[1:]) for item in items]
+        else:
+            return eval_listSubscript(items, indices[1:])
+    slice_exps = get_list(subscript_exp, ':')
+    if len(slice_exps) > 1:  # slice subscript
+        slice_args = [eval_pure(exp, env) for exp in slice_exps]
+        return lst[slice(*slice_args)]
     else:
-        return eval_subscription(items, indices[1:])
+        return eval_listSubscript(lst, eval_list(subscript_exp, env))
 
-def eval_comprehension(exp, env):
-    def split(exp, delimiter):
-        tokens_group = gen_divided_tokens(exp, delimiter)
-        return [' '.join(tokens) for tokens in tokens_group]
+def eval_comprehension(comprehension, env):
     def gen_vals(exp, params, ranges):
         if params:
             segs = split(ranges[0], 'if')
@@ -36,26 +47,21 @@ def eval_comprehension(exp, env):
                      yield from gen_vals(exp, params[1:], ranges[1:])
         else:
             yield eval_pure(exp, local_env)
-    segs = split(exp, 'for')
-    exp, param_ranges = segs[0], segs[1:]
+    exp, param_ranges = comprehension[0], comprehension[1:]
     params, ranges = zip(*[split(pr, 'in') for pr in param_ranges])
     params = [get_name(par) for par in params]
     local_env = env.make_subEnv()
     return gen_vals(exp, params, ranges)
 
 def eval_cases(exp, env):
-    def error():
-        raise SyntaxError('invalid cases expression!')
-    cases = [get_list('(%s)'%case) for case in exp.split(';')]
-    try:
-        for val_exp, cond_exp in cases[:-1]:
-            if eval_pure(cond_exp, env):
-                CM.push_val(eval_pure(val_exp, env))
-                return
-    except ValueError: error()
+    cases = [split(case, ',') for case in split(exp, ';')]
+    value = lambda exp: eval_pure(exp, env)
+    for val in (value(exp) for exp, cond in cases[:-1] if value(cond)):
+        return val
     else_case = cases[-1]
-    if len(else_case) != 1: error()
-    CM.push_val(eval_pure(else_case[0], env))
+    if len(else_case) != 1:
+        raise SyntaxError('invalid cases expression!')
+    return value(else_case[0])
 
 def eval_ans(exp):
     if len(global_env['ans']) > 0:
@@ -96,10 +102,8 @@ class function:
 
 def eval_pure(exp, env):
     # inner evaluation, without assignment
+    if exp == '': return
     prev_type = None
-    def check_at_beginning(type):
-        if prev_type is not None:
-            raise SyntaxError('%s must be at the beginning!'%type)
     CM.begin()
     is_replacable = lambda t, t_src: t == t_src or t in ['name','paren','ans']
     while exp:
@@ -108,7 +112,7 @@ def eval_pure(exp, env):
         if isFunction(prev_val):  # applying a function
             if type != 'paren' and prev_type is not None:
                 raise SyntaxError('invalid function application!')
-            CM.push_val(CM.vals.pop()(*(eval_list(token, env))))
+            CM.push_val(CM.vals.pop()(*eval_list(token, env)))
             continue
         if all(is_replacable(t, 'number') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
@@ -137,26 +141,28 @@ def eval_pure(exp, env):
             if CM.vals.peek() != 'false':
                 CM.ops.pop(); break  # short circuit
         elif type == 'lambda':  # eg: {x, y} x^2-3*y
-            check_at_beginning(type)
+            if prev_type is not None:
+                raise SyntaxError('%s must be at the beginning!'%type)
             CM.push_val(function(get_params(token), exp, env))
             break
         elif type == 'let':  # eg: let {x=1, y=2} x+y
             CM.push_val(eval_let(exp, env))
             break
         elif type == 'cases':  # eg: cases: 1, x>0; 0, x=0; -1
-            eval_cases(exp, env); break
+            CM.push_val(eval_cases(exp, env)); break
         elif type == 'list':
-            val = eval_list(token, env)
             if isIterable(prev_val) and is_replacable(prev_type, 'list'):
-                CM.push_val(eval_subscription(CM.vals.pop(), val))
-            else: CM.push_val(val)
+                CM.push_val(eval_subscription(CM.vals.pop(), token, env))
+            else: 
+                CM.push_val(eval_list(token, env))
         else:
-            pass  # add more functionality here
+            raise SyntaxError('invalid token: %s' % token)
         prev_type = type
     return CM.calc()
 
 
 def eval(exp):
+    if exp == '': return
     assign_mark = exp.find(':=')
     words = exp.split()
     if words[0] == 'ENV':
@@ -166,8 +172,9 @@ def eval(exp):
         return
     elif words[0] == 'load':
         current_ans = global_env['ans'].copy()
-        for filename in words[1:]:
-            run(filename)
+        test = words[-1] == '-t'
+        for filename in words[1:-1] if test else words[1:]:
+            run(filename, test)
         global_env['ans'] = current_ans
         return
     elif assign_mark < 0:
@@ -180,15 +187,14 @@ def eval(exp):
         if not rest:  # assignment of a variable
             value = eval_pure(right_exp, global_env)
         else:  # assignment of a function
-            type, para_str, rest = get_token(rest)
+            type, param_str, rest = get_token(rest)
             if type != 'paren' or rest != '':
                 raise SyntaxError('invalid variable name!')
-            value = function(get_params(para_str), right_exp)
-            # a function is regarded as a special value
+            value = function(get_params(param_str), right_exp)
         global_env[name] = value
         result = value
 
-    if not CM.vals.empty() or not CM.ops.empty() or isinstance(result, tuple):
+    if not (CM.vals.empty() and CM.ops.empty()):
         raise SyntaxError('invalid expression!')
     global_env['ans'].append(result)
     return result
@@ -204,27 +210,32 @@ def display(val):
         print(sci_repr(val))
     else: print(val)
 
-def run(filename=None, test=False):
-    def loop():
-        while True: yield
 
-    if filename:
-        try:
+def run(filename=None, test=False):
+    def get_lines(filename):
+        if filename:
             file = open(filename, 'r')
-            lines = file.readlines()
-        except FileNotFoundError:
-            print('file not found: %s' % filename)
-            return
-    else:
-        lines = loop()
+            return file.readlines()
+        else:
+            return iter(lambda: 0, 1)  # an infinite loop
+    def split_exp_comment(line):
+        comment_at = line.find('#')
+        if comment_at < 0:
+            return line, ''
+        else:
+            return line[:comment_at], line[comment_at+1:]
+    def verify_answer(result, answer):
+        if result == py_eval(answer):
+            print('--- OK! ---')
+        else:
+            print('--- Fail! Expect %s ---' % answer)
 
     buffer = ''
     count = 0
-    for line in lines:
+    for line in get_lines(filename):
         try:
             print('[{}]> '.format(count), end='')
-            if not filename: line = input()
-            line = line.strip()
+            line = line.strip() if filename else input()
             if filename: print(line)
 
             if line and line[-1] == '\\':
@@ -233,42 +244,30 @@ def run(filename=None, test=False):
             elif buffer:
                 line, buffer = buffer+line, ''
 
-            ### test ###
-            if filename and test:
-                if line.find('#') > 0:
-                    exp, ans = line.split('#')
-                else:
-                    exp, ans = line, None
-            else:
-            ############
-                exp = line
-
-            if not exp: continue
-            val = eval(exp)
-            if val is None: continue
-            display(val)
+            exp, comment = split_exp_comment(line)
+            result = eval(exp)
+            if result is None: continue
+            display(result)
 
             ### test ###
-            if test and ans is not None:
-                if val == py_eval(ans):
-                    print('--- OK! ---')
-                else:
-                    print('--- Fail! Expect %s ---' % ans)
-                    return
-            ############
+            if test and comment:
+                verify_answer(result, comment)
+
             count += 1
 
         except KeyboardInterrupt:
             return
-        except Exception as err:
+        except (Warning if test else Exception) as err:
+            # actually no warning is raised,
+            # I just don't want to catch errors when testing
             print('Error:', err)
-            if test: return
             CM.reset()
             
     if test:
-        print('\nCongratulations, tests all passed!')
+        print('\nCongratulations, tests all passed in "%s"!\n'%filename)
 
 
+### RUN ###
 from sys import argv
 if len(argv) > 1:
     if argv[1] == '-t':
