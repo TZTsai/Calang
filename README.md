@@ -17,7 +17,7 @@ Check the file "__builtins.py" to see the available builtin operations and funct
     Use keyword "ans" to represent the result of the last calculation.  
     Use keyword "ans.\<n>" to represent the result of the \<n>th calculation.  
     Use keyword "ENV" to let the calculator print all variable bindings in the global environment.
-- Multiline expression
+- Multiline expression  
     Use "\" at the end of the line to indicate that the expression continues in the next line.  
 - Complex numbers  
     The keyword "I" represents the imaginary number "i" in mathematics.  
@@ -51,7 +51,7 @@ Check the file "__builtins.py" to see the available builtin operations and funct
   - rect(x) := 0 if x<-1 else 1 if x<=1 else 0  
     **Syntax 2**: cases \<exp1>, \<cond1>; \<exp2>, \<cond2>; ... ; \<expElse> (note that for the lase expression there is no condition to examine)  
     **Examples**: max(x, y, z) := cases x, x > y and x > z; y, y > z; z
-- Let expression
+- Let expression  
     **Syntax**: let {\<par1> = \<val1>, \<par2> = \<val2>, ...} \<exp>
     In fact, a let expression is another way of creating and applying a lambda expression. It is identical to **({\<par1>, \<par2>, ...} \<exp>)(\<val1>, \<val2>, ...)**.  
     **Examples**:  
@@ -107,7 +107,7 @@ Check the file "__builtins.py" to see the available builtin operations and funct
   - sum([i^2 for i in 1~10])
   - differentiate_polynomial(coeff_list) := let {l=coeff_list} \  
     [l@i * i for i in range(len(l)) if i > 0]
-- Load files
+- Load files  
     Use the keyword "load" appended by a sequence of file names to load these files.  
     The calculator will run through the loaded file and load its defined variables into the current environment. However, the current evaluation history will not be affected.  
     **Examples**:
