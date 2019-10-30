@@ -1,7 +1,5 @@
 # A small but powerful calculator
 
-Inspired by Python and Scheme.
-
 Run "python calc.py" to start the program.
 
 In this calculator, there are four types of values: Number, List, Range and Function.
