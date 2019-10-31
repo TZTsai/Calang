@@ -17,6 +17,8 @@ Check the file "__builtins.py" to see the available builtin operations and funct
     Use keyword "ENV" to let the calculator print all variable bindings in the global environment.
 - Multiline expression  
     Use "\" at the end of the line to indicate that the expression continues in the next line.  
+- Omit displaying result
+    Use ";" at the end of the line.  
 - Complex numbers  
     The keyword "I" represents the imaginary number "i" in mathematics.  
     **Examples**:

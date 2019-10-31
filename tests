@@ -67,4 +67,4 @@ abs(z) #5
 conj(z) #3-4j
 angle(z) #atan(4/3)
 load examples/perms -t
-load examples/impl_list -t
+load examples/lambda_list -t

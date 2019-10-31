@@ -15,8 +15,11 @@ def eval_list(list_str, env):
         comprehension = get_list(list_str, 'for')
         if len(comprehension) > 1:
             return toList(eval_comprehension(comprehension, env))
-    lst = [eval_pure(exp, env) for exp in lst]
-    return lst
+    value = lambda exp: eval_pure(exp, env)
+    if lst and lst[-1][0] == '*':
+        return list(map(value, lst[:-1])) + list(value(lst[-1][1:]))
+    else:
+        return list(map(value, lst))
 
 def eval_subscription(lst, subscript_exp, env):
     def eval_listSubscript(lst, indices):
@@ -88,7 +91,7 @@ class function:
         if not self.fixed_argc:
             if len(args) < self.least_argc:
                 raise TypeError('inconsistent number of arguments!')
-            args = args[:self.least_argc] + [args[self.least_argc:]]
+            args = list(args[:self.least_argc]) + [args[self.least_argc:]]
         elif len(args) != self.least_argc:
             raise TypeError('inconsistent number of arguments!')
         bindings = dict(zip(self.params, args))
@@ -113,7 +116,7 @@ def eval_pure(exp, env):
     while exp:
         type, token, exp = get_token(exp)
         prev_val = None if CM.vals.empty() else CM.vals.peek()
-        if is_applying(prev_val, prev_type, type):
+        if is_applying(prev_val, prev_type, type):  # apply a function
             CM.push_val(CM.vals.pop()(*eval_list(token, env)))
             continue
         if all(is_replacable(t, 'number') for t in (type, prev_type)):
@@ -220,7 +223,7 @@ def display(val):
     else: print(val)
 
 
-def run(filename=None, test=False):
+def run(filename=None, test=False, start=0):
     def get_lines(filename):
         if filename:
             file = open(filename, 'r')
@@ -237,11 +240,12 @@ def run(filename=None, test=False):
         if result == py_eval(answer):
             print('--- OK! ---')
         else:
-            print('--- Fail! Expect %s ---' % answer)
+            raise Warning('--- Fail! Expect %s ---' % answer)
 
-    buffer = ''
-    count = 0
+    buffer, count = '', 0
     for line in get_lines(filename):
+        if test and count < start:
+            count += 1; continue
         try:
             print('[{}]> '.format(count), end='')
             line = line.strip() if filename else input()
@@ -252,11 +256,15 @@ def run(filename=None, test=False):
                 continue  # join multiple lines
             elif buffer:
                 line, buffer = buffer+line, ''
+            if line and line[-1] == ';':
+                line = line[:-1]
+                show = False
+            else: show = True
 
             exp, comment = split_exp_comment(line)
             result = eval(exp)
             if result is None: continue
-            display(result)
+            if show: display(result)
 
             ### test ###
             if test and comment:
@@ -267,8 +275,7 @@ def run(filename=None, test=False):
         except KeyboardInterrupt:
             return
         except (Warning if test else Exception) as err:
-            # actually no warning is raised,
-            # I just don't want to catch errors when testing
+            if test: print(err); return
             print('Error:', err)
             CM.reset()
             
