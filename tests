@@ -53,7 +53,7 @@ sin_approx(n) := {x} sum([(-1)^(i // 2)*x^i/fact(i) for i in 1~n if i%2])
 my_sin := sin_approx(10)
 abs(sin(PI/3)-my_sin(PI/3)) < 0.0001 #1
 sum([[1,2],[3,4]]) #[1,2,3,4]
-load SciNums
+load scinums
 T #273.15
 ans.54 #[1,2,3,4]
 ans.55 #273.15
@@ -68,3 +68,4 @@ conj(z) #3-4j
 angle(z) #atan(4/3)
 load examples/perms -t
 load examples/lambda_list -t
+load examples/tree -t

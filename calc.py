@@ -127,7 +127,7 @@ def eval_pure(exp, env):
             try:
                 CM.push_val(py_eval(token))
             except Exception:
-                raise SyntaxError('invalid number!')
+                raise SyntaxError(f'invalid number: {token}')
         elif type == 'name':
             CM.push_val(builtins[token] if token in builtins else env[token])
         elif type == 'op':
@@ -174,7 +174,7 @@ def eval(exp):
     if words[0] == 'ENV':
         for name in global_env.bindings:
             if name == 'ans': continue
-            print("{}: {}".format(name, global_env[name]))
+            print(f"{name}: {global_env[name]}")
         return
     elif words[0] == 'load':
         current_ans = global_env['ans'].copy()
@@ -211,7 +211,7 @@ def display(val):
         if x == 0: return 0
         e = floor(log10(x))
         b = x/10**e
-        return '{} E {}'.format(b, e)
+        return f'{b} E {e}'
     if isNumber(val):
         if abs(val) <= 0.001 or abs(val) >= 10000:
             print(sci_repr(val))
@@ -247,7 +247,7 @@ def run(filename=None, test=False, start=0):
         if test and count < start:
             count += 1; continue
         try:
-            print('[{}]> '.format(count), end='')
+            print(f'[{count}]> ', end='')
             line = line.strip() if filename else input()
             if filename: print(line)
 
@@ -275,7 +275,9 @@ def run(filename=None, test=False, start=0):
         except KeyboardInterrupt:
             return
         except (Warning if test else Exception) as err:
-            if test: print(err); return
+            if test:
+                print(err)
+                raise Warning
             print('Error:', err)
             CM.reset()
             
@@ -287,7 +289,7 @@ def run(filename=None, test=False, start=0):
 from sys import argv
 if len(argv) > 1:
     if argv[1] == '-t':
-        run("tests", True)
+        run("tests", True, 68)
     else:
         run(argv[1])
 else:

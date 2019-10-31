@@ -8,12 +8,13 @@ def get_token(exp):
         def update(f):
             def match(b):
                 def change(c):
-                    if b == c: cnt[0] = f(cnt[0])
+                    nonlocal cnt
+                    if b == c: cnt = f(cnt)
                 return change
             return match
         inc_match = update(lambda n: n+1)
         dec_match = update(lambda n: n-1)
-        cnt = [0]
+        cnt = 0
         if exp[0] is '(':
             inc = inc_match('('); dec = dec_match(')')
         elif exp[0] is '[':
@@ -23,7 +24,8 @@ def get_token(exp):
 
         for i in range(len(exp)):
             inc(exp[i]); dec(exp[i])
-            if cnt[0] == 0: break
+            if cnt == 0: break
+        if cnt: raise SyntaxError(f'unpaired brackets in {exp[-15:]}')
         return exp[:i+1], exp[i+1:]
 
     first_char = exp[0]
@@ -43,13 +45,13 @@ def get_token(exp):
         token, rest = get_bracketed_token(exp)
         return type, token, rest
     elif first_char in ')]}':
-        raise SyntaxError('unpaired brackets!')
+        raise SyntaxError(f'unpaired brackets in {exp[:15]}')
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     elif first_char in op_list:
         return 'op', first_char, exp[1:]
     else:
-        raise SyntaxError('unknown symbol: {}'.format(first_char))
+        raise SyntaxError(f'unknown symbol: {first_char}')
 
     i = 1   
     while i < len(exp):
@@ -79,7 +81,7 @@ def get_token(exp):
 def get_name(exp, no_rest=True):  
     type, name, rest = get_token(exp)
     if not type == 'name' or (no_rest and rest):
-        raise SyntaxError('invalid variable name!')
+        raise SyntaxError(f'invalid variable name: {exp}!')
     if no_rest: return name
     return name, rest
 

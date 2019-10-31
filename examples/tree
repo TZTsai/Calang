@@ -1,0 +1,38 @@
+btree(node, left, right) := [node, left, right]
+bleaf(node) := [node, [], []]
+node(t) := t[0]
+left(t) := t[1]
+right(t) := t[2]
+
+traverse(t) := [] if empty?(t) else \
+traverse(left(t))+[node(t)]+traverse(right(t));
+
+orderedList_to_tree(l) := [] if l=[] else {halflen: len(l)//2, \
+ltot: orderedList_to_tree} btree(l@halflen, ltot(l[:halflen]), \
+ltot(l[halflen+1:]));
+
+ol := [1,2,3,4,5,6,7,8,9]
+t := orderedList_to_tree(ol)
+ol1 := traverse(t)
+ol1 = ol #1
+
+insert(item, tree) := bleaf(item) if empty?(tree) else {entry:node(tree)} \
+cases tree, item=entry; insert(item, left(tree)), item<entry; insert(item, right(tree));
+
+tree(node, branches) := [node] + branches
+add_branch(tree, branch) := tree + [branch]
+binom_tree(n) := [0] if n=0 else {child:binom_tree(n-1)} add_branch(child, child);
+binom_tree_order(bt) := len(bt)-1
+bt := binom_tree(5)
+binom_tree_order(bt) #5
+binom_tree_order(add_branch(bt, bt)) #6
+
+binom_heap_union(h1, h2) := cases h1, h2=[]; h2, h1=[]; ({t1:car(h1), t2:car(h2),\
+union: binom_heap_union} {o1:binom_tree_order(t1),o2:binom_tree_order(t2)} \
+cases [t1]+union(cdr(h1), h2), o1<o2; [t2]+union(h1, cdr(h2)), o1>o2; \
+{a1:car(t1), a2:car(t2)} union(union([add_branch(t1, t2) if a1<=a2 else \
+add_branch(t2, t1)], cdr(h1)), cdr(h2)));
+bt := binom_tree
+h1 := [bt(0), bt(1), bt(3)]
+h2 := [bt(0), bt(2), bt(5)]
+[binom_tree_order(t) for t in binom_heap_union(h1, h2)] #[4,5]

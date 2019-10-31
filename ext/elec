@@ -1,0 +1,5 @@
+load scinums
+T:=300
+kT_q:=kC*T/qe
+
+para(r1, r2) := r1*r2/(r1+r2)
