@@ -52,8 +52,8 @@ Check the file "__builtins.py" to see the available builtin operations and funct
   - ramp(x) := 0 if x<0 else x  
   - rect(x) := 0 if x<-1 else 1 if x<=1 else 0  
 
-    **Syntax 2**: cases \<exp1>, \<cond1>; \<exp2>, \<cond2>; ... ; \<expElse> (note that for the lase expression there is no condition to examine)  
-    **Examples**:  
+  **Syntax 2**: cases \<exp1>, \<cond1>; \<exp2>, \<cond2>; ... ; \<expElse> (note that for the lase expression there is no condition to examine)  
+  **Examples**:  
   - max(x, y, z) := cases x, x > y and x > z; y, y > z; z
 - Local environment  
     **Syntax**: {\<par1>: \<val1>, \<par2>: \<val2>, ...} \<exp>  
@@ -110,7 +110,7 @@ Check the file "__builtins.py" to see the available builtin operations and funct
     m@[range(2), [i for i in [0, 1, 2] if i%2]] (return: [[2],[4]])
   - [i\*j for i in range(10) if i%3 for j in range(10) if i+j>6]
   - sum([i^2 for i in 1~10])
-  - differentiate_polynomial(coeff_list) := let {l=coeff_list} [l@i * i for i in range(len(l)) if i > 0]
+  - differentiate_polynomial(coeff_list) := let {l:coeff_list} [l@i * i for i in range(len(l)) if i > 0]
 - Load files  
     Use the keyword "load" appended by a sequence of file names to load these files.  
     The calculator will run through the loaded file and load its defined variables into the current environment. However, the current evaluation history will not be affected.  
