@@ -51,7 +51,7 @@ Check the file "__builtins.py" to see the available builtin operations and funct
   - rect(x) := 0 if x<-1 else 1 if x<=1 else 0  
     **Syntax 2**: cases \<exp1>, \<cond1>; \<exp2>, \<cond2>; ... ; \<expElse> (note that for the lase expression there is no condition to examine)  
     **Examples**: max(x, y, z) := cases x, x > y and x > z; y, y > z; z
-- Local environment
+- Local environment  
     **Syntax**: {\<par1>: \<val1>, \<par2>: \<val2>, ...} \<exp>
     In fact, it is identical to **({\<par1>, \<par2>, ...} \<exp>)(\<val1>, \<val2>, ...)**.  
     **Examples**:  
