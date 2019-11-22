@@ -6,15 +6,25 @@ right(t) := t[2]
 
 traverse(t) := [] if empty?(t) else \
 traverse(left(t))+[node(t)]+traverse(right(t));
+depth_first_traverse := traverse
+
+queue_helper(l, q) := l if empty?(q) else {t: car[q], dq: cdr[q]} \
+{lt: left(t), rt: right(t)} queue_helper(l+[node(t)], \
+dq + (lt if lt else []) + (rt if rt else []);
+level_traverse(t) := queue_helper([], [t]);
+# !!! has BUG !!!
 
 orderedList_to_tree(l) := [] if l=[] else {halflen: len(l)//2, \
 ltot: orderedList_to_tree} btree(l@halflen, ltot(l[:halflen]), \
 ltot(l[halflen+1:]));
+# This turns a list into a tree whose node is no bigger than its
+# left child and no less than its right child, recursively.
 
 ol := [1,2,3,4,5,6,7,8,9]
 t := orderedList_to_tree(ol)
 ol1 := traverse(t)
 ol1 = ol #1
+ll := level_traverse(t)
 
 insert(item, tree) := bleaf(item) if empty?(tree) else {entry:node(tree)} \
 cases tree, item=entry; insert(item, left(tree)), item<entry; insert(item, right(tree));

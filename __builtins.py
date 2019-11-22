@@ -73,8 +73,7 @@ reconstruct(unitary_r_ops, 'uni_r')
 
 op_list = list(binary_ops) + list(unitary_l_ops) + list(unitary_r_ops)
 
-special_words = set(['ans', 'if', 'else', 'cases', 'for', 'in', 'ENV',
-'load'])
+special_words = set(['if', 'else', 'cases', 'for', 'in', 'ENV', 'load'])
 
 builtins = {'sin':sin, 'cos':cos, 'tan':tan, 'asin':asin, 'acos':acos,
 'atan':atan, 'abs':abs, 'sqrt':sqrt, 'floor':floor, 'ceil':ceil, 'log':log,

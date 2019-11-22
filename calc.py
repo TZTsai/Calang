@@ -63,17 +63,6 @@ def eval_cases(exp, env):
         raise SyntaxError('invalid cases expression!')
     return value(else_case[0])
 
-def eval_ans(exp):
-    if len(global_env['ans']) > 0:
-        if exp and exp[0] == '.':
-            _, index, exp = get_token(exp[1:])
-            index = py_eval(index)
-        else: index = -1
-        CM.push_val(global_env['ans'][index])
-        return exp
-    else: raise ValueError('No previous result!')
-
-
 class function:
     def __init__(self, params, body, env=global_env):
         if params and params[-1][0] == '*':
@@ -122,7 +111,11 @@ def eval_pure(exp, env):
         if all(is_replacable(t, 'number') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
         if type == 'ans':
-            exp = eval_ans(exp)
+            id = -1 if len(token == 1) else int(token[1:])
+            if len(global_env['ans']) > 0:
+                CM.push_val(global_env['ans'][id])
+            else:
+                raise ValueError('No previous result!')
         elif type == 'number':
             try:
                 CM.push_val(py_eval(token))
