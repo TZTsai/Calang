@@ -1,6 +1,6 @@
 s := 1
 5*2/(10-9) #10
-.5*2^2 + log10(100+10*90) #5
+0.5*2^2 + log10(100+10*90) #5
 5!/3! #20
 [1, 2, 3] #[1,2,3]
 . #[1,2,3]
@@ -27,12 +27,12 @@ m := [[1,2,3],[3,4,5],[5,6,7]]
 m[2,1] #6
 mm := m[range(2),[i for i in range(3) if i%2]]
 list(mm) #[[2],[4]]
-2*.4 #0.8
+2*0.4 #0.8
 1e2 #100.0
 1+3e-2 #1.03
 2e3*7e-2 #140.0
 -2^4 #-16
--.5+3 #2.5
+-0.5+3 #2.5
 not 3+3 = 3 #1
 [i if i%2 else 0 for i in range(10) if i%3] #[1,0,0,5,7,0]
 compose := {f, g} {x} f(g(x))
@@ -54,12 +54,12 @@ my_sin := sin_approx(10)
 abs(sin(PI/3)-my_sin(PI/3)) < 0.0001 #1
 sum([[1,2],[3,4]]) #[1,2,3,4]
 load scinums
-T #273.15
+T0 #273.15
 .54 #[1,2,3,4]
 .55 #273.15
 1 + \
 2 #3
-load examples/btree -t
+load examples/tree -t
 z:=3+4I
 real(z) #3
 imag(z) #4
@@ -71,4 +71,8 @@ load examples/lambda_list -t
 load examples/tree -t
 2
 3
-.-2 #2
+.. #2
+1 and 0 #0
+1 xor 0 #1
+... #2
+..-. #-1

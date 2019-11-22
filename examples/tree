@@ -8,11 +8,10 @@ traverse(t) := [] if empty?(t) else \
 traverse(left(t))+[node(t)]+traverse(right(t));
 depth_first_traverse := traverse
 
-queue_helper(l, q) := l if empty?(q) else {t: car[q], dq: cdr[q]} \
+queue_helper(l, q) := l if empty?(q) else {t: q[0], dq: q[1:]} \
 {lt: left(t), rt: right(t)} queue_helper(l+[node(t)], \
-dq + (lt if lt else []) + (rt if rt else []);
+dq + ([lt] if lt else []) + ([rt] if rt else []));
 level_traverse(t) := queue_helper([], [t]);
-# !!! has BUG !!!
 
 orderedList_to_tree(l) := [] if l=[] else {halflen: len(l)//2, \
 ltot: orderedList_to_tree} btree(l@halflen, ltot(l[:halflen]), \

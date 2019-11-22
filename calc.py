@@ -111,11 +111,13 @@ def eval_pure(exp, env):
         if all(is_replacable(t, 'number') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
         if type == 'ans':
-            id = -1 if len(token == 1) else int(token[1:])
-            if len(global_env['ans']) > 0:
+            id = -1 if len(token) == 1 else int(token[1:])
+            try:
                 CM.push_val(global_env['ans'][id])
-            else:
-                raise ValueError('No previous result!')
+            except IndexError:
+                if id < 0:
+                    id = len(global_env['ans']) + id
+                raise ValueError(f'Answer No.{id} not found!')
         elif type == 'number':
             try:
                 CM.push_val(py_eval(token))
@@ -282,7 +284,7 @@ def run(filename=None, test=False, start=0):
 from sys import argv
 if len(argv) > 1:
     if argv[1] == '-t':
-        run("tests", True, 68)
+        run("tests", True)
     else:
         run(argv[1])
 else:

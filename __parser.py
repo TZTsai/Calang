@@ -33,24 +33,26 @@ def get_token(exp):
         while i < n and condition(exp[i]): i += 1
         return i
 
-    first_char = exp[0]
-    if first_char is ',':
+    if exp[0] is ',':
         return 'comma', ',', exp[1:]
-    elif first_char is ':':
+    elif exp[0] is ':':
         return 'colon', ':', exp[1:]
-    elif first_char is ';':
+    elif exp[0] is ';':
         return 'semicolon', ';', exp[1:]
-    elif first_char is '.':
-        start = 2 if exp[1] == '-' else 1
-        m = match(exp, lambda c: c.isdigit(), start)
+    elif exp[:3] == '...':
+        return 'ans', '.-3', exp[3:]
+    elif exp[:2] == '..':
+        return 'ans', '.-2', exp[2:]
+    elif exp[0] is '.':
+        m = match(exp, lambda c: c.isdigit(), 1)
         return 'ans', exp[:m], exp[m:]
-    elif first_char.isdigit():
+    elif exp[0].isdigit():
         m = match(exp, lambda c: c in '0123456789.')
-        if exp[m] == 'e':
+        if m+1 < len(exp) and exp[m] == 'e':
             start = m+2 if exp[m+1] == '-' else m+1
             m = match(exp, lambda c: c.isdigit(), start)
         return 'number', exp[:m], exp[m:]
-    elif first_char.isalpha() or first_char is '_':
+    elif exp[0].isalpha() or exp[0] is '_':
         m = match(exp, lambda c: c.isalnum() or c in '_?')
         token, rest = exp[:m], exp[m:]
         if token in op_list:
@@ -60,17 +62,17 @@ def get_token(exp):
         return 'name', token, rest
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
-    elif first_char in op_list:
-        return 'op', first_char, exp[1:]
-    elif first_char in '([{':
-        type = 'paren' if first_char is '(' else 'bracket' \
-            if first_char is '[' else 'brace'
+    elif exp[0] in op_list:
+        return 'op', exp[0], exp[1:]
+    elif exp[0] in '([{':
+        type = 'paren' if exp[0] is '(' else 'bracket' \
+            if exp[0] is '[' else 'brace'
         token, rest = get_bracketed_token(exp)
         return type, token, rest
-    elif first_char in ')]}':
+    elif exp[0] in ')]}':
         raise SyntaxError(f'unpaired brackets in {exp[:15]}')
     else:
-        raise SyntaxError(f'unknown symbol: {first_char}')
+        raise SyntaxError(f'unknown symbol: {exp[0]}')
 
 
 def get_name(exp, no_rest=True):  
