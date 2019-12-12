@@ -87,7 +87,20 @@ class function:
         return eval_pure(self.body, self.env.make_subEnv(bindings))
 
     def __str__(self):
-        return 'function of {}: {}'.format(', '.join(self.params), self.body)
+        return f"function of {'' if self.fixed_argc else '*'}{', '.join(self.params)}: {self.body}"
+
+
+def get_binding(lexp, rexp, env=global_env):
+    name, rest = get_name(lexp, False)
+    if not rest:
+        return name, eval_pure(rexp, env)
+    else:
+        type, params, rest = get_token(rest)
+        if type != 'paren' or rest != '':
+            raise SyntaxError('invalid variable name!')
+        func = function(get_list(params), rexp, env.make_subEnv())
+        func.env[name] = func  # enable recursion
+        return name, func
 
 
 def is_replacable(type, src_type):
@@ -152,8 +165,8 @@ def eval_pure(exp, env):
             if not segs or len(split(segs[0], ':')) == 1:  # lambda expression
                 CM.push_val(function(segs, exp, env))
             else:  # local environment
-                bindings = [(get_name(s1), eval_pure(s2, env))
-                for s1, s2 in [split(seg, ':') for seg in segs]]
+                bindings = [get_binding(l, r, env) for l, r in \
+                    [split(seg, ':') for seg in segs]]
                 CM.push_val(eval_pure(exp, env.make_subEnv(dict(bindings))))
             break
         else:
@@ -181,17 +194,10 @@ def eval(exp):
     elif assign_mark < 0:
         result = eval_pure(exp, global_env)
     else:  # an assignment
-        name, rest = get_name(exp[:assign_mark], False)
-        if name in special_words or name in builtins or name in op_list:
+        lexp, rexp = exp[:assign_mark], exp[assign_mark+2:]
+        name, value = get_binding(lexp, rexp)
+        if any([name in lst for lst in (special_words, builtins, op_list)]):
             raise SyntaxError('word "%s" is protected!'%name)
-        right_exp = exp[assign_mark+2:]
-        if not rest:  # assignment of a variable
-            value = eval_pure(right_exp, global_env)
-        else:  # assignment of a function
-            type, params_str, rest = get_token(rest)
-            if type != 'paren' or rest != '':
-                raise SyntaxError('invalid variable name!')
-            value = function(get_list(params_str), right_exp)
         global_env[name] = value
         result = value
 

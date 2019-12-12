@@ -76,3 +76,4 @@ load examples/tree -t
 1 xor 0 #1
 ... #2
 ..-. #-1
+load la -t
