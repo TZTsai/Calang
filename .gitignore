@@ -1,4 +1,3 @@
-*.bat
 *.pyc
 *.stackdump
-/.vscode
+*.stackdump

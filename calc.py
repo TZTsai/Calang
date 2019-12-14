@@ -1,6 +1,7 @@
 from __classes import *
 from __parser import *
 from __builtins import *
+from __formatter import *
 
 
 py_eval = eval
@@ -205,9 +206,13 @@ def eval(exp):
         return
     elif words[0] == 'load':
         current_ans = global_env['ans'].copy()
-        test = words[-1] == '-t'
-        for filename in words[1:-1] if test else words[1:]:
-            run(filename, test)
+        test = verbose = 1
+        try: words.remove('-t')
+        except: test = 0
+        try: words.remove('-v')
+        except: verbose = 0
+        for filename in words[1:]:
+            run(filename, test, 0, verbose)
         global_env['ans'] = current_ans
         return
     elif assign_mark < 0:
@@ -227,36 +232,7 @@ def eval(exp):
     return result
 
 
-def display(val):
-    def pos_scinum_str(x):
-        supscripts = '\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079'
-        e = floor(log10(x))
-        b = x/10**e
-        supscript_pos = lambda n: ''.join([supscripts[int(i)] for i in str(n)])
-        supscript = lambda n: '\u207b'+supscript_pos(-n) if e < 0 else supscript_pos(n)
-        return f"{b}×10{supscript(e)}"
-    if isNumber(val):
-        if type(val) is Fraction: print(val)
-        elif type(val) is complex:
-            re, im = val.real, val.imag
-            print(f"{re}{'' if im<0 else '+'}{im}i")
-        elif abs(val) <= 0.001 or abs(val) >= 10000:
-            if val == 0: print('0')
-            elif val > 0: print(pos_scinum_str(val))
-            else: print('-'+pos_scinum_str(-val))
-        else: print(val)
-    elif type(val) is list:
-        if len(val) > 1 and type(val[0]) is list and all(
-            [type(it) is list and len(it) == len(val[0])
-            for it in val[1:]]):  # regarded as a matrix
-            print(matrix_format(val))
-        else:
-            print('['+', '.join(map(str, val))+']')
-    else:
-        print(val)
-
-
-def run(filename=None, test=False, start=0):
+def run(filename=None, test=False, start=0, verbose=True):
     def get_lines(filename):
         if filename:
             file = open(filename, 'r')
@@ -269,20 +245,21 @@ def run(filename=None, test=False, start=0):
             return line, ''
         else:
             return line[:comment_at], line[comment_at+1:]
-    def verify_answer(result, answer):
-        if result == py_eval(answer):
+    def verify_answer(exp, result, answer, verbose):
+        if verbose and result == py_eval(answer):
             print('--- OK! ---')
         else:
-            raise Warning('--- Fail! Expect %s ---' % answer)
+            raise Warning('--- Fail! expected answer of %s is %s ---' % (exp, answer))
 
     buffer, count = '', 0
     for line in get_lines(filename):
         if test and count < start:
             count += 1; continue
         try:
-            print(f'({count})▶ ', end='')  # prompt
+            if verbose:
+                print(f'({count})▶ ', end='')  # prompt
             line = line.strip() if filename else input()
-            if filename: print(line)
+            if filename and verbose: print(line)
 
             if line and line[-1] == '\\':
                 buffer += line[:-1]
@@ -297,11 +274,12 @@ def run(filename=None, test=False, start=0):
             exp, comment = split_exp_comment(line)
             result = eval(exp)
             if result is None: continue
-            if show: display(result)
+            if verbose and show:
+                print(format(result))
 
             ### test ###
             if test and comment:
-                verify_answer(result, comment)
+                verify_answer(exp, result, comment, verbose)
 
             count += 1
 

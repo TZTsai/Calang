@@ -74,27 +74,6 @@ op_list = list(binary_ops) + list(unitary_l_ops) + list(unitary_r_ops)
 special_words = set(['if', 'else', 'cases', 'for', 'in', 'ENV', 'load', 'config'])
 
 
-def normal_mat(mat):
-    space = max([max([len(str(x)) for x in row]) for row in mat])
-    entry_str = lambda x: str(x).ljust(space)
-    row_str = lambda row, start, end: '{} {}{}\n'.format(start, 
-        ' '.join(map(entry_str, row)), end)
-    s = row_str(mat[0], '┌', '┐')
-    for row in mat[1:-1]: s += row_str(row, '│', '│')
-    s += row_str(mat[-1], '└', '┘')
-    return s
-
-latex_mat = lambda mat: '\\begin{bmatrix}' + ' \\\\ '.join([
-    ' & '.join(map(str,row)) for row in mat]) + '\\end{bmatrix}'
-
-latex_table = lambda mat: r'\begin{table}[h!] \centering' + \
-    f"\n\\begin{{tabular}}{{{'|c'*len(mat[0])+'|'}}}\n\\hline\n" + \
-    ' \\\\ \\hline\n'.join([' & '.join(map(str,row)) for row in mat]) + \
-    ' \\\\ \\hline\n\\end{tabular}\n\\end{table}'
-
-matrix_format = normal_mat
-
-
 import numpy as np
 from numpy.polynomial import Polynomial
 poly = lambda *coeffs: Polynomial(coeffs)
