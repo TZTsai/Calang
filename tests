@@ -78,3 +78,6 @@ load examples/tree -t
 ..-. #-1
 load la -t
 config deci
+1/3
+config prec 2
+1/3

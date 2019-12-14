@@ -1,4 +1,5 @@
 from operator import *
+from operator import pow as expt
 from math import *
 from functools import reduce
 from numbers import Number
@@ -50,31 +51,8 @@ decimal_div = lambda x, y: Decimal(x)/Decimal(y)
 fractal_div = lambda x, y: Fraction(x)/Fraction(y)
 getcontext().prec = 4
 
-
-def normal_mat(mat):
-    space = min(5, len(str(mat[0][0]))+1)
-    entry_str = lambda x: str(x).ljust(space)
-    row_str = lambda row, start, end: ''.format(start, 
-        ' '.join(map(entry_str, row)), end)
-    s = ''
-    s += row_str(mat[0], '┌', '┐')
-    for row in mat[1:-1]: s += row_str(row, '|', '|')
-    s += row_str(mat[-1], '└', '┘')
-    return s
-
-latex_mat = lambda mat: '\\begin{bmatrix}' + ' \\\\ '.join([
-    ' & '.join(map(str,row)) for row in mat]) + '\\end{bmatrix}'
-
-latex_table = lambda mat: r'\begin{table}[h!] \centering' + \
-    f"\n\\begin{{tabular}}{{{'|c'*len(mat[0])+'|'}}}\n\\hline\n" + \
-    ' \\\\ \\hline\n'.join([' & '.join(map(str,row)) for row in mat]) + \
-    ' \\\\ \\hline\n\\end{tabular}\n\\end{table}'
-
-matrix_format = normal_mat
-
-
 binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(fractal_div, 8),
-'//':(floordiv, 8), '^':(pow, 14), '%':(mod, 8), '&':(and_, 4), '|':(or_, 2),
+'//':(floordiv, 8), '^':(expt, 14), '%':(mod, 8), '&':(and_, 4), '|':(or_, 2),
 '=':(lambda x, y: 1 if x == y else 0, 0), '!=':(boolToBin(ne), 0),
 '<':(boolToBin(lt), 0), '>':(boolToBin(gt), 0), '<=':(boolToBin(le), 0), 
 '>=':(boolToBin(ge), 0), 'xor': (boolToBin(xor), 3), 
@@ -95,6 +73,36 @@ op_list = list(binary_ops) + list(unitary_l_ops) + list(unitary_r_ops)
 
 special_words = set(['if', 'else', 'cases', 'for', 'in', 'ENV', 'load', 'config'])
 
+
+def normal_mat(mat):
+    space = max([max([len(str(x)) for x in row]) for row in mat])
+    entry_str = lambda x: str(x).ljust(space)
+    row_str = lambda row, start, end: '{} {}{}\n'.format(start, 
+        ' '.join(map(entry_str, row)), end)
+    s = row_str(mat[0], '┌', '┐')
+    for row in mat[1:-1]: s += row_str(row, '│', '│')
+    s += row_str(mat[-1], '└', '┘')
+    return s
+
+latex_mat = lambda mat: '\\begin{bmatrix}' + ' \\\\ '.join([
+    ' & '.join(map(str,row)) for row in mat]) + '\\end{bmatrix}'
+
+latex_table = lambda mat: r'\begin{table}[h!] \centering' + \
+    f"\n\\begin{{tabular}}{{{'|c'*len(mat[0])+'|'}}}\n\\hline\n" + \
+    ' \\\\ \\hline\n'.join([' & '.join(map(str,row)) for row in mat]) + \
+    ' \\\\ \\hline\n\\end{tabular}\n\\end{table}'
+
+matrix_format = normal_mat
+
+
+import numpy as np
+from numpy.polynomial import Polynomial
+poly = lambda *coeffs: Polynomial(coeffs)
+def solve(p):
+    if type(p) is not Polynomial:
+        raise TypeError('expected a polynomial!')
+    return list(p.roots())
+
 builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
 'atan': atan, 'abs': abs, 'sqrt': sqrt, 'floor': floor, 'ceil': ceil, 'log': log,
 'E': e, 'PI': pi, 'I': 1j, 'range': range, 'max': max, 'min': min, 'gcd': gcd,
@@ -110,4 +118,5 @@ builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
 'sinh':sinh, 'cosh':cosh, 'tanh':tanh, 'degrees':degrees, 
 'real': lambda z: z.real, 'imag': lambda z: z.imag, 'conj': lambda z: z.conjugate(),
 'angle': lambda z: atan(z.imag/z.real), 
-'reduce': reduce, 'filter': compose(list, filter), 'map': compose(list, map)}
+'reduce': reduce, 'filter': compose(list, filter), 'map': compose(list, map),
+'poly': poly, 'solve': solve, 'array': lambda *a: np.array(a)}

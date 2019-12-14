@@ -172,9 +172,9 @@ def eval_pure(exp, env):
         elif type == 'config':
             _, key, rest = get_token(exp)
             if key == 'frac': 
-                binary_ops['/'] = fractal_div
+                binary_ops['/'].function = fractal_div
             elif key == 'deci': 
-                binary_ops['/'] = decimal_div
+                binary_ops['/'].function = decimal_div
             elif key == 'prec': 
                 getcontext().prec = py_eval(rest)
             elif key == 'matdisp':
@@ -222,7 +222,8 @@ def eval(exp):
 
     if not (CM.vals.empty() and CM.ops.empty()):
         raise SyntaxError('invalid expression!')
-    global_env['ans'].append(result)
+    if result is not None:
+        global_env['ans'].append(result)
     return result
 
 
@@ -244,7 +245,7 @@ def display(val):
     elif type(val) is list:
         if len(val) > 1 and type(val[0]) is list and all(
             [type(it) is list and len(it) == len(val[0])
-            for it in val[1:]]):
+            for it in val[1:]]):  # regarded as a matrix
             print(matrix_format(val))
         else:
             print('['+', '.join(map(str, val))+']')
