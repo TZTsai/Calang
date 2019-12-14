@@ -169,6 +169,20 @@ def eval_pure(exp, env):
                     [split(seg, ':') for seg in segs]]
                 CM.push_val(eval_pure(exp, env.make_subEnv(dict(bindings))))
             break
+        elif type == 'config':
+            _, key, rest = get_token(exp)
+            print(key, rest)
+            if key == 'frac': Config.div_mode = fractal_div
+            elif key == 'deci': Config.div_mode = decimal_div
+            elif key == 'prec': Config.prec = py_eval(rest)
+            elif key == 'matdisp':
+                mode = rest.strip()
+                if mode == 'normal':
+                    Config.matrix_display = mat_str
+                elif mode == 'latex':
+                    Config.matrix_display = latex_mat_str
+                else: raise SyntaxError('invalid config!')
+            else: raise SyntaxError('invalid config!')
         else:
             raise SyntaxError('invalid token: %s' % token)
         prev_type = type
@@ -208,20 +222,29 @@ def eval(exp):
 
 
 def display(val):
-    def sci_repr(x):
-        if x == 0: return 0
+    def pos_scinum_str(x):
         e = floor(log10(x))
         b = x/10**e
-        return f'{b} E {e}'
+        return f'{b}10^{e}'
     if isNumber(val):
-        if abs(val) <= 0.001 or abs(val) >= 10000:
-            print(sci_repr(val))
+        if type(val) is Fraction: print(val)
         elif type(val) is complex:
             re, im = val.real, val.imag
-            print('{}{}{}i'.format(re, '' if im<0 else '+', im))
+            print(f"{re}{'' if im<0 else '+'}{im}i")
+        elif abs(val) <= 0.001 or abs(val) >= 10000:
+            if val == 0: print('0')
+            elif val > 0: print(pos_scinum_str(val))
+            else: print('-'+pos_scinum_str(-val))
+        else: print(val)
+    elif type(val) is list:
+        if len(val) > 1 and type(val[0]) is list and all(
+            [type(it) is list and len(it) == len(val[0])
+            for it in val[1:]]):
+            print(Config.matrix_display(val))
         else:
-            print(val)
-    else: print(val)
+            print('['+', '.join(map(str, val))+']')
+    else:
+        print(val)
 
 
 def run(filename=None, test=False, start=0):
@@ -248,7 +271,7 @@ def run(filename=None, test=False, start=0):
         if test and count < start:
             count += 1; continue
         try:
-            print(f'[{count}]> ', end='')
+            print(f'{count}) ', end='')
             line = line.strip() if filename else input()
             if filename: print(line)
 

@@ -2,14 +2,14 @@ addv(v1, v2) := map({x1, x2} x1+x2, v1, v2);
 sumv(vects) := reduce(addv, vects);
 subv(v1, v2) := map({x1,x2}x1-x2, v1, v2);
 scalev(v, a) := map({x}a*x, v);
-dot(u, v) := sum(map({x,y}x*y, u, v));
+dot(u, v) := sum(map({x,y}x*conj(y), u, v));
 
 rnum(m) := len(m);
 cnum(m) := len(m@0);
 row(m, k) := rows@k;
 col(m, k) := [row@k for row in m];
 transp(m) := [[m[r][c] for r in range(rnum(m))] for c in range(cnum(m))];
-augment(m1, m2) := [sum(p) for p in zip(m1, m2)];
+augment(m1, m2) := map({r1,r2}r1+r2, m1, m2);
 slice(m, start, end) := [row[start:end] for row in m];
 mult(m1, m2) := {m2t: transp(m2)} [[dot(m1@i, m2t@j) for j in range(cnum(m2))] for i in range(rnum(m1))];
 matmap(f, *mats) := map({*vects} map(f, *vects), *mats);
@@ -26,9 +26,8 @@ proj(v, B) := {nB: map(normalize, B)} sumv(map({c} scalev(c, dot(v, c)), nB));
 # B is a list of vectors, not a matrix, same in Gram_Schmidt
 Gram_Schmidt(B) := {helper(processed, rest): processed if rest = [] else \
 {x: car(rest)} helper(processed+[{p:proj(x, processed)} normalize(subv(x, p))],\
-cdr(rest))} helper(normalize(car(B)), cdr(B));
-#BUG UNFIXED!
-orthonormalize(m) := Gram_Schmidt(transp(m));
+cdr(rest))} helper([normalize(car(B))], cdr(B));
+orthonormalize(m) := transp(Gram_Schmidt(transp(m)));
 orthnorm := orthonormalize;
 
 #test
