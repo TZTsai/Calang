@@ -1,1 +1,2 @@
 para(r1, r2) := r1*r2/(r1+r2)
+compose(f, g) := {*args} f(g(*args))

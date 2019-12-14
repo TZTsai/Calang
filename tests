@@ -77,3 +77,4 @@ load examples/tree -t
 ... #2
 ..-. #-1
 load la -t
+config deci

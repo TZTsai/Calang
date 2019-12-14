@@ -48,8 +48,10 @@ from decimal import Decimal, getcontext
 from fractions import Fraction
 decimal_div = lambda x, y: Decimal(x)/Decimal(y)
 fractal_div = lambda x, y: Fraction(x)/Fraction(y)
+getcontext().prec = 4
 
-def mat_str(mat):
+
+def normal_mat(mat):
     space = min(5, len(str(mat[0][0]))+1)
     entry_str = lambda x: str(x).ljust(space)
     row_str = lambda row, start, end: ''.format(start, 
@@ -60,23 +62,18 @@ def mat_str(mat):
     s += row_str(mat[-1], '└', '┘')
     return s
 
-latex_mat_str = lambda mat: '\\begin{bmatrix}' + ' \\\\ '.join([
+latex_mat = lambda mat: '\\begin{bmatrix}' + ' \\\\ '.join([
     ' & '.join(map(str,row)) for row in mat]) + '\\end{bmatrix}'
 
-latex_table_str = lambda mat: r'\begin{table}[h!] \centering' + \
+latex_table = lambda mat: r'\begin{table}[h!] \centering' + \
     f"\n\\begin{{tabular}}{{{'|c'*len(mat[0])+'|'}}}\n\\hline\n" + \
     ' \\\\ \\hline\n'.join([' & '.join(map(str,row)) for row in mat]) + \
     ' \\\\ \\hline\n\\end{tabular}\n\\end{table}'
 
-class Config:
-    prec = 4
-    div_mode = fractal_div
-    matrix_display = mat_str
-
-getcontext().prec = Config.prec
+matrix_format = normal_mat
 
 
-binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(Config.div_mode, 8),
+binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(fractal_div, 8),
 '//':(floordiv, 8), '^':(pow, 14), '%':(mod, 8), '&':(and_, 4), '|':(or_, 2),
 '=':(lambda x, y: 1 if x == y else 0, 0), '!=':(boolToBin(ne), 0),
 '<':(boolToBin(lt), 0), '>':(boolToBin(gt), 0), '<=':(boolToBin(le), 0), 
@@ -113,5 +110,4 @@ builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
 'sinh':sinh, 'cosh':cosh, 'tanh':tanh, 'degrees':degrees, 
 'real': lambda z: z.real, 'imag': lambda z: z.imag, 'conj': lambda z: z.conjugate(),
 'angle': lambda z: atan(z.imag/z.real), 
-'compose': compose,
 'reduce': reduce, 'filter': compose(list, filter), 'map': compose(list, map)}

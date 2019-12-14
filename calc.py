@@ -171,18 +171,23 @@ def eval_pure(exp, env):
             break
         elif type == 'config':
             _, key, rest = get_token(exp)
-            print(key, rest)
-            if key == 'frac': Config.div_mode = fractal_div
-            elif key == 'deci': Config.div_mode = decimal_div
-            elif key == 'prec': Config.prec = py_eval(rest)
+            if key == 'frac': 
+                binary_ops['/'] = fractal_div
+            elif key == 'deci': 
+                binary_ops['/'] = decimal_div
+            elif key == 'prec': 
+                getcontext().prec = py_eval(rest)
             elif key == 'matdisp':
                 mode = rest.strip()
                 if mode == 'normal':
-                    Config.matrix_display = mat_str
+                    matrix_format = normal_mat
                 elif mode == 'latex':
-                    Config.matrix_display = latex_mat_str
+                    matrix_format = latex_mat
+                elif mode == 'table':
+                    matrix_format = latex_table
                 else: raise SyntaxError('invalid config!')
             else: raise SyntaxError('invalid config!')
+            break
         else:
             raise SyntaxError('invalid token: %s' % token)
         prev_type = type
@@ -240,7 +245,7 @@ def display(val):
         if len(val) > 1 and type(val[0]) is list and all(
             [type(it) is list and len(it) == len(val[0])
             for it in val[1:]]):
-            print(Config.matrix_display(val))
+            print(matrix_format(val))
         else:
             print('['+', '.join(map(str, val))+']')
     else:
@@ -271,7 +276,7 @@ def run(filename=None, test=False, start=0):
         if test and count < start:
             count += 1; continue
         try:
-            print(f'{count}) ', end='')
+            print(f'({count})▶ ', end='')  # prompt
             line = line.strip() if filename else input()
             if filename: print(line)
 
