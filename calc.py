@@ -229,9 +229,12 @@ def eval(exp):
 
 def display(val):
     def pos_scinum_str(x):
+        supscripts = '\u2070\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079'
         e = floor(log10(x))
         b = x/10**e
-        return f'{b}10^{e}'
+        supscript_pos = lambda n: ''.join([supscripts[int(i)] for i in str(n)])
+        supscript = lambda n: '\u207b'+supscript_pos(-n) if e < 0 else supscript_pos(n)
+        return f"{b}×10{supscript(e)}"
     if isNumber(val):
         if type(val) is Fraction: print(val)
         elif type(val) is complex:
