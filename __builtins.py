@@ -2,7 +2,8 @@ from operator import *
 from operator import pow as expt
 from math import *
 from functools import reduce
-from numbers import Number
+from numbers import Number, Rational, Complex
+from fractions import Fraction
 from  __classes import Op
 
 
@@ -44,14 +45,12 @@ def reconstruct(op_dict, type):
         info = op_dict[op]
         op_dict[op] = Op(op, type, info[0], info[1])
 
+def smart_div(x, y):
+    if all(isinstance(w, Rational) for w in (x, y)):
+        return Fraction(x, y)
+    return x / y
 
-from decimal import Decimal, getcontext
-from fractions import Fraction
-decimal_div = lambda x, y: Decimal(x)/Decimal(y)
-fractal_div = lambda x, y: Fraction(x)/Fraction(y)
-getcontext().prec = 4
-
-binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(fractal_div, 8),
+binary_ops = {'+':(add, 6), '-':(sub, 6), '*':(mul, 8), '/':(smart_div, 8),
 '//':(floordiv, 8), '^':(expt, 14), '%':(mod, 8), '&':(and_, 4), '|':(or_, 2),
 '=':(lambda x, y: 1 if x == y else 0, 0), '!=':(boolToBin(ne), 0),
 '<':(boolToBin(lt), 0), '>':(boolToBin(gt), 0), '<=':(boolToBin(le), 0), 
@@ -71,16 +70,16 @@ reconstruct(unitary_r_ops, 'uni_r')
 
 op_list = list(binary_ops) + list(unitary_l_ops) + list(unitary_r_ops)
 
-special_words = set(['if', 'else', 'cases', 'for', 'in', 'ENV', 'load', 'config'])
+special_words = set(['if', 'else', 'cases', 'for', 'in', 'ENV', 'load', 'format'])
 
 
-import numpy as np
-from numpy.polynomial import Polynomial
-poly = lambda *coeffs: Polynomial(coeffs)
-def solve(p):
-    if type(p) is not Polynomial:
-        raise TypeError('expected a polynomial!')
-    return list(p.roots())
+# import numpy as np
+# from numpy.polynomial import Polynomial
+# poly = lambda *coeffs: Polynomial(coeffs)
+# def solve(p):
+#     if type(p) is not Polynomial:
+#         raise TypeError('expected a polynomial!')
+#     return list(p.roots())
 
 builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
 'atan': atan, 'abs': abs, 'sqrt': sqrt, 'floor': floor, 'ceil': ceil, 'log': log,
@@ -97,5 +96,5 @@ builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
 'sinh':sinh, 'cosh':cosh, 'tanh':tanh, 'degrees':degrees, 
 'real': lambda z: z.real, 'imag': lambda z: z.imag, 'conj': lambda z: z.conjugate(),
 'angle': lambda z: atan(z.imag/z.real), 
-'reduce': reduce, 'filter': compose(list, filter), 'map': compose(list, map),
-'poly': poly, 'solve': solve, 'array': lambda *a: np.array(a)}
+'reduce': reduce, 'filter': compose(list, filter), 'map': compose(list, map),}
+# 'poly': poly, 'solve': solve, 'array': lambda *a: np.array(a)}

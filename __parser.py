@@ -39,16 +39,14 @@ def get_token(exp):
         return 'colon', ':', exp[1:]
     elif exp[0] is ';':
         return 'semicolon', ';', exp[1:]
-    elif exp[:3] == '...':
-        return 'ans', '.-3', exp[3:]
-    elif exp[:2] == '..':
-        return 'ans', '.-2', exp[2:]
-    elif exp[0] is '.':
+    elif exp[0] is '"':
+        return 'ans', '.-2', exp[1:]
+    elif exp[0] is '\'':
         m = match(exp, lambda c: c.isdigit(), 1)
         return 'ans', exp[:m], exp[m:]
     elif exp[0].isdigit():
         m = match(exp, lambda c: c in '0123456789.')
-        if m+1 < len(exp) and exp[m] == 'e':
+        if m+1 < len(exp) and exp[m] == 'e':  # scientific notation
             start = m+2 if exp[m+1] == '-' else m+1
             m = match(exp, lambda c: c.isdigit(), start)
         return 'number', exp[:m], exp[m:]

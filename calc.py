@@ -170,22 +170,18 @@ def eval_pure(exp, env):
                     [split(seg, ':') for seg in segs]]
                 CM.push_val(eval_pure(exp, env.make_subEnv(dict(bindings))))
             break
-        elif type == 'config':
+        elif type == 'format':
             _, key, rest = get_token(exp)
-            if key == 'frac': 
-                binary_ops['/'].function = fractal_div
-            elif key == 'deci': 
-                binary_ops['/'].function = decimal_div
-            elif key == 'prec': 
-                getcontext().prec = py_eval(rest)
-            elif key == 'matdisp':
+            if key == 'prec': 
+                format_config.prec = py_eval(rest)
+            elif key == 'matrix':
                 mode = rest.strip()
                 if mode == 'normal':
-                    matrix_format = normal_mat
-                elif mode == 'latex':
-                    matrix_format = latex_mat
-                elif mode == 'table':
-                    matrix_format = latex_table
+                    format_config.matrix = matrix
+                elif mode == 'tex_mat':
+                    format_config.matrix = latex_matrix
+                elif mode == 'tex_table':
+                    format_config.matrix = latex_table
                 else: raise SyntaxError('invalid config!')
             else: raise SyntaxError('invalid config!')
             break
@@ -246,8 +242,8 @@ def run(filename=None, test=False, start=0, verbose=True):
         else:
             return line[:comment_at], line[comment_at+1:]
     def verify_answer(exp, result, answer, verbose):
-        if verbose and result == py_eval(answer):
-            print('--- OK! ---')
+        if result == py_eval(answer):
+            if verbose: print('--- OK! ---')
         else:
             raise Warning('--- Fail! expected answer of %s is %s ---' % (exp, answer))
 
@@ -256,8 +252,7 @@ def run(filename=None, test=False, start=0, verbose=True):
         if test and count < start:
             count += 1; continue
         try:
-            if verbose:
-                print(f'({count})▶ ', end='')  # prompt
+            if verbose: print(f'({count})▶ ', end='')  # prompt
             line = line.strip() if filename else input()
             if filename and verbose: print(line)
 
@@ -274,8 +269,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             exp, comment = split_exp_comment(line)
             result = eval(exp)
             if result is None: continue
-            if verbose and show:
-                print(format(result))
+            if verbose and show: print(format(result))
 
             ### test ###
             if test and comment:
