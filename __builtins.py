@@ -1,7 +1,7 @@
 from operator import add, sub, mul, floordiv, mod, and_, or_, ne, neg, lt, gt, le, ge, xor
 from operator import pow as expt
 from math import sin, cos, tan, factorial, asin, acos, atan, sqrt, floor, ceil, \
-    log, e, pi, log2, exp, log10, gcd, cosh, sinh, tanh, degrees
+    log, e, pi, log2, exp, log10, gcd, cosh, sinh, tanh, degrees, inf
 from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
@@ -86,7 +86,7 @@ special_words = {'if', 'else', 'cases', 'for', 'in', 'ENV', 'load', 'format', 'i
 
 builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
             'atan': atan, 'abs': abs, 'sqrt': sqrt, 'floor': floor, 'ceil': ceil, 'log': log,
-            'E': e, 'PI': pi, 'I': 1j, 'range': range, 'max': max, 'min': min, 'gcd': gcd,
+            'E': e, 'PI': pi, 'I': 1j, 'INF': inf, 'range': range, 'max': max, 'min': min, 'gcd': gcd,
             'list': to_list, 'binom': lambda n, m: factorial(n) / factorial(m), 'log10': log10,
             'log2': log2, 'exp': exp, 'fact': factorial, 'len': len, 'sort': sorted,
             'empty?': lambda l: 0 if len(l) else 1, 'number?': boolToBin(is_number),
