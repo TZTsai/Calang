@@ -3,6 +3,7 @@ sumv(vects) := reduce(addv, vects);
 subv(v1, v2) := map({x1,x2}x1-x2, v1, v2);
 scalev(v, a) := map({x}a*x, v);
 dot(u, v) := sum(map({x,y}x*conj(y), u, v));
+to_mat(v) := [[x] for x in v]
 
 rnum(m) := len(m);
 cnum(m) := len(m@0);
@@ -19,6 +20,7 @@ subm(m1, m2) := matmap({x,y}x-y, m1, m2);
 scalem(m, a) := matmap({x}a*x, m);
 id(n) := [[1 if i=j else 0 for i in range(n)] for j in range(n)];
 diag(m) := [[m[i, j] if i=j else 0 for i in range(rnum(m))] for j in range(cnum(m))]
+eqmat(m1, m2) := all([all([x = 0 for x in r]) for r in subm(m1, m2)])
 
 combine(coeffs, vects) := sumv(map({c,v} scalev(v,c), coeffs, vects));
 norm(v) := sqrt(real(dot(v, v)));
@@ -31,8 +33,17 @@ cdr(rest))} helper([normalize(car(B))], cdr(B));
 orthonormalize(m) := transp(Gram_Schmidt(transp(m)));
 orthnorm := orthonormalize;
 
-#test
-combine([1,2],[[1,0],[0,1]]) #[1,2]
-normalize([3,4]) #[3/5, 4/5]
-proj([1,2,3],[[1,0,0],[0,2,0]]) #[1, 2, 0]
-orthnorm([[1,-1,4],[1,4,-2],[1,4,2],[1,-1,0]]) #[[0.5, -0.5, 0.5], [0.5, 0.5, -0.5], [0.5, 0.5, 0.5], [0.5, -0.5, -0.5]]
+import gauss_jordan
+# import det, eliminate, LU (decomposition), inverse
+load ext
+eliminate :=  compose(list, eliminate)
+LU := compose(list, LU)
+inverse := compose(list, inverse)
+eigenvalues(m) := solve(det(subm(m, scalem(id(rnum(m)), _lambda))))	
+
+#TEST
+combine([1,2],[[1,0],[0,1]]) #(1,2)
+normalize([3,4]) #(3/5, 4/5)
+proj([1,2,3],[[1,0,0],[0,2,0]]) #(1, 2, 0)
+orthnorm([[1,-1,4],[1,4,-2],[1,4,2],[1,-1,0]]) #tuple(tuple(l) for l in ([0.5, -0.5, 0.5], [0.5, 0.5, -0.5], [0.5, 0.5, 0.5], [0.5, -0.5, -0.5]))
+det(scalem(id(3), -2)) #-8

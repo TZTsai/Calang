@@ -101,5 +101,8 @@ class Env:
             else:
                 raise KeyError('unbound symbol: {}'.format(name))
 
+    def define(self, bindings):
+        self.bindings.update(bindings)
+
     def make_subEnv(self, bindings={}):
         return Env(bindings, self)

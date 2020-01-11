@@ -53,11 +53,15 @@ def get_token(exp):
     elif exp[0].isalpha() or exp[0] is '_':
         m = match(exp, lambda c: c.isalnum() or c in '_?')
         token, rest = exp[:m], exp[m:]
-        if token in op_list:
+        if token in op_list:  # operation
             return 'op', token, rest
-        elif token in special_words:
+        elif token in special_words:  # keyword
             return token, token, rest
-        return 'name', token, rest
+        if token[0] is '_':  # symbol
+            type = 'symbol'
+        else:  # variable name
+            type = 'name'
+        return type, token, rest
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     elif exp[0] in op_list:

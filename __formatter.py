@@ -28,7 +28,7 @@ def format(val):
         supscript_pos = lambda n: ''.join([supscripts[int(i)] for i in format(n)])
         supscript = lambda n: '⁻' + supscript_pos(-n) if e < 0 else supscript_pos(n)
         return f"{b}×10{supscript(e)}"
-    if isNumber(val):
+    if is_number(val):
         if isinstance(val, Rational):
             if type(val) == Fraction:
                 val.limit_denominator(10**format_config.prec)
@@ -41,10 +41,10 @@ def format(val):
             elif val > 0: return pos_scinum_str(val)
             else: return '-'+pos_scinum_str(-val)
         else: return str(format_float(val))
-    elif type(val) is list:
+    elif type(val) is tuple:
         if len(val) > 1 and type(val[0]) is list and all(
-            [type(it) is list and len(it) == len(val[0])
-            for it in val[1:]]):  # regarded as a matrix
+            type(it) is list and len(it) == len(val[0])
+            for it in val[1:]):  # regarded as a matrix
             return format_config.matrix(val)
         else:
             return '['+', '.join(map(format, val))+']'

@@ -5,4 +5,4 @@ merge(l1,l2) := cases l1, l2=[]; l2, l1=[]; {a1:l1@0, a2:l2@0} \
 merge_sort(l) := l if len(l) < 2 else {halflen:len(l)//2} \
 {ll:merge_sort(l@range(halflen)), rl:merge_sort(l[halflen:])} merge(ll, rl)
 
-merge_sort(l) #[0,1,2,3,4,5,6,7,8,9]
+merge_sort(l) #(0,1,2,3,4,5,6,7,8,9)
