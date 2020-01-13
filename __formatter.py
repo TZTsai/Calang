@@ -36,6 +36,8 @@ def format(val):
         elif type(val) == complex:
             re, im = format_float(val.real), format_float(val.imag)
             return f"{re} {'-' if im<0 else '+'} {abs(im)}i"
+        elif abs(val) == inf:
+            return '∞'
         elif abs(val) <= 0.001 or abs(val) >= 10000:
             if val == 0: return '0'
             elif val > 0: return pos_scinum_str(val)

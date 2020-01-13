@@ -109,8 +109,8 @@ def get_binding(lexp, rexp, env=global_env):
         return name, func
 
 
-def is_replacable(type, src_type):
-    return type == src_type or type in ['name', 'paren', 'ans']
+def is_replacable(type, *replaced_types):
+    return type in replaced_types + ('name', 'paren', 'ans')
 
 
 def is_applying(prev_val, prev_type, type):
@@ -127,9 +127,10 @@ def calc_eval(exp, env):
         type, token, exp = get_token(exp)
         prev_val = None if CM.vals.empty() else CM.vals.peek()
         if is_applying(prev_val, prev_type, type):  # apply a function
-            CM.push_val(CM.vals.pop()(*eval_list(token, env)))
+            func, args = CM.vals.pop(), eval_list(token, env)
+            CM.push_val(func(*args))
             continue
-        if all(is_replacable(t, 'number') for t in (type, prev_type)):
+        if all(is_replacable(t, 'number', 'symbol') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
         if type == 'ans':
             id = -1 if len(token) == 1 else int(token[1:])
@@ -147,7 +148,7 @@ def calc_eval(exp, env):
         elif type == 'name':
             CM.push_val(builtins[token] if token in builtins else env[token])
         elif type == 'symbol':
-            CM.push_val(sympy.Symbol(token[1:]))
+            CM.push_val(Symbol(token))
         elif type == 'op':
             if (prev_type in (None, 'op')) and token in unitary_l_ops:
                 CM.push_op(unitary_l_ops[token])
@@ -160,7 +161,7 @@ def calc_eval(exp, env):
         elif type == 'else':
             CM.push_op(Op('else', 'bin', lambda x, y: y, -5))
             if CM.vals.peek() != 'false':
-                CM.ops.pop();
+                CM.ops.pop()
                 break  # short circuit
         elif type == 'cases':
             CM.push_val(eval_cases(exp, env));
@@ -184,7 +185,10 @@ def calc_eval(exp, env):
         else:
             raise SyntaxError('invalid token: %s' % token)
         prev_type = type
-    return CM.calc()
+    result = CM.calc()
+    if not is_number(result) and hasattr(result, 'evalf'):
+        result = result.evalf(format_config.prec)
+    return result
 
 
 def calc_exec(exp):

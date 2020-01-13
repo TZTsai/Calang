@@ -1,2 +1,3 @@
 para(r1, r2) := r1*r2/(r1+r2)
 compose(f, g) := {*args} f(g(*args))
+poly(coeffs, symb) := sum([coeffs[i] * symb^i for i in range(len(coeffs))])

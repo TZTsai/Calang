@@ -50,18 +50,21 @@ def get_token(exp):
             start = m+2 if exp[m+1] == '-' else m+1
             m = match(exp, lambda c: c.isdigit(), start)
         return 'number', exp[:m], exp[m:]
-    elif exp[0].isalpha() or exp[0] is '_':
+    elif exp[0].isalpha():  # name
         m = match(exp, lambda c: c.isalnum() or c in '_?')
         token, rest = exp[:m], exp[m:]
         if token in op_list:  # operation
             return 'op', token, rest
         elif token in special_words:  # keyword
             return token, token, rest
-        if token[0] is '_':  # symbol
-            type = 'symbol'
-        else:  # variable name
-            type = 'name'
-        return type, token, rest
+        else:
+            return 'name', token, rest
+    elif exp[0] is '_':  # symbol
+        exp = exp[1:]
+        m = match(exp, lambda c: c.isalnum())
+        if m == 0: raise SyntaxError('absence of symbol name')
+        token, rest = exp[:m], exp[m:]
+        return 'symbol', token, rest
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     elif exp[0] in op_list:

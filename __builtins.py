@@ -1,16 +1,19 @@
 from operator import add, sub, mul, floordiv, mod, and_, or_, ne, neg, lt, gt, le, ge, xor
 from operator import pow as expt
-from math import sin, cos, tan, factorial, asin, acos, atan, sqrt, floor, ceil, \
-    log, e, pi, log2, exp, log10, gcd, cosh, sinh, tanh, degrees, inf
 from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
-import sympy
+from math import e, pi, inf, log10
+from sympy import Symbol, solve, limit, integrate, diff, simplify, evalf, \
+    sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh
 from __classes import Op
 
 
 def is_number(value):
     return issubclass(type(value), Number)
+
+def is_symbol(value):
+    return type(value) == Symbol
 
 
 def is_iterable(value):
@@ -57,9 +60,9 @@ def smart_div(x, y):
         return Fraction(x, y)
     return x / y
 
-
-def substitute(exp, bindings):
-    return exp.subs(bindings)
+def substitute(exp, *bindings):
+    return exp.subs(zip([bindings[i] for i in range(len(bindings)) if i%2 == 0],
+                        [bindings[i] for i in range(len(bindings)) if i%2 == 1]))
 
 
 binary_ops = {'+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (smart_div, 8),
@@ -85,17 +88,17 @@ op_list = list(binary_ops) + list(unitary_l_ops) + list(unitary_r_ops)
 special_words = {'if', 'else', 'cases', 'for', 'in', 'ENV', 'load', 'format', 'import'}
 
 builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
-            'atan': atan, 'abs': abs, 'sqrt': sqrt, 'floor': floor, 'ceil': ceil, 'log': log,
+            'atan': atan, 'abs': abs, 'sqrt': sqrt, 'floor': floor, 'log': log,
             'E': e, 'PI': pi, 'I': 1j, 'INF': inf, 'range': range, 'max': max, 'min': min, 'gcd': gcd,
-            'list': to_list, 'binom': lambda n, m: factorial(n) / factorial(m), 'log10': log10,
-            'log2': log2, 'exp': exp, 'fact': factorial, 'len': len, 'sort': sorted,
-            'empty?': lambda l: 0 if len(l) else 1, 'number?': boolToBin(is_number),
-            'iter?': boolToBin(is_iterable), 'function?': boolToBin(is_function),
+            'binom': lambda n, m: factorial(n) / factorial(m), 'fact': factorial, 'len': len, 'sort': sorted,
+            'exp': exp, 'lg': lambda x: log(x)/log(10), 'ln': log, 'log2': lambda x: log(x)/log(2),
+            'empty?': lambda l: 0 if len(l) else 1, 'number?': boolToBin(is_number), 'symbol?': boolToBin(is_symbol),
+            'iter?': boolToBin(is_iterable), 'function?': boolToBin(is_function), 'list': to_list, 
             'sum': lambda l: reduce(add, l), 'prod': lambda l: reduce(mul, l),
             'car': lambda l: l[0], 'cdr': lambda l: l[1:],
             'all': all, 'any': any, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),
-            'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': degrees,
+            'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': lambda x: x / pi * 180,
             'real': lambda z: z.real, 'imag': lambda z: z.imag, 'conj': lambda z: z.conjugate(),
             'angle': lambda z: atan(z.imag / z.real),
             'reduce': reduce, 'filter': compose(tuple, filter), 'map': compose(tuple, map), 
-            'solve': sympy.solve, 'limit': sympy.limit, 'diff': sympy.diff, 'int': sympy.integrate}
+            'solve': solve, 'limit': limit, 'diff': diff, 'int': integrate, 'subs': substitute, 'simp': simplify}
