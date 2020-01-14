@@ -1,4 +1,5 @@
 from __builtins import *
+from sympy import latex
 
 def matrix(mat):
     space = max([max([len(format(x)) for x in row]) for row in mat])
@@ -10,28 +11,34 @@ def matrix(mat):
     s += row_str(mat[-1], '└', '┘')
     return s
 
-latex_matrix = lambda mat: '\\begin{bmatrix}' + ' \\\\ '.join([
-    ' & '.join(map(format,row)) for row in mat]) + '\\end{bmatrix}'
+# latex_matrix = lambda mat: '\\begin{bmatrix}' + ' \\\\ '.join([
+#     ' & '.join(map(format,row)) for row in mat]) + '\\end{bmatrix}'
 
-latex_table = lambda mat: r'\begin{table}[h!]\n\centering' + \
-    f"\n\\begin{{tabular}}{{{'|c'*len(mat[0])+'|'}}}\n\\hline\n" + \
-    ' \\\\ \\hline\n'.join([' & '.join(map(format,row)) for row in mat]) + \
-    ' \\\\ \\hline\n\\end{tabular}\n\\end{table}'
+# latex_table = lambda mat: r'\begin{table}[h!]\n\centering' + \
+#     f"\n\\begin{{tabular}}{{{'|c'*len(mat[0])+'|'}}}\n\\hline\n" + \
+#     ' \\\\ \\hline\n'.join([' & '.join(map(format,row)) for row in mat]) + \
+#     ' \\\\ \\hline\n\\end{tabular}\n\\end{table}'
 
 def format(val):
     def format_float(x):
-        return round(x, format_config.prec)
+        prec = config.prec
+        return float(f'%.{prec}g' % x)
     def pos_scinum_str(x):
         supscripts = '⁰¹²³⁴⁵⁶⁷⁸⁹'
         e = floor(log10(x))
         b = format_float(x/10**e)
-        supscript_pos = lambda n: ''.join([supscripts[int(i)] for i in format(n)])
+        supscript_pos = lambda n: ''.join([supscripts[int(i)] for i in str(n)])
         supscript = lambda n: '⁻' + supscript_pos(-n) if e < 0 else supscript_pos(n)
         return f"{b}×10{supscript(e)}"
+    def is_matrix(x):
+        return is_iterable(x) and len(x) > 1 and is_iterable(x[0]) and \
+            all(is_iterable(it) and len(it) == len(x[0]) for it in x[1:])
+    if config.latex:
+        return latex(Matrix(val) if is_matrix(val) else val)
     if is_number(val):
         if isinstance(val, Rational):
             if type(val) == Fraction:
-                val.limit_denominator(10**format_config.prec)
+                val.limit_denominator(10**config.prec)
             return str(val)
         elif type(val) == complex:
             re, im = format_float(val.real), format_float(val.imag)
@@ -44,16 +51,15 @@ def format(val):
             else: return '-'+pos_scinum_str(-val)
         else: return str(format_float(val))
     elif type(val) is tuple:
-        if len(val) > 1 and type(val[0]) is list and all(
-            type(it) is list and len(it) == len(val[0])
-            for it in val[1:]):  # regarded as a matrix
-            return format_config.matrix(val)
+        if is_matrix(val):
+            return matrix(val)
         else:
             return '['+', '.join(map(format, val))+']'
     else:
         return str(val)
 
 
-format_config = lambda: None
-format_config.matrix = matrix
-format_config.prec = 4
+config = lambda: None
+# config.matrix = matrix
+config.prec = 4
+config.latex = False

@@ -99,7 +99,7 @@ class Env:
             if self.parent:
                 return self.parent[name]
             else:
-                raise KeyError('unbound symbol: {}'.format(name))
+                raise KeyError(f'unbound symbol: {format(name)}')
 
     def define(self, bindings):
         self.bindings.update(bindings)

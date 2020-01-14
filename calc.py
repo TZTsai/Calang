@@ -16,27 +16,36 @@ def eval_list(list_str, env):
         if len(comprehension) > 1:
             return eval_comprehension(comprehension, env)
     value = lambda exp: calc_eval(exp, env)
-    if lst and lst[-1][0] == '*':
-        return tuple(map(value, lst[:-1])) + tuple(value(lst[-1][1:]))
-    else:
-        return tuple(map(value, lst))
+    result = []
+    for exp in lst:
+        if exp[0] == '*':
+            result.extend(value(exp[1:]))
+        else:
+            result.append(value(exp))
+    return tuple(result)
 
 
 def eval_subscription(lst, subscript_exp, env):
-    def eval_listSubscript(lst, indices):
-        if not indices: return lst
-        items = subscript(lst, indices[0])
-        if is_iterable(indices[0]):
-            return tuple(eval_listSubscript(item, indices[1:]) for item in items)
+    def eval_index(index_exp):
+        slice_args = [calc_eval(exp, env) for exp in split(index_exp, ':')]
+        if len(slice_args) > 1:
+            return slice(*slice_args)
         else:
-            return eval_listSubscript(items, indices[1:])
-
-    slice_exps = get_list(subscript_exp, ':')
-    if len(slice_exps) > 1:  # slice subscript
-        slice_args = [calc_eval(exp, env) for exp in slice_exps]
-        return lst[slice(*slice_args)]
-    else:
-        return eval_listSubscript(lst, eval_list(subscript_exp, env))
+            return slice_args[0]
+    def eval_chain_subscript(lst, subscript_exps):
+        if not subscript_exps: return lst
+        first_index = eval_index(subscript_exps[0])
+        items = index(lst, first_index)
+        if is_iterable(first_index) or type(first_index) == slice:
+            return tuple(eval_chain_subscript(item, subscript_exps[1:])
+                         for item in items)
+        else:
+            return eval_chain_subscript(items, subscript_exps[1:])
+    subscript_exps = get_list(subscript_exp)
+    if not subscript_exps: raise SyntaxError('invalid subscript')
+    if len(subscript_exps) == 1:
+        return index(lst, eval_index(subscript_exps[0]))
+    return eval_chain_subscript(lst, subscript_exps)
 
 
 def eval_comprehension(comprehension, env):
@@ -146,9 +155,13 @@ def calc_eval(exp, env):
             except Exception:
                 raise SyntaxError(f'invalid number: {token}')
         elif type == 'name':
-            CM.push_val(builtins[token] if token in builtins else env[token])
+            try:
+                val = builtins[token] if token in builtins else env[token]
+            except KeyError:
+                val = Symbol(token)
+            CM.push_val(val)
         elif type == 'symbol':
-            CM.push_val(Symbol(token))
+            CM.push_val(Symbol(token[1:]))
         elif type == 'op':
             if (prev_type in (None, 'op')) and token in unitary_l_ops:
                 CM.push_op(unitary_l_ops[token])
@@ -186,8 +199,8 @@ def calc_eval(exp, env):
             raise SyntaxError('invalid token: %s' % token)
         prev_type = type
     result = CM.calc()
-    if not is_number(result) and hasattr(result, 'evalf'):
-        result = result.evalf(format_config.prec)
+    if hasattr(result, 'evalf'):
+        result = result.evalf(config.prec)
     return result
 
 
@@ -221,22 +234,14 @@ def calc_exec(exp):
             definitions = locals['definitions']
             global_env.define(definitions)
             return set(definitions)
-    elif words[0] == 'format':
+    elif words[0] == 'set':
         if len(words) < 3:
             raise SyntaxError("invalid format setting")
         if words[1] == 'prec':
             prec = py_eval(words[2])
-            format_config.prec = prec
-        elif words[1] == 'matrix':
-            mode = words[2]
-            if mode == 'normal':
-                format_config.matrix = matrix
-            elif mode == 'tex_mat':
-                format_config.matrix = latex_matrix
-            elif mode == 'tex_table':
-                format_config.matrix = latex_table
-            else:
-                raise SyntaxError('invalid matrix format setting')
+            config.prec = prec
+        elif words[1] == 'latex':
+            config.latex = True if words[2] == 'on' else False
         else:
             raise SyntaxError('invalid format setting')
         return
@@ -275,7 +280,14 @@ def run(filename=None, test=False, start=0, verbose=True):
             return line[:comment_at], line[comment_at + 1:]
 
     def verify_answer(exp, result, answer, verbose):
-        if result == py_eval(answer):
+        def equal(x, y):
+            if is_number(x) and is_number(y):
+                return abs(x-y) < 0.001
+            if all(type(t) == tuple for t in (x, y)):
+                return len(x) == len(y) and all(equal(xi, yi) 
+                    for xi, yi in zip(x, y))
+            return x == y
+        if equal(result, py_eval(answer)):
             if verbose: print('--- OK! ---')
         else:
             raise Warning('--- Fail! expected answer of %s is %s, but actual result is %s ---'

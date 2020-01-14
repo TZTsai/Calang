@@ -39,11 +39,11 @@ load ext
 eliminate :=  compose(list, eliminate)
 LU := compose(list, LU)
 inverse := compose(list, inverse)
-eigenvalues(m) := solve(det(subm(m, scalem(id(rnum(m)), _lambda))))	
+eigenvalues(m) := solve(det(subm(m, scalem(id(rnum(m)), lambda))))	
 
 #TEST
 combine([1,2],[[1,0],[0,1]]) #(1,2)
-normalize([3,4]) #(3/5, 4/5)
+normalize([3,4]) #(0.6,0.8)
 proj([1,2,3],[[1,0,0],[0,2,0]]) #(1, 2, 0)
 orthnorm([[1,-1,4],[1,4,-2],[1,4,2],[1,-1,0]]) #tuple(tuple(l) for l in ([0.5, -0.5, 0.5], [0.5, 0.5, -0.5], [0.5, 0.5, 0.5], [0.5, -0.5, -0.5]))
 det(scalem(id(3), -2)) #-8

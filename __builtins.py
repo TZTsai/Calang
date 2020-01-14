@@ -4,13 +4,13 @@ from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from math import e, pi, inf, log10
-from sympy import Symbol, solve, limit, integrate, diff, simplify, evalf, \
+from sympy import Symbol, solve, limit, integrate, diff, simplify, evalf, Number as sympyNumber, \
     sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh
 from __classes import Op
 
 
 def is_number(value):
-    return issubclass(type(value), Number)
+    return isinstance(value, Number) or isinstance(value, sympyNumber)
 
 def is_symbol(value):
     return type(value) == Symbol
@@ -24,7 +24,7 @@ def is_function(value):
     return callable(value)
 
 
-def subscript(lst, index):
+def index(lst, index):
     if not hasattr(lst, '__getitem__'):
         raise SyntaxError('{} is not subscriptable'.format(lst))
     return tuple(lst[i] for i in index) if is_iterable(index) else lst[index]
@@ -61,6 +61,8 @@ def smart_div(x, y):
     return x / y
 
 def substitute(exp, *bindings):
+    if is_iterable(exp):
+        return tuple(substitute(x, *bindings) for x in exp)
     return exp.subs(zip([bindings[i] for i in range(len(bindings)) if i%2 == 0],
                         [bindings[i] for i in range(len(bindings)) if i%2 == 1]))
 
@@ -71,7 +73,7 @@ binary_ops = {'+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (smart_div, 8),
               '<': (boolToBin(lt), 0), '>': (boolToBin(gt), 0), '<=': (boolToBin(le), 0),
               '>=': (boolToBin(ge), 0), 'xor': (boolToBin(xor), 3),
               'in': (lambda x, l: 1 if x in l else 0, -2),
-              '@': (subscript, 16), '~': (lambda a, b: range(a, b + 1), 5),
+              '@': (index, 16), '~': (lambda a, b: range(a, b + 1), 5),
               'and': (boolToBin(lambda a, b: a and b), -5),
               'or': (boolToBin(lambda a, b: a or b), -6)}
 reconstruct(binary_ops, 'bin')
@@ -98,7 +100,7 @@ builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
             'car': lambda l: l[0], 'cdr': lambda l: l[1:],
             'all': all, 'any': any, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),
             'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': lambda x: x / pi * 180,
-            'real': lambda z: z.real, 'imag': lambda z: z.imag, 'conj': lambda z: z.conjugate(),
-            'angle': lambda z: atan(z.imag / z.real),
+            'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else z, 
+            'conj': lambda z: z.conjugate(), 'angle': lambda z: atan(z.imag / z.real),
             'reduce': reduce, 'filter': compose(tuple, filter), 'map': compose(tuple, map), 
             'solve': solve, 'limit': limit, 'diff': diff, 'int': integrate, 'subs': substitute, 'simp': simplify}
