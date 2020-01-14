@@ -54,7 +54,8 @@ def format(val):
         if is_matrix(val):
             return matrix(val)
         else:
-            return '['+', '.join(map(format, val))+']'
+            return '['+', '.join(map(lambda v: ('\n' if is_matrix(v) 
+                else '') + format(v), val))+']'
     else:
         return str(val)
 
