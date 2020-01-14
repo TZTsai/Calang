@@ -103,4 +103,4 @@ builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
             'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else z, 
             'conj': lambda z: z.conjugate(), 'angle': lambda z: atan(z.imag / z.real),
             'reduce': reduce, 'filter': compose(tuple, filter), 'map': compose(tuple, map), 
-            'solve': solve, 'limit': limit, 'diff': diff, 'int': integrate, 'subs': substitute, 'simp': simplify}
+            'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute, 'simp': simplify}

@@ -50,7 +50,7 @@ def format(val):
             elif val > 0: return pos_scinum_str(val)
             else: return '-'+pos_scinum_str(-val)
         else: return str(format_float(val))
-    elif type(val) is tuple:
+    elif is_iterable(val):
         if is_matrix(val):
             return matrix(val)
         else:

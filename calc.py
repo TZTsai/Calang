@@ -283,7 +283,7 @@ def run(filename=None, test=False, start=0, verbose=True):
         def equal(x, y):
             if is_number(x) and is_number(y):
                 return abs(x-y) < 0.001
-            if all(type(t) == tuple for t in (x, y)):
+            if all(is_iterable(t) for t in (x, y)):
                 return len(x) == len(y) and all(equal(xi, yi) 
                     for xi, yi in zip(x, y))
             return x == y
