@@ -5,11 +5,11 @@ Run "python calc.py" to start the program.
 In this calculator, there are five types of values: Number, Symbol, List, Range and Function.
 Every evaluation will return a value of one of these four types.  
 
+Check the file "__builtins.py" to see the available built-in operations and functions.  
+
 ## Demo
 
-<iframe height=498 width=510 src="CalcDemo.mp4">  
-
-Check the file "__builtins.py" to see the available builtin operations and functions.  
+<iframe src="demo.gif">  
 
 ## Features
 
@@ -73,6 +73,7 @@ Check the file "__builtins.py" to see the available builtin operations and funct
   **Syntax 2**: cases \<exp1>, \<cond1>; \<exp2>, \<cond2>; ... ; \<expElse> (note that for the lase expression there is no condition to examine)  
   
   **Examples**:  
+  
   - max(x, y, z) := cases x, x > y and x > z; y, y > z; z
 - Local environment  
     **Syntax**: {\<par1>: \<val1>, \<par2>: \<val2>, ...} \<exp>  
@@ -169,6 +170,7 @@ Check the file "__builtins.py" to see the available builtin operations and funct
     Use the keyword "import" appended by a sequence of python module names (located in "pymodules") to import the definitions in these modules. To create such an importable module, you must create a python file in the "pymodules" directory and apply a variable "definitions" bound to a dict object, containing the definitions you want to export (the main program will only import "definitions" in this file). This feature is used to empower calculator with python functions and powerful python modules like numpy and sympy.  
   
     **Example**:
+  
   - import gauss_jordan
 
 You can find more examples in the "examples" folder.  
