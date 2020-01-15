@@ -101,6 +101,9 @@ class Env:
             else:
                 raise KeyError(f'unbound symbol: {format(name)}')
 
+    def remove(self, name):
+        self.bindings.pop(name)
+
     def define(self, bindings):
         self.bindings.update(bindings)
 

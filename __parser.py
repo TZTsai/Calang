@@ -1,37 +1,35 @@
 from __builtins import op_list, special_words
 
+def match(exp, condition, start=0):
+    i, n = start, len(exp)
+    while i < n and condition(exp[i]): i += 1
+    return i
 
 def get_token(exp):
-    exp = exp.strip()
 
     def get_bracketed_token(exp):
-        def update(f):
-            def match(b):
-                def change(c):
-                    nonlocal cnt
-                    if b == c: cnt = f(cnt)
-                return change
-            return match
-        inc_match = update(lambda n: n+1)
-        dec_match = update(lambda n: n-1)
-        cnt = 0
-        if exp[0] is '(':
-            inc = inc_match('('); dec = dec_match(')')
-        elif exp[0] is '[':
-            inc = inc_match('['); dec = dec_match(']')
-        elif exp[0] is '{':
-            inc = inc_match('{'); dec = dec_match('}')
-
+        def update_stack(stack, char):
+            pairs = ('()', '[]', '{}')
+            for p in pairs:
+                if char in p:
+                    if char == p[0]: 
+                        stack.append(char)
+                    elif stack[-1] != p[0]:
+                        raise SyntaxError
+                    else: stack.pop()
+                    break
+        stack = []
         for i in range(len(exp)):
-            inc(exp[i]); dec(exp[i])
-            if cnt == 0: break
-        if cnt: raise SyntaxError(f'unpaired brackets in {exp[-15:]}')
+            try:
+                update_stack(stack, exp[i])
+            except SyntaxError:
+                raise SyntaxError(f'unpaired brackets in "{exp[i-14:i+1]}"')
+            if stack == []: break
+        if stack: 
+            raise SyntaxError(f'unpaired brackets in "{exp[-15:]}"')
         return exp[:i+1], exp[i+1:]
-    
-    def match(exp, condition, start=0):
-        i, n = start, len(exp)
-        while i < n and condition(exp[i]): i += 1
-        return i
+
+    exp = exp.strip()
 
     if exp[0] is ',':
         return 'comma', ',', exp[1:]

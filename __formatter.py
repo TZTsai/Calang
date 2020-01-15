@@ -1,5 +1,6 @@
 from __builtins import *
 from sympy import latex
+from re import sub as translate
 
 def matrix(mat):
     space = max([max([len(format(x)) for x in row]) for row in mat])
@@ -57,7 +58,15 @@ def format(val):
             return '['+', '.join(map(lambda v: ('\n' if is_matrix(v) 
                 else '') + format(v), val))+']'
     else:
-        return str(val)
+        def repl_star(match):
+            s = match.string
+            starpos, endpos = match.span('varpar')
+            return s[:starpos] + s[starpos+1:endpos] + '... ' + s[endpos:]
+        mapping = {r'\*\*': '^', r'^function .*(?P<varpar>\*\w)\:': repl_star, r'\*': '\u00b7'}
+        s = str(val)
+        for k in mapping:
+            s = translate(k, mapping[k], s)
+        return s
 
 
 config = lambda: None

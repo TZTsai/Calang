@@ -102,7 +102,8 @@ class function:
         return calc_eval(self.body, self.env.make_subEnv(bindings))
 
     def __str__(self):
-        return f"function of {'' if self.fixed_argc else '*'}{', '.join(self.params)}: {self.body}"
+        params = self.params[:-1] + ['' if self.fixed_argc else '*' + self.params[-1]]
+        return f"function of {', '.join(params)}: {self.body}"
 
 
 def get_binding(lexp, rexp, env=global_env):
@@ -199,8 +200,6 @@ def calc_eval(exp, env):
             raise SyntaxError('invalid token: %s' % token)
         prev_type = type
     result = CM.calc()
-    if hasattr(result, 'evalf'):
-        result = result.evalf(config.prec)
     return result
 
 
@@ -211,7 +210,6 @@ def calc_exec(exp):
         for name in global_env.bindings:
             if name == 'ans': continue
             print(f"{name}: {global_env[name]}")
-        return
     elif words[0] == 'load':
         current_ans = global_env['ans'].copy()
         test = verbose = True
@@ -226,7 +224,6 @@ def calc_exec(exp):
         for filename in words[1:]:  # default folder: ./modules
             run('modules/' + filename, test, 0, verbose)
         global_env['ans'] = current_ans
-        return
     elif words[0] == 'import':
         for modules in words[1:]:
             locals = {}
@@ -244,7 +241,9 @@ def calc_exec(exp):
             config.latex = True if words[2] == 'on' else False
         else:
             raise SyntaxError('invalid format setting')
-        return
+    elif words[0] == 'del':
+        for name in words[1:]:
+            global_env.remove(name)
     else:
         assign_mark = exp.find(':=')
         if assign_mark < 0:
@@ -256,12 +255,11 @@ def calc_exec(exp):
                 raise SyntaxError('word "%s" is protected!' % name)
             global_env[name] = value
             result = value
-
-    if not (CM.vals.empty() and CM.ops.empty()):
-        raise SyntaxError('invalid expression!')
-    if result is not None:
-        global_env['ans'].append(result)
-    return result
+        if not (CM.vals.empty() and CM.ops.empty()):
+            raise SyntaxError('invalid expression!')
+        if result is not None:
+            global_env['ans'].append(result)
+        return result
 
 
 def run(filename=None, test=False, start=0, verbose=True):
