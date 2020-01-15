@@ -54,7 +54,7 @@ def standardize(f):
         return b
     def pynumfy(val):
         # if val is a sympy number, convert it to a python number
-        if isinstance(val, Rational):
+        if any(isinstance(val, c) for c in (int, float, complex, Fraction)):
             return val
         elif isinstance(val, Integer):
             return int(val)
