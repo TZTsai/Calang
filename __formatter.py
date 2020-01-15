@@ -3,13 +3,15 @@ from sympy import latex
 from re import sub as translate
 
 def matrix(mat):
-    space = max([max([len(format(x)) for x in row]) for row in mat])
-    entry_str = lambda x: format(x).ljust(space)
-    row_str = lambda row, start, end: '{} {}{}\n'.format(start, 
-        ' '.join(map(entry_str, row)), end)
-    s = row_str(mat[0], '┌', '┐')
-    for row in mat[1:-1]: s += row_str(row, '│', '│')
-    s += row_str(mat[-1], '└', '┘')
+    mat = [[format(x) for x in row] for row in mat]
+    space = max([max([len(s) for s in row]) for row in mat])
+    just_space = lambda s: s.ljust(space)
+    row_str = lambda row, start, end: \
+        f"{start} {' '.join(map(just_space, row))}{end}\n"
+    col_num = len(mat[0])
+    s = row_str(['']*col_num, '┏', '┓')
+    for row in mat: s += row_str(row, '┃', '┃')
+    s += row_str(['']*col_num, '┗', '┛')
     return s
 
 # latex_matrix = lambda mat: '\\begin{bmatrix}' + ' \\\\ '.join([
