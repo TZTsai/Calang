@@ -48,12 +48,7 @@ def format(val, indent=0):
                 return format_scinum(val)
             else: return str(format_float(val))
         else:  # symbol, function, range
-            def replace_vararg(match):
-                s = match.string
-                starpos, endpos = match.span('varpar')
-                return s[:starpos] + s[starpos+1:endpos] + '... :'
-            mapping = [(r'\*\*', '^'), (r'^function .*(?P<varpar>\*\w*)\:', replace_vararg), 
-                (r'\*', '\u00b7')]
+            mapping = [(r'\*\*', '^'), (r'\*', '\u00b7')]
             s = str(val)
             for p in mapping:
                 s = translate(p[0], p[1], s)

@@ -104,8 +104,8 @@ class function:
         return calc_eval(self.body, self.env.make_subEnv(bindings))
 
     def __str__(self):
-        params = self.params[:-1] + ['' if self.fixed_argc else '*' + self.params[-1]]
-        return f"function of {', '.join(params)}: {self.body}"
+        params_str = ', '.join(self.params) + ('' if self.fixed_argc else '... ')
+        return f"function of {params_str}: {self.body}"
 
 
 def get_binding(lexp, rexp, env=global_env):
