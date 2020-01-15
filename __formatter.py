@@ -48,7 +48,7 @@ def format(val, indent=0):
                 return format_scinum(val)
             else: return str(format_float(val))
         else:  # symbol, function, range
-            mapping = [(r'\*\*', '^'), (r'\*', '\u00b7')]
+            mapping = [(r'\*\*', '^'), (r'(?<![\,\(\[])\*', '\u00b7')]
             s = str(val)
             for p in mapping:
                 s = translate(p[0], p[1], s)

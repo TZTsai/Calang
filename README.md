@@ -5,12 +5,16 @@ Run "python calc.py" to start the program.
 In this calculator, there are five types of values: Number, Symbol, List, Range and Function.
 Every evaluation will return a value of one of these four types.  
 
+## Demo
+
+<iframe height=498 width=510 src="CalcDemo.mp4">  
+
 Check the file "__builtins.py" to see the available builtin operations and functions.  
 
 ## Features
 
 - Evaluation of simple arithmetic expressions  
-    **Examples**: 1+3, 0.5*2, -8^(4-2), 147 % 43 (modular arithmetic), 52 // 17 (integer division), 
+    **Examples**: 1+3, 0.5*2, -8^(4-2), 147 % 43 (modular arithmetic), 52 // 17 (integer division),
     8 & 3 (bitwise "and" operation), 1e10 \* 3e-5 (supports scientific notation)
 - History  
     Use keyword **'** to represent the result of the last calculation.  
@@ -32,7 +36,7 @@ Check the file "__builtins.py" to see the available builtin operations and funct
     Return 1 if the result is true, otherwise return 0  
     **Examples**: 3 > 2, 2 = 2, x = y xor x = z, x > 0 and x < 2, not (a or b) = (not a and not b)
 - Definition and evaluation of variables  
-    A legitimate variable name begins with a letter and only contains digits, letters, underscores and '?' 
+    A legitimate variable name begins with a letter and only contains digits, letters, underscores and '?'
     (only used at the end of the name of a function that does a judgement).
     **Syntax**: \<var> := \<exp>  
     **Examples**: x := 1, g := x > 2, c := x if x > 2 else 0
@@ -167,4 +171,4 @@ Check the file "__builtins.py" to see the available builtin operations and funct
     **Example**:
   - import gauss_jordan
 
-You can find more examples in the "examples" folder. You can also refer to the "tests" file (which I use to test my program) for the usage of this calculator.
+You can find more examples in the "examples" folder.  

@@ -29,7 +29,7 @@ def eval_list(list_str, env):
 def eval_subscription(lst, subscript_exp, env):
     def eval_index(index_exp):
         slice_args = [calc_eval(exp, env) for exp in split(index_exp, ':')]
-        slice_args = [int(arg) if is_number(arg) else arg for arg in slice_args]
+        # slice_args = [int(arg) if is_number(arg) else arg for arg in slice_args]
         if len(slice_args) > 1:
             return slice(*slice_args)
         else:

@@ -83,8 +83,10 @@ def smart_div(x, y):
 def substitute(exp, *bindings):
     if is_iterable(exp):
         return tuple(substitute(x, *bindings) for x in exp)
-    return exp.subs(zip([bindings[i] for i in range(len(bindings)) if i%2 == 0],
-                        [bindings[i] for i in range(len(bindings)) if i%2 == 1]))
+    if hasattr(exp, 'subs'):
+        return exp.subs(zip([bindings[i] for i in range(len(bindings)) if i%2 == 0],
+                            [bindings[i] for i in range(len(bindings)) if i%2 == 1]))
+    return exp
 
 
 binary_ops = {'+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (smart_div, 8),
