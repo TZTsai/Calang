@@ -38,9 +38,10 @@ def get_token(exp):
     elif exp[0] is ';':
         return 'semicolon', ';', exp[1:]
     elif exp[0] is '"':
-        return 'ans', '.-2', exp[1:]
+        return 'ans', '\'-2', exp[1:]
     elif exp[0] is '\'':
-        m = match(exp, lambda c: c.isdigit(), 1)
+        start = 2 if exp[1:] and exp[1] is '-' else 1
+        m = match(exp, lambda c: c.isdigit(), start)
         return 'ans', exp[:m], exp[m:]
     elif exp[0].isdigit():
         m = match(exp, lambda c: c in '0123456789.')

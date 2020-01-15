@@ -5,7 +5,8 @@ from __formatter import *
 
 py_eval = eval
 
-global_env = Env({'ans': []})
+global_env = Env()
+history = []
 CM = calcMachine()
 
 
@@ -28,6 +29,7 @@ def eval_list(list_str, env):
 def eval_subscription(lst, subscript_exp, env):
     def eval_index(index_exp):
         slice_args = [calc_eval(exp, env) for exp in split(index_exp, ':')]
+        slice_args = [int(arg) if is_number(arg) else arg for arg in slice_args]
         if len(slice_args) > 1:
             return slice(*slice_args)
         else:
@@ -145,10 +147,10 @@ def calc_eval(exp, env):
         if type == 'ans':
             id = -1 if len(token) == 1 else int(token[1:])
             try:
-                CM.push_val(global_env['ans'][id])
+                CM.push_val(history[id])
             except IndexError:
                 if id < 0:
-                    id = len(global_env['ans']) + id
+                    id = len(history) + id
                 raise ValueError(f'Answer No.{id} not found!')
         elif type == 'number':
             try:
@@ -208,10 +210,9 @@ def calc_exec(exp):
     words = exp.split()
     if words[0] == 'ENV':
         for name in global_env.bindings:
-            if name == 'ans': continue
             print(f"{name}: {global_env[name]}")
     elif words[0] == 'load':
-        current_ans = global_env['ans'].copy()
+        current_history = history.copy()
         test = verbose = True
         try:
             words.remove('-t')
@@ -223,14 +224,19 @@ def calc_exec(exp):
             verbose = False
         for filename in words[1:]:  # default folder: ./modules
             run('modules/' + filename, test, 0, verbose)
-        global_env['ans'] = current_ans
+        history.clear()
+        history.extend(current_history)
     elif words[0] == 'import':
+        verbose = True
+        try: words.remove('-v')
+        except: verbose = False
+        definitions = {}
         for modules in words[1:]:
             locals = {}
             exec('from pymodules.%s import definitions' % modules, globals(), locals)
-            definitions = locals['definitions']
-            global_env.define(definitions)
-            return set(definitions)
+            definitions.update(locals['definitions'])
+        global_env.define(definitions)
+        if verbose: return set(definitions)
     elif words[0] == 'set':
         if len(words) < 3:
             raise SyntaxError("invalid format setting")
@@ -258,7 +264,7 @@ def calc_exec(exp):
         if not (CM.vals.empty() and CM.ops.empty()):
             raise SyntaxError('invalid expression!')
         if result is not None:
-            global_env['ans'].append(result)
+            history.append(result)
         return result
 
 
@@ -320,7 +326,11 @@ def run(filename=None, test=False, start=0, verbose=True):
                     return  # if not testing, omit lines below #TEST
                 continue
             if result is None: continue
-            if verbose and show: print(format(result))
+            if verbose and show: 
+                if type(result) == set:  # imported definitions
+                    print('imported:', ', '.join(result))
+                else:
+                    prettyprint(result)
 
             # test
             if test and comment:

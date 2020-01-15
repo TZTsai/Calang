@@ -76,7 +76,7 @@ def eliminate(mat, back=1, display=0):
 def inverse(m):
     assert(issquare(m))
     inv, rref = eliminate(m)
-    assert(mat_eq(rref, idmat(len(n))))
+    assert(mat_eq(rref, idmat(len(m))))
     return inv
 
 
