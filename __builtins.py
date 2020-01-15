@@ -4,17 +4,13 @@ from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from math import e, pi, inf, log10
-from sympy import Symbol, solve, limit, integrate, diff, simplify, evalf, Integer,\
+from sympy import Symbol, solve, limit, integrate, diff, simplify, evalf, Integer, Float, \
     sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh
 from __classes import Op
 
 
 def is_number(value):
     return isinstance(value, Number)
-
-
-def is_integer(value):
-    return any(isinstance(value, t) for t in (int, Integer))
 
 
 def is_symbol(value):
@@ -58,11 +54,15 @@ def standardize(f):
         return b
     def pynumfy(val):
         # if val is a sympy number, convert it to a python number
-        try: val = int(val) if is_integer(val) else float(val)
-        except TypeError:
-            try: val = complex(val)
-            except TypeError: pass
-        return val
+        if isinstance(val, Rational):
+            return val
+        elif isinstance(val, Integer):
+            return int(val)
+        elif isinstance(val, Float):
+            return float(val)
+        else:
+            try: return complex(val)
+            except TypeError: return val
     if is_function(f):
         return compose(pynumfy, compose(bool_to_binary, f))
     return f
