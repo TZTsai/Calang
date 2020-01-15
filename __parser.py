@@ -35,8 +35,6 @@ def get_token(exp):
         return 'comma', ',', exp[1:]
     elif exp[0] is ':':
         return 'colon', ':', exp[1:]
-    elif exp[0] is ';':
-        return 'semicolon', ';', exp[1:]
     elif exp[0] is '"':
         return 'ans', '\'-2', exp[1:]
     elif exp[0] is '\'':

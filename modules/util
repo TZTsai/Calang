@@ -3,6 +3,7 @@ para(r1, r2) := r1*r2/(r1+r2)
 compose(f, g) := {*args} f(g(*args))
 poly(coeffs, symb) := sum([coeffs[i] * symb^i for i in range(len(coeffs))])
 grad(potential, vars) := [diff(potential, var) for var in vars]
+ids(l):=range(len(l))
 
 #TEST
 grad(x^2y/t^2,[x,y,t])  #(lambda x, y, t: [2*x*y/t**2, x**2/t**2, -2*x**2*y/t**3])(*(Symbol(var) for var in 'x y t'.split()))

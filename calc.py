@@ -70,9 +70,9 @@ def eval_comprehension(comprehension, env):
 
 
 def eval_cases(exp, env):
-    cases = [split(case, ',') for case in split(exp, ';')]
+    cases = [split(case, ':') for case in split(exp, ',')]
     value = lambda exp: calc_eval(exp, env)
-    for val in (value(exp) for exp, cond in cases[:-1] if value(cond)):
+    for val in (value(exp) for cond, exp in cases[:-1] if value(cond)):
         return val
     else_case = cases[-1]
     if len(else_case) != 1:
@@ -205,8 +205,14 @@ def calc_eval(exp, env):
     return result
 
 
-def calc_exec(exp):
-    if exp == '': return
+def calc_exec(exp, record=True):
+    exps = exp.split(';')
+    if not exps: return
+    if len(exps) > 1:
+        for exp in exps[:-1]:
+            calc_exec(exp, False)
+        return calc_exec(exps[-1])
+    exp = exps[0]
     words = exp.split()
     if words[0] == 'ENV':
         for name in global_env.bindings:
@@ -263,7 +269,7 @@ def calc_exec(exp):
             result = value
         if not (CM.vals.empty() and CM.ops.empty()):
             raise SyntaxError('invalid expression!')
-        if result is not None:
+        if result is not None and record:
             history.append(result)
         return result
 
