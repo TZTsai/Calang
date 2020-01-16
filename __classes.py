@@ -21,8 +21,7 @@ class Stack:
 
 
 class Op:
-    def __init__(self, symbol, type, function, priority):
-        self.symbol = symbol
+    def __init__(self, type, function, priority):
         self.type = type
         self.function = function
         self.priority = priority
@@ -51,7 +50,7 @@ class calcMachine:
             self.vals.push(op(n1, n2))
 
     def begin(self):
-        self.ops.push(Op('', 'stop', None, -99))
+        self.ops.push(Op('stop', None, -99))
         # add a stop_mark in op_stack
 
     def reset(self):

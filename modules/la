@@ -1,19 +1,11 @@
 addv(v1, v2) := map({x1, x2} x1+x2, v1, v2);
 sumv(vects) := reduce(addv, vects);
 subv(v1, v2) := map({x1,x2}x1-x2, v1, v2);
-scalev(v, a) := map({x}a*x, v);
-dot(u, v) := sum(map({x,y}x*conj(y), u, v));
-to_mat(v) := [[x] for x in v]
 
 rnum(m) := len(m);
 cnum(m) := len(m@0);
-row(m, k) := rows@k;
-col(m, k) := [row@k for row in m];
-transp(m) := [[m[r][c] for r in range(rnum(m))] for c in range(cnum(m))];
-htransp(m) := [[conj(m[r][c]) for r in range(rnum(m))] for c in range(cnum(m))];
+Htransp(m) := [[conj(m[r][c]) for r in range(rnum(m))] for c in range(cnum(m))];
 augment(m1, m2) := map({r1,r2}r1+r2, m1, m2);
-slice(m, start, end) := [row[start:end] for row in m];
-mult(m1, m2) := {m2t: transp(m2)} [[dot(m1@i, m2t@j) for j in range(cnum(m2))] for i in range(rnum(m1))];
 matmap(f, *mats) := map({*vects} map(f, *vects), *mats);
 addm(m1, m2) := matmap({x,y}x+y, m1, m2);
 subm(m1, m2) := matmap({x,y}x-y, m1, m2);
@@ -22,10 +14,10 @@ id(n) := [[1 if i=j else 0 for i in range(n)] for j in range(n)];
 diag(m) := [[m[i, j] if i=j else 0 for i in range(rnum(m))] for j in range(cnum(m))]
 eqmat(m1, m2) := all([all([x = 0 for x in r]) for r in subm(m1, m2)])
 
-combine(coeffs, vects) := sumv(map({c,v} scalev(v,c), coeffs, vects));
-norm(v) := sqrt(real(dot(v, v)));
+combine(coeffs, vects) := sumv(map({c,v} v.c, coeffs, vects));
+norm(v) := sqrt(real(v.v));
 normalize(v) := {n: norm(v)} map({x}x/n, v);
-proj(v, B) := {nB: map(normalize, B)} sumv(map({c} scalev(c, dot(v, c)), nB));
+proj(v, B) := {nB: map(normalize, B)} sumv(map({c} c.(v.c), nB));
 # B is a list of vectors, not a matrix, same in Gram_Schmidt
 Gram_Schmidt(B) := {helper(processed, rest): processed if rest = [] else \
 {x: car(rest)} helper(processed+[{p:proj(x, processed)} normalize(subv(x, p))],\

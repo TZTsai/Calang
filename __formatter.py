@@ -1,12 +1,9 @@
 from __builtins import *
 from sympy import latex
+from types import FunctionType
 from re import sub as translate
 
-def format(val, indent=0):
-
-    def is_matrix(x):
-        return is_iterable(x) and len(x) > 1 and is_iterable(x[0]) and \
-            all(is_iterable(it) and len(it) == len(x[0]) for it in x[1:])
+def format(val, config, indent=0):
     if config.latex:
         return latex(Matrix(val) if is_matrix(val) else val)
 
@@ -24,7 +21,7 @@ def format(val, indent=0):
         if x == 0: return '0'
         return positive_case(x) if x > 0 else '-' + positive_case(-x)
     def format_matrix(mat, indent):
-        mat = [[format(x) for x in row] for row in mat]
+        mat = [[format(x, config) for x in row] for row in mat]
         space = max([max([len(s) for s in row]) for row in mat])
         just_space = lambda s: s.ljust(space)
         row_str = lambda row, start, end: \
@@ -41,37 +38,33 @@ def format(val, indent=0):
                 return str(val)
             elif type(val) == complex:
                 re, im = format_float(val.real), format_float(val.imag)
-                return f"{re} {'-' if im<0 else '+'} {abs(im)}i"
+                return f"{re}{'-' if im<0 else '+'}{abs(im)}i"
             elif abs(val) == inf:
                 return '∞'
             elif abs(val) <= 0.001 or abs(val) >= 10000:
                 return format_scinum(val)
             else: return str(format_float(val))
+        elif type(val) is FunctionType:  # builtin
+            return val.str
         else:  # symbol, function, range
             mapping = [(r'\*\*', '^'), (r'(?<![\,\(\[])\*', '\u00b7')]
             s = str(val)
             for p in mapping:
                 s = translate(p[0], p[1], s)
-        return s
+            return s
 
     s = ' ' * indent
-    indented_format = lambda v: format(v, indent+2)
-    if type(val) in (list, tuple):
-        if any(is_matrix(it) for it in val):
+    indented_format = lambda v: format(v, config, indent+2)
+    if is_list(val):
+        contains_mat = False
+        for a in val:
+            if is_matrix(a):  contains_mat = True
+        if contains_mat:
             s += '[\n' + ',\n'.join(map(indented_format, val)) + '\n' + s + ']'
         elif is_matrix(val):
             s = format_matrix(val, indent)
         else:
-            s += '['+', '.join(map(format, val))+']'
+            s += '['+', '.join(map(lambda v: format(v, config), val))+']'
     else:
         s += format_atom(val)
     return s
-
-
-def prettyprint(val):
-    print(format(val))
-
-
-config = lambda: None
-config.prec = 4
-config.latex = False

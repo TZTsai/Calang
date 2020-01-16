@@ -10,6 +10,12 @@ history = []
 CM = calcMachine()
 
 
+config = lambda: None
+config.prec = 4
+config.latex = False
+config.all_symbol = True
+
+
 def eval_list(list_str, env):
     lst = get_list(list_str)
     if len(lst) == 1:
@@ -29,25 +35,15 @@ def eval_list(list_str, env):
 def eval_subscription(lst, subscript_exp, env):
     def eval_index(index_exp):
         slice_args = [calc_eval(exp, env) for exp in split(index_exp, ':')]
-        # slice_args = [int(arg) if is_number(arg) else arg for arg in slice_args]
         if len(slice_args) > 1:
             return slice(*slice_args)
         else:
             return slice_args[0]
-    def eval_chain_subscript(lst, subscript_exps):
-        if not subscript_exps: return lst
-        first_index = eval_index(subscript_exps[0])
-        items = index(lst, first_index)
-        if is_iterable(first_index) or type(first_index) == slice:
-            return tuple(eval_chain_subscript(item, subscript_exps[1:])
-                         for item in items)
-        else:
-            return eval_chain_subscript(items, subscript_exps[1:])
     subscript_exps = get_list(subscript_exp)
     if not subscript_exps: raise SyntaxError('invalid subscript')
     if len(subscript_exps) == 1:
         return index(lst, eval_index(subscript_exps[0]))
-    return eval_chain_subscript(lst, subscript_exps)
+    return subscript(lst, tuple(map(eval_index, subscript_exps)))
 
 
 def eval_comprehension(comprehension, env):
@@ -161,7 +157,10 @@ def calc_eval(exp, env):
             try:
                 val = builtins[token] if token in builtins else env[token]
             except KeyError:
-                val = Symbol(token)
+                if config.all_symbol:
+                    val = Symbol(token)
+                else:
+                    raise NameError(f'unbound symbol \'{token}\'')
             CM.push_val(val)
         elif type == 'symbol':
             CM.push_val(Symbol(token[1:]))
@@ -173,14 +172,15 @@ def calc_eval(exp, env):
             else:
                 CM.push_op(unitary_r_ops[token])
         elif type == 'if':
-            CM.push_op(Op('if', 'bin', lambda x, y: x if y else 'false', -5))
+            CM.push_op(Op('bin', standardize('if', 
+                lambda x, y: x if y else None), -5))
         elif type == 'else':
-            CM.push_op(Op('else', 'bin', lambda x, y: y, -5))
-            if CM.vals.peek() != 'false':
+            CM.push_op(Op('bin', standardize('else', lambda x, y: y), -5))
+            if CM.vals.peek() is not None:
                 CM.ops.pop()
                 break  # short circuit
         elif type == 'cases':
-            CM.push_val(eval_cases(exp, env));
+            CM.push_val(eval_cases(exp, env))
             break
         elif type == 'paren':
             CM.push_val(calc_eval(token[1:-1], env))
@@ -250,7 +250,9 @@ def calc_exec(exp, record=True):
             prec = py_eval(words[2])
             config.prec = prec
         elif words[1] == 'latex':
-            config.latex = True if words[2] == 'on' else False
+            config.latex = True if words[2] in ('on', '1') else False
+        elif words[1] == 'all-symbol':
+            config.all_symbol = True if words[2] in ('on', '1') else False
         else:
             raise SyntaxError('invalid format setting')
     elif words[0] == 'del':
@@ -336,7 +338,7 @@ def run(filename=None, test=False, start=0, verbose=True):
                 if type(result) == set:  # imported definitions
                     print('imported:', ', '.join(result))
                 else:
-                    prettyprint(result)
+                    print(format(result, config))
 
             # test
             if test and comment:

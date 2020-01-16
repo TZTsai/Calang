@@ -56,6 +56,9 @@ def get_token(exp):
             return token, token, rest
         else:
             return 'name', token, rest
+    elif exp[0] is '_':
+        m = match(exp, lambda c: c.isalnum(), 1)
+        return 'symbol', exp[:m], exp[m:]
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     elif exp[0] in op_list:
