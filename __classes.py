@@ -98,7 +98,7 @@ class Env:
             if self.parent:
                 return self.parent[name]
             else:
-                raise KeyError(f'unbound symbol: {format(name)}')
+                raise KeyError
 
     def remove(self, name):
         self.bindings.pop(name)

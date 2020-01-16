@@ -125,7 +125,7 @@ def dot(x1, x2):
             return tuple(dot(x1, transpose(x2)))
         else:
             return tuple(tuple(dot(row(x1, r), col(x2, c))
-                for r in range(len(x1))) for c in range(len(x2[0])))
+                for c in range(len(x2[0]))) for r in range(len(x1)))
     else:
         raise TypeError('invalid arguments')
     
@@ -220,7 +220,7 @@ builtins = {'add': add, 'sub': sub, 'mul': mul, 'div': smart_div,
             'row': row, 'col': col, 'shape': list_shape, 'depth': list_depth, 'transp': transpose,
             'all': all, 'any': any, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),
             'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': lambda x: x / pi * 180,
-            'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else z, 
+            'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else 0, 
             'conj': lambda z: z.conjugate(), 'angle': lambda z: atan(z.imag / z.real),
             'reduce': reduce, 'filter': filter, 'map': map, 'zip': zip,
             'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute, 'simp': simplify}

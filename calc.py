@@ -100,7 +100,7 @@ class function:
         return calc_eval(self.body, self.env.make_subEnv(bindings))
 
     def __str__(self):
-        params_str = ', '.join(self.params) + ('' if self.fixed_argc else '... ')
+        params_str = ', '.join(self.params) + ('' if self.fixed_argc else ' ... ')
         return f"function of {params_str}: {self.body}"
 
 
@@ -155,9 +155,11 @@ def calc_eval(exp, env):
                 raise SyntaxError(f'invalid number: {token}')
         elif type == 'name':
             try:
-                val = builtins[token] if token in builtins else env[token]
+                val = env[token]
             except KeyError:
-                if config.all_symbol:
+                if token in builtins:
+                    val = builtins[token]
+                elif config.all_symbol:
                     val = Symbol(token)
                 else:
                     raise NameError(f'unbound symbol \'{token}\'')

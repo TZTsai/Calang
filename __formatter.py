@@ -47,7 +47,7 @@ def format(val, config, indent=0):
         elif type(val) is FunctionType:  # builtin
             return val.str
         else:  # symbol, function, range
-            mapping = [(r'\*\*', '^'), (r'(?<![\,\(\[])\*', '\u00b7')]
+            mapping = [(r'\*\*', '^'), (r'(?<![\,\(\[])\*', ' ')]
             s = str(val)
             for p in mapping:
                 s = translate(p[0], p[1], s)
