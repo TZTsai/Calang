@@ -1,0 +1,101 @@
+s := 1
+5*2/(10-9) #10
+0.5*2^2 + lg(100+10*90) #5
+5!/3! #20
+[1, 2, 3] #(1,2,3)
+_ #(1,2,3)
+_@2 #3
+_2 #5
+s #1
+f(x) := x+1
+f(s) #2
+1 if s=2 else 3 #3
+f := {x, y} x*(1+y)
+f(s, 2*(1+s)) #5
+l := [1,max(1,2),3]
+l = _5 #1
+sum([i^2 for i in l]) #14
+[i for i in range(3)] #(0,1,2)
+[i for i in range(4) if i%2] #(1,3)
+2 in range(3) #1
+3 in 2~3 #1
+l@(1~2) #(2,3)
+l[:1] #(1,)
+l@(0~1)+[3,4,5][:-1:2] #(1,2,3)
+l[1:-1] #(2,)
+m := [[1,2,3],[3,4,5],[5,6,7]]
+m[2,1] #6
+mm := m[range(2),[i for i in range(3) if i%2]]
+list(mm) #((2,),(4,))
+2*0.4 #0.8
+1e2 #100.0
+1+3e-2 #1.03
+2e3*7e-2 #140.0
+-2^4 #-16
+-0.5+3 #2.5
+not 3+3 = 3 #1
+[i if i%2 else 0 for i in range(10) if i%3] #(1,0,0,5,7,0)
+compose := {f, g} {function :x} f(g(x))
+inc(x) := x+1
+sqr(x) := x^2
+compose(inc, sqr)(3) #10
+compose(sqr, inc)(3) #16
+max3(x, y, z) := cases x>y and x>z: x, y > z: y, z
+max3(3, 4, 2) #4
+max3(1, 2, 2) #2
+[1,2]+[3,4] #(1,2,3,4)
+1+I #1+1j
+(1-I)(1+I) #2
+11062274001.181583
+{x:1}with : x+3 #4
+cdr([1,2,3]) #(2,3)
+sin_approx(n) := {x} sum([(-1)^(i // 2)*x^i/i! for i in 1~n if i%2])
+my_sin := sin_approx(10)
+abs(sin(PI/3)-my_sin(PI/3)) < 0.0001 #1
+sum([[1,2],[3,4]]) #(1,2,3,4)
+load scinums
+_ #(1,2,3,4)
+T0 #273.15
+_54 #(1,2,3,4)
+_56 #273.15
+1 + \
+2 #3
+load ../examples/tree -t -v
+z:=3+4I
+real(z) #3
+imag(z) #4
+abs(z) #5
+conj(z) #3-4j
+angle(z) #atan(4/3).evalf(4)
+load ../examples/perms -t -v
+load ../examples/lambda_list -t -v
+load ../examples/tree -t -v
+
+1 and 0 #0
+1 xor 0 #1
+__-_ #-1
+2 x
+load la -t -v
+1/3
+conf prec 2
+1/3
+pascal(n) := [1] if n=0 else map({x,y}x+y, pascal(n-1)+[0], [0]+pascal(n-1));
+pascal(2) #(1,2,1)
+pascal(3) #(1,3,3,1)
+
+import gauss_jordan
+det(scalem(id(3), -2))  #-8
+
+e 
+[_,_,_]
+subs(_, e, 3) #(3,3,3)
+eigenvalues([[1,0,0],[0,-3,0],[0,0,2]])
+1 in _ and -3 in _ and 2 in _  # 1
+2x^2*y
+diff(_, x)
+subs(_, x, 12, y, -9)  # -48*9
+lim(exp(-x), x, INF)  # 0
+[__]  # (-432,)
+
+z:=1+2I
+abs(z) ^ 2 = z conj(z)  # 1

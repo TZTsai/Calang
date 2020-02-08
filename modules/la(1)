@@ -1,0 +1,41 @@
+addv(v1, v2) := map({x1, x2} x1+x2, v1, v2);
+sumv(vects) := reduce(addv, vects);
+subv(v1, v2) := map({x1,x2}x1-x2, v1, v2);
+
+rnum(m) := len(m);
+cnum(m) := len(m@0);
+Htransp(m) := [[conj(m[r][c]) for r in range(rnum(m))] for c in range(cnum(m))];
+augment(m1, m2) := map({r1,r2}r1+r2, m1, m2);
+matmap(f, *mats) := map({*vects} map(f, *vects), *mats);
+addm(m1, m2) := matmap({x,y}x+y, m1, m2);
+subm(m1, m2) := matmap({x,y}x-y, m1, m2);
+scalem(m, a) := matmap({x}a*x, m);
+id(n) := [[1 if i=j else 0 for i in range(n)] for j in range(n)];
+diag(m) := [[m[i, j] if i=j else 0 for i in range(rnum(m))] for j in range(cnum(m))]
+eqmat(m1, m2) := all([all([x = 0 for x in r]) for r in subm(m1, m2)])
+
+combine(coeffs, vects) := sumv(map({c,v} v.c, coeffs, vects));
+norm(v) := sqrt(real(v.v));
+normalize(v) := {n: norm(v)} map({function :x}with :x/n, v);
+proj(v, B) := {nB: map(normalize, B)} sumv(map({function :c}with : c.(v.c), nB));
+# B is a list of vectors, not a matrix, same in Gram_Schmidt
+Gram_Schmidt(B) := {helper(processed, rest): processed if rest = [] else \
+{x: car(rest)} helper(processed+[{function :p:proj(x, processed)}with : normalize(subv(x, p))],\
+cdr(rest))} helper([normalize(car(B))], cdr(B));
+orthonormalize(m) := transp(Gram_Schmidt(transp(m)));
+orthnorm := orthonormalize;
+
+import gauss_jordan
+# import det, eliminate, LU (decomposition), inverse
+load util
+eliminate :=  compose(list, eliminate)
+LU := compose(list, LU)
+inverse := compose(list, inverse)
+eigenvalues(m) := solve(det(subm(m, scalem(id(rnum(m)), lambda))))	
+
+#TEST
+combine([1,2],[[1,0],[0,1]]) #(1,2)
+normalize([3,4]) #(0.6,0.8)
+proj([1,2,3],[[1,0,0],[0,2,0]]) #(1, 2, 0)
+orthnorm([[1,-1,4],[1,4,-2],[1,4,2],[1,-1,0]]) #((0.5, -0.5, 0.5), (0.5, 0.5, -0.5), (0.5, 0.5, 0.5), (0.5, -0.5, -0.5))
+det(scalem(id(3), -2)) #-8

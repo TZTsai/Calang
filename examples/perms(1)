@@ -1,0 +1,5 @@
+perms(l) := [l] if len(l) = 1 else {insert(l, a, i): l[:i]+[a]+l[i:]} with first: car(l), rest: cdr(l)}: \
+{subperms: perms(rest)}with : sum([[insert(p, first, i) for i in enum(l)] for p in subperms])
+
+#TEST
+perms([1,2,3])
