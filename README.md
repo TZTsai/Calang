@@ -1,15 +1,13 @@
 # A small but powerful calculator
 
-Run "python calc.py" to start the program.
+Dependency: python package sympy
+
+Run *python calc.py* to start the program.
 
 In this calculator, there are five types of values: Number, Symbol, List, Range and Function.
-Every evaluation will return a value of one of these four types.  
+Every evaluation will return a value of one of these five types.  
 
 Check the file "__builtins.py" to see the available built-in operations and functions.  
-
-## Demo
-
-<iframe src="demo.gif">  
 
 ## Features
 
@@ -17,9 +15,8 @@ Check the file "__builtins.py" to see the available built-in operations and func
     **Examples**: 1+3, 0.5*2, -8^(4-2), 147 % 43 (modular arithmetic), 52 // 17 (integer division),
     8 & 3 (bitwise "and" operation), 1e10 \* 3e-5 (supports scientific notation)
 - History  
-    Use keyword **'** to represent the result of the last calculation.  
-    Use keyword **'\<n>** to represent the result of the \<n>th calculation.  
-    Use keyword **"** to represent the second last result.  
+    Use the symbol \_ to represent the result of the last calculation, \_\_ the second last, \_\_\_ the third last, and so on (but you may not want to use longer ones XD).   
+    Use keyword **_**\<n> to represent the result of the calculation no.\<n>.  
     Use keyword **ENV** to let the calculator print all variable bindings in the global environment.
 - Multiline expression  
     Use **\\** at the end of the line to indicate that the expression continues in the next line.  

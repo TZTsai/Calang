@@ -1,5 +1,3 @@
+.vscode/*
+__pychache__/*
 *.pyc
-*.stackdump
-*.stackdump
-*.xml
-*.iml

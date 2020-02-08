@@ -3,9 +3,9 @@ s := 1
 0.5*2^2 + lg(100+10*90) #5
 5!/3! #20
 [1, 2, 3] #(1,2,3)
-' #(1,2,3)
-'@2 #3
-'2 #5
+_ #(1,2,3)
+_@2 #3
+_2 #5
 s #1
 f(x) := x+1
 f(s) #2
@@ -13,7 +13,7 @@ f(s) #2
 f := {x, y} x*(1+y)
 f(s, 2*(1+s)) #5
 l := [1,max(1,2),3]
-l = '5 #1
+l = _5 #1
 sum([i^2 for i in l]) #14
 [i for i in range(3)] #(0,1,2)
 [i for i in range(4) if i%2] #(1,3)
@@ -54,9 +54,10 @@ my_sin := sin_approx(10)
 abs(sin(PI/3)-my_sin(PI/3)) < 0.0001 #1
 sum([[1,2],[3,4]]) #(1,2,3,4)
 load scinums
+_ #(1,2,3,4)
 T0 #273.15
-'54 #(1,2,3,4)
-'55 #273.15
+_54 #(1,2,3,4)
+_56 #273.15
 1 + \
 2 #3
 load ../examples/tree -t -v
@@ -72,11 +73,11 @@ load ../examples/tree -t -v
 
 1 and 0 #0
 1 xor 0 #1
-"-' #-1
+__-_ #-1
 2 x
 load la -t -v
 1/3
-set prec 2
+conf prec 2
 1/3
 pascal(n) := [1] if n=0 else map({x,y}x+y, pascal(n-1)+[0], [0]+pascal(n-1));
 pascal(2) #(1,2,1)
@@ -86,12 +87,15 @@ import gauss_jordan
 det(scalem(id(3), -2))  #-8
 
 e 
-[',',']
-subs(', e, 3) #(3,3,3)
+[_,_,_]
+subs(_, e, 3) #(3,3,3)
 eigenvalues([[1,0,0],[0,-3,0],[0,0,2]])
-1 in ' and -3 in ' and 2 in '  # 1
+1 in _ and -3 in _ and 2 in _  # 1
 2x^2*y
-diff(', x)
-subs(', x, 12, y, -9)  # -48*9
+diff(_, x)
+subs(_, x, 12, y, -9)  # -48*9
 lim(exp(-x), x, INF)  # 0
-["]  # (-432,)
+[__]  # (-432,)
+
+z:=1+2I
+abs(z) ^ 2 = z conj(z)  # 1

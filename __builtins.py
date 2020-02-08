@@ -4,7 +4,7 @@ from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from math import e, pi, inf, log10
-from sympy import Symbol, solve, limit, integrate, diff, simplify, evalf, Integer, Float, \
+from sympy import Symbol, solve, limit, integrate, diff, simplify, Integer, Float, \
     sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh
 from __classes import Op
 
@@ -42,6 +42,14 @@ def is_vector(x):
 
 def is_function(value):
     return callable(value)
+
+
+eq_tolerance = [1e-10]
+def equal(x, y):
+    if is_number(x) and is_number(y):
+        return abs(x - y) <= eq_tolerance[0]
+    else:
+        return x == y
 
 
 def index(lst, id):
@@ -187,7 +195,7 @@ def substitute(exp, *bindings):
 
 binary_ops = {'+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (smart_div, 8), '.': (dot, 7),
               '//': (floordiv, 8), '^': (expt, 14), '%': (mod, 8), '&': (and_, 4), '|': (or_, 2),
-              '=': (lambda x, y: 1 if x == y else 0, 0), '!=': (ne, 0),
+              '=': (equal, 0), '!=': (ne, 0),
               '<': (lt, 0), '>': (gt, 0), '<=': (le, 0),
               '>=': (ge, 0), 'xor': (xor, 3),
               'in': (lambda x, l: 1 if x in l else 0, -2),
@@ -196,7 +204,7 @@ binary_ops = {'+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (smart_div, 8), 
               'or': (lambda a, b: a or b, -6)}
 reconstruct(binary_ops, 'bin')
 
-unitary_l_ops = {'-': (neg, 10), 'not': (lambda n: 1 if n == 0 else 1, -4)}
+unitary_l_ops = {'-': (neg, 10), 'not': (lambda n: 1 if n == 0 else 0, -4)}
 reconstruct(unitary_l_ops, 'uni_l')
 
 unitary_r_ops = {'!': (factorial, 99)}

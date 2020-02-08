@@ -24,11 +24,11 @@ def format(val, config, indent=0):
         mat = [[format(x, config) for x in row] for row in mat]
         space = max([max([len(s) for s in row]) for row in mat])
         just_space = lambda s: s.ljust(space)
-        row_str = lambda row, start, end: \
-            ' '*indent + f"{start} {' '.join(map(just_space, row))}{end}"
+        row_str = lambda row, start, end, sep='  ': \
+            ' '*indent + f"{start} {sep.join(map(just_space, row))}{end}"
         col_num = len(mat[0])
         return '\n'.join([row_str(['']*col_num, '╭', '╮')] +
-                         [row_str(row, ' ', ' ') for row in mat] +
+                         [row_str(row, ' ', ' ', ', ') for row in mat] +
                          [row_str(['']*col_num, '╰', '╯')])
     def format_atom(val):
         if is_number(val):

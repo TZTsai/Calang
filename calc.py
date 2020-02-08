@@ -141,12 +141,13 @@ def calc_eval(exp, env):
         if all(is_replacable(t, 'number', 'symbol') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
         if type == 'ans':
-            id = -1 if len(token) == 1 else int(token[1:])
+            if all(c is '_' for c in token):
+                id = -len(token)
+            else:
+                id = int(token[1:])
             try:
                 CM.push_val(history[id])
             except IndexError:
-                if id < 0:
-                    id = len(history) + id
                 raise ValueError(f'Answer No.{id} not found!')
         elif type == 'number':
             try:
@@ -230,7 +231,7 @@ def calc_exec(exp, record=True):
             words.remove('-v')
         except:
             verbose = False
-        for filename in words[1:]:  # default folder: ./modules
+        for filename in words[1:]:  # default folder: modules/
             run('modules/' + filename, test, 0, verbose)
         history.clear()
         history.extend(current_history)
@@ -245,16 +246,30 @@ def calc_exec(exp, record=True):
             definitions.update(locals['definitions'])
         global_env.define(definitions)
         if verbose: return set(definitions)
-    elif words[0] == 'set':
-        if len(words) < 3:
-            raise SyntaxError("invalid format setting")
+    elif words[0] == 'conf':
+        if len(words) is 1:
+            raise SyntaxError('config field unspecified')
         if words[1] == 'prec':
-            prec = py_eval(words[2])
-            config.prec = prec
+            if len(words) is 2:
+                print(config.prec)
+            else:
+                prec = py_eval(words[2])
+                config.prec = prec
         elif words[1] == 'latex':
-            config.latex = True if words[2] in ('on', '1') else False
+            if len(words) is 2:
+                print(config.latex)
+            else:
+                config.latex = True if words[2] in ('on', '1') else False
         elif words[1] == 'all-symbol':
-            config.all_symbol = True if words[2] in ('on', '1') else False
+            if len(words) is 2:
+                print(config.all_symbol)
+            else:
+                config.all_symbol = True if words[2] in ('on', '1') else False
+        elif words[1] == 'tolerance':
+            if len(words) is 2:
+                print(eq_tolerance[0])
+            else:
+                eq_tolerance[0] = float(words[2])
         else:
             raise SyntaxError('invalid format setting')
     elif words[0] == 'del':
@@ -313,8 +328,11 @@ def run(filename=None, test=False, start=0, verbose=True):
             count += 1
             continue
         try:
+            # get input
+            if filename: line = line.strip()
+            if line == '#TEST' and not test: return
             if verbose: print(f'({count})▶ ', end='')  # prompt
-            line = line.strip() if filename else input()
+            if filename is None: line = input()
             if filename and verbose: print(line)
 
             if line and line[-1] == '\\':
@@ -332,15 +350,15 @@ def run(filename=None, test=False, start=0, verbose=True):
             if exp:
                 result = calc_exec(exp)
             else:  # a comment line
-                if comment.strip() == 'TEST' and not test:
-                    return  # if not testing, omit lines below #TEST
                 continue
-            if result is None: continue
-            if verbose and show: 
+            if result is None:
+                continue
+
+            if show and verbose:  # print output
                 if type(result) == set:  # imported definitions
-                    print('imported:', ', '.join(result))
+                    print('imported:', ', '.join(result), flush=True)
                 else:
-                    print(format(result, config))
+                    print(format(result, config), flush=True)
 
             # test
             if test and comment:
@@ -362,7 +380,10 @@ def run(filename=None, test=False, start=0, verbose=True):
 
 
 ### RUN ###
+import sys, io
 from sys import argv
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 
 if len(argv) > 1:
     if argv[1] == '-t':
@@ -371,3 +392,4 @@ if len(argv) > 1:
         run(argv[1])
 else:
     run()
+

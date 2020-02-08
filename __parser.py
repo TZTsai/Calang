@@ -1,11 +1,12 @@
 from __builtins import op_list, special_words
 
-def match(exp, condition, start=0):
-    i, n = start, len(exp)
-    while i < n and condition(exp[i]): i += 1
-    return i
 
 def get_token(exp):
+    
+    def match(exp, condition, start=0):
+        i, n = start, len(exp)
+        while i < n and condition(exp[i]): i += 1
+        return i
 
     def get_bracketed_token(exp):
         def update_stack(stack, char):
@@ -35,14 +36,8 @@ def get_token(exp):
         return 'comma', ',', exp[1:]
     elif exp[0] is ':':
         return 'colon', ':', exp[1:]
-    elif exp[0] is '"':
-        return 'ans', '\'-2', exp[1:]
-    elif exp[0] is '\'':
-        start = 2 if exp[1:] and exp[1] is '-' else 1
-        m = match(exp, lambda c: c.isdigit(), start)
-        return 'ans', exp[:m], exp[m:]
     elif exp[0].isdigit():
-        m = match(exp, lambda c: c in '0123456789.')
+        m = match(exp, lambda c: c.isdigit() or c is '.')
         if m+1 < len(exp) and exp[m] == 'e':  # scientific notation
             start = m+2 if exp[m+1] == '-' else m+1
             m = match(exp, lambda c: c.isdigit(), start)
@@ -57,17 +52,19 @@ def get_token(exp):
         else:
             return 'name', token, rest
     elif exp[0] is '_':
-        m = match(exp, lambda c: c.isalnum(), 1)
-        return 'symbol', exp[:m], exp[m:]
+        m = match(exp, lambda c: c.isalnum() or c is '_', 1)
+        token, rest = exp[:m], exp[m:]
+        _type = 'ans' if len(token) is 1 or not token[1].isalpha() else 'symbol'
+        return _type, token, rest
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     elif exp[0] in op_list:
         return 'op', exp[0], exp[1:]
     elif exp[0] in '([{':
-        type = 'paren' if exp[0] is '(' else 'bracket' \
+        _type = 'paren' if exp[0] is '(' else 'bracket' \
             if exp[0] is '[' else 'brace'
         token, rest = get_bracketed_token(exp)
-        return type, token, rest
+        return _type, token, rest
     elif exp[0] in ')]}':
         raise SyntaxError(f'unpaired brackets in {exp[:15]}')
     else:
@@ -75,8 +72,8 @@ def get_token(exp):
 
 
 def get_name(exp, no_rest=True):  
-    type, name, rest = get_token(exp)
-    if not type == 'name' or (no_rest and rest):
+    _type, name, rest = get_token(exp)
+    if not _type == 'name' or (no_rest and rest):
         raise SyntaxError(f'invalid variable name: {exp}!')
     if no_rest: return name
     return name, rest
