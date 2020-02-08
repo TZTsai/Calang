@@ -47,7 +47,7 @@ max3(1, 2, 2) #2
 1+I #1+1j
 (1-I)(1+I) #2
 11062274001.181583
-function x:1: x+3 #4
+with x=1: x+3 #4
 cdr([1,2,3]) #(2,3)
 sin_approx(n) := function x: sum([(-1)^(i // 2)*x^i/i! for i in 1~n if i%2])
 my_sin := sin_approx(10)

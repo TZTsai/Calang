@@ -26,8 +26,8 @@ def sub_func(s):
 def repfile(filename):
     with open(filename, 'r') as fi, open(filename+'(1)', 'w') as fo:
         s = fi.read()
-        s = sub_func(s)
         s = sub_with(s)
+        s = sub_func(s)
         fo.write(s)
 
 def copyfile(filename):
