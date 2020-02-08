@@ -2,10 +2,13 @@ from __builtins import op_list, special_words
 
 
 def get_token(exp):
-    
+    """ split out the first token of exp and return its type, the token itself,
+    and the rest of exp """
+
     def match(exp, condition, start=0):
         i, n = start, len(exp)
-        while i < n and condition(exp[i]): i += 1
+        while i < n and condition(exp[i]):
+            i += 1
         return i
 
     def get_bracketed_token(exp):
@@ -13,11 +16,12 @@ def get_token(exp):
             pairs = ('()', '[]', '{}')
             for p in pairs:
                 if char in p:
-                    if char == p[0]: 
+                    if char == p[0]:
                         stack.append(char)
                     elif stack[-1] != p[0]:
                         raise SyntaxError
-                    else: stack.pop()
+                    else:
+                        stack.pop()
                     break
         stack = []
         for i in range(len(exp)):
@@ -25,8 +29,9 @@ def get_token(exp):
                 update_stack(stack, exp[i])
             except SyntaxError:
                 raise SyntaxError(f'unpaired brackets in "{exp[i-14:i+1]}"')
-            if stack == []: break
-        if stack: 
+            if stack == []:
+                break
+        if stack:
             raise SyntaxError(f'unpaired brackets in "{exp[-15:]}"')
         return exp[:i+1], exp[i+1:]
 
@@ -54,7 +59,8 @@ def get_token(exp):
     elif exp[0] is '_':
         m = match(exp, lambda c: c.isalnum() or c is '_', 1)
         token, rest = exp[:m], exp[m:]
-        _type = 'ans' if len(token) is 1 or not token[1].isalpha() else 'symbol'
+        _type = 'ans' if len(
+            token) is 1 or not token[1].isalpha() else 'symbol'
         return _type, token, rest
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
@@ -71,28 +77,30 @@ def get_token(exp):
         raise SyntaxError(f'unknown symbol: {exp[0]}')
 
 
-def get_name(exp, no_rest=True):  
+def get_name(exp, no_rest=True):
     _type, name, rest = get_token(exp)
     if not _type == 'name' or (no_rest and rest):
         raise SyntaxError(f'invalid variable name: {exp}!')
-    if no_rest: return name
+    if no_rest:
+        return name
     return name, rest
 
 
-def split(exp, delimiter):
-    def grouped_tokens(exp, delimiter):
-        def gen():
-            nonlocal exp, stop
-            while exp:
-                _, token, exp = get_token(exp)
-                if token == delimiter: return
-                yield token
-            stop = True
-        stop = False
-        while not stop: yield gen()
-    if not exp: return []
-    token_groups = grouped_tokens(exp, delimiter)
-    return [' '.join(group) for group in token_groups]
+def split(exp, delimiter, maxnum=None):
+    segs, num = [], 1
+    while exp:
+        if num == maxnum:
+            segs.append(exp)
+            break
+        tokens = []
+        while exp:
+            _, token, exp = get_token(exp)
+            if token == delimiter:
+                break
+            tokens.append(token)
+        segs.append(' '.join(tokens))
+        num += 1
+    return segs
 
 
 def get_list(list_exp, delimiter=','):
@@ -101,3 +109,8 @@ def get_list(list_exp, delimiter=','):
 
 def get_params(list_str):
     return [get_name(s) for s in get_list(list_str)]
+
+
+# test
+print(split('1,2,3,4', ','))
+print(split('1,2,3,4', ',', 2))

@@ -3,7 +3,8 @@
         "expt",
         "pynumfy",
         "scinum",
+        "segs",
         "sympy"
     ],
-    "python.pythonPath": "C:\\Users\\JamesCai\\Miniconda3\\python.exe",
+    "python.pythonPath": "C:\\Users\\JamesCai\\AppData\\Local\\Microsoft\\WindowsApps\\python.exe",
 }

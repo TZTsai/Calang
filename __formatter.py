@@ -1,4 +1,5 @@
-from __builtins import *
+from __builtins import Rational, Fraction, Matrix, is_number, is_list, \
+    is_matrix, floor, log10, inf
 from sympy import latex
 from types import FunctionType
 from re import sub as translate

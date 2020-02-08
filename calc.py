@@ -1,7 +1,11 @@
+import io
+import sys
+from sys import argv
 from __classes import *
 from __parser import *
 from __builtins import *
 from __formatter import *
+from msvcrt import getch
 
 py_eval = eval
 
@@ -10,7 +14,9 @@ history = []
 CM = calcMachine()
 
 
-config = lambda: None
+def config(): return None
+
+
 config.prec = 4
 config.latex = False
 config.all_symbol = True
@@ -22,7 +28,8 @@ def eval_list(list_str, env):
         comprehension = get_list(list_str, 'for')
         if len(comprehension) > 1:
             return eval_comprehension(comprehension, env)
-    value = lambda exp: calc_eval(exp, env)
+
+    def value(exp): return calc_eval(exp, env)
     result = []
     for exp in lst:
         if exp[0] == '*':
@@ -40,7 +47,8 @@ def eval_subscription(lst, subscript_exp, env):
         else:
             return slice_args[0]
     subscript_exps = get_list(subscript_exp)
-    if not subscript_exps: raise SyntaxError('invalid subscript')
+    if not subscript_exps:
+        raise SyntaxError('invalid subscript')
     if len(subscript_exps) == 1:
         return index(lst, eval_index(subscript_exps[0]))
     return subscript(lst, tuple(map(eval_index, subscript_exps)))
@@ -67,7 +75,7 @@ def eval_comprehension(comprehension, env):
 
 def eval_cases(exp, env):
     cases = [split(case, ':') for case in split(exp, ',')]
-    value = lambda exp: calc_eval(exp, env)
+    def value(exp): return calc_eval(exp, env)
     for val in (value(exp) for cond, exp in cases[:-1] if value(cond)):
         return val
     else_case = cases[-1]
@@ -100,15 +108,17 @@ class function:
         return calc_eval(self.body, self.env.make_subEnv(bindings))
 
     def __str__(self):
-        params_str = ', '.join(self.params) + ('' if self.fixed_argc else ' ... ')
+        params_str = ', '.join(self.params) + \
+            ('' if self.fixed_argc else ' ... ')
         return f"function of {params_str}: {self.body}"
 
 
 def get_binding(lexp, rexp, env=global_env):
+    """ lexp can be either a name or a repr of a function, eg. 'f(x)' """
     name, rest = get_name(lexp, False)
     if not rest:
         return name, calc_eval(rexp, env)
-    else:
+    else:  # 'f(x)' can be bound with 'x+1' or even 'x if x>0 else f(-x)'
         type, params, rest = get_token(rest)
         if type != 'paren' or rest != '':
             raise SyntaxError('invalid variable name!')
@@ -123,12 +133,13 @@ def is_replacable(type, *replaced_types):
 
 def is_applying(prev_val, prev_type, type):
     return type == 'paren' and is_function(prev_val) \
-           and is_replacable(prev_type, 'name')
+        and is_replacable(prev_type, 'name')
 
 
 def calc_eval(exp, env):
     # inner evaluation
-    if exp == '': return
+    if exp == '':
+        return
     CM.begin()
     prev_type = None
     while exp:
@@ -175,8 +186,9 @@ def calc_eval(exp, env):
             else:
                 CM.push_op(unitary_r_ops[token])
         elif type == 'if':
-            CM.push_op(Op('bin', standardize('if', 
-                lambda x, y: x if y else None), -5))
+            CM.push_op(Op('bin',
+                          standardize('if', lambda x, y: x if y else None), 
+                          -5))
         elif type == 'else':
             CM.push_op(Op('bin', standardize('else', lambda x, y: y), -5))
             if CM.vals.peek() is not None:
@@ -193,13 +205,29 @@ def calc_eval(exp, env):
             else:
                 CM.push_val(eval_list(token, env))
         elif type == 'brace':
-            segs = get_list(token)
-            if not segs or len(split(segs[0], ':')) == 1:  # lambda expression
-                CM.push_val(function(segs, exp, env))
-            else:  # local environment
-                bindings = (get_binding(l, r, env) for l, r in
-                            [split(seg, ':') for seg in segs])
-                CM.push_val(calc_eval(exp, env.make_subEnv(dict(bindings))))
+            """ Below is my previous interpretation that braces represents
+            lambda expressions or local environments. """
+            # segs = get_list(token)
+            # if not segs or len(split(segs[0], ':')) == 1:  # lambda expression
+            #     CM.push_val(function(segs, exp, env))
+            # else:  # local environment
+            #     bindings = (get_binding(l, r, env) for l, r in
+            #                 [split(seg, ':') for seg in segs])
+            #     CM.push_val(calc_eval(exp, env.make_subEnv(dict(bindings))))
+            # break
+            CM.push_val(set(eval_list(token, env)))
+        elif type in ('function', 'λ', 'with'):
+            try:
+                list_str, body = split(exp, ':', 2)
+            except ValueError:
+                raise SyntaxError('invalid lambda expression')
+            segs = split(list_str, ',')
+            if type == 'with':
+                bindings = [get_binding(name, exp, env) for name, exp in
+                            (split(pair, '=', 2) for pair in segs)]
+                CM.push_val(calc_eval(body, env.make_subEnv(dict(bindings))))
+            else:
+                CM.push_val(function(segs, body, env))
             break
         else:
             raise SyntaxError('invalid token: %s' % token)
@@ -210,7 +238,8 @@ def calc_eval(exp, env):
 
 def calc_exec(exp, record=True):
     exps = exp.split(';')
-    if not exps: return
+    if not exps:
+        return
     if len(exps) > 1:
         for exp in exps[:-1]:
             calc_exec(exp, False)
@@ -237,35 +266,39 @@ def calc_exec(exp, record=True):
         history.extend(current_history)
     elif words[0] == 'import':
         verbose = True
-        try: words.remove('-v')
-        except: verbose = False
+        try:
+            words.remove('-v')
+        except:
+            verbose = False
         definitions = {}
         for modules in words[1:]:
             locals = {}
-            exec('from pymodules.%s import definitions' % modules, globals(), locals)
+            exec('from pymodules.%s import definitions' %
+                 modules, globals(), locals)
             definitions.update(locals['definitions'])
         global_env.define(definitions)
-        if verbose: return set(definitions)
+        if verbose:
+            return set(definitions)
     elif words[0] == 'conf':
         if len(words) is 1:
             raise SyntaxError('config field unspecified')
-        if words[1] == 'prec':
+        if words[1] == 'PREC':
             if len(words) is 2:
                 print(config.prec)
             else:
                 prec = py_eval(words[2])
                 config.prec = prec
-        elif words[1] == 'latex':
+        elif words[1] == 'LATEX':
             if len(words) is 2:
                 print(config.latex)
             else:
                 config.latex = True if words[2] in ('on', '1') else False
-        elif words[1] == 'all-symbol':
+        elif words[1] == 'ALL-SYMBOL':
             if len(words) is 2:
                 print(config.all_symbol)
             else:
                 config.all_symbol = True if words[2] in ('on', '1') else False
-        elif words[1] == 'tolerance':
+        elif words[1] == 'TOLERANCE':
             if len(words) is 2:
                 print(eq_tolerance[0])
             else:
@@ -293,6 +326,19 @@ def calc_exec(exp, record=True):
         return result
 
 
+def read_input():
+    s = ''
+    while True:
+        char = getch()
+        if char is b'\x0c':
+            s += 'λ'
+        elif char is b'\r':
+            break
+        else:
+            s += char.decode('utf8')
+    return s
+
+
 def run(filename=None, test=False, start=0, verbose=True):
     def get_lines(filename):
         if filename:
@@ -313,11 +359,12 @@ def run(filename=None, test=False, start=0, verbose=True):
             if is_number(x) and is_number(y):
                 return abs(x-y) < 0.001
             if all(is_iterable(t) for t in (x, y)):
-                return len(x) == len(y) and all(equal(xi, yi) 
-                    for xi, yi in zip(x, y))
+                return len(x) == len(y) and all(equal(xi, yi)
+                                                for xi, yi in zip(x, y))
             return x == y
         if equal(result, py_eval(answer)):
-            if verbose: print('--- OK! ---')
+            if verbose:
+                print('--- OK! ---')
         else:
             raise Warning('--- Fail! expected answer of %s is %s, but actual result is %s ---'
                           % (exp, answer, str(result)))
@@ -329,11 +376,16 @@ def run(filename=None, test=False, start=0, verbose=True):
             continue
         try:
             # get input
-            if filename: line = line.strip()
-            if line == '#TEST' and not test: return
-            if verbose: print(f'({count})▶ ', end='')  # prompt
-            if filename is None: line = input()
-            if filename and verbose: print(line)
+            if filename:
+                line = line.strip()
+            if line == '#TEST' and not test:
+                return
+            if verbose:
+                print(f'({count})▶ ', end='')  # prompt
+            if filename is None:
+                line = read_input()
+            if filename and verbose:
+                print(line)
 
             if line and line[-1] == '\\':
                 buffer += line[:-1]
@@ -380,8 +432,6 @@ def run(filename=None, test=False, start=0, verbose=True):
 
 
 ### RUN ###
-import sys, io
-from sys import argv
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 
@@ -392,4 +442,3 @@ if len(argv) > 1:
         run(argv[1])
 else:
     run()
-
