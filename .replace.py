@@ -43,5 +43,5 @@ print(sub_with('{x:1} x+3'))
 for fn in ('tests', *map(lambda s: 'examples/'+s,
                          ('fold', 'lambda_list', 'merge_sort', 'perms', 'tree')),
            *map(lambda s: 'modules/'+s, ('la', 'util'))):
-    repfile(fn)
-    # copyfile(fn)
+    # repfile(fn)
+    copyfile(fn)

@@ -1,9 +1,9 @@
-pair(x, y) := {f} f(x, y)
-first(p) := p({x, y} x)
-second(p) := p({x, y} y)
+pair(x, y) := function f: f(x, y)
+first(p) := p(function x, y: x)
+second(p) := p(function x, y: y)
 
-nil := {x} nil
-nil?(p) := function?(p) and p({x, y} 0) = nil;
+nil := function x: nil
+nil?(p) := function?(p) and p(function x, y: 0) = nil;
 
 make_list(*nums) := nil if empty?(nums) else pair(car(nums), make_list(*cdr(nums)));
 pmap(f, p) := nil if nil?(p) else pair(f(first(p)), pmap(f, second(p)));
@@ -12,5 +12,5 @@ to_list(p) := [] if nil?(p) else [first(p)]+to_list(second(p));
 l := pair(1, pair(2, pair(3, pair(4, nil))))
 to_list(l) #(1,2,3,4)
 l := make_list(1,2,3,4)
-sql := pmap(({x} x^2), l)
+sql := pmap((function x: x^2), l)
 to_list(sql) #(1,4,9,16)
