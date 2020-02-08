@@ -112,5 +112,5 @@ def get_params(list_str):
 
 
 # test
-print(split('1,2,3,4', ','))
-print(split('1,2,3,4', ',', 2))
+# print(split('1,2,3,4', ','))
+# print(split('1,2,3,4', ',', 2))

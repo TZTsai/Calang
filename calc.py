@@ -5,7 +5,7 @@ from __classes import *
 from __parser import *
 from __builtins import *
 from __formatter import *
-from msvcrt import getch
+from msvcrt import getche
 
 py_eval = eval
 
@@ -152,7 +152,7 @@ def calc_eval(exp, env):
         if all(is_replacable(t, 'number', 'symbol') for t in (type, prev_type)):
             CM.push_op(binary_ops['*'])
         if type == 'ans':
-            if all(c is '_' for c in token):
+            if all(c == '_' for c in token):
                 id = -len(token)
             else:
                 id = int(token[1:])
@@ -187,7 +187,7 @@ def calc_eval(exp, env):
                 CM.push_op(unitary_r_ops[token])
         elif type == 'if':
             CM.push_op(Op('bin',
-                          standardize('if', lambda x, y: x if y else None), 
+                          standardize('if', lambda x, y: x if y else None),
                           -5))
         elif type == 'else':
             CM.push_op(Op('bin', standardize('else', lambda x, y: y), -5))
@@ -280,26 +280,26 @@ def calc_exec(exp, record=True):
         if verbose:
             return set(definitions)
     elif words[0] == 'conf':
-        if len(words) is 1:
+        if len(words) == 1:
             raise SyntaxError('config field unspecified')
         if words[1] == 'PREC':
-            if len(words) is 2:
+            if len(words) == 2:
                 print(config.prec)
             else:
                 prec = py_eval(words[2])
                 config.prec = prec
         elif words[1] == 'LATEX':
-            if len(words) is 2:
+            if len(words) == 2:
                 print(config.latex)
             else:
                 config.latex = True if words[2] in ('on', '1') else False
         elif words[1] == 'ALL-SYMBOL':
-            if len(words) is 2:
+            if len(words) == 2:
                 print(config.all_symbol)
             else:
                 config.all_symbol = True if words[2] in ('on', '1') else False
         elif words[1] == 'TOLERANCE':
-            if len(words) is 2:
+            if len(words) == 2:
                 print(eq_tolerance[0])
             else:
                 eq_tolerance[0] = float(words[2])
@@ -329,10 +329,11 @@ def calc_exec(exp, record=True):
 def read_input():
     s = ''
     while True:
-        char = getch()
-        if char is b'\x0c':
+        char = getche()
+        if char == b'\x0c':
             s += 'λ'
-        elif char is b'\r':
+        elif char == b'\r':
+            print()
             break
         else:
             s += char.decode('utf8')
@@ -381,7 +382,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             if line == '#TEST' and not test:
                 return
             if verbose:
-                print(f'({count})▶ ', end='')  # prompt
+                print(f'({count})▶ ', end='', flush=True)  # prompt
             if filename is None:
                 line = read_input()
             if filename and verbose:
