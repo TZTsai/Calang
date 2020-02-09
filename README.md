@@ -274,6 +274,10 @@ Check the file "__builtins.py" to see the available built-in operations and func
     + Ctrl+C: exit
     + Ctrl+L: the shorthand of 'function'
 
+    **Example**:
+    + ^L: 1
+      function: 1
+
 
 
 You can find more examples in the "examples" folder.
