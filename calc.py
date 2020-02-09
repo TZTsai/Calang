@@ -78,12 +78,11 @@ def eval_comprehension(comprehension, env):
 def eval_cases(exp, env):
     cases = [split(case, ':') for case in split(exp, ',')]
     def value(exp): return calc_eval(exp, env)
-    for val in (value(exp) for cond, exp in cases[:-1] if value(cond)):
-        return val
-    else_case = cases[-1]
-    if len(else_case) != 1:
-        raise SyntaxError('invalid cases expression!')
-    return value(else_case[0])
+    try:
+        for val in (value(exp) for cond, exp in cases if value(cond)):
+            return val
+    except ValueError:
+        return value(cases[-1][0])
 
 
 class function:
@@ -209,27 +208,16 @@ def calc_eval(exp, env):
         elif type == 'brace':
             """ Below is my previous interpretation that braces represents
             lambda expressions or local environments. """
-            # segs = get_list(token)
-            # if not segs or len(split(segs[0], ':')) == 1:  # lambda expression
-            #     CM.push_val(function(segs, exp, env))
-            # else:  # local environment
-            #     bindings = (get_binding(l, r, env) for l, r in
-            #                 [split(seg, ':') for seg in segs])
-            #     CM.push_val(calc_eval(exp, env.make_subEnv(dict(bindings))))
-            # break
             CM.push_val(set(eval_list(token, env)))
-        elif type in ('function', 'λ', 'with'):
-            try:
-                list_str, body = split(exp, ':', 2)
-            except ValueError:
-                raise SyntaxError('invalid lambda expression')
-            segs = split(list_str, ',')
+        elif type in ('function', 'with'):
+            i = first(lambda c: c.isspace(), token)
+            segs = split(token[i:-2], ',')  # the last two chars are ': '
             if type == 'with':
                 bindings = [get_binding(name, exp, env) for name, exp in
                             (split(pair, '=', 2) for pair in segs)]
-                CM.push_val(calc_eval(body, env.make_subEnv(dict(bindings))))
+                CM.push_val(calc_eval(exp, env.make_subEnv(dict(bindings))))
             else:
-                CM.push_val(function(segs, body, env))
+                CM.push_val(function(segs, exp, env))
             break
         else:
             raise SyntaxError('invalid token: %s' % token)
@@ -331,6 +319,8 @@ def calc_exec(exp, /, record=True, env=global_env):
             name, value = get_binding(lexp, rexp)
             if any(name in lst for lst in (special_words, builtins, op_list)):
                 raise SyntaxError('word "%s" is protected!' % name)
+            if value is None:
+                raise ValueError(f'assigning {name} to null!')
             global_env[name] = value
             result = value
         if not (CM.vals.empty() and CM.ops.empty()):

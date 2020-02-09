@@ -3,7 +3,12 @@ from __builtins import op_list, special_words, inf, first
 
 def get_token(exp):
     """ split out the first token of exp and return its type, the token itself,
-    and the rest of exp """
+    and the rest of exp
+    >>> get_token('function:')
+    ('function', 'function:', '')
+    >>> get_token('function x, y: x + y')[1:]
+    ('function x, y:', ' x + y')
+    """
 
     def match(exp, condition, start=0):
         i, n = start, len(exp)
@@ -35,66 +40,73 @@ def get_token(exp):
             raise SyntaxError(f'unpaired brackets in "{exp[-15:]}"')
         return exp[:i+1], exp[i+1:]
 
-    # def get_midcolon_token(exp):
-    #     try:
-    #         list_str, body = split(exp, ':', 2)
-    #         segs = split(body, ',', 2)
-    #         left = list_str + segs[0]
-    #     except (ValueError, IndexError):
-    #         raise SyntaxError('invalid function expression')
-    #     right = exp[len(left):]
-    #     return left, right
+    def get_name(exp):
+        m = match(exp, lambda c: c.isalnum() or c in '_?')
+        return exp[:m], exp[m:]
 
-    # def get_cases_token(exp):
-    #     cases = [split(case, ':') for case in split(exp, ',')]
-    #     no_colon = first(lambda l: len(l) != 2, cases)
-    #     cases = ' 'cases[:no_colon+1]
-    #     return 
+    def get_colon_token(exp):
+        kwds = ('function', 'with', '\x0c')
+        stack = 0
+        token = ''
+        while exp:
+            token_, exp = get_name(exp)
+            if not token_:
+                _, token_, exp = get_token(exp)
+            if token_ in kwds:
+                stack += 1
+            elif token_ == ':':
+                stack -= 1
+            token += token_ + ' '
+            if stack == 0:
+                return token, exp
+        if stack:
+            raise SyntaxError('invalid expression')
 
     exp = exp.strip()
     if not exp:
         raise ValueError('empty expression')
 
-    if exp[0] == ',':
-        return 'comma', ',', exp[1:]
-    elif exp[0] == ':':
-        return 'colon', ':', exp[1:]
-    elif exp[0] == '\x0c':
-        return 'function', '\x0c', exp[1:]
-    elif exp[0].isdigit():
+    if exp[0].isdigit():
         m = match(exp, lambda c: c.isdigit() or c == '.')
         if m+1 < len(exp) and exp[m] == 'e':  # scientific notation
             start = m+2 if exp[m+1] == '-' else m+1
             m = match(exp, lambda c: c.isdigit(), start)
         return 'number', exp[:m], exp[m:]
-    elif exp[0].isalpha():  # name
-        m = match(exp, lambda c: c.isalnum() or c in '_?')
-        token, rest = exp[:m], exp[m:]
+    if exp[0].isalpha():  # name
+        token, rest = get_name(exp)
         if token in op_list:  # operation
             return 'op', token, rest
         elif token in special_words:  # keyword
-            return token, token, rest
+            _type = token
+            if token in ('function', 'with'):
+                token, rest = get_colon_token(exp)
+            return _type, token, rest
         else:
             return 'name', token, rest
-    elif exp[0] == '_':
+    if exp[0] == ',':
+        return 'comma', ',', exp[1:]
+    if exp[0] == ':':
+        return 'colon', ':', exp[1:]
+    if exp[0] == '_':
         m = match(exp, lambda c: c.isalnum() or c == '_', 1)
         token, rest = exp[:m], exp[m:]
         _type = 'ans' if len(
             token) == 1 or not token[1].isalpha() else 'symbol'
         return _type, token, rest
-    elif exp[:2] in op_list:
+    if exp[0] == '\x0c':
+        return 'function', *get_colon_token(exp)
+    if exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
-    elif exp[0] in op_list:
+    if exp[0] in op_list:
         return 'op', exp[0], exp[1:]
-    elif exp[0] in '([{':
+    if exp[0] in '([{':
         _type = 'paren' if exp[0] == '(' else 'bracket' \
             if exp[0] == '[' else 'brace'
         token, rest = get_bracketed_token(exp)
         return _type, token, rest
-    elif exp[0] in ')]}':
+    if exp[0] in ')]}':
         raise SyntaxError(f'unpaired brackets in {exp[:15]}')
-    else:
-        raise SyntaxError(f'unknown symbol: {exp[0]}')
+    raise SyntaxError(f'unknown symbol: {exp[0]}')
 
 
 def get_name(exp, no_rest=True):
@@ -118,6 +130,8 @@ def split(exp, delimiter, /, maxnum=inf):
     ['a', '', 'b', ', c']
     >>> split(' ', ',')
     []
+    >>> split('function x, y: 1, 2', ',')
+    ['function x, y: 1', '2']
     """
     if not exp.strip():
         return []
