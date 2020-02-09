@@ -263,7 +263,7 @@ def calc_exec(exp, / , record=True, env=global_env):
             protect = False  # disable overwriting
         for filename in words[1:]:  # default folder: modules/
             new_env = Env()
-            run('modules/' + filename, test, start=0,
+            run('modules/' + filename + '.cal', test, start=0,
                 verbose=verbose, env=new_env)
             if not protect:
                 global_env.update(new_env)

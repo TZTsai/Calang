@@ -1,8 +1,7 @@
-para(r1, r2) := r1*r2/(r1+r2)
-# the resistance of two paralleled resistors
-compose(f, g) := function *args: f(g(*args))
 poly(coeffs, symb) := sum([coeffs[i] * symb^i for i in enum(coeffs)])
 grad(potential, vars) := [diff(potential, var) for var in vars]
+
+normal(mu, sigma) := function x: 1/sqrt(2PI*sigma^2) exp(-(x-mu)^2/(2sigma^2))
 
 #TEST
 grad(x^2y/t^2,[x,y,t])  #(lambda x, y, t: [2*x*y/t**2, x**2/t**2, -2*x**2*y/t**3])(*(Symbol(var) for var in 'x y t'.split()))
