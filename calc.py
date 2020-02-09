@@ -109,9 +109,10 @@ class function:
         return calc_eval(self.body, self.env.make_subEnv(bindings))
 
     def __str__(self):
-        params_str = ', '.join(self.params) + \
-            ('' if self.fixed_argc else ' ... ')
-        return f"function of {params_str}: {self.body}"
+        params_str = ' of ' + ', '.join(self.params) + \
+            ('' if self.fixed_argc else '... ') if self.params \
+                else ''
+        return f"function{params_str}: {self.body}"
 
 
 def get_binding(lexp, rexp, env=global_env):
@@ -138,6 +139,12 @@ def is_applying(prev_val, prev_type, type):
 
 
 def calc_eval(exp, env):
+    """
+    >>> calc_eval('(function: function: 1)()()', Env())
+    1
+    >>> calc_eval('(\x0c: \x0c: 1)()()', Env())
+    1
+    """
     # inner evaluation
     if exp == '':
         return
@@ -211,7 +218,7 @@ def calc_eval(exp, env):
             CM.push_val(set(eval_list(token, env)))
         elif type in ('function', 'with'):
             i = first(lambda c: c.isspace(), token)
-            segs = split(token[i:-2], ',')  # the last two chars are ': '
+            segs = split(token[i:-1], ',')  # the last char is ':'
             if type == 'with':
                 bindings = [get_binding(name, exp, env) for name, exp in
                             (split(pair, '=', 2) for pair in segs)]
@@ -226,7 +233,7 @@ def calc_eval(exp, env):
     return result
 
 
-def calc_exec(exp, /, record=True, env=global_env):
+def calc_exec(exp, / , record=True, env=global_env):
     exps = exp.split(';')
     if not exps:
         return
@@ -256,7 +263,7 @@ def calc_exec(exp, /, record=True, env=global_env):
             protect = False  # disable overwriting
         for filename in words[1:]:  # default folder: modules/
             new_env = Env()
-            run('modules/' + filename, test, start=0, 
+            run('modules/' + filename, test, start=0,
                 verbose=verbose, env=new_env)
             if not protect:
                 global_env.update(new_env)
@@ -330,7 +337,7 @@ def calc_exec(exp, /, record=True, env=global_env):
         return result
 
 
-def run(filename=None, /, test=False, start=0, verbose=True, env=global_env):
+def run(filename=None, / , test=False, start=0, verbose=True, env=global_env):
     def get_lines(filename):
         if filename:
             file = open(filename, 'r')
@@ -424,12 +431,15 @@ def run(filename=None, /, test=False, start=0, verbose=True, env=global_env):
 
 ### RUN ###
 
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
+if __name__ == "__main__":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 
-if len(argv) > 1:
-    if argv[1] == '-t':
-        run("tests", True, 0)
+    if len(argv) > 1:
+        if argv[1] == '-t':
+            import doctest
+            doctest.testmod()
+            run("tests", True, 0)
+        else:
+            run(argv[1])
     else:
-        run(argv[1])
-else:
-    run()
+        run()

@@ -1,13 +1,16 @@
 from __builtins import op_list, special_words, inf, first
+import re
 
 
 def get_token(exp):
     """ split out the first token of exp and return its type, the token itself,
     and the rest of exp
     >>> get_token('function:')
-    ('function', 'function:', '')
-    >>> get_token('function x, y: x + y')[1:]
-    ('function x, y:', ' x + y')
+    ('function', 'function :', '')
+    >>> get_token('function x , y: x + y')[1:]
+    ('function x , y :', ' x + y')
+    >>> get_token('\x0c x, y: x + y')[1:]
+    ('function x , y :', ' x + y')
     """
 
     def match(exp, condition, start=0):
@@ -41,29 +44,34 @@ def get_token(exp):
         return exp[:i+1], exp[i+1:]
 
     def get_name(exp):
+        exp = exp.strip()
         m = match(exp, lambda c: c.isalnum() or c in '_?')
         return exp[:m], exp[m:]
 
     def get_colon_token(exp):
-        kwds = ('function', 'with', '\x0c')
-        stack = 0
-        token = ''
+        types = ('function', 'with')
+        stack, tokens = 0, []
         while exp:
-            token_, exp = get_name(exp)
-            if not token_:
-                _, token_, exp = get_token(exp)
-            if token_ in kwds:
+            token, exp = get_name(exp)
+            type_ = token
+            if not token:
+                type_, token, exp = get_token(exp)
+            if type_ in types:
                 stack += 1
-            elif token_ == ':':
+            elif type_ == 'colon':
                 stack -= 1
-            token += token_ + ' '
+            tokens.append(token)
             if stack == 0:
-                return token, exp
+                return ' '.join(tokens), exp
         if stack:
             raise SyntaxError('invalid expression')
 
-    if exp.isspace():
-        raise ValueError('empty expression')
+    # hotkey Ctrl+L: equiv to 'function'
+    exp = re.sub(r'\x0c', 'function', exp)
+
+    exp = exp.strip()
+    if not exp:
+        raise ValueError('no more tokens')
 
     if exp[0].isdigit():
         m = match(exp, lambda c: c.isdigit() or c == '.')
@@ -92,8 +100,6 @@ def get_token(exp):
         _type = 'ans' if len(
             token) == 1 or not token[1].isalpha() else 'symbol'
         return _type, token, rest
-    if exp[0] == '\x0c':
-        return 'function', *get_colon_token(exp)
     if exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     if exp[0] in op_list:
@@ -130,9 +136,9 @@ def split(exp, delimiter, /, maxnum=inf):
     >>> split(' ', ',')
     []
     >>> split('function x, y: 1, 2', ',')
-    ['function x, y: 1', '2']
+    ['function x , y : 1', '2']
     """
-    if not exp.strip():
+    if exp.isspace():
         return []
     segs, num = [], 1
     while num < maxnum and len(segs) < num:

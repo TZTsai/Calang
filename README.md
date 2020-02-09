@@ -93,7 +93,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
 * Lambda expression  
 
     A lambda expression directly evaluates to a function.
-    **Syntax**: function \<par1>, \<par2>, ...: \<exp>  (in the calculator you are allowed to use Ctrl+L to represent "function")
+    **Syntax**: function \<par1>, \<par2>, ...: \<exp>  
     
     **Examples**:
     
@@ -268,6 +268,11 @@ Check the file "__builtins.py" to see the available built-in operations and func
     **Example**:
     
       * import gauss_jordan
+
+* Hotkeys
+
+    + Ctrl+C: exit
+    + Ctrl+L: the shorthand of 'function'
 
 
 
