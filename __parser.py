@@ -62,8 +62,7 @@ def get_token(exp):
         if stack:
             raise SyntaxError('invalid expression')
 
-    exp = exp.strip()
-    if not exp:
+    if exp.isspace():
         raise ValueError('empty expression')
 
     if exp[0].isdigit():

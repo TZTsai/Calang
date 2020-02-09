@@ -320,7 +320,7 @@ def calc_exec(exp, /, record=True, env=global_env):
             if any(name in lst for lst in (special_words, builtins, op_list)):
                 raise SyntaxError('word "%s" is protected!' % name)
             if value is None:
-                raise ValueError(f'assigning {name} to null!')
+                raise ValueError(f'assigning {name} to none!')
             global_env[name] = value
             result = value
         if not (CM.vals.empty() and CM.ops.empty()):
