@@ -1,4 +1,4 @@
-from __builtins import op_list, special_words
+from __builtins import op_list, special_words, inf, first
 
 
 def get_token(exp):
@@ -35,14 +35,34 @@ def get_token(exp):
             raise SyntaxError(f'unpaired brackets in "{exp[-15:]}"')
         return exp[:i+1], exp[i+1:]
 
-    exp = exp.strip()
+    # def get_midcolon_token(exp):
+    #     try:
+    #         list_str, body = split(exp, ':', 2)
+    #         segs = split(body, ',', 2)
+    #         left = list_str + segs[0]
+    #     except (ValueError, IndexError):
+    #         raise SyntaxError('invalid function expression')
+    #     right = exp[len(left):]
+    #     return left, right
 
-    if exp[0] is ',':
+    # def get_cases_token(exp):
+    #     cases = [split(case, ':') for case in split(exp, ',')]
+    #     no_colon = first(lambda l: len(l) != 2, cases)
+    #     cases = ' 'cases[:no_colon+1]
+    #     return 
+
+    exp = exp.strip()
+    if not exp:
+        raise ValueError('empty expression')
+
+    if exp[0] == ',':
         return 'comma', ',', exp[1:]
-    elif exp[0] is ':':
+    elif exp[0] == ':':
         return 'colon', ':', exp[1:]
+    elif exp[0] == '\x0c':
+        return 'function', '\x0c', exp[1:]
     elif exp[0].isdigit():
-        m = match(exp, lambda c: c.isdigit() or c is '.')
+        m = match(exp, lambda c: c.isdigit() or c == '.')
         if m+1 < len(exp) and exp[m] == 'e':  # scientific notation
             start = m+2 if exp[m+1] == '-' else m+1
             m = match(exp, lambda c: c.isdigit(), start)
@@ -56,19 +76,19 @@ def get_token(exp):
             return token, token, rest
         else:
             return 'name', token, rest
-    elif exp[0] is '_':
-        m = match(exp, lambda c: c.isalnum() or c is '_', 1)
+    elif exp[0] == '_':
+        m = match(exp, lambda c: c.isalnum() or c == '_', 1)
         token, rest = exp[:m], exp[m:]
         _type = 'ans' if len(
-            token) is 1 or not token[1].isalpha() else 'symbol'
+            token) == 1 or not token[1].isalpha() else 'symbol'
         return _type, token, rest
     elif exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     elif exp[0] in op_list:
         return 'op', exp[0], exp[1:]
     elif exp[0] in '([{':
-        _type = 'paren' if exp[0] is '(' else 'bracket' \
-            if exp[0] is '[' else 'brace'
+        _type = 'paren' if exp[0] == '(' else 'bracket' \
+            if exp[0] == '[' else 'brace'
         token, rest = get_bracketed_token(exp)
         return _type, token, rest
     elif exp[0] in ')]}':
@@ -86,20 +106,33 @@ def get_name(exp, no_rest=True):
     return name, rest
 
 
-def split(exp, delimiter, maxnum=None):
+def split(exp, delimiter, /, maxnum=inf):
+    """
+    >>> split('1 , 3 ,', ',')
+    ['1', '3', '']
+    >>> split('1,2 +  t,3,4*8', ',')
+    ['1', '2 + t', '3', '4 * 8']
+    >>> split('f(x), 2,f(x) ,4', ',', 2)
+    ['f (x)', ' 2,f(x) ,4']
+    >>> split('a,, b,, c', ',', 4)
+    ['a', '', 'b', ', c']
+    >>> split(' ', ',')
+    []
+    """
+    if not exp.strip():
+        return []
     segs, num = [], 1
-    while exp:
-        if num == maxnum:
-            segs.append(exp)
-            break
+    while num < maxnum and len(segs) < num:
         tokens = []
         while exp:
             _, token, exp = get_token(exp)
             if token == delimiter:
+                num += 1
                 break
             tokens.append(token)
         segs.append(' '.join(tokens))
-        num += 1
+    if num == maxnum:
+        segs.append(exp)
     return segs
 
 
@@ -111,6 +144,6 @@ def get_params(list_str):
     return [get_name(s) for s in get_list(list_str)]
 
 
-# test
-# print(split('1,2,3,4', ','))
-# print(split('1,2,3,4', ',', 2))
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

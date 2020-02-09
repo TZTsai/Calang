@@ -23,15 +23,17 @@ config.all_symbol = True
 
 
 def eval_list(list_str, env):
-    lst = get_list(list_str)
-    if len(lst) == 1:
-        comprehension = get_list(list_str, 'for')
-        if len(comprehension) > 1:
-            return eval_comprehension(comprehension, env)
+    comprehension = get_list(list_str, 'for')
+    if len(comprehension) > 1:
+        return eval_comprehension(comprehension, env)
 
     def value(exp): return calc_eval(exp, env)
+
+    lst = get_list(list_str)
     result = []
     for exp in lst:
+        if not exp:
+            raise SyntaxError('')
         if exp[0] == '*':
             result.extend(value(exp[1:]))
         else:
@@ -236,7 +238,7 @@ def calc_eval(exp, env):
     return result
 
 
-def calc_exec(exp, record=True):
+def calc_exec(exp, /, record=True, env=global_env):
     exps = exp.split(';')
     if not exps:
         return
@@ -251,7 +253,7 @@ def calc_exec(exp, record=True):
             print(f"{name}: {global_env[name]}")
     elif words[0] == 'load':
         current_history = history.copy()
-        test = verbose = True
+        test = verbose = protect = True
         try:
             words.remove('-t')
         except:
@@ -260,8 +262,20 @@ def calc_exec(exp, record=True):
             words.remove('-v')
         except:
             verbose = False
+        try:
+            words.remove('-p')
+        except:
+            protect = False  # disable overwriting
         for filename in words[1:]:  # default folder: modules/
-            run('modules/' + filename, test, 0, verbose)
+            new_env = Env()
+            run('modules/' + filename, test, start=0, 
+                verbose=verbose, env=new_env)
+            if not protect:
+                global_env.update(new_env)
+            else:
+                for name in new_env:
+                    if name not in global_env:
+                        global_env[name] = new_env[name]
         history.clear()
         history.extend(current_history)
     elif words[0] == 'import':
@@ -326,21 +340,7 @@ def calc_exec(exp, record=True):
         return result
 
 
-def read_input():
-    s = ''
-    while True:
-        char = getche()
-        if char == b'\x0c':
-            s += 'λ'
-        elif char == b'\r':
-            print()
-            break
-        else:
-            s += char.decode('utf8')
-    return s
-
-
-def run(filename=None, test=False, start=0, verbose=True):
+def run(filename=None, /, test=False, start=0, verbose=True, env=global_env):
     def get_lines(filename):
         if filename:
             file = open(filename, 'r')
@@ -384,9 +384,9 @@ def run(filename=None, test=False, start=0, verbose=True):
             if verbose:
                 print(f'({count})▶ ', end='', flush=True)  # prompt
             if filename is None:
-                line = read_input()
+                line = input()
             if filename and verbose:
-                print(line)
+                print(line, flush=True)
 
             if line and line[-1] == '\\':
                 buffer += line[:-1]
@@ -401,7 +401,7 @@ def run(filename=None, test=False, start=0, verbose=True):
 
             exp, comment = split_exp_comment(line)
             if exp:
-                result = calc_exec(exp)
+                result = calc_exec(exp, env=env)
             else:  # a comment line
                 continue
             if result is None:

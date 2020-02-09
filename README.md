@@ -1,6 +1,6 @@
 # A small but powerful calculator
 
-Dependency: python package sympy
+Dependencies: python 3.8, sympy package
 
 Run *python calc.py* to start the program.
 

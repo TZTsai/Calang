@@ -99,9 +99,15 @@ class Env:
                 return self.parent[name]
             else:
                 raise KeyError
+    
+    def __contains__(self, name):
+        return name in self.bindings
 
     def remove(self, name):
         self.bindings.pop(name)
+
+    def update(self, other):
+        self.bindings.update(other.bindings)
 
     def define(self, bindings):
         self.bindings.update(bindings)

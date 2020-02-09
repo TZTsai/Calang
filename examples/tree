@@ -39,8 +39,8 @@ binom_tree_order(add_branch(bt, bt)) #6
 binom_heap_union(h1, h2) := cases h2=[]: h1, h1=[]: h2, (with t1=car(h1), t2=car(h2),\
 union=binom_heap_union: with o1=binom_tree_order(t1),o2=binom_tree_order(t2): \
 cases o1<o2: [t1]+union(cdr(h1), h2), o1>o2: [t2]+union(h1, cdr(h2)), \
-with a1=car(t1), a2=car(t2): union(union([add_branch(t1, t2) if a1<=a2 else \
-add_branch(t2, t1)], cdr(h1)), cdr(h2)));
+(with a1=car(t1), a2=car(t2): union(union([add_branch(t1, t2) if a1<=a2 else \
+add_branch(t2, t1)], cdr(h1)), cdr(h2))));
 bt := binom_tree
 h1 := [bt(0), bt(1), bt(3)]
 h2 := [bt(0), bt(2), bt(5)]

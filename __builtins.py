@@ -163,6 +163,13 @@ def compose(*functions):
     return lambda *args: functions[0](compose(*functions[1:])(*args))
 
 
+def first(cond, lst):
+    try:
+        return tuple(map(cond, lst)).index(True)
+    except ValueError:
+        return len(lst)
+
+
 def standardize(name, val):
 
     def pynumfy(val):
@@ -236,7 +243,7 @@ reconstruct(unitary_r_ops, 'uni_r')
 op_list = set(binary_ops).union(set(unitary_l_ops)).union(set(unitary_r_ops))
 
 special_words = {'if', 'else', 'cases', 'for', 'in', 'ENV', 'load', 'format',
-                 'import', 'del', 'λ', 'function', 'with'}
+                 'import', 'del', 'function', 'with'}
 
 builtins = {'add': add, 'sub': sub, 'mul': mul, 'div': smart_div,
             'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
