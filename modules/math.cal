@@ -1,6 +1,5 @@
 poly(coeffs, symb) := sum([coeffs[i] * symb^i for i in enum(coeffs)])
 grad(potential, vars) := [diff(potential, var) for var in vars]
-
 normal(mu, sigma) := function x: 1/sqrt(2PI*sigma^2) exp(-(x-mu)^2/(2sigma^2))
 
 #TEST

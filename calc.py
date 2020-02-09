@@ -438,7 +438,7 @@ if __name__ == "__main__":
         if argv[1] == '-t':
             import doctest
             doctest.testmod()
-            run("tests", True, 0)
+            run("tests.cal", True, 100)
         else:
             run(argv[1])
     else:

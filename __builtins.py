@@ -49,15 +49,13 @@ def equal(x, y):
 
 
 def power(x, y):
-    if not is_number(y):
-        raise TypeError('invalid type for ^ operation')
-    if is_number(x) or is_symbol(x):
-        return pow_(x, y)
-    elif is_list(x):
+    if is_list(x):
         return reduce(dot, [x] * y)
-    elif is_function(x):
+    if is_function(x):
         return reduce(compose, [x] * y)
-    else:
+    try:
+        return pow_(x, y)
+    except:
         raise TypeError('invalid type for ^ operation')
 
 

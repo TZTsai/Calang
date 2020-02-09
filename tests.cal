@@ -97,3 +97,6 @@ lim(exp(-x), x, INF)  # 0
 
 z:=1+2I
 abs(z) ^ 2 = z conj(z)  # 1
+
+load math
+int(normal(1, sqrt(2))(x), [x, 0.5, 2])
