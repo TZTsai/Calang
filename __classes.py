@@ -1,10 +1,12 @@
+from copy import copy
+
 class Stack:
     def __init__(self):
         self.lst = []
 
     def push(self, obj):
         self.lst.append(obj)
-    
+
     def pop(self):
         assert(not self.empty())
         return self.lst.pop()
@@ -76,10 +78,12 @@ class calcMachine:
         while not (self.ops.empty() or op.isStopMark()):
             last_op = self.ops.peek()
             if op.priority <= last_op.priority:
-                try: self.__calc()
+                try:
+                    self.__calc()
                 except AssertionError:
                     raise SyntaxError
-            else: break
+            else:
+                break
         self.ops.push(op)
 
 
@@ -99,7 +103,7 @@ class Env:
                 return self.parent[name]
             else:
                 raise KeyError
-    
+
     def __contains__(self, name):
         return name in self.bindings
 
@@ -114,3 +118,51 @@ class Env:
 
     def make_subEnv(self, bindings={}):
         return Env(bindings, self)
+
+
+class function:
+
+    _eval = lambda *args: None  # should be rebound later
+
+    def _default_apply(self, *args):
+        if not self._fixed_argc:
+            if len(args) < self._least_argc:
+                raise TypeError('inconsistent number of arguments!')
+            args = args[:self._least_argc] + (args[self._least_argc:],)
+        elif len(args) != self._least_argc:
+            raise TypeError('inconsistent number of arguments!')
+        bindings = dict(zip(self._params, args))
+        return function._eval(self._body, self._env.make_subEnv(bindings))
+
+    def __init__(self, params, body, env):
+        if params and params[-1][0] == '*':
+            params[-1] = params[-1][1:]
+            self._least_argc = len(params) - 1
+            self._fixed_argc = False
+        else:
+            self._least_argc = len(params)
+            self._fixed_argc = True
+        params = [s.strip() for s in params]
+        self._params = [s for s in params if s and s[0].isalpha()]
+        if len(self._params) != len(params):
+            raise SyntaxError('invalid parameters:', ', '.join(params))
+        self._body = body.strip()
+        self._env = env
+        self._apply = self._default_apply
+
+    def __call__(self, *args):
+        return self._apply(*args)
+
+    def compose(self, *funcs):
+        """ Return a function that compose this function and several functions. """
+        def apply(*args):
+            return self._default_apply(*map(lambda f: f(*args), funcs))
+        g = copy(self)
+        g._apply = apply
+        return g
+
+    def __str__(self):
+        params_str = ' of ' + ', '.join(self._params) + \
+            ('' if self._fixed_argc else '... ') if self._params \
+            else ''
+        return f"function{params_str}: {self._body}"

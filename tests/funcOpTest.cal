@@ -1,0 +1,7 @@
+f(x) := x + 1
+g(x) := x * 2
+(f+g)(2)  # 7
+(4*g)(5)  # 40
+(f*g)(3)  # 24
+(f.g)(3)  # 7  # Composition
+(f*g + f^3 + 4)(2)  # 21  # f^3 is f repeated for 3 times

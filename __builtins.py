@@ -4,9 +4,9 @@ from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from math import e, pi, inf, log10
-from sympy import Symbol, solve, limit, integrate, diff, simplify, Integer, Float, Matrix, \
+from sympy import Symbol, solve, limit, integrate, diff, simplify, Integer, Float, Matrix, Expr, \
     sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh
-from __classes import Op
+from __classes import Op, function, Env
 
 
 def is_number(value):
@@ -48,15 +48,64 @@ def equal(x, y):
         return x == y
 
 
+def all_(lst, condition=None):
+    if condition:
+        return all(map(condition, lst))
+    else:
+        return all(lst)
+
+
+def any_(lst, condition=None):
+    if condition:
+        return any(map(condition, lst))
+    else:
+        return any(lst)
+
+
+def smart_div(x, y):
+    if all(isinstance(w, Rational) for w in (x, y)):
+        return Fraction(x, y)
+    return x / y
+
+
+def substitute(exp, *bindings):
+    if is_iterable(exp):
+        return tuple(substitute(x, *bindings) for x in exp)
+    if hasattr(exp, 'subs'):
+        return exp.subs(zip([bindings[i] for i in range(len(bindings)) if i % 2 == 0],
+                            [bindings[i] for i in range(len(bindings)) if i % 2 == 1]))
+    return exp
+
+
+def func_op_template(op, fallback):
+    def apply(a, b):
+        if all_((a, b), is_function):
+            f = function(('a', 'b'), 'a'+op+'b', Env())
+            return f.compose(a, b)
+        if is_function(a) and not is_list(b):
+            return function(['x'], 'x' + op + str(b), Env()).compose(a)
+        if is_function(b) and not is_list(a):
+            return function(['x'], str(a) + op + 'x', Env()).compose(b)
+        return fallback(a, b)
+    return apply
+
+
+add_ = func_op_template('+', add)
+sub_ = func_op_template('-', sub)
+mul_ = func_op_template('*', mul)
+div_ = func_op_template('/', smart_div)
+
+
 def power(x, y):
     if is_list(x):
         return reduce(dot, [x] * y)
-    if is_function(x):
-        return reduce(compose, [x] * y)
-    try:
+    elif isinstance(x, function) and isinstance(y, int):
+        f = x
+        for _ in range(1, y):
+            f = x.compose(f)
+        return f
+    else:
         return pow_(x, y)
-    except:
-        raise TypeError('invalid type for ^ operation')
 
 
 def list_depth(value):
@@ -133,7 +182,10 @@ def transpose(value):
 def dot(x1, x2):
     d1, d2 = list_depth(x1), list_depth(x2)
     if d1 == d2 == 0:
-        return x1 * x2
+        if all_((x1, x2), is_function):
+            return x1.compose(x2)
+        else:
+            return mul_(x1, x2)
     elif d2 == 0:
         return tuple(dot(a1, x2) for a1 in x1)
     elif d1 == 0:
@@ -155,17 +207,30 @@ def dot(x1, x2):
         raise TypeError('invalid arguments')
 
 
-def compose(*functions):
-    if len(functions) == 1:
-        return functions[0]
-    return lambda *args: functions[0](compose(*functions[1:])(*args))
+def compose(*funcs):
+    def compose2(f, g):
+        return lambda *args: f(g(*args))
+    return reduce(compose2, funcs)
 
 
 def first(cond, lst):
     try:
-        return tuple(map(cond, lst)).index(True)
+        return list(map(cond, lst)).index(True)
     except ValueError:
         return len(lst)
+
+
+def find(cond, lst):
+    if is_function(cond):
+        return [i for i in range(len(lst)) if cond(lst[i])]
+    else:
+        return [i for i in range(len(lst)) if equal(lst[i], cond)]
+
+
+def cases(cases):
+    for cond, val in cases:
+        if cond:
+            return val
 
 
 def standardize(name, val):
@@ -179,7 +244,7 @@ def standardize(name, val):
         elif isinstance(val, Float):
             return float(val)
         else:
-            return complex(val)
+            return (lambda z: z.real if z.imag == 0 else z)(complex(val))
 
     def unify_types(x):
         if type(x) is bool:
@@ -190,7 +255,7 @@ def standardize(name, val):
             try:
                 return pynumfy(x)
             except (ValueError, TypeError):
-                return x
+                return simplify(x) if isinstance(x, Expr) else x
 
     if is_function(val):
         fun = compose(unify_types, val)
@@ -205,23 +270,8 @@ def reconstruct(op_dict, type):
         op_dict[op] = Op(type, standardize(op, info[0]), info[1])
 
 
-def smart_div(x, y):
-    if all(isinstance(w, Rational) for w in (x, y)):
-        return Fraction(x, y)
-    return x / y
-
-
-def substitute(exp, *bindings):
-    if is_iterable(exp):
-        return tuple(substitute(x, *bindings) for x in exp)
-    if hasattr(exp, 'subs'):
-        return exp.subs(zip([bindings[i] for i in range(len(bindings)) if i % 2 == 0],
-                            [bindings[i] for i in range(len(bindings)) if i % 2 == 1]))
-    return exp
-
-
-binary_ops = {'+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (smart_div, 8), '.': (dot, 7),
-              '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '|': (compose, 12),
+binary_ops = {'+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '.': (dot, 7),
+              '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8),
               '=': (equal, 0), '!=': (ne, 0),
               '<': (lt, 0), '>': (gt, 0), '<=': (le, 0),
               '>=': (ge, 0), 'xor': (xor, 3),
@@ -240,7 +290,7 @@ reconstruct(unitary_r_ops, 'uni_r')
 
 op_list = set(binary_ops).union(set(unitary_l_ops)).union(set(unitary_r_ops))
 
-special_words = {'if', 'else', 'cases', 'for', 'in', 'ENV', 'load', 'format',
+special_words = {'if', 'else', 'for', 'in', 'ENV', 'load', 'format', 'cases',
                  'import', 'del', 'function', 'with'}
 
 builtins = {'add': add, 'sub': sub, 'mul': mul, 'div': smart_div,
@@ -254,15 +304,20 @@ builtins = {'add': add, 'sub': sub, 'mul': mul, 'div': smart_div,
             'list': to_list, 'sum': lambda l: reduce(add, l), 'prod': lambda l: reduce(mul, l),
             'car': lambda l: l[0], 'cdr': lambda l: l[1:], 'cons': lambda a, l: (a,) + l, 'enum': compose(range, len),
             'row': row, 'col': col, 'shape': list_shape, 'depth': list_depth, 'transp': transpose,
-            'all': all, 'any': any, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),
+            'all': all_, 'any': any, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),
             'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': lambda x: x / pi * 180,
             'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else 0,
             'conj': lambda z: z.conjugate(), 'angle': lambda z: atan(z.imag / z.real),
-            'reduce': reduce, 'filter': filter, 'map': map, 'zip': zip,
-            'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute, 'simp': simplify}
+            'reduce': reduce, 'filter': filter, 'map': map, 'zip': zip, 'cases': cases, 'find': find,
+            'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute}
 
 for name in builtins:
     val = builtins[name]
     if is_function(val):
         builtins[name] = standardize(name, val)
         builtins[name].str = f'<built-in: {name}>'
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

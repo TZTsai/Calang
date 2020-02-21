@@ -49,14 +49,13 @@ def get_token(exp):
         return exp[:m], exp[m:]
 
     def get_colon_token(exp):
-        types = ('function', 'with')
         stack, tokens = 0, []
         while exp:
             token, exp = get_name(exp)
             type_ = token
             if not token:
                 type_, token, exp = get_token(exp)
-            if type_ in types:
+            if type_ in closure_kwds:
                 stack += 1
             elif type_ == 'colon':
                 stack -= 1
@@ -66,8 +65,10 @@ def get_token(exp):
         if stack:
             raise SyntaxError('invalid expression')
 
-    # hotkey Ctrl+L: equiv to 'function'
+    # hotkey Ctrl+L: equiv to 'lambda'
     exp = re.sub(r'\x0c', 'function', exp)
+
+    closure_kwds = ('function', 'with')
 
     exp = exp.strip()
     if not exp:
@@ -84,10 +85,10 @@ def get_token(exp):
         if token in op_list:  # operation
             return 'op', token, rest
         elif token in special_words:  # keyword
-            _type = token
-            if token in ('function', 'with'):
+            type_ = token
+            if token in closure_kwds:
                 token, rest = get_colon_token(exp)
-            return _type, token, rest
+            return type_, token, rest
         else:
             return 'name', token, rest
     if exp[0] == ',':
@@ -97,26 +98,49 @@ def get_token(exp):
     if exp[0] == '_':
         m = match(exp, lambda c: c.isalnum() or c == '_', 1)
         token, rest = exp[:m], exp[m:]
-        _type = 'ans' if len(
+        type_ = 'ans' if len(
             token) == 1 or not token[1].isalpha() else 'symbol'
-        return _type, token, rest
+        return type_, token, rest
+    if exp[:2] == '->':
+        return 'arrow', '->', exp[2:]
     if exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     if exp[0] in op_list:
         return 'op', exp[0], exp[1:]
     if exp[0] in '([{':
-        _type = 'paren' if exp[0] == '(' else 'bracket' \
+        type_ = 'paren' if exp[0] == '(' else 'bracket' \
             if exp[0] == '[' else 'brace'
         token, rest = get_bracketed_token(exp)
-        return _type, token, rest
+        return type_, token, rest
     if exp[0] in ')]}':
         raise SyntaxError(f'unpaired brackets in {exp[:15]}')
     raise SyntaxError(f'unknown symbol: {exp[0]}')
 
 
+class Tokenizer:
+    class iterator:
+        def __init__(self, exp):
+            self.exp = exp
+
+        def __next__(self):
+            if self.exp:
+                type_, token, self.exp = get_token(self.exp)
+                return type_, token
+            raise StopIteration
+
+        def peek(self):
+            return get_token(self.exp)[:2]
+
+    def __init__(self, exp):
+        self.exp = exp
+
+    def __iter__(self):
+        return Tokenizer.iterator(self.exp)
+
+
 def get_name(exp, no_rest=True):
-    _type, name, rest = get_token(exp)
-    if not _type == 'name' or (no_rest and rest):
+    type_, name, rest = get_token(exp)
+    if not type_ == 'name' or (no_rest and rest):
         raise SyntaxError(f'invalid variable name: {exp}!')
     if no_rest:
         return name
@@ -138,7 +162,8 @@ def split(exp, delimiter, /, maxnum=inf):
     >>> split('function x, y: 1, 2', ',')
     ['function x , y : 1', '2']
     """
-    if exp.isspace():
+    exp = exp.strip()
+    if not exp:
         return []
     segs, num = [], 1
     while num < maxnum and len(segs) < num:
@@ -156,6 +181,10 @@ def split(exp, delimiter, /, maxnum=inf):
 
 
 def get_list(list_exp, delimiter=','):
+    """
+    >>> get_list('[]')
+    []
+    """
     return split(list_exp[1:-1], delimiter)
 
 

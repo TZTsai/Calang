@@ -1,11 +1,9 @@
 import io
 import sys
-from sys import argv
 from __classes import *
 from __parser import *
 from __builtins import *
 from __formatter import *
-from msvcrt import getche
 
 py_eval = eval
 
@@ -33,7 +31,7 @@ def eval_list(list_str, env):
     result = []
     for exp in lst:
         if not exp:
-            raise SyntaxError('')
+            raise SyntaxError('invalid list syntax')
         if exp[0] == '*':
             result.extend(value(exp[1:]))
         else:
@@ -76,7 +74,7 @@ def eval_comprehension(comprehension, env):
 
 
 def eval_cases(exp, env):
-    cases = [split(case, ':') for case in split(exp, ',')]
+    cases = [split(case, ':') for case in get_list(exp)]
     def value(exp): return calc_eval(exp, env)
     try:
         for val in (value(exp) for cond, exp in cases if value(cond)):
@@ -85,152 +83,150 @@ def eval_cases(exp, env):
         return value(cases[-1][0])
 
 
-class function:
-    def __init__(self, params, body, env=global_env):
-        if params and params[-1][0] == '*':
-            params[-1] = params[-1][1:]
-            self.least_argc = len(params) - 1
-            self.fixed_argc = False
-        else:
-            self.least_argc = len(params)
-            self.fixed_argc = True
-        self.params = [get_name(s) for s in params]
-        self.body = body.strip()
-        self.env = env
-
-    def __call__(self, *args):
-        if not self.fixed_argc:
-            if len(args) < self.least_argc:
-                raise TypeError('inconsistent number of arguments!')
-            args = args[:self.least_argc] + (args[self.least_argc:],)
-        elif len(args) != self.least_argc:
-            raise TypeError('inconsistent number of arguments!')
-        bindings = dict(zip(self.params, args))
-        return calc_eval(self.body, self.env.make_subEnv(bindings))
-
-    def __str__(self):
-        params_str = ' of ' + ', '.join(self.params) + \
-            ('' if self.fixed_argc else '... ') if self.params \
-                else ''
-        return f"function{params_str}: {self.body}"
-
-
 def get_binding(lexp, rexp, env=global_env):
     """ lexp can be either a name or a repr of a function, eg. 'f(x)' """
     name, rest = get_name(lexp, False)
     if not rest:
         return name, calc_eval(rexp, env)
-    else:  # 'f(x)' can be bound with 'x+1' or even 'x if x>0 else f(-x)'
-        type, params, rest = get_token(rest)
-        if type != 'paren' or rest != '':
+    else:  # bind a function, eg. f(x) bound to x + 1
+        type_, params, rest = get_token(rest)
+        if type_ != 'paren' or rest != '':
             raise SyntaxError('invalid variable name!')
         func = function(get_list(params), rexp, env.make_subEnv())
-        func.env[name] = func  # enable recursion
+        func._env[name] = func  # enable recursion
         return name, func
 
 
-def is_replacable(type, *replaced_types):
-    return type in replaced_types + ('name', 'paren', 'ans')
+def eval_name(token, env):
+    try:
+        val = env[token]
+    except KeyError:
+        if token in builtins:
+            val = builtins[token]
+        elif config.all_symbol:
+            val = Symbol(token)
+        else:
+            raise NameError(f'unbound symbol \'{token}\'')
+    return val
 
 
-def is_applying(prev_val, prev_type, type):
-    return type == 'paren' and is_function(prev_val) \
+def eval_ans_id(token):
+    if all(c == '_' for c in token):
+        return -len(token)
+    else:
+        return int(token[1:])
+
+
+def eval_closure(type_, token, exp, env):
+    i = first(lambda c: c.isspace(), token)
+    segs = split(token[i:-1], ',')  # the last char is ':'
+    if type_ == 'with':
+        bindings = [get_binding(name, exp, env) for name, exp in
+                    (split(pair, '=', 2) for pair in segs)]
+        return calc_eval(exp, env.make_subEnv(dict(bindings)))
+    else:
+        return function(segs, exp, env)
+
+
+def is_replacable(type_, *replaced_types):
+    return type_ in replaced_types + ('name', 'paren', 'ans')
+
+
+def is_applying(prev_val, prev_type, type_):
+    return type_ == 'paren' and is_function(prev_val) \
         and is_replacable(prev_type, 'name')
 
 
+def is_making_func(exp):
+    if exp and (tup := get_token(exp))[0] == 'arrow':
+        return tup[2]
+    return False
+
+
 def calc_eval(exp, env):
-    """
-    >>> calc_eval('(function: function: 1)()()', Env())
-    1
-    >>> calc_eval('(\x0c: \x0c: 1)()()', Env())
-    1
-    """
+    """ a pure function that evaluates exp in env """
     # inner evaluation
     if exp == '':
         return
     CM.begin()
     prev_type = None
     while exp:
-        type, token, exp = get_token(exp)
+        type_, token, exp = get_token(exp)
         prev_val = None if CM.vals.empty() else CM.vals.peek()
-        if is_applying(prev_val, prev_type, type):  # apply a function
+        if is_applying(prev_val, prev_type, type_):  # apply a function
             func, args = CM.vals.pop(), eval_list(token, env)
             CM.push_val(func(*args))
             continue
-        if all(is_replacable(t, 'number', 'symbol') for t in (type, prev_type)):
+        if all(is_replacable(t, 'number', 'symbol') for t in (type_, prev_type)):
             CM.push_op(binary_ops['*'])
-        if type == 'ans':
-            if all(c == '_' for c in token):
-                id = -len(token)
-            else:
-                id = int(token[1:])
+        if type_ == 'ans':
             try:
-                CM.push_val(history[id])
+                CM.push_val(history[eval_ans_id(token)])
             except IndexError:
                 raise ValueError(f'Answer No.{id} not found!')
-        elif type == 'number':
+        elif type_ == 'number':
             try:
                 CM.push_val(py_eval(token))
             except Exception:
                 raise SyntaxError(f'invalid number: {token}')
-        elif type == 'name':
-            try:
-                val = env[token]
-            except KeyError:
-                if token in builtins:
-                    val = builtins[token]
-                elif config.all_symbol:
-                    val = Symbol(token)
-                else:
-                    raise NameError(f'unbound symbol \'{token}\'')
-            CM.push_val(val)
-        elif type == 'symbol':
+        elif type_ == 'name':
+            if (body := is_making_func(exp)) == False:
+                CM.push_val(eval_name(token, env))
+            else:
+                CM.push_val(function([token], body, env))
+                break
+        elif type_ == 'symbol':
             CM.push_val(Symbol(token[1:]))
-        elif type == 'op':
+        elif type_ == 'op':
             if (prev_type in (None, 'op')) and token in unitary_l_ops:
                 CM.push_op(unitary_l_ops[token])
             elif exp and token in binary_ops:
                 CM.push_op(binary_ops[token])
             else:
                 CM.push_op(unitary_r_ops[token])
-        elif type == 'if':
-            CM.push_op(Op('bin',
-                          standardize('if', lambda x, y: x if y else None),
-                          -5))
-        elif type == 'else':
+        elif type_ == 'if':
+            CM.push_op(Op('bin', priority=-5,
+                          function=standardize('if', lambda x, y: x if y else None)))
+        elif type_ == 'else':
             CM.push_op(Op('bin', standardize('else', lambda x, y: y), -5))
             if CM.vals.peek() is not None:
                 CM.ops.pop()
                 break  # short circuit
-        elif type == 'cases':
-            CM.push_val(eval_cases(exp, env))
-            break
-        elif type == 'paren':
-            CM.push_val(calc_eval(token[1:-1], env))
-        elif type == 'bracket':
+        elif type_ == 'cases':
+            type_, token, exp = get_token(exp)
+            if type_ != 'paren':
+                raise SyntaxError('invalid cases expression')
+            CM.push_val(eval_cases(token, env))
+        elif type_ == 'paren':
+            lst = get_list(token)
+            if (body := is_making_func(exp)) != False:
+                # a shorthand function
+                CM.push_val(function(lst, body, env))
+                break
+            else:
+                if len(lst) != 1:
+                    raise SyntaxError('invalid syntax in parentheses')
+                CM.push_val(calc_eval(lst[0], env))
+        elif type_ == 'bracket':
             if is_iterable(prev_val) and is_replacable(prev_type, 'bracket'):
                 CM.push_val(eval_subscription(CM.vals.pop(), token, env))
             else:
                 CM.push_val(eval_list(token, env))
-        elif type == 'brace':
+        elif type_ == 'brace':
             """ Below is my previous interpretation that braces represents
             lambda expressions or local environments. """
             CM.push_val(set(eval_list(token, env)))
-        elif type in ('function', 'with'):
-            i = first(lambda c: c.isspace(), token)
-            segs = split(token[i:-1], ',')  # the last char is ':'
-            if type == 'with':
-                bindings = [get_binding(name, exp, env) for name, exp in
-                            (split(pair, '=', 2) for pair in segs)]
-                CM.push_val(calc_eval(exp, env.make_subEnv(dict(bindings))))
-            else:
-                CM.push_val(function(segs, exp, env))
+        elif type_ in ('function', 'with', 'lambda'):
+            CM.push_val(eval_closure(type_, token, exp, env))
             break
         else:
             raise SyntaxError('invalid token: %s' % token)
-        prev_type = type
+        prev_type = type_
     result = CM.calc()
     return result
+
+
+function._eval = calc_eval
 
 
 def calc_exec(exp, / , record=True, env=global_env):
@@ -337,7 +333,7 @@ def calc_exec(exp, / , record=True, env=global_env):
         return result
 
 
-def run(filename=None, / , test=False, start=0, verbose=True, env=global_env):
+def run(filename=None, test=False, start=0, verbose=True, env=global_env):
     def get_lines(filename):
         if filename:
             file = open(filename, 'r')
@@ -434,12 +430,17 @@ def run(filename=None, / , test=False, start=0, verbose=True, env=global_env):
 if __name__ == "__main__":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf8')
 
-    if len(argv) > 1:
-        if argv[1] == '-t':
-            import doctest
-            doctest.testmod()
-            run("tests.cal", True, 100)
+    import doctest
+    doctest.testmod()
+
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '-t':
+            if len(sys.argv) == 2:
+                testfile = 'tests.cal'
+            else:
+                testfile = sys.argv[2]
+            run("tests/"+testfile, test=True, start=0)
         else:
-            run(argv[1])
+            run(sys.argv[1])
     else:
         run()
