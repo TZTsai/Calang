@@ -117,27 +117,6 @@ def get_token(exp):
     raise SyntaxError(f'unknown symbol: {exp[0]}')
 
 
-class Tokenizer:
-    class iterator:
-        def __init__(self, exp):
-            self.exp = exp
-
-        def __next__(self):
-            if self.exp:
-                type_, token, self.exp = get_token(self.exp)
-                return type_, token
-            raise StopIteration
-
-        def peek(self):
-            return get_token(self.exp)[:2]
-
-    def __init__(self, exp):
-        self.exp = exp
-
-    def __iter__(self):
-        return Tokenizer.iterator(self.exp)
-
-
 def get_name(exp, no_rest=True):
     type_, name, rest = get_token(exp)
     if not type_ == 'name' or (no_rest and rest):
