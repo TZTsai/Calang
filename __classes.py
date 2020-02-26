@@ -1,5 +1,6 @@
 from copy import copy
 
+
 class Stack:
     def __init__(self):
         self.lst = []
@@ -161,8 +162,47 @@ class function:
         g._apply = apply
         return g
 
+    @classmethod
+    def operator(cls, sym, fallback=None):
+        def apply(a, b):
+            if callable(a) and callable(b):
+                f = function(('a', 'b'), 'a '+sym+' b', Env())
+                return f.compose(a, b)
+            if callable(a):
+                body = sym+' x' if b is None else f'x {sym} {str(b)}'
+                return function(['x'], body, Env()).compose(a)
+            if callable(b):
+                return function(['x'], f'{str(a)} {sym} x', Env()).compose(b)
+            return fallback(a, b)
+        return apply
+
     def __str__(self):
         params_str = ' of ' + ', '.join(self._params) + \
             ('' if self._fixed_argc else '... ') if self._params \
             else ''
         return f"function{params_str}: {self._body}"
+
+
+# class GeneralSet(set):  # but disabled - no operations
+
+#     def __init__(self, vars, constraint):
+#         self._vars = vars
+#         self._constr = constraint
+
+#     def __contains__(self, el):
+#         if len(self._vars) > 1:
+#             assert(len(self._vars) == len(el))
+#         mapping = zip(self._vars, el)
+#         for var, val in mapping:
+#             if var[1] and val not in var[1]:
+#                 return False
+#         return self._constr(el)
+
+#     def __str__(self):
+#         def withfield(var):
+#             v = var[0]
+#             if var[1]:
+#                 v += ' in ' + str(var[1])
+#             return v
+#         left = ', '.join(map(withfield, self._vars))
+#         return f"{{{left} | {self._constr._body}}}"

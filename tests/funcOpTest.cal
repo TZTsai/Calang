@@ -5,3 +5,6 @@ g(x) := x * 2
 (f*g)(3)  # 24
 (f.g)(3)  # 7  # Composition
 (f*g + f^3 + 4)(2)  # 21  # f^3 is f repeated for 3 times
+h(x) := x + x^2 / x
+one(x) := g == h
+map(one, [0,2,-5,0.3,-1.9])  # (1,1,1,1,1)

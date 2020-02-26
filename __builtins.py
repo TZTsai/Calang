@@ -1,5 +1,5 @@
 from operator import add, sub, mul, floordiv, mod, ne, neg, lt, gt, le, ge, \
-    xor, pow as pow_
+    xor, pow as pow_, and_, or_
 from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
@@ -7,6 +7,7 @@ from math import e, pi, inf, log10
 from sympy import Symbol, solve, limit, integrate, diff, simplify, Integer, Float, Matrix, Expr, \
     sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh
 from __classes import Op, function, Env
+from myutils.utils import interact
 
 
 def is_number(value):
@@ -77,23 +78,25 @@ def substitute(exp, *bindings):
     return exp
 
 
-def func_op_template(op, fallback):
-    def apply(a, b):
-        if all_((a, b), is_function):
-            f = function(('a', 'b'), 'a'+op+'b', Env())
-            return f.compose(a, b)
-        if is_function(a) and not is_list(b):
-            return function(['x'], 'x' + op + str(b), Env()).compose(a)
-        if is_function(b) and not is_list(a):
-            return function(['x'], str(a) + op + 'x', Env()).compose(b)
-        return fallback(a, b)
-    return apply
+# set operation supports
+def smart_add(a, b):
+    if all_((a, b), lambda x: isinstance(x, set)):
+        return or_(a, b)
+    return add(a, b)
+
+def smart_mul(a, b):
+    if all_((a, b), lambda x: isinstance(x, set)):
+        return and_(a, b)
+    return mul(a, b)
 
 
-add_ = func_op_template('+', add)
-sub_ = func_op_template('-', sub)
-mul_ = func_op_template('*', mul)
-div_ = func_op_template('/', smart_div)
+add_ = function.operator('+', smart_add)
+sub_ = function.operator('-', sub)
+mul_ = function.operator('*', smart_mul)
+div_ = function.operator('/', smart_div)
+and_ = function.operator('/\\', and_)
+or_ = function.operator('\\/', or_)
+eq_ = function.operator('=', equal)
 
 
 def power(x, y):
@@ -249,7 +252,7 @@ def standardize(name, val):
     def unify_types(x):
         if type(x) is bool:
             return 1 if x else 0
-        elif is_iterable(x) and type(x) != range:
+        elif is_iterable(x) and not any_((range, set), lambda c: isinstance(x, c)):
             return tuple(unify_types(a) for a in x)
         else:
             try:
@@ -271,14 +274,11 @@ def reconstruct(op_dict, type):
 
 
 binary_ops = {'+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '.': (dot, 7),
-              '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8),
-              '=': (equal, 0), '!=': (ne, 0),
-              '<': (lt, 0), '>': (gt, 0), '<=': (le, 0),
-              '>=': (ge, 0), 'xor': (xor, 3),
-              'in': (lambda x, l: 1 if x in l else 0, -2),
+              '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '==': (eq_, 4),
+              '=': (equal, 0), '!=': (ne, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0),
+              '>=': (ge, 0), 'xor': (xor, 3), 'in': (lambda x, y: x in y, -2),
               '@': (index, 16), '~': (lambda a, b: range(a, b + 1), 5),
-              'and': (lambda a, b: a and b, -5),
-              'or': (lambda a, b: a or b, -6)}
+              'and': (and_, -5), 'or': (or_, -6), '/\\': (and_, 8), '\\/': (or_, 7)}
 reconstruct(binary_ops, 'bin')
 
 unitary_l_ops = {'-': (neg, 10), 'not': (lambda n: 1 if n == 0 else 0, -4)}
@@ -290,10 +290,10 @@ reconstruct(unitary_r_ops, 'uni_r')
 
 op_list = set(binary_ops).union(set(unitary_l_ops)).union(set(unitary_r_ops))
 
-special_words = {'if', 'else', 'for', 'in', 'ENV', 'load', 'format', 'cases',
+special_words = {'if', 'else', 'in', 'ENV', 'load', 'format', 'cases',
                  'import', 'del', 'function', 'with'}
 
-builtins = {'add': add, 'sub': sub, 'mul': mul, 'div': smart_div,
+builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
             'atan': atan, 'abs': abs, 'sqrt': sqrt, 'floor': floor, 'log': log,
             'E': e, 'PI': pi, 'I': 1j, 'INF': inf, 'range': range, 'max': max, 'min': min, 'gcd': gcd,
@@ -301,7 +301,7 @@ builtins = {'add': add, 'sub': sub, 'mul': mul, 'div': smart_div,
             'exp': exp, 'lg': lambda x: log(x)/log(10), 'ln': log, 'log2': lambda x: log(x)/log(2),
             'empty?': lambda l: 0 if len(l) else 1, 'number?': is_number, 'symbol?': is_symbol,
             'iter?': is_iterable, 'function?': is_function, 'matrix?': is_matrix, 'vector?': is_vector,
-            'list': to_list, 'sum': lambda l: reduce(add, l), 'prod': lambda l: reduce(mul, l),
+            'list': to_list, 'sum': lambda l: reduce(add, l), 'product': lambda l: reduce(mul, l),
             'car': lambda l: l[0], 'cdr': lambda l: l[1:], 'cons': lambda a, l: (a,) + l, 'enum': compose(range, len),
             'row': row, 'col': col, 'shape': list_shape, 'depth': list_depth, 'transp': transpose,
             'all': all_, 'any': any, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),

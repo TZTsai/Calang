@@ -44,4 +44,4 @@ add_branch(t2, t1)], cdr(h1)), cdr(h2))))));
 bt := binom_tree
 h1 := [bt(0), bt(1), bt(3)]
 h2 := [bt(0), bt(2), bt(5)]
-[binom_tree_order(t) for t in binom_heap_union(h1, h2)] #(4,5)
+[binom_tree_order(t) | t in binom_heap_union(h1, h2)] #(4,5)

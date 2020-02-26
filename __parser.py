@@ -74,7 +74,7 @@ def get_token(exp):
     if not exp:
         raise ValueError('no more tokens')
 
-    if exp[0].isdigit():
+    if exp[0].isdigit():  # number
         m = match(exp, lambda c: c.isdigit() or c == '.')
         if m+1 < len(exp) and exp[m] == 'e':  # scientific notation
             start = m+2 if exp[m+1] == '-' else m+1
@@ -91,6 +91,8 @@ def get_token(exp):
             return type_, token, rest
         else:
             return 'name', token, rest
+
+    # special symbols
     if exp[0] == ',':
         return 'comma', ',', exp[1:]
     if exp[0] == ':':
@@ -101,6 +103,8 @@ def get_token(exp):
         type_ = 'ans' if len(
             token) == 1 or not token[1].isalpha() else 'symbol'
         return type_, token, rest
+    if exp[0] == '|':
+        return 'pipe', '|', exp[1:]
     if exp[:2] == '->':
         return 'arrow', '->', exp[2:]
     if exp[:2] in op_list:
@@ -126,7 +130,7 @@ def get_name(exp, no_rest=True):
     return name, rest
 
 
-def split(exp, delimiter, /, maxnum=inf):
+def split(exp, delimiter, maxnum=inf):
     """
     >>> split('1 , 3 ,', ',')
     ['1', '3', '']

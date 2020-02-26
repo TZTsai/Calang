@@ -20,14 +20,14 @@ config.latex = False
 config.all_symbol = True
 
 
-def eval_list(list_str, env):
-    comprehension = get_list(list_str, 'for')
+def eval_list(exp, env):
+    comprehension = get_list(exp, '|')
     if len(comprehension) > 1:
         return eval_comprehension(comprehension, env)
 
     def value(exp): return calc_eval(exp, env)
 
-    lst = get_list(list_str)
+    lst = get_list(exp)
     result = []
     for exp in lst:
         if not exp:
@@ -55,22 +55,40 @@ def eval_subscription(lst, subscript_exp, env):
 
 
 def eval_comprehension(comprehension, env):
-    def gen_vals(exp, params, ranges):
-        if params:
-            segs = split(ranges[0], 'if')
-            ran, conds = segs[0], segs[1:]
-            for parvalue in calc_eval(ran, local_env):
-                local_env[params[0]] = parvalue
-                if all(calc_eval(cond, local_env) for cond in conds):
-                    yield from gen_vals(exp, params[1:], ranges[1:])
+    def gen_vals(exp, constraints):
+        if constraints:
+            constr = constraints[0]
+            try:
+                param, range_, spec = *split(constr[0], 'in'), constr[1:]
+            except ValueError:
+                raise SyntaxError('no range provided, use \'in\'')
+            param = get_name(param)
+            for val in calc_eval(range_, local_env):
+                local_env[param] = val
+                if not spec or calc_eval(spec[0], local_env):
+                    yield from gen_vals(exp, constraints[1:])
         else:
             yield calc_eval(exp, local_env)
 
-    exp, param_ranges = comprehension[0], comprehension[1:]
-    params, ranges = zip(*[split(pr, 'in') for pr in param_ranges])
-    params = [get_name(par) for par in params]
+    exp, constraints = comprehension[0], comprehension[1:]
+    constraints = [split(constr, 'and', 2) for constr in constraints]
     local_env = env.make_subEnv()
-    return tuple(gen_vals(exp, params, ranges))
+    return tuple(gen_vals(exp, constraints))
+
+
+# def eval_set(exp, env):
+#     try:
+#         varstr, constr = get_list(exp, '|')
+#     except ValueError:
+#         return set(eval_list(exp, env))
+#     def getvar(s):
+#         if len(t := split(s, 'in')) == 2:
+#             return t[0], calc_eval(t[1], env)
+#         else:
+#             return s, None
+#     vars_ = [getvar(s) for s in split(varstr, ',')]
+#     constr = function(list(zip(*vars_))[0], constr, env)
+#     return GeneralSet(vars_, constr)
 
 
 def eval_cases(exp, env):
@@ -81,20 +99,6 @@ def eval_cases(exp, env):
             return val
     except ValueError:
         return value(cases[-1][0])
-
-
-def get_binding(lexp, rexp, env=global_env):
-    """ lexp can be either a name or a repr of a function, eg. 'f(x)' """
-    name, rest = get_name(lexp, False)
-    if not rest:
-        return name, calc_eval(rexp, env)
-    else:  # bind a function, eg. f(x) bound to x + 1
-        type_, params, rest = get_token(rest)
-        if type_ != 'paren' or rest != '':
-            raise SyntaxError('invalid variable name!')
-        func = function(get_list(params), rexp, env.make_subEnv())
-        func._env[name] = func  # enable recursion
-        return name, func
 
 
 def eval_name(token, env):
@@ -126,6 +130,20 @@ def eval_closure(type_, token, exp, env):
         return calc_eval(exp, env.make_subEnv(dict(bindings)))
     else:
         return function(segs, exp, env)
+
+
+def get_binding(lexp, rexp, env=global_env):
+    """ lexp can be either a name or a repr of a function, eg. 'f(x)' """
+    name, rest = get_name(lexp, False)
+    if not rest:
+        return name, calc_eval(rexp, env)
+    else:  # bind a function, eg. f(x) bound to x + 1
+        type_, params, rest = get_token(rest)
+        if type_ != 'paren' or rest != '':
+            raise SyntaxError('invalid variable name!')
+        func = function(get_list(params), rexp, env.make_subEnv())
+        func._env[name] = func  # enable recursion
+        return name, func
 
 
 def is_replacable(type_, *replaced_types):
@@ -161,7 +179,8 @@ def calc_eval(exp, env):
             CM.push_op(binary_ops['*'])
         if type_ == 'ans':
             try:
-                CM.push_val(history[eval_ans_id(token)])
+                id = eval_ans_id(token)
+                CM.push_val(history[id])
             except IndexError:
                 raise ValueError(f'Answer No.{id} not found!')
         elif type_ == 'number':
@@ -213,9 +232,8 @@ def calc_eval(exp, env):
             else:
                 CM.push_val(eval_list(token, env))
         elif type_ == 'brace':
-            """ Below is my previous interpretation that braces represents
-            lambda expressions or local environments. """
-            CM.push_val(set(eval_list(token, env)))
+            # experiment feature
+            CM.push_val(eval_set(token, env))
         elif type_ in ('function', 'with', 'lambda'):
             CM.push_val(eval_closure(type_, token, exp, env))
             break
@@ -283,7 +301,7 @@ def calc_exec(exp, / , record=True, env=global_env):
             definitions.update(locals['definitions'])
         global_env.define(definitions)
         if verbose:
-            return set(definitions)
+            return definitions
     elif words[0] == 'conf':
         if len(words) == 1:
             raise SyntaxError('config field unspecified')
@@ -401,7 +419,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
                 continue
 
             if show and verbose:  # print output
-                if type(result) == set:  # imported definitions
+                if type(result) == dict:  # imported definitions
                     print('imported:', ', '.join(result), flush=True)
                 else:
                     print(format(result, config), flush=True)

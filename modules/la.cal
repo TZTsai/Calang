@@ -4,15 +4,15 @@ subv(v1, v2) := map(function x1,x2:x1-x2, v1, v2);
 
 rnum(m) := len(m);
 cnum(m) := len(m@0);
-Htransp(m) := [[conj(m[r][c]) for r in range(rnum(m))] for c in range(cnum(m))];
+Htransp(m) := [[conj(m[r][c]) | r in range(rnum(m))] | c in range(cnum(m))];
 augment(m1, m2) := map(function r1,r2:r1+r2, m1, m2);
 matmap(f, *mats) := map(function *vects: map(f, *vects), *mats);
 addm(m1, m2) := matmap(function x,y:x+y, m1, m2);
 subm(m1, m2) := matmap(function x,y:x-y, m1, m2);
 scalem(m, a) := matmap(function x:a*x, m);
-id(n) := [[1 if i=j else 0 for i in range(n)] for j in range(n)];
-diag(m) := [[m[i, j] if i=j else 0 for i in range(rnum(m))] for j in range(cnum(m))]
-eqmat(m1, m2) := all([all([x = 0 for x in r]) for r in subm(m1, m2)])
+id(n) := [[1 if i=j else 0 | i in range(n)] | j in range(n)];
+diag(m) := [[m[i, j] if i=j else 0 | i in range(rnum(m))] | j in range(cnum(m))]
+eqmat(m1, m2) := all([all([x = 0 | x in r]) | r in subm(m1, m2)])
 
 combine(coeffs, vects) := sumv(map(function c,v: v.c, coeffs, vects));
 norm(v) := sqrt(real(v.v));
