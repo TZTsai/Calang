@@ -2,7 +2,7 @@
 
 Dependencies: python 3.8+, sympy package
 
-Run *python calc.py* to start the program.
+Run `python calc.py` to start the program.
 
 In this calculator, there are five types of values: Number, Symbol, List, Range and Function.
 Every evaluation will return a value of one of these five types.
@@ -298,14 +298,9 @@ Check the file "__builtins.py" to see the available built-in operations and func
     * import gauss_jordan
 
 
-* Hotkeys
+* Exit
 
-  - Ctrl+C: exit
-  - Ctrl+L: the shorthand of 'function'
-
-  **Example**:
-  - ^L: 1
-    function: 1
+  Ctrl+C or exit()
 
 
 You can find more examples in the "examples" folder.

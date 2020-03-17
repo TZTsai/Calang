@@ -19,8 +19,8 @@ norm(v) := sqrt(real(v.v));
 normalize(v) := with n=norm(v): map(function x:x/n, v);
 proj(v, B) := with nB=map(normalize, B): sumv(map(function c: c.(v.c), nB));
 # B is a list of vectors, not a matrix, same in Gram_Schmidt
-Gram_Schmidt(B) := with helper(processed, rest)=processed if rest = [] else \
-with x=car(rest): helper(processed+[with p=proj(x, processed): normalize(subv(x, p))],\
+Gram_Schmidt(B) := with helper(processed, rest)=processed if rest = [] else --
+with x=car(rest): helper(processed+[with p=proj(x, processed): normalize(subv(x, p))],--
 cdr(rest)): helper([normalize(car(B))], cdr(B));
 orthonormalize(m) := transp(Gram_Schmidt(transp(m)));
 orthnorm := orthonormalize;

@@ -231,9 +231,9 @@ def calc_eval(exp, env):
                 CM.push_val(eval_subscription(CM.vals.pop(), token, env))
             else:
                 CM.push_val(eval_list(token, env))
-        elif type_ == 'brace':
-            # experiment feature
-            CM.push_val(eval_set(token, env))
+        # elif type_ == 'brace':
+        #     # experiment feature
+        #     CM.push_val(eval_set(token, env))
         elif type_ in ('function', 'with', 'lambda'):
             CM.push_val(eval_closure(type_, token, exp, env))
             break
@@ -399,7 +399,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             if filename and verbose:
                 print(line, flush=True)
 
-            if line and line[-1] == '\\':
+            if line and line[-2:] == '--':
                 buffer += line[:-1]
                 continue  # join multiple lines
             elif buffer:

@@ -1,4 +1,5 @@
 from __builtins import op_list, special_words, inf, first
+from utils.EnToGr import escape_to_greek
 import re
 
 
@@ -65,14 +66,13 @@ def get_token(exp):
         if stack:
             raise SyntaxError('invalid expression')
 
-    # hotkey Ctrl+L: equiv to 'lambda'
-    exp = re.sub(r'\x0c', 'function', exp)
-
     closure_kwds = ('function', 'with')
 
     exp = exp.strip()
     if not exp:
         raise ValueError('no more tokens')
+
+    exp = escape_to_greek(exp)
 
     if exp[0].isdigit():  # number
         m = match(exp, lambda c: c.isdigit() or c == '.')

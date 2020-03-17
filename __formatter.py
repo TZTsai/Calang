@@ -4,6 +4,10 @@ from sympy import latex
 from types import FunctionType
 from re import sub as translate
 
+EnGrDict = {}
+for i in range(26*2):
+    
+
 def format(val, config, indent=0):
     if config.latex:
         return latex(Matrix(val) if is_matrix(val) else val)

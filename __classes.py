@@ -123,7 +123,7 @@ class Env:
 
 class function:
 
-    _eval = lambda *args: None  # should be rebound later
+    _eval = lambda *args: None  # to be defined later
 
     def _default_apply(self, *args):
         if not self._fixed_argc:

@@ -4,4 +4,3 @@ __pychache__/*
 .vscode/settings.json
 *.mp4
 bash.exe.stackdump
-.utils/
