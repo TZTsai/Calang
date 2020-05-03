@@ -7,7 +7,7 @@ from math import e, pi, inf, log10
 from sympy import Symbol, solve, limit, integrate, diff, simplify, Integer, Float, Matrix, Expr, \
     sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh
 from __classes import Op, function, Env
-from myutils.utils import interact
+from myutils import interact
 
 
 def is_number(value):

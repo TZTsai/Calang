@@ -44,11 +44,12 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
 * Definition and evaluation of variables  
 
-    A legitimate variable name begins with a letter and only contains digits, letters, underscores and '?' (conventionally at the end of the name of a function that does a test).
+    A legitimate variable name begins with a letter and only contains digits, letters, underscores and '?' (conventionally at the end of the name of a function that does a test).  
+    **Note**: You can add a backslash before an English letter to convert it into its corresponding Greek letter! For instance, '\p' will be interpreted and printed as 'π'.  
 
-    **Syntax**: `var` := `exp` 
+    **Syntax**: `var` := `exp`  
 
-    **Examples**: x := 1, g := x > 2, c := x if x > 2 else 0, sqr?(x) := (sqrt(x)//1)^2 = x
+    **Examples**: x := 1, \a := 0.05, g := x > 2, c := x if x > 2 else 0, sqr?(x) := (sqrt(x)//1)^2 = x
 
 * Definition and evaluation of functions  
 

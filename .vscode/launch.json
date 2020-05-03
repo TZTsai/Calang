@@ -28,6 +28,7 @@
       "type": "python",
       "request": "launch",
       "program": "${file}",
+      "cwd": "${workspaceFolder}/utils",
       "console": "integratedTerminal"
     },
   ]

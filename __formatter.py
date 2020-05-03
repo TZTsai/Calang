@@ -3,14 +3,13 @@ from __builtins import Rational, Fraction, Matrix, is_number, is_list, \
 from sympy import latex
 from types import FunctionType
 from re import sub as translate
-
-EnGrDict = {}
-for i in range(26*2):
-    
+from utils.greek import gr_to_tex
 
 def format(val, config, indent=0):
     if config.latex:
-        return latex(Matrix(val) if is_matrix(val) else val)
+        s = latex(Matrix(val) if is_matrix(val) else val)
+        # substitute the Greek letters to tex representations
+        return translate(r'[^\x00-\x7F]', lambda m: gr_to_tex(m[0]), s)
 
     def format_float(x):
         prec = config.prec

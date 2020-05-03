@@ -1,5 +1,5 @@
 from __builtins import op_list, special_words, inf, first
-from utils.EnToGr import escape_to_greek
+from utils.greek import escape_to_greek
 import re
 
 
