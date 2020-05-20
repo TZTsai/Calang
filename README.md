@@ -25,17 +25,16 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
   The symbol `I` represents the imaginary number 'i' in mathematics.  
 
-  **Examples**:
+  **Examples**:  
 
   + (3+4I)*(2-6I)
   + z:=3+4I  
     [real(z), imag(z), angle(z), abs(z), conj(z)]
     
     
-
 * Evaluation of boolean expressions  
 
-    Return 1 if the result is true, otherwise return 0.
+    Return 1 if the result is true, otherwise return 0.  
 
     **Examples**: 3 > 2, 2 = 2, x = y xor x = z, x > 0 and x < 2, not (a or b) = (not a and not b), 1 /\ 0, f \\/ g
     (note: /\ and \\/ resemble the symbols for "logical and" and "logical or" in mathematics. They are the same as `and` and `or` operations except higher priorities.)
@@ -45,6 +44,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
 * Definition and evaluation of variables  
 
     A legitimate variable name begins with a letter and only contains digits, letters, underscores and '?' (conventionally at the end of the name of a function that does a test).  
+
     **Note**: You can add a backslash before an English letter to convert it into its corresponding Greek letter! For instance, '\p' will be interpreted and printed as 'π'.  
 
     **Syntax**: `var` := `exp`  
@@ -60,26 +60,26 @@ Check the file "__builtins.py" to see the available built-in operations and func
   + cot(x) := 1/tan(x)  
   + fact(n) := 1 if n=0 else n*fact(n-1)
   + d(f) := function x: (f(x+0.0001)-f(x))/0.0001;  
-    newton(f, x) := with update = function x: x - f(x)/d(f)(x): \  
+    newton(f, x) := with update = function x: x - f(x)/d(f)(x): \\  
     x if abs(f(x)) \< 0.0001 else newton(f, update(x));  
     newton(sin, 3)  (return: 3.1416)
 
 * Function expression  
 
-    A function expression directly evaluates to a function.
+    A function expression directly evaluates to a function.  
     
     **Syntax 1**: function `par1`, `par2`, ... : `exp`  
     
-    (note: I have added the feature that the user can press Ctrl+L to represent "function", but it becomes redundant when I later added the succinct arrow representation "->".)
+    (note: I have added the feature that the user can press Ctrl+L to represent "function", but it becomes redundant when I later added the succinct arrow representation "->".)  
     
     **Examples**:
     
     * fact := function n: 1 if n=0 else n*fact(n-1)
-    * compose := function f, g: x: f(g(x))
+    * compose := function f, g: x: f(g(x))  
     
-    **Syntax 2**: (`par1`, `par2`) -> `exp`  (the parentheses can be omitted if there is exactly one parameter)
+    **Syntax 2**: (`par1`, `par2`) -> `exp`  (the parentheses can be omitted if there is exactly one parameter)  
     
-    **Examples**:
+    **Examples**:  
     
     * double := f -> (x -> f(f(x)))
     * inc := x -> x+1
@@ -89,20 +89,20 @@ Check the file "__builtins.py" to see the available built-in operations and func
     
 * Conditional expression  
 
-    **Syntax 1**: `exp1` if `cond` else `exp2` 
+    **Syntax 1**: `exp1` if `cond` else `exp2`  
     (if `cond` holds then the expression is evaluated as `exp1`, otherwise as `exp2`)  
 
     **Examples**:  
 
-    * step(x) := 0 if x<0 else 1
+    * step(x) := 0 if x<0 else 1  
     * ramp(x) := 0 if x<0 else x  
     * rect(x) := 0 if x<-1 else 1 if x<=1 else 0  
 
-     **Syntax 2**: cases(`cond1`: `exp1`, `cond2`: `exp2`, ... , `default`)
+     **Syntax 2**: cases(`cond1`: `exp1`, `cond2`: `exp2`, ... , `default`)  
 
     (note: the `default` expression does not have a condition preceding it)  
 
-    **Examples**:
+    **Examples**:  
 
     * max(x, y, z) := cases(x > y and x > z: x, y > z: y, z)
     * [cases(a: 1, b: 2, c: 3, 4), 2, 3]
@@ -111,12 +111,12 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
 * Local environment  
 
-  **Syntax**: with *par1*=*val1*, *par2*=*val2*, ... : *exp* 
-  In fact, it is identical to `(function `par1`, `par2`, ... : `exp>)(\<val1`, `val2`, ... )`, so the "with" expression will not change the current environment.
+  **Syntax**: with *par1*=*val1*, *par2*=*val2*, ... : *exp*  
+  In fact, it is identical to `(function `par1`, `par2`, ... : `exp>)(\<val1`, `val2`, ... )`, so the "with" expression will not change the current environment.  
 
-  **Examples**:
+  **Examples**:  
 
-    - with exp = a_very_long_expression: sqrt(exp) + exp + exp^2
+    - with exp = a_very_long_expression: sqrt(exp) + exp + exp^2  
     - binomial(n, m) := 1 if (n=0 or m=0 or m=n) else with b1=binomial(n-1, m-1), b2:binomial(n-1, m): b1 + b2  
     - x := 2  
       with x=4: x * 2 (return: 8)  
@@ -125,9 +125,9 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
 * Symbol  
 
-    In the `ALL-SYMBOL` mode, all undefined names will be regarded as symbols.
+    In the `ALL-SYMBOL` mode, all undefined names will be regarded as symbols.  
 
-    If this mode is off, then symbol is represented by an underscore `_` followed by a legitimate variable name. 
+    If this mode is off, then symbol is represented by an underscore `_` followed by a legitimate variable name.  
 
     **Examples**: _x, _y, _angle, diff(\_x^2 +ln(\_x), \_x) (underscores can be removed in `ALL-SYMBOL` mode)
 
@@ -143,9 +143,9 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
     * l := [1, 2, 3]  
       3 in l
-    * [1, 2]+[3, 4]
+    * [1, 2]+[3, 4]  
     * sum([1, 2, 3, 4]) (the "sum" function returns the sum of all elements of a list)  
-    * sum([[1, 2], [3, 4]]) (since we can concatenate two lists by "+", the "sum" function will concatenate all lists in the list) (return: [1, 2, 3, 4])
+    * sum([[1, 2], [3, 4]]) (since we can concatenate two lists by "+", the "sum" function will concatenate all lists in the list) (return: [1, 2, 3, 4])  
 
     
 
@@ -171,8 +171,8 @@ Check the file "__builtins.py" to see the available built-in operations and func
 * List slicing  
 
     **Syntax**: `list>[\<start>:\<end>(:\<step`)]
-    This syntax is identical to the list slicing syntax in python.
-    The second colon can be omitted, when `step` is 1 as default.
+    This syntax is identical to the list slicing syntax in python.  
+    The second colon can be omitted, when `step` is 1 as default.  
     When `start` is omitted, it is set to 0; when `end` is omitted, it is set to the end of the list.  
     
     **Examples**:  
@@ -188,7 +188,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
     There are two ways to generate a "range" type value: by using the symbol "\~" or by the built-in function "range".  
     The expression "a\~b" evaluates to a range including all integers from a to b.  
     The "range" function, however, is identical to its corresponding python function, which excludes the second argument from the range. Besides, you can use a third argument in the function "range" to specify the step of the range.
-    If a range is used as the index of a list, a sub-list containing elements whose indices lies in this range will be returned.
+    If a range is used as the index of a list, a sub-list containing elements whose indices lies in this range will be returned.  
     
 
   **Examples**:
@@ -197,7 +197,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
     * list(r) (converts a range to a list, return: [1, 2, 3, 4])
     * sum([i^2 for i in 1~10])
     * r := range(1, 4), list(r) (return: [1, 2, 3])
-    * r := range(9, 1, -2) (return: [9, 7, 5, 3])
+    * r := range(9, 1, -2) (return: [9, 7, 5, 3])  
 
 
 * List comprehension  
@@ -214,19 +214,17 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
   Use the symbol \_ to represent the result of the last calculation, \_\_ the second last, \_\_\_ the third last, and so on (but you may not want to use longer ones XD).  
   Use keyword `_``n` to represent the result of the calculation no.`n`.  
-  Use keyword `ENV` to let the calculator print all variable bindings in the global environment.
-
-  
+  Use keyword `ENV` to let the calculator print all variable bindings in the global environment.  
 
 * Config
 
-  Use keyword `conf` to config the calculator.
-  Available parameters:
+  Use keyword `conf` to config the calculator.  
+  Available parameters:  
 
   - PREC (significant digits of decimals)
   - LATEX (all outputs will be in the LaTeX format)
   - ALL-SYMBOL (all undefined names will be regarded as symbols)
-  - TOLERANCE (if the difference of two numbers is within TOLERANCE, they are considered equal)
+  - TOLERANCE (if the difference of two numbers is within TOLERANCE, they are considered equal)  
 
   **EXAMPLES**:
   - conf PREC 4
@@ -238,21 +236,14 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
   Use `\\` at the end of the line to indicate that the expression continues in the next line.  
 
-  
 
 * Omit displaying result
 
-  Use `;` at the end of the line.
-
-  
-
-  
+  Use `;` at the end of the line.  
 
 * Comment  
 
-  Use `#` to comment.
-
-  
+  Use `#` to comment.  
 
 * Load files  
 
@@ -260,18 +251,15 @@ Check the file "__builtins.py" to see the available built-in operations and func
   The calculator will run through the loaded file and load its definitions into the current environment. However, the current evaluation history will not be affected.  
   The loading command has two extra options: verbose and test. To turn on the verbose option, add "-v" in your command; to turn on the test option, add "-t" in your command. The testing process will be explained in the next section.  
   
-    **Examples**:
-  
-
+  **Examples**:  
     * load ../examples/merge_sort examples/btree
     * 12  
       load somefile  
       _ (return: 12)
   
-* load la -t (la is my linear algebra library)
+    * load la -t (la is my linear algebra library)  
   
     * load scinums -v
-
 
 
 * Create modules and testing  
@@ -299,10 +287,9 @@ Check the file "__builtins.py" to see the available built-in operations and func
     * import gauss_jordan
 
 
-* Exit
+* Exit  
 
   Ctrl+C or exit()
-
 
 You can find more examples in the "examples" folder.
 
