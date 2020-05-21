@@ -274,8 +274,8 @@ def reconstruct(op_dict, type):
 
 
 binary_ops = {'+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '.': (dot, 7),
-              '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '==': (eq_, 4),
-              '=': (equal, 0), '!=': (ne, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0),
+              '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '=': (eq_, 0),
+              '!=': (ne, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0),
               '>=': (ge, 0), 'xor': (xor, 3), 'in': (lambda x, y: x in y, -2),
               '@': (index, 16), '~': (lambda a, b: range(a, b + 1), 5),
               'and': (and_, -5), 'or': (or_, -6), '/\\': (and_, 8), '\\/': (or_, 7)}
