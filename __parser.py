@@ -168,6 +168,8 @@ def get_list(list_exp, delimiter=','):
     >>> get_list('[]')
     []
     """
+    if list_exp[0] != '[' or list_exp[-1] != ']':
+        raise SyntaxError("not a list expression")
     return split(list_exp[1:-1], delimiter)
 
 

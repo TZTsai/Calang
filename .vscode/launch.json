@@ -16,8 +16,8 @@
       "type": "python",
       "request": "launch",
       "args": [
-        // "-t",
-        // "comprehTest.cal"
+        "-t",
+        "unpackTest.cal"
       ],
       "program": "calc.py",
       "console": "integratedTerminal",

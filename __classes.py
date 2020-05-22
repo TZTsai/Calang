@@ -36,7 +36,7 @@ class Op:
         return self.function(*args)
 
 
-class calcMachine:
+class CalcMachine:
     def __init__(self):
         self.vals = Stack()
         self.ops = Stack()
@@ -181,6 +181,14 @@ class function:
             ('' if self._fixed_argc else '... ') if self._params \
             else ''
         return f"function{params_str}: {self._body}"
+
+
+class config:
+    "This class holds all configs for the calculator."
+    tolerance = 1e-12
+    precision = 5
+    latex = False
+    all_symbol = True
 
 
 # class GeneralSet(set):  # but disabled - no operations

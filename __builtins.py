@@ -6,7 +6,7 @@ from fractions import Fraction
 from math import e, pi, inf, log10
 from sympy import Symbol, solve, limit, integrate, diff, simplify, Integer, Float, Matrix, Expr, \
     sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh
-from __classes import Op, function, Env
+from __classes import Op, function, Env, config
 from myutils import interact
 
 
@@ -39,12 +39,9 @@ def is_function(value):
     return callable(value)
 
 
-eq_tolerance = [1e-12]
-
-
 def equal(x, y):
     if is_number(x) and is_number(y):
-        return abs(x - y) <= eq_tolerance[0]
+        return abs(x - y) <= config.tolerance
     else:
         return x == y
 
@@ -157,6 +154,23 @@ def list_shape(x):
         return min(args)
     subshapes = [list_shape(a) for a in x]
     return (len(x),) + tuple(map(min_, *subshapes))
+
+
+def flatten(l):
+    """
+    >>> flatten([1,2])
+    [1, 2]
+    >>> flatten([[1,2,[3]],[4]])
+    [1, 2, 3, 4]
+    """
+    if list_depth(l) <= 1: return l
+    fl = []
+    for x in l: 
+        if not is_iterable(x):
+            fl.append(x)
+        else:
+            fl.extend(flatten(x))
+    return fl
 
 
 def row(mat, k):
@@ -303,7 +317,7 @@ builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'iter?': is_iterable, 'lambda?': is_function, 'matrix?': is_matrix, 'vector?': is_vector,
             'list': to_list, 'sum': lambda l: reduce(add, l), 'product': lambda l: reduce(mul, l),
             'car': lambda l: l[0], 'cdr': lambda l: l[1:], 'cons': lambda a, l: (a,) + l, 'enum': compose(range, len),
-            'row': row, 'col': col, 'shape': list_shape, 'depth': list_depth, 'transp': transpose,
+            'row': row, 'col': col, 'shape': list_shape, 'depth': list_depth, 'transp': transpose, 'flatten': flatten,
             'all': all_, 'any': any, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),
             'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': lambda x: x / pi * 180,
             'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else 0,

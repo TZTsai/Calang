@@ -12,7 +12,7 @@ def format(val, config, indent=0):
         return translate(r'[^\x00-\x7F]', lambda m: gr_to_tex(m[0]), s)
 
     def format_float(x):
-        prec = config.prec
+        prec = config.precision
         return float(f'%.{prec}g' % x)
     def format_scinum(x):
         def positive_case(x):
@@ -38,7 +38,7 @@ def format(val, config, indent=0):
         if is_number(val):
             if isinstance(val, Rational):
                 if type(val) == Fraction:
-                    val.limit_denominator(10**config.prec)
+                    val.limit_denominator(10**config.precision)
                 return str(val)
             elif type(val) == complex:
                 re, im = format_float(val.real), format_float(val.imag)
