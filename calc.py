@@ -70,8 +70,10 @@ def eval_comprehension(comprehension, env):
         else:
             yield calc_eval(exp, local_env)
 
-    exp, constraints = comprehension[0], comprehension[1:]
-    constraints = [split(constr, 'and', 2) for constr in constraints]
+    if len(comprehension) != 2:
+        raise SyntaxError('Bad comprehension syntax!')
+    exp, constraint = comprehension
+    constraints = [split(constr, 'and', 2) for constr in split(constraint, ',')]
     local_env = env.make_subEnv()
     return tuple(gen_vals(exp, constraints))
 
@@ -155,7 +157,7 @@ def is_applying(prev_val, prev_type, type_):
         and is_replacable(prev_type, 'name')
 
 
-def is_making_func(exp):
+def is_closure(exp):
     if exp and (tup := get_token(exp))[0] == 'arrow':
         return tup[2]
     return False
@@ -189,7 +191,7 @@ def calc_eval(exp, env):
             except Exception:
                 raise SyntaxError(f'invalid number: {token}')
         elif type_ == 'name':
-            if (body := is_making_func(exp)) == False:
+            if (body := is_closure(exp)) == False:
                 CM.push_val(eval_name(token, env))
             else:
                 CM.push_val(function([token], body, env))
@@ -218,9 +220,11 @@ def calc_eval(exp, env):
             CM.push_val(eval_cases(token, env))
         elif type_ == 'paren':
             lst = get_list(token)
-            if (body := is_making_func(exp)) != False:
-                # a shorthand function
-                CM.push_val(function(lst, body, env))
+            if (body := is_closure(exp)) != False:
+                if lst and ':' in lst[0]:  # local variables
+                    pass
+                else: # a function
+                    CM.push_val(function(lst, body, env))
                 break
             else:
                 if len(lst) != 1:
@@ -234,7 +238,7 @@ def calc_eval(exp, env):
         # elif type_ == 'brace':
         #     # experiment feature
         #     CM.push_val(eval_set(token, env))
-        elif type_ in ('function', 'with', 'lambda'):
+        elif type_ in ('with', 'lambda'):
             CM.push_val(eval_closure(type_, token, exp, env))
             break
         else:
@@ -400,7 +404,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
                 print(line, flush=True)
 
             if line and line[-2:] == '--':
-                buffer += line[:-1]
+                buffer += line[:-2]
                 continue  # join multiple lines
             elif buffer:
                 line, buffer = buffer + line, ''

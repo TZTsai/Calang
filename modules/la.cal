@@ -1,23 +1,23 @@
-addv(v1, v2) := map(function x1, x2: x1+x2, v1, v2);
+addv(v1, v2) := map((x1,x2) -> x1+x2, v1, v2);
 sumv(vects) := reduce(addv, vects);
-subv(v1, v2) := map(function x1,x2:x1-x2, v1, v2);
+subv(v1, v2) := map((x1,x2) -> x1-x2, v1, v2);
 
 rnum(m) := len(m);
 cnum(m) := len(m@0);
 Htransp(m) := [[conj(m[r][c]) | r in range(rnum(m))] | c in range(cnum(m))];
-augment(m1, m2) := map(function r1,r2:r1+r2, m1, m2);
-matmap(f, *mats) := map(function *vects: map(f, *vects), *mats);
-addm(m1, m2) := matmap(function x,y:x+y, m1, m2);
-subm(m1, m2) := matmap(function x,y:x-y, m1, m2);
-scalem(m, a) := matmap(function x:a*x, m);
+augm(m1, m2) := map(lambda r1,r2:r1+r2, m1, m2);
+mapm(f, *mats) := map(lambda *vects: map(f, *vects), *mats);
+addm(m1, m2) := mapm(lambda x,y:x+y, m1, m2);
+subm(m1, m2) := mapm(lambda x,y:x-y, m1, m2);
+scalem(m, a) := mapm(lambda x:a*x, m);
 id(n) := [[1 if i=j else 0 | i in range(n)] | j in range(n)];
 diag(m) := [[m[i, j] if i=j else 0 | i in range(rnum(m))] | j in range(cnum(m))]
 eqmat(m1, m2) := all([all([x = 0 | x in r]) | r in subm(m1, m2)])
 
-combine(coeffs, vects) := sumv(map(function c,v: v.c, coeffs, vects));
+combine(coeffs, vects) := sumv(map(lambda c,v: v.c, coeffs, vects));
 norm(v) := sqrt(real(v.v));
-normalize(v) := with n=norm(v): map(function x:x/n, v);
-proj(v, B) := with nB=map(normalize, B): sumv(map(function c: c.(v.c), nB));
+normalize(v) := with n=norm(v): map(lambda x:x/n, v);
+proj(v, B) := with nB=map(normalize, B): sumv(map(lambda c: c.(v.c), nB));
 # B is a list of vectors, not a matrix, same in Gram_Schmidt
 Gram_Schmidt(B) := with helper(processed, rest)=processed if rest = [] else --
 with x=car(rest): helper(processed+[with p=proj(x, processed): normalize(subv(x, p))],--
@@ -28,10 +28,10 @@ orthnorm := orthonormalize;
 import gauss_jordan
 # import det, eliminate, LU (decomposition), inverse
 load util
-eliminate :=  compose(list, eliminate)
-LU := compose(list, LU)
-inverse := compose(list, inverse)
 eigenvalues(m) := solve(det(subm(m, scalem(id(rnum(m)), lambda))))	
+
+minormat(m, i, j) := [row[:j-1]+row[j:] | row in m[:i-1]+m[i:]]
+adj(m) := with n=rnum(m): [[(-1)^(i+j)*det(minormat(m, i, j)) | i in 1~n] | j in 1~n]
 
 #TEST
 combine([1,2],[[1,0],[0,1]]) #(1,2)

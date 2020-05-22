@@ -66,7 +66,7 @@ def get_token(exp):
         if stack:
             raise SyntaxError('invalid expression')
 
-    closure_kwds = ('function', 'with')
+    closure_kwds = ('lambda', 'with')
 
     exp = exp.strip()
     if not exp:

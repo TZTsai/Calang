@@ -17,7 +17,7 @@
       "request": "launch",
       "args": [
         "-t",
-        "funcOpTest.cal"
+        "comprehTest.cal"
       ],
       "program": "calc.py",
       "console": "integratedTerminal",
