@@ -60,7 +60,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
   + cot(x) := 1/tan(x)  
   + fact(n) := 1 if n=0 else n*fact(n-1)
   + d(f) := function x: (f(x+0.0001)-f(x))/0.0001;  
-    newton(f, x) := with update = function x: x - f(x)/d(f)(x): \\  
+    newton(f, x) := with update = function x: x - f(x)/d(f)(x): ...
     x if abs(f(x)) \< 0.0001 else newton(f, update(x));  
     newton(sin, 3)  (return: 3.1416)
 
@@ -234,7 +234,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
 * Multiline expression  
 
-  Use `\\` at the end of the line to indicate that the expression continues in the next line.  
+  Use `...` at the end of the line to indicate that the expression continues in the next line.  
 
 
 * Omit displaying result

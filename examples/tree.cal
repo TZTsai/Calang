@@ -4,17 +4,17 @@ node(t) := t[0]
 left(t) := t[1]
 right(t) := t[2]
 
-traverse(t) := [] if empty?(t) else --
+traverse(t) := [] if empty?(t) else ...
 traverse(left(t))+[node(t)]+traverse(right(t));
 depth_first_traverse := traverse
 
-queue_helper(l, q) := l if empty?(q) else with t=q[0], dq=q[1:]: --
-with lt=left(t), rt=right(t): queue_helper(l+[node(t)], --
+queue_helper(l, q) := l if empty?(q) else with t=q[0], dq=q[1:]: ...
+with lt=left(t), rt=right(t): queue_helper(l+[node(t)], ...
 dq + ([lt] if lt else []) + ([rt] if rt else []));
 level_traverse(t) := queue_helper([], [t]);
 
-orderedList_to_tree(l) := [] if l=[] else with halflen=len(l)//2, --
-ltot=orderedList_to_tree: btree(l@halflen, ltot(l[:halflen]), --
+orderedList_to_tree(l) := [] if l=[] else with halflen=len(l)//2, ...
+ltot=orderedList_to_tree: btree(l@halflen, ltot(l[:halflen]), ...
 ltot(l[halflen+1:]));
 # This turns a list into a tree whose node is no bigger than its
 # left child and no less than its right child, recursively.
@@ -25,7 +25,7 @@ ol1 := traverse(t)
 ol1 = ol #1
 ll := level_traverse(t)
 
-insert(item, tree) := bleaf(item) if empty?(tree) else with entry=node(tree): --
+insert(item, tree) := bleaf(item) if empty?(tree) else with entry=node(tree): ...
 cases(item=entry: tree, item<entry: insert(item, left(tree)), insert(item, right(tree)));
 
 tree(node, branches) := [node] + branches
@@ -36,10 +36,10 @@ bt := binom_tree(5)
 binom_tree_order(bt) #5
 binom_tree_order(add_branch(bt, bt)) #6
 
-binom_heap_union(h1, h2) := cases(h2=[]: h1, h1=[]: h2, (with t1=car(h1), t2=car(h2),--
-union=binom_heap_union: with o1=binom_tree_order(t1),o2=binom_tree_order(t2): --
-cases(o1<o2: [t1]+union(cdr(h1), h2), o1>o2: [t2]+union(h1, cdr(h2)), --
-(with a1=car(t1), a2=car(t2): union(union([add_branch(t1, t2) if a1<=a2 else --
+binom_heap_union(h1, h2) := cases(h2=[]: h1, h1=[]: h2, (with t1=car(h1), t2=car(h2),...
+union=binom_heap_union: with o1=binom_tree_order(t1),o2=binom_tree_order(t2): ...
+cases(o1<o2: [t1]+union(cdr(h1), h2), o1>o2: [t2]+union(h1, cdr(h2)), ...
+(with a1=car(t1), a2=car(t2): union(union([add_branch(t1, t2) if a1<=a2 else ...
 add_branch(t2, t1)], cdr(h1)), cdr(h2))))));
 bt := binom_tree
 h1 := [bt(0), bt(1), bt(3)]

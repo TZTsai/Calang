@@ -408,8 +408,8 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             if filename and verbose:
                 print(line, flush=True)
 
-            if line and line[-2:] == '--':
-                buffer += line[:-2]
+            if line and line[-3:] == '...':
+                buffer += line[:-3]
                 continue  # join multiple lines
             elif buffer:
                 line, buffer = buffer + line, ''

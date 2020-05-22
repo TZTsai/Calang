@@ -16,7 +16,7 @@
       "type": "python",
       "request": "launch",
       "args": [
-        "-t",
+        // "-t",
         // "comprehTest.cal"
       ],
       "program": "calc.py",
