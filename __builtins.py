@@ -96,7 +96,6 @@ mul_ = function.operator('*', smart_mul)
 div_ = function.operator('/', smart_div)
 and_ = function.operator('/\\', and_)
 or_ = function.operator('\\/', or_)
-eq_ = function.operator('=', equal)
 
 
 def power(x, y):
@@ -274,7 +273,7 @@ def reconstruct(op_dict, type):
 
 
 binary_ops = {'+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '.': (dot, 7),
-              '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '=': (eq_, 0),
+              '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '=': (equal, 0),
               '!=': (ne, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0),
               '>=': (ge, 0), 'xor': (xor, 3), 'in': (lambda x, y: x in y, -2),
               '@': (index, 16), '~': (lambda a, b: range(a, b + 1), 5),
@@ -291,7 +290,7 @@ reconstruct(unitary_r_ops, 'uni_r')
 op_list = set(binary_ops).union(set(unitary_l_ops)).union(set(unitary_r_ops))
 
 special_words = {'if', 'else', 'in', 'ENV', 'load', 'format', 'cases',
-                 'import', 'del', 'function', 'with'}
+                 'import', 'del', 'lambda', 'with'}
 
 builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
@@ -301,7 +300,7 @@ builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'len': len, 'sort': sorted, 'exit': lambda: exit(),
             'exp': exp, 'lg': lambda x: log(x)/log(10), 'ln': log, 'log2': lambda x: log(x)/log(2),
             'empty?': lambda l: 0 if len(l) else 1, 'number?': is_number, 'symbol?': is_symbol,
-            'iter?': is_iterable, 'function?': is_function, 'matrix?': is_matrix, 'vector?': is_vector,
+            'iter?': is_iterable, 'lambda?': is_function, 'matrix?': is_matrix, 'vector?': is_vector,
             'list': to_list, 'sum': lambda l: reduce(add, l), 'product': lambda l: reduce(mul, l),
             'car': lambda l: l[0], 'cdr': lambda l: l[1:], 'cons': lambda a, l: (a,) + l, 'enum': compose(range, len),
             'row': row, 'col': col, 'shape': list_shape, 'depth': list_depth, 'transp': transpose,

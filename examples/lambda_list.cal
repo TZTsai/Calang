@@ -9,6 +9,10 @@ make_list(*nums) := nil if empty?(nums) else pair(car(nums), make_list(*cdr(nums
 pmap(f, p) := nil if nil?(p) else pair(f(first(p)), pmap(f, second(p)));
 to_list(p) := [] if nil?(p) else [first(p)]+to_list(second(p));
 
+p := pair(-3, 4)
+first(p) # -3
+second(p) # 4
+nil?(p) # 0
 l := pair(1, pair(2, pair(3, pair(4, nil))))
 to_list(l) #(1,2,3,4)
 l := make_list(1,2,3,4)

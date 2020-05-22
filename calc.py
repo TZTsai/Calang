@@ -94,7 +94,7 @@ def eval_comprehension(comprehension, env):
 
 
 def eval_cases(exp, env):
-    cases = [split(case, ':') for case in get_list(exp)]
+    cases = [split(case, ':', 2) for case in get_list(exp)]
     def value(exp): return calc_eval(exp, env)
     try:
         for val in (value(exp) for cond, exp in cases if value(cond)):
@@ -123,15 +123,10 @@ def eval_ans_id(token):
         return int(token[1:])
 
 
-def eval_closure(type_, token, exp, env):
-    i = first(lambda c: c.isspace(), token)
-    segs = split(token[i:-1], ',')  # the last char is ':'
-    if type_ == 'with':
-        bindings = [get_binding(name, exp, env) for name, exp in
-                    (split(pair, '=', 2) for pair in segs)]
-        return calc_eval(exp, env.make_subEnv(dict(bindings)))
-    else:
-        return function(segs, exp, env)
+def eval_closure(bindings, exp, env, delim='='):
+    bindings = [get_binding(name, _exp, env) for name, _exp in
+                (split(pair, delim, 2) for pair in bindings)]
+    return calc_eval(exp, env.make_subEnv(dict(bindings)))
 
 
 def get_binding(lexp, rexp, env=global_env):
@@ -155,12 +150,6 @@ def is_replacable(type_, *replaced_types):
 def is_applying(prev_val, prev_type, type_):
     return type_ == 'paren' and is_function(prev_val) \
         and is_replacable(prev_type, 'name')
-
-
-def is_closure(exp):
-    if exp and (tup := get_token(exp))[0] == 'arrow':
-        return tup[2]
-    return False
 
 
 def calc_eval(exp, env):
@@ -191,11 +180,21 @@ def calc_eval(exp, env):
             except Exception:
                 raise SyntaxError(f'invalid number: {token}')
         elif type_ == 'name':
-            if (body := is_closure(exp)) == False:
-                CM.push_val(eval_name(token, env))
-            else:
-                CM.push_val(function([token], body, env))
-                break
+            next_type = None
+            if exp: 
+                next_type, _, rest = get_token(exp)
+                if next_type == 'colon':
+                    try:
+                        val, exp = split(exp, '->', 2)
+                    except ValueError:
+                        raise SyntaxError('invalid use of colon')
+                    binding = token + val
+                    CM.push_val(eval_closure([binding], exp, env, delim=':'))
+                    break
+                if next_type == 'arrow':
+                    CM.push_val(function([token], rest, env))
+                    break
+            CM.push_val(eval_name(token, env))
         elif type_ == 'symbol':
             CM.push_val(Symbol(token[1:]))
         elif type_ == 'op':
@@ -220,16 +219,17 @@ def calc_eval(exp, env):
             CM.push_val(eval_cases(token, env))
         elif type_ == 'paren':
             lst = get_list(token)
-            if (body := is_closure(exp)) != False:
-                if lst and ':' in lst[0]:  # local variables
-                    pass
-                else: # a function
-                    CM.push_val(function(lst, body, env))
-                break
-            else:
-                if len(lst) != 1:
-                    raise SyntaxError('invalid syntax in parentheses')
-                CM.push_val(calc_eval(lst[0], env))
+            if exp: 
+                next_type, _, body = get_token(exp)
+                if next_type == 'arrow':
+                    if lst and ':' in lst[0]:  # local variables
+                        CM.push_val(eval_closure(lst, body, env, delim=':'))
+                    else: # a function
+                        CM.push_val(function(lst, body, env))
+                    break
+            if len(lst) != 1:
+                raise SyntaxError('invalid syntax in parentheses')
+            CM.push_val(calc_eval(lst[0], env))
         elif type_ == 'bracket':
             if is_iterable(prev_val) and is_replacable(prev_type, 'bracket'):
                 CM.push_val(eval_subscription(CM.vals.pop(), token, env))
@@ -239,7 +239,12 @@ def calc_eval(exp, env):
         #     # experiment feature
         #     CM.push_val(eval_set(token, env))
         elif type_ in ('with', 'lambda'):
-            CM.push_val(eval_closure(type_, token, exp, env))
+            i = first(lambda c: c.isspace(), token)
+            lst = split(token[i:-1], ',')  # the last char is ':'
+            if type_ == 'lambda':  # lst is the binding list
+                CM.push_val(function(lst, exp, env))
+            else:  # lst is the parameter list
+                CM.push_val(eval_closure(lst, exp, env))
             break
         else:
             raise SyntaxError('invalid token: %s' % token)

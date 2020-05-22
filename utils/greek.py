@@ -1,18 +1,21 @@
 import re
 
 
-def en_to_gr(ch):
-    en_start = ord('A')
-    gr_start = ord('\u0391')
-    return chr(ord(ch) + gr_start - en_start)
-
-
 alphabet = {}
 with open('utils/greek_alphabet.txt', 'r', encoding='utf8') as fi:
     for line in fi.readlines():
-        uGr, lGr, En = line.split()
-        alphabet[uGr] = En[0].upper() + En[1:]
-        alphabet[lGr] = En
+        Gr, gr, english = line.split()
+        if english == 'theta': 
+            en, En = 'th', 'Th'
+        elif english == 'psi': 
+            en, En = 'ps', 'Ps'
+        else: 
+            en = english[0]
+            En = en.upper()
+        alphabet[Gr] = english[0].upper() + english[1:]
+        alphabet[gr] = english
+        alphabet[En] = Gr
+        alphabet[en] = gr
 
 
 def gr_to_tex(letter):
@@ -20,12 +23,9 @@ def gr_to_tex(letter):
 
 
 def escape_to_greek(s):
-    return re.sub(r'\\([a-zA-Z])', lambda m: en_to_gr(m[1]), s)
+    return re.sub(r'\\([Tt]h|[Pp]s|[a-zA-Z])', lambda m: alphabet[m[1]], s)
 
 
 if __name__ == "__main__":
-    print(en_to_gr('a'))
-    print(en_to_gr('b'))
-    print(en_to_gr('S'))
-    print(escape_to_greek('\\a \\bXy\\c1 \\D3\\s\\t\\u'))
-    print(gr_to_tex('\u03c1'))
+    print(escape_to_greek(r'\a \bXy\c1 \D3\s\t\u \t\theta\Psi'))
+    print(gr_to_tex(escape_to_greek(r'\th')))
