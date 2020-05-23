@@ -40,7 +40,7 @@ inc(x) := x+1
 sqr(x) := x^2
 compose(inc, sqr)(3) #10
 compose(sqr, inc)(3) #16
-max3(x, y, z) := cases(x>y and x>z: x, y > z: y, z)
+max3(x, y, z) := when(x>y and x>z, x; y > z, y; z)
 max3(3, 4, 2) #4
 max3(1, 2, 2) #2
 [1,2]+[3,4] #(1,2,3,4)

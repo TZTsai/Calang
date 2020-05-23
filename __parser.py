@@ -97,6 +97,8 @@ def get_token(exp):
         return 'comma', ',', exp[1:]
     if exp[0] == ':':
         return 'colon', ':', exp[1:]
+    if exp[0] == ';':
+        return 'semicolon', ';', exp[1:]
     if exp[0] == '_':
         m = match(exp, lambda c: c.isalnum() or c == '_', 1)
         token, rest = exp[:m], exp[m:]
@@ -168,7 +170,7 @@ def get_list(list_exp, delimiter=','):
     >>> get_list('[]')
     []
     """
-    if list_exp[0] != '[' or list_exp[-1] != ']':
+    if list_exp[0] not in '[(' or list_exp[-1] not in ')]':
         raise SyntaxError("not a list expression")
     return split(list_exp[1:-1], delimiter)
 

@@ -10,13 +10,6 @@ global_env = Env()
 
 
 def calc_exec(exp, / , record=True, env=global_env):
-    exps = exp.split(';')
-    if not exps: return
-    if len(exps) > 1:
-        for exp in exps[:-1]:
-            calc_exec(exp, False)
-        return calc_exec(exps[-1])
-    exp = exps[0]
     words = exp.split()
     if words[0] == 'ENV':
         for name in global_env.bindings:
@@ -143,8 +136,6 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             continue
         try:
             # get input
-            if filename:
-                line = line.strip()
             if line == '#TEST' and not test:
                 return
             if verbose:
@@ -153,6 +144,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
                 line = input()
             if filename and verbose:
                 print(line, flush=True)
+            line = line.strip()
 
             if line and line[-3:] == '...':
                 buffer += line[:-3]
@@ -190,7 +182,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
         except (Warning if test else Exception) as err:
             if test:
                 print(err)
-                raise Warning
+                # raise Warning
             print('Error:', err)
             CM.reset()
 

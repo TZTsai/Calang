@@ -79,7 +79,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
 * Conditional expression  
 
   **Syntax 1**: `exp1` if `cond` else `exp2`  
-  (if `cond` holds then the expression is evaluated as `exp1`, otherwise as `exp2`)  
+  (note: if `cond` holds then the expression is evaluated as `exp1`, otherwise as `exp2`. `exp1` will be evaluated first even if `cond` is false. `exp2`, however, will not be evaluated if `cond` is true.)
 
   **Examples**:  
 
@@ -87,14 +87,16 @@ Check the file "__builtins.py" to see the available built-in operations and func
   * ramp(x) := 0 if x<0 else x  
   * rect(x) := 0 if x<-1 else 1 if x<=1 else 0  
 
-    **Syntax 2**: cases(`cond1`: `exp1`, `cond2`: `exp2`, ... , `default`)  
+    **Syntax 2**: when(`cond1`, `exp1`; `cond2`, `exp2`; ... ; `default`)  
 
-  (note: the `default` expression does not have a condition preceding it)  
+  (note: The `default` expression does not have a condition preceding it.
+  In comparison to the 'if-else' syntax, the 'when' syntax is fully short-circuited
+  \- if one condition is found to be true, all following conditions and their corresponding expressions will not be evaluated.)  
 
   **Examples**:  
 
-  * max(x, y, z) := cases(x > y and x > z: x, y > z: y, z)
-  * [cases(a: 1, b: 2, c: 3, 4), 2, 3]
+  * max(x, y, z) := when(x > y and x > z: x, y > z: y, z)
+  * when(a/\\b: 1, (not a)/\\(not b): 2, 4)
 
 * Local environment  
 

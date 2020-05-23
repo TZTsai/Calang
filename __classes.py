@@ -123,7 +123,8 @@ class Env:
 
 class function:
 
-    _eval = lambda *args: None  # to be defined later
+    evaluator = lambda *args: None  # to be defined later
+    debug = False
 
     def _default_apply(self, *args):
         if not self._fixed_argc:
@@ -133,9 +134,9 @@ class function:
         elif len(args) != self._least_argc:
             raise TypeError('inconsistent number of arguments!')
         bindings = dict(zip(self._params, args))
-        return function._eval(self._body, self._env.make_subEnv(bindings))
+        return function.evaluator(self._body, self._env.make_subEnv(bindings))
 
-    def __init__(self, params, body, env):
+    def __init__(self, params, body, env, name=''):
         if params and params[-1][0] == '*':
             params[-1] = params[-1][1:]
             self._least_argc = len(params) - 1
@@ -150,9 +151,13 @@ class function:
         self._body = body.strip()
         self._env = env
         self._apply = self._default_apply
+        self.__name__ = name
 
     def __call__(self, *args):
-        return self._apply(*args)
+        result = self._apply(*args)
+        if function.debug:
+            print(f"{self.__name__}({', '.join(map(str, args))}) = {result}")
+        return result
 
     def compose(self, *funcs):
         """ Return a function that compose this function and several functions. """

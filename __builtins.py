@@ -243,12 +243,6 @@ def find(cond, lst):
         return [i for i in range(len(lst)) if equal(lst[i], cond)]
 
 
-def cases(cases):
-    for cond, val in cases:
-        if cond:
-            return val
-
-
 def standardize(name, val):
 
     def pynumfy(val):
@@ -322,7 +316,7 @@ builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': lambda x: x / pi * 180,
             'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else 0,
             'conj': lambda z: z.conjugate(), 'angle': lambda z: atan(z.imag / z.real),
-            'reduce': reduce, 'filter': filter, 'map': map, 'zip': zip, 'cases': cases, 'find': find,
+            'reduce': reduce, 'filter': filter, 'map': map, 'zip': zip, 'find': find,
             'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute}
 
 for name in builtins:

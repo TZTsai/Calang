@@ -80,8 +80,9 @@ def eval_comprehension(comprehension, env):
 #     return GeneralSet(vars_, constr)
 
 
-def eval_cases(exp, env):
-    cases = [split(case, ':', 2) for case in get_list(exp)]
+def eval_when(exp, env):
+    "Support short circuit."
+    cases = [split(case, ',', 2) for case in get_list(exp, ';')]
     def value(exp): return calc_eval(exp, env)
     try:
         for val in (value(exp) for cond, exp in cases if value(cond)):
@@ -221,11 +222,11 @@ def calc_eval(exp, env):
             if CM.vals.peek() is not None:
                 CM.ops.pop()
                 break  # short circuit
-        elif type_ == 'cases':
+        elif type_ == 'when':
             type_, token, exp = get_token(exp)
             if type_ != 'paren':
-                raise SyntaxError('invalid cases expression')
-            CM.push_val(eval_cases(token, env))
+                raise SyntaxError('invalid when expression')
+            CM.push_val(eval_when(token, env))
         elif type_ == 'paren':
             lst = get_list(token)
             if exp: 
@@ -262,7 +263,10 @@ def calc_eval(exp, env):
             raise SyntaxError('invalid token: %s' % token)
         prev_type = type_
     result = CM.calc()
+    if is_iterable(result): 
+        print(exp)
+        print(result)
     return result
 
 
-function._eval = calc_eval
+function.evaluator = calc_eval
