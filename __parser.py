@@ -58,7 +58,7 @@ def get_token(exp):
                 type_, token, exp = get_token(exp)
             if type_ in closure_kwds:
                 stack += 1
-            elif type_ == 'colon':
+            elif token == ':':
                 stack -= 1
             tokens.append(token)
             if stack == 0:
@@ -93,20 +93,14 @@ def get_token(exp):
             return 'name', token, rest
 
     # special symbols
-    if exp[0] == ',':
-        return 'comma', ',', exp[1:]
-    if exp[0] == ':':
-        return 'colon', ':', exp[1:]
-    if exp[0] == ';':
-        return 'semicolon', ';', exp[1:]
+    if exp[0] in ',:;|':
+        return exp[0], exp[0], exp[1:]
     if exp[0] == '_':
         m = match(exp, lambda c: c.isalnum() or c == '_', 1)
         token, rest = exp[:m], exp[m:]
         type_ = 'ans' if len(
             token) == 1 or not token[1].isalpha() else 'symbol'
         return type_, token, rest
-    if exp[0] == '|':
-        return 'pipe', '|', exp[1:]
     if exp[:2] == '->':
         return 'arrow', '->', exp[2:]
     if exp[:2] in op_list:

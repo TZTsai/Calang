@@ -123,8 +123,7 @@ class Env:
 
 class function:
 
-    evaluator = lambda *args: None  # to be defined later
-    debug = False
+    evaluator = lambda *args: None  # to be set later
 
     def _default_apply(self, *args):
         if not self._fixed_argc:
@@ -136,8 +135,8 @@ class function:
         bindings = dict(zip(self._params, args))
         return function.evaluator(self._body, self._env.make_subEnv(bindings))
 
-    def __init__(self, params, body, env, name=''):
-        if params and params[-1][0] == '*':
+    def __init__(self, params, body, env, name=None):
+        if params and params[-1][0] == '%':
             params[-1] = params[-1][1:]
             self._least_argc = len(params) - 1
             self._fixed_argc = False
@@ -151,12 +150,12 @@ class function:
         self._body = body.strip()
         self._env = env
         self._apply = self._default_apply
-        self.__name__ = name
+        self._name = name
 
     def __call__(self, *args):
         result = self._apply(*args)
-        if function.debug:
-            print(f"{self.__name__}({', '.join(map(str, args))}) = {result}")
+        if __debug__:
+            print(f"{self._name}({', '.join(map(str, args))}) = {result}")
         return result
 
     def compose(self, *funcs):
@@ -181,17 +180,25 @@ class function:
             return fallback(a, b)
         return apply
 
+    def __repr__(self):
+        params = self._params
+        if not self._fixed_argc: params[-1] = '%' + params[-1]
+        params = ', '.join(params)
+        if self._name: 
+            return f'{self._name}({params})'
+        elif params:
+            return f'function of {params}'
+        else:
+            return f"function"
+
     def __str__(self):
-        params_str = ' of ' + ', '.join(self._params) + \
-            ('' if self._fixed_argc else '... ') if self._params \
-            else ''
-        return f"function{params_str}: {self._body}"
+        return repr(self) + ': ' + self._body
 
 
 class config:
     "This class holds all configs for the calculator."
     tolerance = 1e-12
-    precision = 5
+    precision = 6
     latex = False
     all_symbol = True
 

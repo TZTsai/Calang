@@ -2,7 +2,7 @@ poly(coeffs, symb) := sum([coeffs[i] * symb^i | i in enum(coeffs)])
 grad(potential, vars) := [diff(potential, var) | var in vars]
 normal(mu, sigma) := lambda x: 1/sqrt(2PI*sigma^2) exp(-(x-mu)^2/(2sigma^2))
 moddiv(x, y) := [x//y, x%y]
-egcd(a, b) := (a<b, [s,t,d]:egcd(b, a)->[t,s,d]; [q, r]: moddiv(a, b) -> [1, 1-q, b] if r = 0 else [s, t, d]: egcd(b, r) -> [t, s-t*q, d])
+egcd(a, b) := when(a<b, [s,t,d]:egcd(b, a)->[t,s,d]; [q, r]: moddiv(a, b) -> [1, 1-q, b] if r = 0 else [s, t, d]: egcd(b, r) -> [t, s-t*q, d])
 
 #TEST
 egcd(11111, 12345) #(2471, -2224, 1)

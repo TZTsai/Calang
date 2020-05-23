@@ -291,13 +291,13 @@ reconstruct(binary_ops, 'bin')
 unitary_l_ops = {'-': (neg, 10), 'not': (lambda n: 1 if n == 0 else 0, -4)}
 reconstruct(unitary_l_ops, 'uni_l')
 
-unitary_r_ops = {'!': (factorial, 99)}
+unitary_r_ops = {'!': (factorial, 99), '%': (lambda x: 0.01*x, 99)}
 # actually a unitary op on the right will always be immediately carried out
 reconstruct(unitary_r_ops, 'uni_r')
 
 op_list = set(binary_ops).union(set(unitary_l_ops)).union(set(unitary_r_ops))
 
-special_words = {'if', 'else', 'in', 'ENV', 'load', 'format', 'cases',
+special_words = {'if', 'else', 'in', 'ENV', 'load', 'format', 'when',
                  'import', 'del', 'lambda', 'with'}
 
 builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,

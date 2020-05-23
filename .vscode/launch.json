@@ -5,11 +5,12 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python: Run",
+      "name": "Python: Debug",
       "type": "python",
       "request": "launch",
       "program": "calc.py",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "justMyCode": false
     },
     {
       "name": "Python: Test",

@@ -1,6 +1,6 @@
 import io
 import sys
-from __classes import Env, config
+from __classes import Env, config, function
 from __builtins import *
 from __evaluator import add_bindings, calc_eval, history, CM
 from __formatter import format
@@ -181,8 +181,9 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             return
         except (Warning if test else Exception) as err:
             if test:
-                print(err)
-                # raise Warning
+                raise Warning(err)
+            if __debug__:
+                raise Exception(err)
             print('Error:', err)
             CM.reset()
 

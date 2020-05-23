@@ -8,22 +8,29 @@ CM = CalcMachine()
 
 
 def eval_list(exp, env):
+
     comprehension = get_list(exp, '|')
     if len(comprehension) > 1:
         return eval_comprehension(comprehension, env)
 
-    def value(exp): return calc_eval(exp, env)
+    def eval_inner(s):
+        exps = split(s, ',')
+        result = []
+        for exp in exps:
+            if not exp:
+                raise SyntaxError('invalid list syntax')
+            if exp[0] == '%':  # equivalent to star notation in python
+                result.extend(calc_eval(exp[1:], env))
+            else:
+                result.append(calc_eval(exp, env))
+        return result
 
-    lst = get_list(exp)
-    result = []
-    for exp in lst:
-        if not exp:
-            raise SyntaxError('invalid list syntax')
-        if exp[0] == '*':
-            result.extend(value(exp[1:]))
-        else:
-            result.append(value(exp))
-    return tuple(result)
+    # new feature: ';' can be used for a depth-2 list
+    lst = get_list(exp, ';')
+    if len(lst) == 1:
+        return tuple(eval_inner(lst[0]))
+    else:
+        return tuple(eval_inner(_exp) for _exp in lst)
 
 
 def eval_subscription(lst, subscript_exp, env):
@@ -147,7 +154,7 @@ def add_bindings(lexp, rexp, env):
             type_, params, rest = get_token(rest)
             if type_ != 'paren' or rest != '':
                 raise SyntaxError('invalid variable name!')
-            value = function(get_list(params), rexp, env.make_subEnv())
+            value = function(get_list(params), rexp, env.make_subEnv(), name)
             value._env[name] = value  # enable recursion
         elif not rest:  # a single variable
             value = calc_eval(rexp, env) if type(rexp) is str else rexp
@@ -197,11 +204,11 @@ def calc_eval(exp, env):
                 raise SyntaxError(f'invalid number: {token}')
         elif type_ == 'name':
             if exp: 
-                next_type, _, rest = get_token(exp)
-                if next_type == 'colon':  # single variable closure
+                _, next_token, rest = get_token(exp)
+                if next_token == ':':  # single variable closure
                     CM.push_val(eval_singlevar_closure(token, exp, env))
                     break
-                if next_type == 'arrow':
+                if next_token == '->':
                     CM.push_val(function([token], rest, env))
                     break
             CM.push_val(eval_name(token, env))
@@ -241,7 +248,7 @@ def calc_eval(exp, env):
                 raise SyntaxError('invalid syntax in parentheses')
             CM.push_val(calc_eval(lst[0], env))
         elif type_ == 'bracket':
-            if exp and get_token(exp)[0] == 'colon':  # closure with unpacking
+            if exp and get_token(exp)[1] == ':':  # closure with unpacking
                 CM.push_val(eval_singlevar_closure(token, exp, env))
                 break
             elif is_iterable(prev_val) and is_replacable(prev_type, 'bracket'):
@@ -262,11 +269,7 @@ def calc_eval(exp, env):
         else:
             raise SyntaxError('invalid token: %s' % token)
         prev_type = type_
-    result = CM.calc()
-    if is_iterable(result): 
-        print(exp)
-        print(result)
-    return result
+    return CM.calc()
 
 
 function.evaluator = calc_eval

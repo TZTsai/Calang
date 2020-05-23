@@ -50,23 +50,24 @@ Check the file "__builtins.py" to see the available built-in operations and func
   * f(3, 2) = 8
   * cot(x) := 1/tan(x)  
   * fact(n) := 1 if n=0 else n*fact(n-1)
-  * d(f) := function x: (f(x+0.0001)-f(x))/0.0001;  
-    newton(f, x) := with update = function x: x - f(x)/d(f)(x): ...
+  * d(f) := lambda x: (f(x+0.0001)-f(x))/0.0001;  
+    newton(f, x) := with update = lambda x: x - f(x)/d(f)(x): ...
     x if abs(f(x)) \< 0.0001 else newton(f, update(x));  
     newton(sin, 3)  (return: 3.1416)
 
-* Function expression  
+* Lambda expression  
 
-  A function expression directly evaluates to a function.  
+  A lambda expression directly evaluates to a function.  
   
-  **Syntax 1**: function `par1`, `par2`, ... : `exp`  
+  **Syntax 1**: lambda `par1`, `par2`, ... : `exp`  
   
-  (note: I have added the feature that the user can press Ctrl+L to represent "function", but it becomes redundant when I later added the succinct arrow representation "->".)  
+  (note: The symbol `%` can be used at the beginning of the last to denote that it has a variable length, like the `*` form in python.)  
   
   **Examples**:
   
-  * fact := function n: 1 if n=0 else n*fact(n-1)
-  * compose := function f, g: x: f(g(x))  
+  * fact := lambda n: 1 if n=0 else n*fact(n-1)
+  * compose := lambda f, g: x -> f(g(x))  
+  * map := lambda f, %lists: [] if any([l = [] for l in lists]) with args = []
   
   **Syntax 2**: (`par1`, `par2`) -> `exp`  (the parentheses can be omitted if there is exactly one parameter)  
   
@@ -171,7 +172,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
   **Examples**:  
   * r := 1~4  
   * list(r) (converts a range to a list, return: [1, 2, 3, 4])
-  * sum([i^2 for i in 1~10])
+  * sum([i^2 | i in 1~10])
   * r := range(1, 4), list(r) (return: [1, 2, 3])
   * r := range(9, 1, -2) (return: [9, 7, 5, 3])  
 
