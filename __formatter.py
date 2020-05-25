@@ -1,5 +1,6 @@
 from __builtins import Rational, Fraction, Matrix, is_number, is_list, \
-    is_matrix, floor, log10, inf
+    is_matrix, floor, inf, log
+from __classes import Range
 from sympy import latex
 from types import FunctionType
 from re import sub as translate
@@ -17,7 +18,7 @@ def format(val, config, indent=0):
     def format_scinum(x):
         def positive_case(x):
             supscripts = '⁰¹²³⁴⁵⁶⁷⁸⁹'
-            e = floor(log10(x))
+            e = floor(log(x)/log(10))
             b = format_float(x/10**e)
             supscript_pos = lambda n: ''.join([supscripts[int(i)] for i in str(n)])
             supscript = lambda n: '⁻' + supscript_pos(-n) if e < 0 else supscript_pos(n)
@@ -51,7 +52,7 @@ def format(val, config, indent=0):
         elif type(val) is FunctionType:  # builtin
             return val.str
         else:  # symbol, function, range
-            mapping = [(r'\*\*', '^'), (r'(?<![\,\(\[])\*', ' ')]
+            mapping = [(r'\*\*', '^'), (r'\*', ' ')]
             s = str(val)
             for p in mapping:
                 s = translate(p[0], p[1], s)

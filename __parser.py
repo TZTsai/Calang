@@ -6,19 +6,16 @@ import re
 def get_token(exp):
     """ split out the first token of exp and return its type, the token itself,
     and the rest of exp
-    >>> get_token('function:')
-    ('function', 'function :', '')
-    >>> get_token('function x , y: x + y')[1:]
-    ('function x , y :', ' x + y')
-    >>> get_token('\x0c x, y: x + y')[1:]
-    ('function x , y :', ' x + y')
+    >>> get_token('lambda:')
+    ('lambda', 'lambda :', '')
+    >>> get_token('lambda x , y: x + y')[1:]
+    ('lambda x , y :', ' x + y')
     """
 
-    def match(exp, condition, start=0):
-        i, n = start, len(exp)
-        while i < n and condition(exp[i]):
-            i += 1
-        return i
+    def match(exp, pattern, start=0):
+        exp = exp[start:]
+        m = re.match(f'{pattern}', exp)
+        return start + m.end() if m else start
 
     def get_bracketed_token(exp):
         def update_stack(stack, char):
@@ -27,10 +24,10 @@ def get_token(exp):
                 if char in p:
                     if char == p[0]:
                         stack.append(char)
-                    elif stack[-1] != p[0]:
-                        raise SyntaxError
-                    else:
+                    elif stack[-1] == p[0]:
                         stack.pop()
+                    else:
+                        raise SyntaxError
                     break
         stack = []
         for i in range(len(exp)):
@@ -46,7 +43,7 @@ def get_token(exp):
 
     def get_name(exp):
         exp = exp.strip()
-        m = match(exp, lambda c: c.isalnum() or c in '_?')
+        m = match(exp, r'[a-zA-Z\d_?]*')
         return exp[:m], exp[m:]
 
     def get_colon_token(exp):
@@ -75,10 +72,13 @@ def get_token(exp):
     exp = escape_to_greek(exp)
 
     if exp[0].isdigit():  # number
-        m = match(exp, lambda c: c.isdigit() or c == '.')
+        m = match(exp, r'\d*')
+        if m < len(exp) and exp[m] == '.':
+            try: assert exp[m+1] == '.'  # double dot - a range
+            except: m = match(exp, r'\d*', m+1)
         if m+1 < len(exp) and exp[m] == 'e':  # scientific notation
             start = m+2 if exp[m+1] == '-' else m+1
-            m = match(exp, lambda c: c.isdigit(), start)
+            m = match(exp, r'\d*', start)
         return 'number', exp[:m], exp[m:]
     if exp[0].isalpha():  # name
         token, rest = get_name(exp)
@@ -93,13 +93,12 @@ def get_token(exp):
             return 'name', token, rest
 
     # special symbols
-    if exp[0] in ',:;|':
+    if exp[0] in ',:;|@':
         return exp[0], exp[0], exp[1:]
     if exp[0] == '_':
-        m = match(exp, lambda c: c.isalnum() or c == '_', 1)
+        m = match(exp, '[A-Za-z0-9_]*', 1)
         token, rest = exp[:m], exp[m:]
-        type_ = 'ans' if len(
-            token) == 1 or not token[1].isalpha() else 'symbol'
+        type_ = 'ans' if token == '_' or not token[1].isalpha() else 'symbol'
         return type_, token, rest
     if exp[:2] == '->':
         return 'arrow', '->', exp[2:]
@@ -138,8 +137,8 @@ def split(exp, delimiter, maxnum=inf):
     ['a', '', 'b', ', c']
     >>> split(' ', ',')
     []
-    >>> split('function x, y: 1, 2', ',')
-    ['function x , y : 1', '2']
+    >>> split('lambda x, y: 1, 2', ',')
+    ['lambda x , y : 1', '2']
     """
     exp = exp.strip()
     if not exp:

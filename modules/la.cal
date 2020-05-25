@@ -3,10 +3,10 @@ sumv(vects) := reduce(addv, vects);
 subv(v1, v2) := map((x1,x2) -> x1-x2, v1, v2);
 
 rnum(m) := len(m);
-cnum(m) := len(m@0);
+cnum(m) := len(m[0]);
 Htransp(m) := [[conj(m[r][c]) | r in range(rnum(m))] | c in range(cnum(m))];
 augm(m1, m2) := map(lambda r1,r2:r1+r2, m1, m2);
-mapm(f, %mats) := map(lambda %vects: map(f, %vects), %mats);
+mapm(f, @mats) := map(lambda @vects: map(f, @vects), @mats);
 addm(m1, m2) := mapm(lambda x,y:x+y, m1, m2);
 subm(m1, m2) := mapm(lambda x,y:x-y, m1, m2);
 scalem(m, a) := mapm(lambda x:a*x, m);
@@ -31,7 +31,7 @@ load util
 eigenvalues(m) := solve(det(subm(m, scalem(id(rnum(m)), \l))))	
 
 minormat(m, i, j) := [row[:j-1]+row[j:] | row in m[:i-1]+m[i:]]
-adj(m) := with n=rnum(m): [[(-1)^(i+j)*det(minormat(m, i, j)) | i in 1~n] | j in 1~n]
+adj(m) := with n=rnum(m): [[(-1)^(i+j)*det(minormat(m, i, j)) | i in 1..n] | j in 1..n]
 
 #TEST
 combine([1,2],[[1,0],[0,1]]) #(1,2)

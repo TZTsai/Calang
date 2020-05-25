@@ -5,7 +5,7 @@ second(p) := p(lambda x, y: y)
 nil := lambda x: nil
 nil?(p) := lambda?(p) and p(lambda x, y: 0) = nil;
 
-make_list(%nums) := nil if empty?(nums) else pair(car(nums), make_list(%cdr(nums)));
+make_list(@nums) := nil if empty?(nums) else pair(car(nums), make_list(@cdr(nums)));
 pmap(f, p) := nil if nil?(p) else pair(f(first(p)), pmap(f, second(p)));
 to_list(p) := [] if nil?(p) else [first(p)]+to_list(second(p));
 

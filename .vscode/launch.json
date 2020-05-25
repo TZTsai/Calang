@@ -10,7 +10,7 @@
       "request": "launch",
       "program": "calc.py",
       "console": "integratedTerminal",
-      "justMyCode": false
+      // "justMyCode": false
     },
     {
       "name": "Python: Test",
@@ -18,11 +18,11 @@
       "request": "launch",
       "args": [
         "-t",
-        "../modules/math.cal"
+        // "../modules/math.cal"
       ],
       "program": "calc.py",
       "console": "integratedTerminal",
-      "justMyCode": false
+      // "justMyCode": false
     },
     {
       "name": "Python: 当前文件",

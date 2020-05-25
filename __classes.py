@@ -89,9 +89,11 @@ class CalcMachine:
 
 
 class Env:
-    def __init__(self, bindings={}, parent=None):
-        self.bindings = bindings
+    def __init__(self, bindings=None, parent=None):
         self.parent = parent
+        self.frame = 0 if parent is None else parent.frame + 1
+        self.bindings = {}
+        if bindings: self.bindings.update(bindings)
 
     def __setitem__(self, name, val):
         self.bindings[name] = val
@@ -100,13 +102,21 @@ class Env:
         try:
             return self.bindings[name]
         except KeyError:
-            if self.parent:
-                return self.parent[name]
-            else:
-                raise KeyError
+            if self.parent: return self.parent[name]
+            else: raise KeyError
 
     def __contains__(self, name):
-        return name in self.bindings
+        try: self[name]
+        except: return False
+        return True
+
+    def all_bindings(self):
+        result = dict()
+        env = self
+        while env: 
+            result.update(env.bindings)
+            env = env.parent
+        return result
 
     def remove(self, name):
         self.bindings.pop(name)
@@ -117,13 +127,14 @@ class Env:
     def define(self, bindings):
         self.bindings.update(bindings)
 
-    def make_subEnv(self, bindings={}):
+    def make_subEnv(self, bindings=None):
         return Env(bindings, self)
 
 
 class function:
 
     evaluator = lambda *args: None  # to be set later
+    vararg_char = '@'
 
     def _default_apply(self, *args):
         if not self._fixed_argc:
@@ -132,11 +143,18 @@ class function:
             args = args[:self._least_argc] + (args[self._least_argc:],)
         elif len(args) != self._least_argc:
             raise TypeError('inconsistent number of arguments!')
+
         bindings = dict(zip(self._params, args))
-        return function.evaluator(self._body, self._env.make_subEnv(bindings))
+        env = self._env.make_subEnv(bindings)
+        result = function.evaluator(self._body, env)
+
+        if __debug__ and self._name:
+            print(f"{'  '*env.frame}{self._name}({', '.join(map(str, args))}) = {result}")
+
+        return result
 
     def __init__(self, params, body, env, name=None):
-        if params and params[-1][0] == '%':
+        if params and params[-1][0] == function.vararg_char:
             params[-1] = params[-1][1:]
             self._least_argc = len(params) - 1
             self._fixed_argc = False
@@ -154,8 +172,6 @@ class function:
 
     def __call__(self, *args):
         result = self._apply(*args)
-        if __debug__:
-            print(f"{self._name}({', '.join(map(str, args))}) = {result}")
         return result
 
     def compose(self, *funcs):
@@ -182,7 +198,8 @@ class function:
 
     def __repr__(self):
         params = self._params
-        if not self._fixed_argc: params[-1] = '%' + params[-1]
+        if not self._fixed_argc: 
+            params[-1] = '%' + params[-1]
         params = ', '.join(params)
         if self._name: 
             return f'{self._name}({params})'
@@ -193,6 +210,24 @@ class function:
 
     def __str__(self):
         return repr(self) + ': ' + self._body
+
+
+class Range:
+    def __init__(self, first, last, second=None):
+        self.first = first
+        self.second = second
+        self.last = last
+        step = 1 if second is None else second - first
+        self.range = range(first, last+1, step)
+
+    def __repr__(self):
+        if self.second is None:
+            return f'{self.first}~{self.last}'
+        else:
+            return '..'.join(map(str, [self.first, self.second, self.last]))
+        
+    def __iter__(self):
+        return iter(self.range)
 
 
 class config:

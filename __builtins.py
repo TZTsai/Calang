@@ -3,10 +3,11 @@ from operator import add, sub, mul, floordiv, mod, ne, neg, lt, gt, le, ge, \
 from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
-from math import e, pi, inf, log10
+from math import inf
 from sympy import Symbol, solve, limit, integrate, diff, simplify, Integer, Float, Matrix, Expr, \
-    sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh
-from __classes import Op, function, Env, config
+    sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh, \
+    E, pi
+from __classes import Op, function, Env, config, Range
 from myutils import interact
 
 
@@ -118,7 +119,7 @@ def list_depth(value):
 def index(lst, id):
     if not hasattr(lst, '__getitem__'):
         raise SyntaxError('{} is not subscriptable'.format(lst))
-    if isinstance(lst, range) or not is_iterable(id):
+    if isinstance(lst, range) or isinstance(lst, Range) or not is_iterable(id):
         return lst[id]
     else:
         return tuple(index(lst, i) for i in id)
@@ -233,14 +234,21 @@ def first(cond, lst):
     try:
         return list(map(cond, lst)).index(True)
     except ValueError:
-        return len(lst)
+        return -1
 
 
 def find(cond, lst):
     if is_function(cond):
-        return [i for i in range(len(lst)) if cond(lst[i])]
+        return [i for i, x in enumerate(lst) if cond(x)]
     else:
-        return [i for i in range(len(lst)) if equal(lst[i], cond)]
+        return [i for i, x in enumerate(lst) if equal(x, cond)]
+
+
+def smart_range(x, y):
+    if isinstance(x, Range):
+        return Range(x.first, y, x.last)
+    else:
+        return Range(x, y)
 
 
 def standardize(name, val):
@@ -259,7 +267,8 @@ def standardize(name, val):
     def unify_types(x):
         if type(x) is bool:
             return 1 if x else 0
-        elif is_iterable(x) and not any_((range, set), lambda c: isinstance(x, c)):
+        elif is_iterable(x) and not any_((range, Range, set), 
+                                         lambda c: isinstance(x, c)):
             return tuple(unify_types(a) for a in x)
         else:
             try:
@@ -284,14 +293,14 @@ binary_ops = {'+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '.
               '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '=': (equal, 0),
               '!=': (ne, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0),
               '>=': (ge, 0), 'xor': (xor, 3), 'in': (lambda x, y: x in y, -2),
-              '@': (index, 16), '~': (lambda a, b: range(a, b + 1), 5),
+              '~': (Range, 5), '..': (smart_range, 5),
               'and': (and_, -5), 'or': (or_, -6), '/\\': (and_, 8), '\\/': (or_, 7)}
 reconstruct(binary_ops, 'bin')
 
 unitary_l_ops = {'-': (neg, 10), 'not': (lambda n: 1 if n == 0 else 0, -4)}
 reconstruct(unitary_l_ops, 'uni_l')
 
-unitary_r_ops = {'!': (factorial, 99), '%': (lambda x: 0.01*x, 99)}
+unitary_r_ops = {'!': (factorial, 99)}
 # actually a unitary op on the right will always be immediately carried out
 reconstruct(unitary_r_ops, 'uni_r')
 
@@ -303,14 +312,14 @@ special_words = {'if', 'else', 'in', 'ENV', 'load', 'format', 'when',
 builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,
             'atan': atan, 'abs': abs, 'sqrt': sqrt, 'floor': floor, 'log': log,
-            'E': e, 'PI': pi, 'I': 1j, 'INF': inf, 'range': range, 'max': max, 'min': min, 'gcd': gcd,
+            'E': E, 'PI': pi, 'I': 1j, 'INF': inf, 'range': range, 'max': max, 'min': min, 'gcd': gcd,
             'binom': lambda n, m: factorial(n) / (factorial(m) * factorial(n-m)), 
             'len': len, 'sort': sorted, 'exit': lambda: exit(),
             'exp': exp, 'lg': lambda x: log(x)/log(10), 'ln': log, 'log2': lambda x: log(x)/log(2),
             'empty?': lambda l: 0 if len(l) else 1, 'number?': is_number, 'symbol?': is_symbol,
             'iter?': is_iterable, 'lambda?': is_function, 'matrix?': is_matrix, 'vector?': is_vector,
             'list': to_list, 'sum': lambda l: reduce(add, l), 'product': lambda l: reduce(mul, l),
-            'car': lambda l: l[0], 'cdr': lambda l: l[1:], 'cons': lambda a, l: (a,) + l, 'enum': compose(range, len),
+            'car': lambda l: l[0], 'cdr': lambda l: l[1:], 'cons': lambda a, l: (a,) + l, 'enum': enumerate,
             'row': row, 'col': col, 'shape': list_shape, 'depth': list_depth, 'transp': transpose, 'flatten': flatten,
             'all': all_, 'any': any, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),
             'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': lambda x: x / pi * 180,

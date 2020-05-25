@@ -5,6 +5,7 @@ from __classes import CalcMachine
 
 history = []
 CM = CalcMachine()
+my_globals = {}
 
 
 def eval_list(exp, env):
@@ -19,7 +20,7 @@ def eval_list(exp, env):
         for exp in exps:
             if not exp:
                 raise SyntaxError('invalid list syntax')
-            if exp[0] == '%':  # equivalent to star notation in python
+            if exp[0] == function.vararg_char: 
                 result.extend(calc_eval(exp[1:], env))
             else:
                 result.append(calc_eval(exp, env))
@@ -154,7 +155,7 @@ def add_bindings(lexp, rexp, env):
             type_, params, rest = get_token(rest)
             if type_ != 'paren' or rest != '':
                 raise SyntaxError('invalid variable name!')
-            value = function(get_list(params), rexp, env.make_subEnv(), name)
+            value = function(get_list(params), rexp, env, name)
             value._env[name] = value  # enable recursion
         elif not rest:  # a single variable
             value = calc_eval(rexp, env) if type(rexp) is str else rexp
@@ -176,12 +177,21 @@ def is_applying(prev_val, prev_type, type_):
         and is_replacable(prev_type, 'name')
 
 
+def log_macro(env):
+    def value(arg):
+        return env[arg] if arg in env else '??'
+    def log(*args):
+        print(env.frame*'  ' + 
+              ', '.join(f'{arg}={value(arg)}' for arg in args))
+    return log
+
+
 def calc_eval(exp, env):
     """ a pure function that evaluates exp in env """
-    # inner evaluation
     if exp == '': return
     CM.begin()
     prev_type = None
+
     while exp:
         type_, token, exp = get_token(exp)
         prev_val = None if CM.vals.empty() else CM.vals.peek()
@@ -203,14 +213,14 @@ def calc_eval(exp, env):
             except Exception:
                 raise SyntaxError(f'invalid number: {token}')
         elif type_ == 'name':
-            if exp: 
-                _, next_token, rest = get_token(exp)
-                if next_token == ':':  # single variable closure
-                    CM.push_val(eval_singlevar_closure(token, exp, env))
-                    break
-                if next_token == '->':
-                    CM.push_val(function([token], rest, env))
-                    break
+            next_token = None
+            if exp: _, next_token, rest = get_token(exp)
+            if next_token == ':':  # single variable closure
+                CM.push_val(eval_singlevar_closure(token, exp, env))
+                break
+            if next_token == '->':
+                CM.push_val(function([token], rest, env))
+                break
             CM.push_val(eval_name(token, env))
         elif type_ == 'symbol':
             CM.push_val(Symbol(token[1:]))
@@ -255,9 +265,12 @@ def calc_eval(exp, env):
                 CM.push_val(eval_subscription(CM.vals.pop(), token, env))
             else:
                 CM.push_val(eval_list(token, env))
-        # elif type_ == 'brace':
-        #     # experiment feature
-        #     CM.push_val(eval_set(token, env))
+        elif type_ == 'brace':  # eval the token in python
+            my_locals = env.all_bindings()
+            my_locals['log'] = log_macro(env)
+            result = eval(token[1:-1], my_globals, my_locals)
+            if result: exp = str(result) + exp
+            continue
         elif type_ in ('with', 'lambda'):
             i = first(lambda c: c.isspace(), token)
             lst = split(token[i:-1], ',')  # the last char is ':'
@@ -269,6 +282,7 @@ def calc_eval(exp, env):
         else:
             raise SyntaxError('invalid token: %s' % token)
         prev_type = type_
+
     return CM.calc()
 
 

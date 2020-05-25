@@ -61,13 +61,13 @@ Check the file "__builtins.py" to see the available built-in operations and func
   
   **Syntax 1**: lambda `par1`, `par2`, ... : `exp`  
   
-  (note: The symbol `%` can be used at the beginning of the last to denote that it has a variable length, like the `*` form in python.)  
+  (note: The character `@` can be added at the beginning of the last to denote that it has a variable length, like the `*` form in python.)  
   
   **Examples**:
   
   * fact := lambda n: 1 if n=0 else n*fact(n-1)
   * compose := lambda f, g: x -> f(g(x))  
-  * map := lambda f, %lists: [] if any([l = [] for l in lists]) with args = []
+  * map := lambda f, %lists: [] if any([l = [] | l in lists]) else with args = [l\[0\] | l in lists], rests = \[l\[1:] | l in lists]: \[f(@args)] + map(f, @rests)
   
   **Syntax 2**: (`par1`, `par2`) -> `exp`  (the parentheses can be omitted if there is exactly one parameter)  
   

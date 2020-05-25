@@ -2,7 +2,7 @@ import io
 import sys
 from __classes import Env, config, function
 from __builtins import *
-from __evaluator import add_bindings, calc_eval, history, CM
+from __evaluator import add_bindings, calc_eval, history, CM, my_globals
 from __formatter import format
 
 
@@ -87,16 +87,23 @@ def calc_exec(exp, / , record=True, env=global_env):
             global_env.remove(name)
     else:
         assign_mark = exp.find(':=')
-        if assign_mark < 0:
+        braces = exp.find('{'), exp.rfind('}')
+        if assign_mark < 0 or braces[0] < assign_mark < braces[1]:
             result = calc_eval(exp, global_env)
         else:  # an assignment
             lexp, rexp = exp[:assign_mark], exp[assign_mark + 2:]
             result = add_bindings(lexp, rexp, global_env)
         if not (CM.vals.empty() and CM.ops.empty()):
-            raise SyntaxError('invalid expression!')
+            if CM.ops.pop().type == 'stop' and CM.ops.empty():
+                pass
+            else:
+                raise SyntaxError('invalid expression!')
         if result is not None and record:
             history.append(result)
         return result
+
+
+my_globals['exec'] = calc_exec
 
 
 def run(filename=None, test=False, start=0, verbose=True, env=global_env):
@@ -179,13 +186,10 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
 
         except KeyboardInterrupt:
             return
-        except (Warning if test else Exception) as err:
-            if test:
-                raise Warning(err)
-            if __debug__:
-                raise Exception(err)
+        except (Exception if not test and not __debug__ else Warning) as err:
             print('Error:', err)
             CM.reset()
+            
 
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
