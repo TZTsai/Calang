@@ -4,11 +4,8 @@ from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from math import inf
-from sympy import Symbol, solve, limit, integrate, diff, simplify, Integer, Float, Matrix, Expr, \
-    sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh, \
-    E, pi
+from sympy import Symbol, solve, limit, integrate, diff, simplify, expand, Integer, Float, Matrix, Expr, Add, sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh, E, pi
 from __classes import Op, function, Env, config, Range
-from myutils import interact
 
 
 def is_number(value):
@@ -71,8 +68,7 @@ def substitute(exp, *bindings):
     if is_iterable(exp):
         return tuple(substitute(x, *bindings) for x in exp)
     if hasattr(exp, 'subs'):
-        return exp.subs(zip([bindings[i] for i in range(len(bindings)) if i % 2 == 0],
-                            [bindings[i] for i in range(len(bindings)) if i % 2 == 1]))
+        return exp.subs(bindings)
     return exp
 
 
@@ -274,7 +270,10 @@ def standardize(name, val):
             try:
                 return pynumfy(x)
             except (ValueError, TypeError):
-                return simplify(x) if isinstance(x, Expr) else x
+                if isinstance(x, Expr):
+                    return simplify(x)
+                else:
+                    return x
 
     if is_function(val):
         fun = compose(unify_types, val)
@@ -326,7 +325,8 @@ builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else 0,
             'conj': lambda z: z.conjugate(), 'angle': lambda z: atan(z.imag / z.real),
             'reduce': reduce, 'filter': filter, 'map': map, 'zip': zip, 'find': find,
-            'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute}
+            'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute,
+            'expand': expand}
 
 for name in builtins:
     val = builtins[name]
