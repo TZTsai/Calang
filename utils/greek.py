@@ -9,6 +9,8 @@ with open('utils/greek_alphabet.txt', 'r', encoding='utf8') as fi:
             en, En = 'th', 'Th'
         elif english == 'psi': 
             en, En = 'ps', 'Ps'
+        elif english == 'phi':
+            en, En = 'f', 'F'
         else: 
             en = english[0]
             En = en.upper()

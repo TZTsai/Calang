@@ -160,8 +160,7 @@ def is_replacable(type_, *replaced_types):
 
 
 def is_applying(prev_val, prev_type, type_):
-    return type_ == 'paren' and is_function(prev_val) \
-        and is_replacable(prev_type, 'name')
+    return type_ == 'paren' and is_function(prev_val)
 
 
 def log_macro(env):
@@ -176,18 +175,32 @@ def log_macro(env):
 def calc_eval(exp, env):
     """ a pure function that evaluates exp in env """
     if exp == '': return
+
+    # if-else: support short-circuit
+    split_if = split(exp, 'if', 2)
+    if len(split_if) > 1:
+        try: if_exp, cond_exp, else_exp = split_if[0], *split(split_if[1], 'else', 2)
+        except ValueError: raise SyntaxError('"else" not found to match "if"!')
+        if calc_eval(cond_exp, env): return calc_eval(if_exp, env)        
+        else: return calc_eval(else_exp, env)
+
     CM.begin()
     prev_type = None
+    next_type, next_token, next_exp = get_token(exp)
 
     while exp:
-        type_, token, exp = get_token(exp)
-        prev_val = None if CM.vals.empty() else CM.vals.peek()
-        if is_applying(prev_val, prev_type, type_):  # apply a function
+        type_, token, exp = next_type, next_token, next_exp
+        if exp: next_type, next_token, next_exp = get_token(exp)
+        else: next_type = next_token = next_exp = None
+
+        if is_applying(CM.vals.peek(), prev_type, type_):  # apply a function
             func, args = CM.vals.pop(), eval_list(token, env)
             CM.push_val(func(*args))
             continue
+
         if all(is_replacable(t, 'number', 'symbol') for t in (type_, prev_type)):
             CM.push_op(binary_ops['\\.'])
+
         if type_ == 'ans':
             try:
                 id = eval_ans_id(token)
@@ -200,13 +213,11 @@ def calc_eval(exp, env):
             except Exception:
                 raise SyntaxError(f'invalid number: {token}')
         elif type_ == 'name':
-            next_token = None
-            if exp: _, next_token, rest = get_token(exp)
             if next_token == ':':  # single variable closure
                 CM.push_val(eval_singlevar_closure(token, exp, env))
                 break
             if next_token == '->':
-                CM.push_val(function([token], rest, env))
+                CM.push_val(function([token], next_exp, env))
                 break
             CM.push_val(eval_name(token, env))
         elif type_ == 'attribute':
@@ -228,14 +239,6 @@ def calc_eval(exp, env):
             else:
                 CM.push_op(unitary_r_ops[token])
                 type_ = prev_type
-        elif type_ == 'if':
-            CM.push_op(Op('bin', priority=-5,
-                          function=standardize('if', lambda x, y: x if y else None)))
-        elif type_ == 'else':
-            CM.push_op(Op('bin', standardize('else', lambda x, y: y), -5))
-            if CM.vals.peek() is not None:
-                CM.ops.pop()
-                break  # short circuit
         elif type_ == 'when':
             type_, token, exp = get_token(exp)
             if type_ != 'paren':
@@ -243,14 +246,12 @@ def calc_eval(exp, env):
             CM.push_val(eval_when(token, env))
         elif type_ == 'paren':
             lst = get_list(token)
-            if exp: 
-                next_type, _, body = get_token(exp)
-                if next_type == 'arrow':
-                    if lst and ':' in lst[0]:  # local variables
-                        CM.push_val(eval_closure(lst, body, env, delim=':'))
-                    else: # a function
-                        CM.push_val(function(lst, body, env))
-                    break
+            if next_type == 'arrow':
+                if lst and ':' in lst[0]:  # local variables
+                    CM.push_val(eval_closure(lst, next_exp, env, delim=':'))
+                else: # a function
+                    CM.push_val(function(lst, next_exp, env))
+                break
             if len(lst) != 1:
                 raise SyntaxError('invalid syntax in parentheses')
             CM.push_val(calc_eval(lst[0], env))
@@ -258,7 +259,7 @@ def calc_eval(exp, env):
             if exp and get_token(exp)[1] == ':':  # closure with unpacking
                 CM.push_val(eval_singlevar_closure(token, exp, env))
                 break
-            elif is_iterable(prev_val) and is_replacable(prev_type, 'bracket'):
+            elif is_iterable(CM.vals.peek()) and is_replacable(prev_type, 'bracket'):
                 CM.push_val(eval_subscription(CM.vals.pop(), token, env))
             else:
                 CM.push_val(eval_list(token, env))
@@ -278,6 +279,7 @@ def calc_eval(exp, env):
             break
         else:
             raise SyntaxError('invalid token: %s' % token)
+
         prev_type = type_
 
     return CM.calc()

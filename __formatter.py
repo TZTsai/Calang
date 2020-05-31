@@ -7,8 +7,8 @@ from re import sub as translate
 from utils.greek import gr_to_tex
 
 
-def format(val, indent=0):
-    if config.latex:
+def format(val, indent=0, sci=False, tex=False):
+    if config.latex or tex:
         s = latex(Matrix(val) if is_matrix(val) else val)
         # substitute the Greek letters to tex representations
         return translate(r'[^\x00-\x7F]', lambda m: gr_to_tex(m[0]), s)
@@ -38,17 +38,18 @@ def format(val, indent=0):
                          [row_str(['']*col_num, '╰', '╯')])
     def format_atom(val):
         if is_number(val):
+            mag = abs(val)
             if type(val) == complex:
                 re, im = format_float(val.real), format_float(val.imag)
                 return f"{re} {'-' if im<0 else '+'} {abs(im)}ⅈ"
-            elif abs(val) == inf:
+            elif mag == inf:
                 return '∞'
-            elif abs(val) <= 0.001 or abs(val) >= 10000:
-                return format_scinum(val)
-            elif isinstance(val, Rational):
+            elif isinstance(val, Rational) and not sci:
                 if type(val) == Fraction:
                     val.limit_denominator(10**config.precision)
                 return str(val)
+            elif mag <= 0.001 or mag >= 10000:
+                return format_scinum(val)
             else: 
                 return str(format_float(val))
         elif type(val) is FunctionType:  # builtin

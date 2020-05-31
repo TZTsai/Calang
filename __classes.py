@@ -116,8 +116,9 @@ class Env:
     def all_bindings(self):
         result = dict()
         env = self
-        while env: 
-            result.update(env.bindings)
+        while env:
+            for name, val in env.bindings.items():
+                if name not in result: result[name] = val
             env = env.parent
         return result
 
@@ -227,6 +228,21 @@ class Range:
         
     def __iter__(self):
         return iter(self.range)
+
+
+class Object(Env):
+    def __init__(self, name, parent=None):
+        super().__init__(parent=parent)
+        self.name = name
+        
+    def __getattribute__(self, name):
+        return self[name]
+    
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def makechild(self, name):
+        return Object(name, self)
 
 
 class config:

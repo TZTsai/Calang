@@ -4,6 +4,7 @@ from __classes import Env, config, function
 from __builtins import *
 from __evaluator import add_bindings, calc_eval, history, CM, my_globals
 from __formatter import format
+from __parser import split
 from sympy import pprint
 
 
@@ -94,13 +95,16 @@ def calc_exec(exp, / , record=True, env=global_env):
         for name in words[1:]:
             global_env.remove(name)
     else:
-        assign_mark = exp.find(':=')
-        braces = exp.find('{'), exp.rfind('}')
-        if assign_mark < 0 or braces[0] < assign_mark < braces[1]:
+        assign_split = split(exp, ':=')
+        if len(assign_split) == 1: 
+            exp = assign_split[0]
             result = calc_eval(exp, global_env)
-        else:  # an assignment
-            lexp, rexp = exp[:assign_mark], exp[assign_mark + 2:]
+        elif len(assign_split) == 2:
+            lexp, rexp = assign_split
             result = add_bindings(lexp, rexp, global_env)
+        else:  # an assignment
+            raise SyntaxError('invalid use of assignment symbol!')
+            
         if not (CM.vals.empty() and CM.ops.empty()):
             raise SyntaxError('invalid expression!')
         if result is not None and record:
@@ -120,11 +124,9 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             return iter(lambda: '', 1)  # an infinite loop
 
     def split_exp_comment(line):
-        comment_at = line.find('#')
-        if comment_at < 0:
-            return line, ''
-        else:
-            return line[:comment_at], line[comment_at + 1:]
+        try: exp, comment = line.split('#', 1)
+        except: exp, comment = line, ''
+        return exp.strip(), comment.strip()
 
     def verify_answer(exp, result, answer, verbose):
         def equal(x, y):
@@ -170,15 +172,14 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
                 show = True
 
             exp, comment = split_exp_comment(line)
-            if exp:
-                result = calc_exec(exp, env=env)
-            else:  # a comment line
-                continue
-            if result is None:
-                continue
+            if exp: result = calc_exec(exp, env=env)
+            else: continue
+            if result is None: continue
 
             if show and verbose:  # print output
-                print(format(result), flush=True)
+                sci = comment == 'SCI'
+                tex = comment == 'TEX'
+                print(format(result, sci=sci, tex=tex), flush=True)
 
             # test
             if test and comment:

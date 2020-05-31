@@ -43,7 +43,7 @@ def get_token(exp):
 
     def get_name(exp):
         exp = exp.strip()
-        name_re = r'[a-zA-Z\d_]+[?]?'
+        name_re = r'[a-zA-Z\u0374-\u03FF\d_]+[?]?'
         m = match(exp, f'({name_re}[.])*{name_re}')
         return exp[:m], exp[m:]
 
@@ -94,6 +94,8 @@ def get_token(exp):
             return 'attribute' if '.' in token else 'name', token, rest
 
     # special symbols
+    if exp[:2] == ':=':
+        return 'assign', ':=', exp[2:]
     if exp[0] in ",:;|'":
         return exp[0], exp[0], exp[1:]
     if exp[0] == '_':
@@ -141,8 +143,7 @@ def split(exp, delimiter, maxnum=inf):
     ['lambda x , y : 1', '2']
     """
     exp = exp.strip()
-    if not exp:
-        return []
+    if not exp: return []
     segs, num = [], 1
     while num < maxnum and len(segs) < num:
         tokens = []
