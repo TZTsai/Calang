@@ -106,12 +106,16 @@ def eval_ans_id(token):
             raise SyntaxError('invalid history expression!')
 
 
-def eval_closure(bindings, exp, env, delim='='):
+def make_closure(bindings, env, delim='='):
     sub_env = env.make_subEnv()
     for pair in bindings:
         _var, _exp = split(pair, delim, 2)
         add_bindings(_var, _exp, sub_env)
-    return calc_eval(exp, sub_env)
+    return sub_env
+
+
+def eval_closure(bindings, exp, env, delim='='):
+    return calc_eval(exp, make_closure(bindings, env, delim))
 
 
 def eval_singlevar_closure(token, exp, env):
@@ -155,6 +159,10 @@ def add_bindings(lexp, rexp, env):
     return value
 
 
+def eval_object(parent, exp, env):
+    pass
+
+
 def is_replacable(type_, *replaced_types):
     return type_ in replaced_types + ('name', 'paren', 'ans')
 
@@ -165,7 +173,8 @@ def is_applying(prev_val, prev_type, type_):
 
 def log_macro(env):
     def value(arg):
-        return env[arg] if arg in env else '??'
+        try: return env[arg]
+        except: return '??'
     def log(*args):
         if config.debug:
             print(env.frame*'  ' + ', '.join(f'{arg}={value(arg)}' for arg in args))
@@ -192,8 +201,9 @@ def calc_eval(exp, env):
         type_, token, exp = next_type, next_token, next_exp
         if exp: next_type, next_token, next_exp = get_token(exp)
         else: next_type = next_token = next_exp = None
+        prev_val = CM.vals.peek()
 
-        if is_applying(CM.vals.peek(), prev_type, type_):  # apply a function
+        if is_applying(prev_val, prev_type, type_):  # apply a function
             func, args = CM.vals.pop(), eval_list(token, env)
             CM.push_val(func(*args))
             continue
@@ -219,7 +229,12 @@ def calc_eval(exp, env):
             if next_token == '->':
                 CM.push_val(function([token], next_exp, env))
                 break
-            CM.push_val(eval_name(token, env))
+            value = eval_name(token, env)
+            if isinstance(value, struct): 
+                CM.push_val(eval_object(value, exp, env))
+                break
+            else:
+                CM.push_val(value)
         elif type_ == 'attribute':
             names = token.split('.')
             result = eval_name(names.pop(0), env)
@@ -259,7 +274,7 @@ def calc_eval(exp, env):
             if exp and get_token(exp)[1] == ':':  # closure with unpacking
                 CM.push_val(eval_singlevar_closure(token, exp, env))
                 break
-            elif is_iterable(CM.vals.peek()) and is_replacable(prev_type, 'bracket'):
+            elif is_iterable(prev_val) and is_replacable(prev_type, 'bracket'):
                 CM.push_val(eval_subscription(CM.vals.pop(), token, env))
             else:
                 CM.push_val(eval_list(token, env))

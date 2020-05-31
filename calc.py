@@ -4,7 +4,7 @@ from __classes import Env, config, function
 from __builtins import *
 from __evaluator import add_bindings, calc_eval, history, CM, my_globals
 from __formatter import format
-from __parser import split
+from __parser import split, IncompleteLine, get_bracket, get_colon_token
 from sympy import pprint
 
 
@@ -14,7 +14,7 @@ global_env = Env()
 def calc_exec(exp, / , record=True, env=global_env):
     words = exp.split()
     if words[0] == 'ENV':
-        for name in global_env.bindings:
+        for name in global_env:
             print(f"{name}: {global_env[name]}")
     elif words[0] == 'load':
         current_history = history.copy()
@@ -143,7 +143,8 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             raise Warning('--- Fail! expected answer of %s is %s, but actual result is %s ---'
                           % (exp, answer, str(result)))
 
-    buffer, count = '', 0
+    buffer, count, indent = [], 0, 0
+
     for line in get_lines(filename):
         if test and count < start:
             count += 1
@@ -153,18 +154,31 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             if line.find('#TEST') == 0 and not test:
                 return
             if verbose:
-                print(f'({count})▶ ', end='', flush=True)  # prompt
+                print(f'({count})▶ ', end=' '*indent, flush=True)  # prompt
             if filename is None:
                 line = input()
             if filename and verbose:
                 print(line, flush=True)
-            line = line.strip()
+
+            line = line.rstrip()
 
             if line and line[-3:] == '...':
-                buffer += line[:-3]
+                buffer.append(' '*indent + line[:-3])
                 continue  # join multiple lines
-            elif buffer:
-                line, buffer = buffer + line, ''
+
+            buffer.append(' '*indent + line)
+            line = ''.join(buffer)
+            try: 
+                list(get_bracket(line))
+                list(get_colon_token(line))
+            except IncompleteLine as err:  # brackets not paired; continue
+                indent = err.msg
+                for b in buffer:
+                    if indent > len(b): indent -= len(b)
+                continue
+
+            buffer, indent = [], 0
+
             if line and line[-1] == ';':
                 line = line[:-1]
                 show = False
