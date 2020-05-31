@@ -3,6 +3,6 @@ g(x) := x * 2
 (f+g)(2)  # 7
 (4*g)(5)  # 40
 (f*g)(3)  # 24
-(f.g)(3)  # 7  # Composition
+(f g)(3)  # 7  # Composition
 (g^3)(3)  # 24  # Repetition
-(f*g - f.g + f^3 + 4)(3)  # 27 
+(f*g - f g + f^3 + 4)(3)  # 27 

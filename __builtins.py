@@ -1,10 +1,10 @@
 from operator import add, sub, mul, floordiv, mod, ne, neg, lt, gt, le, ge, \
-    xor, pow as pow_, and_, or_
+    xor, pow as pow_, and_, or_, not_
 from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from math import inf
-from sympy import Symbol, solve, limit, integrate, diff, simplify, expand, Integer, Float, Matrix, Expr, Add, sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh, E, pi
+from sympy import Symbol, solve, limit, integrate, diff, simplify, expand, factor, Integer, Float, Matrix, Expr, Add, sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh, E, pi
 from __classes import Op, function, Env, config, Range
 
 
@@ -42,6 +42,15 @@ def equal(x, y):
         return abs(x - y) <= config.tolerance
     else:
         return x == y
+
+    
+def double_factorial(x):
+    if not isinstance(x, int) or x < 0:
+        raise ValueError('invalid argument for factorial!')
+    if x in (0, 1):
+        return 1
+    else:
+        return x * double_factorial(x-2)
 
 
 def all_(lst, condition=None):
@@ -271,7 +280,7 @@ def standardize(name, val):
                 return pynumfy(x)
             except (ValueError, TypeError):
                 if isinstance(x, Expr):
-                    return simplify(x)
+                    return simplify(factor(x))
                 else:
                     return x
 
@@ -279,7 +288,8 @@ def standardize(name, val):
         fun = compose(unify_types, val)
         fun.str = name
         return fun
-    return val
+    else:    
+        return val
 
 
 def reconstruct(op_dict, type):
@@ -288,22 +298,18 @@ def reconstruct(op_dict, type):
         op_dict[op] = Op(type, standardize(op, info[0]), info[1])
 
 
-binary_ops = {'+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '.': (dot, 7),
-              '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '=': (equal, 0),
-              '!=': (ne, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0),
-              '>=': (ge, 0), 'xor': (xor, 3), 'in': (lambda x, y: x in y, -2),
-              '~': (Range, 5), '..': (smart_range, 5),
-              'and': (and_, -5), 'or': (or_, -6), '/\\': (and_, 8), '\\/': (or_, 7)}
+binary_ops = {'+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '\\.': (dot, 7), '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '=': (equal, 0), '!=': (ne, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'outof': (lambda x, y: x not in y, -2), '~': (Range, 5), '..': (smart_range, 5), 'and': (and_, -5), 'or': (or_, -6), '/\\': (and_, 8), '\\/': (or_, 7)}
 reconstruct(binary_ops, 'bin')
 
-unitary_l_ops = {'-': (neg, 10), 'not': (lambda n: 1 if n == 0 else 0, -4)}
+unitary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '!': (not_, 10), '@': (transpose, 10)}
 reconstruct(unitary_l_ops, 'uni_l')
 
-unitary_r_ops = {'!': (factorial, 99)}
+unitary_r_ops = {'!': (factorial, 99), '!!': (double_factorial, 99)}
 # actually a unitary op on the right will always be immediately carried out
 reconstruct(unitary_r_ops, 'uni_r')
 
 op_list = set(binary_ops).union(set(unitary_l_ops)).union(set(unitary_r_ops))
+op_list.add('.')  # special op: getattr
 
 special_words = {'if', 'else', 'in', 'ENV', 'load', 'format', 'when',
                  'import', 'del', 'lambda', 'with'}
@@ -317,7 +323,7 @@ builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'exp': exp, 'lg': lambda x: log(x)/log(10), 'ln': log, 'log2': lambda x: log(x)/log(2),
             'empty?': lambda l: 0 if len(l) else 1, 'number?': is_number, 'symbol?': is_symbol,
             'iter?': is_iterable, 'lambda?': is_function, 'matrix?': is_matrix, 'vector?': is_vector,
-            'list': to_list, 'sum': lambda l: reduce(add, l), 'product': lambda l: reduce(mul, l),
+            'list': to_list, 'sum': lambda l: reduce(add, l), 'product': lambda l: reduce(mul, l), 'matrix': Matrix, 'set': set,
             'car': lambda l: l[0], 'cdr': lambda l: l[1:], 'cons': lambda a, l: (a,) + l, 'enum': enumerate,
             'row': row, 'col': col, 'shape': list_shape, 'depth': list_depth, 'transp': transpose, 'flatten': flatten,
             'all': all_, 'any': any, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]),
@@ -326,7 +332,7 @@ builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'conj': lambda z: z.conjugate(), 'angle': lambda z: atan(z.imag / z.real),
             'reduce': reduce, 'filter': filter, 'map': map, 'zip': zip, 'find': find,
             'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute,
-            'expand': expand}
+            'expand': expand, 'factor': factor}
 
 for name in builtins:
     val = builtins[name]

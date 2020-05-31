@@ -18,8 +18,7 @@ def eval_list(exp, env):
         exps = split(s, ',')
         result = []
         for exp in exps:
-            if not exp:
-                raise SyntaxError('invalid list syntax')
+            if not exp: raise SyntaxError('invalid list syntax')
             if exp[0] == function.vararg_char: 
                 result.extend(calc_eval(exp[1:], env))
             else:
@@ -73,21 +72,6 @@ def eval_comprehension(comprehension, env):
     return tuple(gen_vals(exp, constraints))
 
 
-# def eval_set(exp, env):
-#     try:
-#         varstr, constr = get_list(exp, '|')
-#     except ValueError:
-#         return set(eval_list(exp, env))
-#     def getvar(s):
-#         if len(t := split(s, 'in')) == 2:
-#             return t[0], calc_eval(t[1], env)
-#         else:
-#             return s, None
-#     vars_ = [getvar(s) for s in split(varstr, ',')]
-#     constr = function(list(zip(*vars_))[0], constr, env)
-#     return GeneralSet(vars_, constr)
-
-
 def eval_when(exp, env):
     "Support short circuit."
     cases = [split(case, ',', 2) for case in get_list(exp, ';')]
@@ -116,7 +100,10 @@ def eval_ans_id(token):
     if all(c == '_' for c in token):
         return -len(token)
     else:
-        return int(token[1:])
+        try:
+            return int(token[1:])
+        except:
+            raise SyntaxError('invalid history expression!')
 
 
 def eval_closure(bindings, exp, env, delim='='):
@@ -181,8 +168,8 @@ def log_macro(env):
     def value(arg):
         return env[arg] if arg in env else '??'
     def log(*args):
-        print(env.frame*'  ' + 
-              ', '.join(f'{arg}={value(arg)}' for arg in args))
+        if config.debug:
+            print(env.frame*'  ' + ', '.join(f'{arg}={value(arg)}' for arg in args))
     return log
 
 
@@ -200,7 +187,7 @@ def calc_eval(exp, env):
             CM.push_val(func(*args))
             continue
         if all(is_replacable(t, 'number', 'symbol') for t in (type_, prev_type)):
-            CM.push_op(binary_ops['*'])
+            CM.push_op(binary_ops['\\.'])
         if type_ == 'ans':
             try:
                 id = eval_ans_id(token)
@@ -222,15 +209,25 @@ def calc_eval(exp, env):
                 CM.push_val(function([token], rest, env))
                 break
             CM.push_val(eval_name(token, env))
+        elif type_ == 'attribute':
+            names = token.split('.')
+            result = eval_name(names.pop(0), env)
+            while names: result = getattr(result, names.pop(0))
+            CM.push_val(result)
         elif type_ == 'symbol':
             CM.push_val(Symbol(token[1:]))
         elif type_ == 'op':
-            if (prev_type in (None, 'op')) and token in unitary_l_ops:
+            if token == '.':  # get attribute
+                type_, token, exp = get_token(exp)
+                result = getattr(CM.vals.pop(), token)
+                CM.push_val(result)
+            elif (prev_type in (None, 'op')) and token in unitary_l_ops:
                 CM.push_op(unitary_l_ops[token])
             elif exp and token in binary_ops:
                 CM.push_op(binary_ops[token])
             else:
                 CM.push_op(unitary_r_ops[token])
+                type_ = prev_type
         elif type_ == 'if':
             CM.push_op(Op('bin', priority=-5,
                           function=standardize('if', lambda x, y: x if y else None)))

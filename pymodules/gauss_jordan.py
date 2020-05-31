@@ -90,5 +90,5 @@ def det(m):
     _, rref = eliminate(m, False)
     return reduce(lambda x, y: x*y, [rref[i][i] for i in range(len(rref))])
 
-# API
-definitions = {'eliminate': eliminate, 'inverse': inverse, 'LU': LU, 'det': det}
+
+export = {'eliminate': eliminate, 'inverse': inverse, 'LU': LU, 'det': det}

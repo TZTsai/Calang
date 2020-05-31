@@ -75,7 +75,6 @@ load ../examples/tree -t -v
 1 and 0 #0
 1 xor 0 #1
 __-_ #-1
-2 x
 load la -t -v
 1/3
 pascal(n) := [1] if n=0 else map(lambda x,y:x+y, pascal(n-1)+[0], [0]+pascal(n-1));
@@ -87,12 +86,9 @@ det(scalem(id(3), -2))  #-8
 
 e 
 [_,_,_]
-subs(_, e, 3) #(3,3,3)
-eigenvalues([[1,0,0],[0,-3,0],[0,0,2]])
-1 in _ and -3 in _ and 2 in _  # 1
-2x^2*y
-diff(_, x)
-subs(_, x, 12, y, -9)  # -48*9
+subs(_, [e, 3]) #(3,3,3)
+diff(2_x^2*y, _x)
+subs(_, [x, 12], [y, -9])  # -48*9
 lim(exp(-x), x, INF)  # 0
 [__]  # (-432,)
 
@@ -102,7 +98,7 @@ abs(z) ^ 2 = z conj(z)  # 1
 load math
 # int(normal(1, sqrt(2))(x), [x, 0.5, 2]) #0.3984
 
-load ../tests/arrowTest -t
-load ../tests/compreTest -t
-load ../tests/funcOpTest -t
-load ../tests/unpackTest -t
+load ../tests/arrowTest -t -v
+load ../tests/compreTest -t -v
+load ../tests/funcOpTest -t -v 
+load ../tests/unpackTest -t -v

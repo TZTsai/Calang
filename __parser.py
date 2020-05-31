@@ -43,7 +43,8 @@ def get_token(exp):
 
     def get_name(exp):
         exp = exp.strip()
-        m = match(exp, r'[a-zA-Z\d_?]*')
+        name_re = r'[a-zA-Z\d_]+[?]?'
+        m = match(exp, f'({name_re}[.])*{name_re}')
         return exp[:m], exp[m:]
 
     def get_colon_token(exp):
@@ -90,10 +91,10 @@ def get_token(exp):
                 token, rest = get_colon_token(exp)
             return type_, token, rest
         else:
-            return 'name', token, rest
+            return 'attribute' if '.' in token else 'name', token, rest
 
     # special symbols
-    if exp[0] in ',:;|@':
+    if exp[0] in ",:;|'":
         return exp[0], exp[0], exp[1:]
     if exp[0] == '_':
         m = match(exp, '[A-Za-z0-9_]*', 1)
@@ -120,8 +121,7 @@ def get_name(exp, no_rest=True):
     type_, name, rest = get_token(exp)
     if not type_ == 'name' or (no_rest and rest):
         raise SyntaxError(f'invalid variable name: {exp}!')
-    if no_rest:
-        return name
+    if no_rest: return name
     return name, rest
 
 

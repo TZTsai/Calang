@@ -7,4 +7,5 @@ def roots(*args):
         return list(p.roots())
     return list(Polynomial(args).roots())
 
-definitions = {'poly': poly, 'roots': roots}
+
+export = {'poly': poly, 'roots': roots}

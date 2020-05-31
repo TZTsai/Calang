@@ -29,8 +29,8 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
     Return 1 if the result is true, otherwise return 0.  
 
-    **Examples**: 3 > 2, 2 = 2, x = y xor x = z, x > 0 and x < 2, not (a or b) = (not a and not b), 1 /\ 0, f \\/ g
-    (note: /\ and \\/ resemble the symbols for "logical and" and "logical or" in mathematics. They are the same as `and` and `or` operations except higher priorities.)
+    **Examples**: 3 > 2, 2 = 2, x = y xor x = z, x > 0 and x < 2, not (a or b) = (not a and not b), 1 /\ 0, !(a\\/b) = !a/\\!b
+    (note: /\ and \\/ resemble the symbols for "logical and" and "logical or" in mathematics. They are the same as `and` and `or` operations except higher priorities), !a\\/b (the calculator will try to interpret `!` as the factorial operation before treat it as negation)
 
 * Definition and evaluation of variables  
 
@@ -51,7 +51,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
   * cot(x) := 1/tan(x)  
   * fact(n) := 1 if n=0 else n*fact(n-1)
   * d(f) := lambda x: (f(x+0.0001)-f(x))/0.0001;  
-    newton(f, x) := with update = lambda x: x - f(x)/d(f)(x): ...
+    newton(f, x) := with update = lambda x: x - f(x)/d(f)(x): ...  
     x if abs(f(x)) \< 0.0001 else newton(f, update(x));  
     newton(sin, 3)  (return: 3.1416)
 
@@ -61,13 +61,13 @@ Check the file "__builtins.py" to see the available built-in operations and func
   
   **Syntax 1**: lambda `par1`, `par2`, ... : `exp`  
   
-  (note: The character `@` can be added at the beginning of the last to denote that it has a variable length, like the `*` form in python.)  
+  (note: The character `'` can be added at the beginning of the last to denote that it has a variable length, like the `*` form in python.)  
   
   **Examples**:
   
   * fact := lambda n: 1 if n=0 else n*fact(n-1)
   * compose := lambda f, g: x -> f(g(x))  
-  * map := lambda f, %lists: [] if any([l = [] | l in lists]) else with args = [l\[0\] | l in lists], rests = \[l\[1:] | l in lists]: \[f(@args)] + map(f, @rests)
+  * map := lambda f, 'lists: [] if any([l = [] | l in lists]) else with args = [l\[0\] | l in lists], rests = \[l\[1:] | l in lists]: \[f('args)] + map(f, 'rests)
   
   **Syntax 2**: (`par1`, `par2`) -> `exp`  (the parentheses can be omitted if there is exactly one parameter)  
   
@@ -88,7 +88,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
   * ramp(x) := 0 if x<0 else x  
   * rect(x) := 0 if x<-1 else 1 if x<=1 else 0  
 
-    **Syntax 2**: when(`cond1`, `exp1`; `cond2`, `exp2`; ... ; `default`)  
+  **Syntax 2**: when(`cond1`, `exp1`; `cond2`, `exp2`; ... ; `default`)  
 
   (note: The `default` expression does not have a condition preceding it.
   In comparison to the 'if-else' syntax, the 'when' syntax is fully short-circuited
@@ -97,7 +97,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
   **Examples**:  
 
   * max(x, y, z) := when(x > y and x > z: x, y > z: y, z)
-  * when(a/\\b: 1, (not a)/\\(not b): 2, 4)
+  * when(a/\\b: 1, !a/\\!b: 2, 4)
 
 * Local environment  
 
@@ -118,7 +118,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
     If this mode is off, then symbol is represented by an underscore `_` followed by a legitimate variable name.  
 
-    **Examples**: \_x, \_y, \_angle, diff(\_x^2 +ln(\_x), \_x) (underscores can be removed in `ALL-SYMBOL` mode)
+    **Examples**: \_x, \_y, \_angle, diff(\_x^2 +ln(\_x), \_x) (for functions like `diff`, `int`(integral), variable names had better begin with `_` in case of previous binding)  
 
 * List  
 
@@ -135,24 +135,24 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
 * List subscription  
 
-  **Syntax 1**: `list>@\<index`  
-  You can use either an integer, a list or a range as the index of the list. When using a list or a range, you will get a sub-list containing the elements whose indices lie in this range.  
-
-  **Syntax 2**: `list>[\<i1`, `i2`, ..., `in`]  
-  This syntax is equivalent to sequentially subscripting `list` by `i1`, `i2`, ...  
-  **Note**: The advantage of the `@` symbol is that it is actually an operation, so the expression on its right is evaluated first. Thus, you are allowed to evaluate expressions like `l@s`, `l@[1, 2, 5]`, etc. Its disadvantage is that you are unable to slice the list till its end.  
+  **Syntax**: `list`[`i1`, `i2`, ..., `in`]  
+  The list is sequentially subscripted by `i1`, `i2`, ... Each of the subscripts is either a natural number or an iterable value (List or Range). For an iterable subscript, it just maps each integer atom within it to the corresponding item in `list`.    
 
   **Examples**:  
-  * [1, 2, 3]@1
+  * [1, 2, 3][1]
   * \[1, 2][-1] (a negative index means counting from the end of the list) (return: 2)
-  * [1, 2, 3]@(1~2) (return: [2, 3])
-  * [1, 2, 3, 4, 5]@[i for i in range(5) if i%2] (return: 2, 4)
+  * [1, 2, 3][1~2] (return: [2, 3])
+  * [1, 2, 3][2:] (return: [3])
+  * s := [0, 2]  
+    \[1, 2, 3][s] (return: [1, 3])  
+  * \[1, 2, 3][[2, [1, 2], [0]]] (return: [3, [2, 3], [1]])
+  * [a, b, c, d, e][[i for i in range(5) if i%2]] (return: [b, d])
   * m := [[1, 2, 3], [3, 4, 5]]  
-  m[0, 1] (return: 2)
+    m[0, 1:] (return: [2, 3])
 
 * List slicing  
 
-  **Syntax**: `list>[\<start>:\<end>(:\<step`)]
+  **Syntax**: `list`[`start`:`end`(:`step`)]  
   This syntax is identical to the list slicing syntax in python.  
   The second colon can be omitted, when `step` is 1 as default.  
   When `start` is omitted, it is set to 0; when `end` is omitted, it is set to the end of the list.  
@@ -163,22 +163,26 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
 * Range  
 
-    A range is a different type from list. It is useful to represent a wide range of numbers, i.e. range(1, 100000). For such a range, on the one hand, the calculator will print "range(1, 100000)" instead of a really long list as the output; on the other hand, internally, a range is not directly evaluated to all the numbers it covers. Instead, it send a number to the calculator and changes to its next state, "range(1, 100000)" to "range(2, 100000)" as an example. Thus it saves the memory.  
-    There are two ways to generate a "range" type value: by using the symbol "\~" or by the built-in function "range".  
-    The expression "a\~b" evaluates to a range including all integers from a to b.  
-    The "range" function, however, is identical to its corresponding python function, which excludes the second argument from the range. Besides, you can use a third argument in the function "range" to specify the step of the range.
-    If a range is used as the index of a list, a sub-list containing elements whose indices lies in this range will be returned.  
+    A range is a different type from list. It is useful to represent a wide range of numbers, i.e. range(1, 100000). For such a range, the calculation of each item is delayed, thus saving time and memory.  
+    There are three ways to generate a "Range" type value: by using the symbol `~` or `..`, or by the built-in function `range`.  
+    The expression `a~b` evaluates to a range including all integers from a to b.  
+    The expression `a..b` is identical to `a~b`. However, `a..b..c` enables you to create an arithmetic sequence that begins with `a` following by `b` and ends with `c` (if `c` is not included by this sequence, then it ends before `c`).  
+    The "range" function, however, is identical to its corresponding python function, which excludes the second argument from the range.  
 
   **Examples**:  
   * r := 1~4  
-  * list(r) (converts a range to a list, return: [1, 2, 3, 4])
+    list(r) (converts a range to a list, return: [1, 2, 3, 4])
+  * l := 1..3..9 (return: 1..3..9)  
+    list(l) (return: [1, 3, 5, 7, 9])
   * sum([i^2 | i in 1~10])
-  * r := range(1, 4), list(r) (return: [1, 2, 3])
+  * r := range(1, 4)  
+    list(r) (return: [1, 2, 3])
   * r := range(9, 1, -2) (return: [9, 7, 5, 3])  
 
 * List comprehension  
 
     [`exp` | `arg1` in `range1` (and `cond1`) | `arg2` in `range2` (and `cond2`) ...]  
+    `|` is used to separate the expression and the constraints of the variables. For the constraint of a variable, a range must be provided, with an option of further constraints by adding `and <condition>`.  
 
   **Examples**:
   * [i | i in range(5) and i%2] (return: [1, 3])

@@ -13,8 +13,8 @@ class Stack:
         return self.lst.pop()
 
     def peek(self):
-        assert(not self.empty())
-        return self.lst[-1]
+        if self.empty(): return None
+        else: return self.lst[-1]
 
     def empty(self):
         return self.lst == []
@@ -34,6 +34,12 @@ class Op:
 
     def __call__(self, *args):
         return self.function(*args)
+
+    def __repr__(self):
+        if self.type == 'stop':
+            return 'stop'
+        try: return self.function.str
+        except: return f"Op({self.type}, {self.function}, {self.priority})"
 
 
 class CalcMachine:
@@ -79,12 +85,9 @@ class CalcMachine:
         while not (self.ops.empty() or op.isStopMark()):
             last_op = self.ops.peek()
             if op.priority <= last_op.priority:
-                try:
-                    self.__calc()
-                except AssertionError:
-                    raise SyntaxError
-            else:
-                break
+                try: self.__calc()
+                except AssertionError: raise SyntaxError('invalid expression!')
+            else: break
         self.ops.push(op)
 
 
@@ -124,9 +127,6 @@ class Env:
     def update(self, other):
         self.bindings.update(other.bindings)
 
-    def define(self, bindings):
-        self.bindings.update(bindings)
-
     def make_subEnv(self, bindings=None):
         return Env(bindings, self)
 
@@ -134,7 +134,7 @@ class Env:
 class function:
 
     evaluator = lambda *args: None  # to be set later
-    vararg_char = '@'
+    vararg_char = "'"
 
     def _default_apply(self, *args):
         if not self._fixed_argc:
@@ -148,21 +148,20 @@ class function:
         env = self._env.make_subEnv(bindings)
         result = function.evaluator(self._body, env)
 
-        if __debug__ and self._name:
+        if config.debug and self._name:
             print(f"{'  '*env.frame}{self._name}({', '.join(map(str, args))}) = {result}")
 
         return result
 
     def __init__(self, params, body, env, name=None):
         if params and params[-1][0] == function.vararg_char:
-            params[-1] = params[-1][1:]
+            params[-1] = params[-1][1:].strip()
             self._least_argc = len(params) - 1
             self._fixed_argc = False
         else:
             self._least_argc = len(params)
             self._fixed_argc = True
-        params = [s.strip() for s in params]
-        self._params = [s for s in params if s and s[0].isalpha()]
+        self._params = tuple(s for s in params if s and s[0].isalpha())
         if len(self._params) != len(params):
             raise SyntaxError('invalid parameters:', ', '.join(params))
         self._body = body.strip()
@@ -197,9 +196,9 @@ class function:
         return apply
 
     def __repr__(self):
-        params = self._params
+        params = list(self._params)
         if not self._fixed_argc: 
-            params[-1] = '%' + params[-1]
+            params[-1] = function.vararg_char + params[-1]
         params = ', '.join(params)
         if self._name: 
             return f'{self._name}({params})'
@@ -236,28 +235,5 @@ class config:
     precision = 6
     latex = False
     all_symbol = True
+    debug = __debug__
 
-
-# class GeneralSet(set):  # but disabled - no operations
-
-#     def __init__(self, vars, constraint):
-#         self._vars = vars
-#         self._constr = constraint
-
-#     def __contains__(self, el):
-#         if len(self._vars) > 1:
-#             assert(len(self._vars) == len(el))
-#         mapping = zip(self._vars, el)
-#         for var, val in mapping:
-#             if var[1] and val not in var[1]:
-#                 return False
-#         return self._constr(el)
-
-#     def __str__(self):
-#         def withfield(var):
-#             v = var[0]
-#             if var[1]:
-#                 v += ' in ' + str(var[1])
-#             return v
-#         left = ', '.join(map(withfield, self._vars))
-#         return f"{{{left} | {self._constr._body}}}"

@@ -4,6 +4,7 @@ from __classes import Env, config, function
 from __builtins import *
 from __evaluator import add_bindings, calc_eval, history, CM, my_globals
 from __formatter import format
+from sympy import pprint
 
 
 global_env = Env()
@@ -43,19 +44,21 @@ def calc_exec(exp, / , record=True, env=global_env):
         history.extend(current_history)
     elif words[0] == 'import':
         verbose = True
-        try:
-            words.remove('-v')
-        except:
-            verbose = False
-        definitions = {}
-        for modules in words[1:]:
-            locals = {}
-            exec('from pymodules.%s import definitions' %
-                 modules, globals(), locals)
-            definitions.update(locals['definitions'])
-        global_env.define(definitions)
-        if verbose:
-            return definitions
+        try: words.remove('-v')
+        except: verbose = False
+        bindings = {}
+        for obj in words[1:]:
+            try: 
+                exec('from pymodules.%s import export'%obj, None, export:={})
+                bindings.update(export['export'])
+            except ModuleNotFoundError:
+                exec('from sympy import %s'%obj, None, bindings)
+        for _name, _val in bindings.items():
+            if verbose:
+                print('imported: '+_name)
+            if _name in global_env:
+                print('Warning: overwrite name "%s"'%_name)
+            global_env[_name] = _val
     elif words[0] == 'conf':
         if len(words) == 1:
             raise SyntaxError('config field unspecified')
@@ -80,6 +83,11 @@ def calc_exec(exp, / , record=True, env=global_env):
                 print(config.tolerance)
             else:
                 config.tolerance = float(words[2])
+        elif words[1] == 'DEBUG':
+            if len(words) == 2:
+                print(config.debug)
+            else:
+                config.debug = True if words[2] in ('on', '1') else False
         else:
             raise SyntaxError('invalid format setting')
     elif words[0] == 'del':
@@ -94,10 +102,7 @@ def calc_exec(exp, / , record=True, env=global_env):
             lexp, rexp = exp[:assign_mark], exp[assign_mark + 2:]
             result = add_bindings(lexp, rexp, global_env)
         if not (CM.vals.empty() and CM.ops.empty()):
-            if CM.ops.pop().type == 'stop' and CM.ops.empty():
-                pass
-            else:
-                raise SyntaxError('invalid expression!')
+            raise SyntaxError('invalid expression!')
         if result is not None and record:
             history.append(result)
         return result
@@ -112,7 +117,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             file = open(filename, 'r')
             return file.readlines()
         else:
-            return iter(lambda: 0, 1)  # an infinite loop
+            return iter(lambda: '', 1)  # an infinite loop
 
     def split_exp_comment(line):
         comment_at = line.find('#')
@@ -143,7 +148,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             continue
         try:
             # get input
-            if line == '#TEST' and not test:
+            if line.find('#TEST') == 0 and not test:
                 return
             if verbose:
                 print(f'({count})▶ ', end='', flush=True)  # prompt
@@ -173,10 +178,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
                 continue
 
             if show and verbose:  # print output
-                if type(result) == dict:  # imported definitions
-                    print('imported:', ', '.join(result), flush=True)
-                else:
-                    print(format(result, config), flush=True)
+                print(format(result), flush=True)
 
             # test
             if test and comment:
@@ -186,7 +188,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
 
         except KeyboardInterrupt:
             return
-        except (Exception if not test and not __debug__ else Warning) as err:
+        except (Exception if not test and not config.debug else Warning) as err:
             print('Error:', err)
             CM.reset()
             
