@@ -10,6 +10,8 @@
       "request": "launch",
       "program": "calc.py",
       "console": "integratedTerminal",
+      "args": [
+      ]
       // "justMyCode": false
     },
     {

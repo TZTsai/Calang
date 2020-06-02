@@ -230,11 +230,7 @@ def calc_eval(exp, env):
                 CM.push_val(function([token], next_exp, env))
                 break
             value = eval_name(token, env)
-            if isinstance(value, struct): 
-                CM.push_val(eval_object(value, exp, env))
-                break
-            else:
-                CM.push_val(value)
+            CM.push_val(value)
         elif type_ == 'attribute':
             names = token.split('.')
             result = eval_name(names.pop(0), env)

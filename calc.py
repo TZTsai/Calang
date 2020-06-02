@@ -126,7 +126,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
     def split_exp_comment(line):
         try: exp, comment = line.split('#', 1)
         except: exp, comment = line, ''
-        return exp.strip(), comment.strip()
+        return exp.rstrip(), comment.strip()
 
     def verify_answer(exp, result, answer, verbose):
         def equal(x, y):
@@ -160,7 +160,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             if filename and verbose:
                 print(line, flush=True)
 
-            line = line.rstrip()
+            line, comment = split_exp_comment(line)
 
             if line and line[-3:] == '...':
                 buffer.append(' '*indent + line[:-3])
@@ -185,8 +185,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
             else:
                 show = True
 
-            exp, comment = split_exp_comment(line)
-            if exp: result = calc_exec(exp, env=env)
+            if line: result = calc_exec(line, env=env)
             else: continue
             if result is None: continue
 
@@ -197,7 +196,7 @@ def run(filename=None, test=False, start=0, verbose=True, env=global_env):
 
             # test
             if test and comment:
-                verify_answer(exp, result, comment, verbose)
+                verify_answer(line, result, comment, verbose)
 
             count += 1
 
