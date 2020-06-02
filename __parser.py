@@ -3,6 +3,63 @@ from utils.greek import escape_to_greek
 import re
 
 
+def match(exp, pattern, start=0):
+    exp = exp[start:]
+    m = re.match(f'{pattern}', exp)
+    return start + m.end() if m else start
+
+
+def match_name(exp):
+    exp = exp.strip()
+    name_re = r'[a-zA-Z\u0374-\u03FF\d_]+[?]?'
+    m = match(exp, f'({name_re}[.])*{name_re}')
+    return exp[:m], exp[m:]
+    
+
+class IncompleteLine(SyntaxError):
+    "Indicate that this line is not complete."
+
+
+bracket_pairs = ('()', '[]', '{}')
+
+def get_bracket(exp):
+    stack = []
+    for i, c in enumerate(exp):
+        for p in bracket_pairs:
+            if c in p:
+                if c == p[0]:
+                    stack.append((c, i))
+                elif stack[-1][0] == p[0]:
+                    _, j = stack.pop()
+                    if not stack: yield exp[j:i+1], exp[i+1:]
+                else:
+                    raise SyntaxError(f'unpaired brackets in "{exp[i-14:i+1]}"!')
+                break
+    if stack: raise IncompleteLine(stack[-1][1]+1)
+
+
+closure_kwds = ('lambda', 'with')
+
+def get_colon_token(exp):
+    pos, stack, tokens = 0, [], []
+    while exp:
+        token, exp = match_name(exp)
+        type_ = token
+        if not token:
+            type_, token, exp = get_token(exp)
+        pos += len(token)
+        if type_ in closure_kwds:
+            stack.append(pos)
+        elif token == ':':
+            if stack: stack.pop()
+            else: return
+        tokens.append(token)
+        if not stack:
+            yield ' '.join(tokens), exp
+    if stack:
+        raise IncompleteLine(stack.pop()+1)
+
+
 def get_token(exp):
     """ split out the first token of exp and return its type, the token itself,
     and the rest of exp
@@ -10,61 +67,9 @@ def get_token(exp):
     ('lambda', 'lambda :', '')
     >>> get_token('lambda x , y: x + y')[1:]
     ('lambda x , y :', ' x + y')
+    >>> get_token('[3, [4, 5]] + [6]')[1]
+    '[3, [4, 5]]'
     """
-
-    def match(exp, pattern, start=0):
-        exp = exp[start:]
-        m = re.match(f'{pattern}', exp)
-        return start + m.end() if m else start
-
-    def get_bracketed_token(exp):
-        def update_stack(stack, char):
-            pairs = ('()', '[]', '{}')
-            for p in pairs:
-                if char in p:
-                    if char == p[0]:
-                        stack.append(char)
-                    elif stack[-1] == p[0]:
-                        stack.pop()
-                    else:
-                        raise SyntaxError
-                    break
-        stack = []
-        for i in range(len(exp)):
-            try:
-                update_stack(stack, exp[i])
-            except SyntaxError:
-                raise SyntaxError(f'unpaired brackets in "{exp[i-14:i+1]}"')
-            if stack == []:
-                break
-        if stack:
-            raise SyntaxError(f'unpaired brackets in "{exp[-15:]}"')
-        return exp[:i+1], exp[i+1:]
-
-    def get_name(exp):
-        exp = exp.strip()
-        name_re = r'[a-zA-Z\u0374-\u03FF\d_]+[?]?'
-        m = match(exp, f'({name_re}[.])*{name_re}')
-        return exp[:m], exp[m:]
-
-    def get_colon_token(exp):
-        stack, tokens = 0, []
-        while exp:
-            token, exp = get_name(exp)
-            type_ = token
-            if not token:
-                type_, token, exp = get_token(exp)
-            if type_ in closure_kwds:
-                stack += 1
-            elif token == ':':
-                stack -= 1
-            tokens.append(token)
-            if stack == 0:
-                return ' '.join(tokens), exp
-        if stack:
-            raise SyntaxError('invalid expression')
-
-    closure_kwds = ('lambda', 'with')
 
     exp = exp.strip()
     if not exp:
@@ -82,13 +87,13 @@ def get_token(exp):
             m = match(exp, r'\d*', start)
         return 'number', exp[:m], exp[m:]
     if exp[0].isalpha():  # name
-        token, rest = get_name(exp)
+        token, rest = match_name(exp)
         if token in op_list:  # operation
             return 'op', token, rest
         elif token in special_words:  # keyword
             type_ = token
             if token in closure_kwds:
-                token, rest = get_colon_token(exp)
+                token, rest = next(get_colon_token(exp))
             return type_, token, rest
         else:
             return 'attribute' if '.' in token else 'name', token, rest
@@ -112,7 +117,7 @@ def get_token(exp):
     if exp[0] in '([{':
         type_ = 'paren' if exp[0] == '(' else 'bracket' \
             if exp[0] == '[' else 'brace'
-        token, rest = get_bracketed_token(exp)
+        token, rest = next(get_bracket(exp))
         return type_, token, rest
     if exp[0] in ')]}':
         raise SyntaxError(f'unpaired brackets in {exp[:15]}')

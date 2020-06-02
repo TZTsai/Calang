@@ -108,11 +108,6 @@ class Env:
             if self.parent: return self.parent[name]
             else: raise KeyError
 
-    def __contains__(self, name):
-        try: self[name]
-        except: return False
-        return True
-
     def all_bindings(self):
         result = dict()
         env = self
@@ -230,19 +225,43 @@ class Range:
         return iter(self.range)
 
 
-class Object(Env):
-    def __init__(self, name, parent=None):
-        super().__init__(parent=parent)
-        self.name = name
+class struct(dict):
+
+    class obj(dict):
+        def __init__(self, val, class_):
+            self.val = val
+            self._class = class_
+
+        def __getattr__(self, name):
+            return self[name]
         
-    def __getattribute__(self, name):
+        def __setattr__(self, name, value):
+            self[name] = value
+
+    def __init__(self, attributes, constructor=None, name='no-name', parent=None):
+        self.attributes = attributes
+        self.name = name
+        self.parent = parent
+        if constructor is None and parent: 
+            self.constructor = parent.constructor
+        else: 
+            self.constructor = constructor
+
+    def __getattr__(self, name):
         return self[name]
     
     def __setattr__(self, name, value):
         self[name] = value
 
-    def makechild(self, name):
-        return Object(name, self)
+    def __call__(self, *args):
+        try: return self[self.name](*args)
+        except: raise RuntimeError('cannot construct object "%s"'%self.name)
+
+    def make_subClass(self, name=None):
+        return struct(name, self)
+
+    def __repr__(self):
+        return f'<{self.parent.name}: {self.name}>'
 
 
 class config:
