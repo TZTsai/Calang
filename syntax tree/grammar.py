@@ -1,7 +1,12 @@
 from mydecorators import memo, disabled
-from myutils import trace
+from myutils import trace, log
 import re
 from __builtins import binary_ops, unary_l_ops, unary_r_ops
+
+
+log.out = open('syntax tree/log.txt', 'w')
+# log.maxdepth = 1
+# trace = disabled
 
 
 def split(text: str, sep=None, maxsplit=-1):
@@ -34,7 +39,7 @@ STATEMENT   := ( ASSIGN | CONF | CMD | LOAD | IMPORT | EXP ) COMMENT ?
 ASSIGN  := ( NAME | FUNFORM ) ":=" EXP
 NAME    := /[a-zA-Z\u0374-\u03FF][a-zA-Z\u0374-\u03FF\d_]*[?]?/
 FUNFORM := NAME PARAMS
-PARAMS  := %LST<[(] [)] [,] NAME>
+PARAMS  := %LST<"(" ")" "," NAME>
 
 CONF    := "conf" NAME /\d+|on|off/ ?
 CMD     := "ENV" | "del" NAME +
@@ -46,26 +51,26 @@ EXP     := LOCAL | LAMBDA | IF_ELSE | OP_SEQ
 IF_ELSE := OP_SEQ "if" OP_SEQ "else" EXP
 OP_SEQ  := %SEQ<BIN_OP ITEM_OP>
 LOCAL   := ( BINDS | BIND ) "->" EXP
-BINDS   := %LST<[(] [)] [,] BIND>
-BIND    := ( ARGLIST | NAME ) [:] EXP
-ARGLIST := %LST<"[" "]" [,] ( NAME | ARGLIST )>
+BINDS   := %LST<"(" ")" "," BIND>
+BIND    := ( ARGLIST | NAME ) ":" EXP
+ARGLIST := %LST<"[" "]" "," ( NAME | ARGLIST )>
 LAMBDA  := ( PARAMS | NAME ) "->" EXP
 
-ITEM_OP := UNL_OP ITEM | ITEM UNR_OP | ITEM
+ITEM_OP := UNL_OP ? ITEM UNR_OP ?
 ITEM    := GROUP | WHEN | FUNC | LIST | ATOM
-GROUP   := [(] EXP [)]
-WHEN    := "when" CASES [;] EXP
-CASES   := %LST<[(] [)] [;] ( EXP [,] EXP )>
-FUNC    := NAME [(] EXPS [)]
-EXPS    := %SEQ<[,] EXP>
-LIST    := "[" ( %SEQ<[;] EXPS> | EXPS ) "]"
+GROUP   := "(" EXP ")"
+WHEN    := "when" CASES ";" EXP
+CASES   := %LST<"(" ")" ";" ( EXP "," EXP )>
+FUNC    := NAME "(" EXPS ")"
+EXPS    := %SEQ<"," EXP>
+LIST    := "[" ( %SEQ<";" EXPS> | EXPS ) "]"
 ATOM    := NUM | NAME | SYMBOL | ANS
 
-SYMBOL  := ['] NAME
+SYMBOL  := "'" NAME
 ANS     := /_(\d+|_*)/
 
 NUM     := COMPLEX | FLOAT | INT | BIN_NUM | HEX_NUM
-COMPLEX := FLOAT [+-] FLOAT [I]
+COMPLEX := FLOAT [+-] FLOAT "I"
 FLOAT   := INT /\.\d*/ ( [eE] INT ) ?
 INT     := /-?\d+/
 BIN_NUM := /0b[01]+/
@@ -126,61 +131,63 @@ metagrammar = simple_grammar(MetaGrammar)
 
 def calc_grammar(rules, whitespace=r'\s*'):
     G = {' ': whitespace}
+    M = {}
     for rule in rules:
         tree, rem = simple_parse('DEF', rule, metagrammar)
         assert tree[0] == 'DEF' and not rem
-        _, obj, body = refactor_tree(tree)
-        G[obj] = body
+        name, body = tree[1][1], tree[3]
+        if name[0] == '%': M[name] = [tree[1][3], body]  # MACRO
+        else: G[name] = body
+    for obj in G: G[obj] = refactor_tree(G[obj], M)
     return G
 
 
+# @trace
 @memo
-def refactor_tree(tree: list):
+def refactor_tree(tree: list, macros, bindings=None):
 
-    def eliminate(tree):
-        if tree[0] == 'DEF':
-            obj, exp = tree[1], refactor_tree(tree[3])
-            if obj[0] == 'OBJ':
-                return 'DEF', obj[1], exp
-            else:
-                return 'DEF', obj[1], (refactor_tree(obj[3]), exp)
-
+    def replace(tree):
         if tree[0] == 'GROUP':
             tree = tree[2]
 
-        if tree[0] == 'MACRO':  # pop < and >
-            tree.pop(2)
-            tree.pop(3)
+        if tree[0] == 'MACRO':
+            name, args = tree[1], tree[3]
+            pars, body = macros[name]
+            args = [p[1] for p in flatten_nested(args)[1:]]
+            pars = [p[1] for p in flatten_nested(pars)[1:]]
+            return refactor_tree(body, macros, dict(zip(pars, args)))
         elif tree[0] == 'EXP' and len(tree) > 2:  # pop |
             tree.pop(2)
+        elif tree[0] == 'VAR':
+            var = tree[1]
+            try: return bindings[var]
+            except: raise SyntaxError('failed to substitute the macro')
 
         return tree
 
     def flatten_nested(tree):
         if tree[-1][0] == tree[0]:  # flatten the nested list
             while tree[-1][0] == tree[0]:
-                last = eliminate(tree.pop(-1))
+                last = replace(tree.pop(-1))
                 tree.extend(last[1:])
         return tree
 
-    def compress_tags(tree):
+    def simplify_tag(tree):
         if len(tree) == 2:  # join nested tags
-            rest = refactor_tree(tree[1])
-            if type(rest) is tuple:
-                return [tree[0]+':'+rest[0], *rest[1:]]
+            rest = refactor_tree(tree[1], macros, bindings)
+            if type(rest) is tuple: return rest
         return tree
 
     if type(tree) is not list:
         return tree
     
-    tree = eliminate(tree)
+    tree = replace(tree)
     tree = flatten_nested(tree)
-    tree = compress_tags(tree)
-    return tuple(map(refactor_tree, tree))
+    tree = simplify_tag(tree)
+    return tuple(refactor_tree(t, macros, bindings) for t in tree)
 
 
 grammar = calc_grammar(Grammar)
-
 
 def calc_parse(type_, text, grammar=grammar):
 
@@ -189,18 +196,24 @@ def calc_parse(type_, text, grammar=grammar):
 
     @trace
     @memo  # avoid parsing the same atom again
-    def parse(syntax, text, replace=None):
-        tags, body = syntax[0].split(':'), syntax[1:]
-        tag = tags[-1]
+    def parse(syntax, text):
+        # if text == '': return None, None
+        tag, body = syntax[0], syntax[1:]
+
         if tag == 'EXP':
             for alt in body:
-                tree, rem = parse(alt, text, replace)
+                tree, rem = parse(alt, text)
                 if rem is not None: return tree, rem
             return None, None
         elif tag in ('ALT', 'ITEMS', 'VARS'):
             tree, rem = [], text
+            # this will save a lot of time
             for item in body:
-                tr, rem = parse(item, rem, replace)
+                if item[0] == 'STR':
+                    if item[1][1:-1] not in text:
+                        return None, None
+            for item in body:
+                tr, rem = parse(item, rem)
                 if rem is None: return None, None
                 if tr:
                     if type(tr[0]) is list:
@@ -211,16 +224,11 @@ def calc_parse(type_, text, grammar=grammar):
             return tree, rem
         elif tag == 'OBJ':
             obj = body[0]
-            tree, rem = parse(grammar[obj], text, replace)
-            if rem is None:
-                return None, None
-            # add the tag
-            if type(tree) is str:
-                return [obj, tree], rem
-            if len(tree) > 1 and type(tree[0]) is str:
-                tree[0] = obj + ':' + tree[0]
-            elif len(tree) > 0:
-                tree = [obj] + tree
+            # OP objects requires a lot of search
+            if '_OP' in obj and text == '': return None, None
+            tree, rem = parse(grammar[obj], text)
+            if rem is None: return None, None
+            tree = process_tag(obj, tree)
             return tree, rem
         elif tag == 'STR':
             literal = body[0][1:-1]
@@ -242,7 +250,7 @@ def calc_parse(type_, text, grammar=grammar):
             item, [_, op] = body
             rep, maxrep = 0, 1 if op == '?' else -1
             while maxrep < 0 or rep < maxrep:
-                tr, _rem = parse(item, rem, replace)
+                tr, _rem = parse(item, rem)
                 if _rem is None: break
                 if tr: tree.append(tr)
                 rem = _rem
@@ -250,33 +258,20 @@ def calc_parse(type_, text, grammar=grammar):
                 return None, None
             if len(tree) == 1: tree = tree[0]
             return tree, rem
-        elif tag == 'MACRO':
-            return apply_macro(body, text)
-        elif tag == 'VAR':
-            try: syntax = dict(replace)[body[0]]
-            except: return None, None
-            return parse(syntax, text, replace)
         else:
             raise TypeError('unrecognized type: %s' % tag)
 
-    @memo
-    def apply_macro(tree, text):
-        name, args = tree
-        syntax = grammar[name]
-        pars, body = syntax
-        assert pars[0] == 'VARS' and args[0] == 'ITEMS'
-        pars, args = pars[1:], args[1:] # remove tags
-        pars = [p[1] for p in pars]     # only keep param names
-        if len(pars) != len(args):
-            raise TypeError('macro arity mismatch')
-        replace = tuple(zip(pars, args))
-        return parse(body, text, replace)
+    def process_tag(tag, tree):
+        prefixes = ['NUM', 'EXP', 'ATOM']
+        if type(tree) is str:
+            tree = [tag, tree]
+        if len(tree) > 1 and type(tree[0]) is str and tag in prefixes:
+            tree[0] = tag + ':' + tree[0]
+        elif len(tree) > 0:
+            tree = [tag] + tree
+        return tree
 
     return parse(grammar[type_], text)
-
-
-trace.ignore.append((None, None))
-trace = disabled
 
 
 def parse(exp):
@@ -294,21 +289,15 @@ def show_grammar(raw=False):
             print(f'{obj}:\n{exp}')
     print()
 
-def test_grammar():
-    expected = {' ': '\\s*', 'STATEMENT': ('EXP:ALT', ('ITEM_OP:ITEM:EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'ASSIGN'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'CONF'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'CMD'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'LOAD'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'IMPORT'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'EXP')), ('ITEM_OP', ('ITEM:ATOM:OBJ', 'COMMENT'), ('OP', '?'))), 'ASSIGN': ('EXP:ALT', ('ITEM_OP:ITEM:EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'NAME'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'FUNFORM')), ('ITEM_OP:ITEM:ATOM:STR', '":="'), ('ITEM_OP:ITEM:ATOM:OBJ', 'EXP')), 'NAME': ('EXP:ALT:ITEM_OP:ITEM:ATOM:REGEX', '/[a-zA-Z\\u0374-\\u03FF][a-zA-Z\\u0374-\\u03FF\\d_]*[?]?/'), 'FUNFORM': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:OBJ', 'NAME'), ('ITEM_OP:ITEM:ATOM:OBJ', 'PARAMS')), 'PARAMS': ('EXP:ALT:ITEM_OP:ITEM:MACRO', '%LST', ('ITEMS', ('ITEM:ATOM:CHARSET', '[(]'), ('ITEM:ATOM:CHARSET', '[)]'), ('ITEM:ATOM:CHARSET', '[,]'), ('ITEM:ATOM:OBJ', 'NAME'))), 'CONF': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:STR', '"conf"'), ('ITEM_OP:ITEM:ATOM:OBJ', 'NAME'), ('ITEM_OP', ('ITEM:ATOM:REGEX', '/\\d+|on|off/'), ('OP', '?'))), 'CMD': ('EXP', ('ALT:ITEM_OP:ITEM:ATOM:STR', '"ENV"'), ('ALT', ('ITEM_OP:ITEM:ATOM:STR', '"del"'), ('ITEM_OP', ('ITEM:ATOM:OBJ', 'NAME'), ('OP', '+')))), 'LOAD': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:STR', '"load"'), ('ITEM_OP:ITEM:ATOM:OBJ', 'NAME'), ('ITEM_OP', ('ITEM:ATOM:REGEX', '/-[tvp]/'), ('OP', '*'))), 'IMPORT': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:STR', '"import"'), ('ITEM_OP:ITEM:ATOM:OBJ', 'NAME'), ('ITEM_OP', ('ITEM:ATOM:REGEX', '/-[tvp]/'), ('OP', '*'))), 'COMMENT': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:CHARSET', '[#]'), ('ITEM_OP:ITEM:ATOM:REGEX', '/.*/')), 'EXP': ('EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'LOCAL'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'LAMBDA'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'IF_ELSE'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'OP_SEQ')), 'IF_ELSE': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:OBJ', 'OP_SEQ'), ('ITEM_OP:ITEM:ATOM:STR', '"if"'), ('ITEM_OP:ITEM:ATOM:OBJ', 'OP_SEQ'), ('ITEM_OP:ITEM:ATOM:STR', '"else"'), ('ITEM_OP:ITEM:ATOM:OBJ', 'EXP')), 'OP_SEQ': ('EXP:ALT:ITEM_OP:ITEM:MACRO', '%SEQ', ('ITEMS', ('ITEM:ATOM:OBJ', 'BIN_OP'), ('ITEM:ATOM:OBJ', 'ITEM_OP'))), 'LOCAL': ('EXP:ALT', ('ITEM_OP:ITEM:EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'BINDS'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'BIND')), ('ITEM_OP:ITEM:ATOM:STR', '"->"'), ('ITEM_OP:ITEM:ATOM:OBJ', 'EXP')), 'BINDS': ('EXP:ALT:ITEM_OP:ITEM:MACRO', '%LST', ('ITEMS', ('ITEM:ATOM:CHARSET', '[(]'), ('ITEM:ATOM:CHARSET', '[)]'), ('ITEM:ATOM:CHARSET', '[,]'), ('ITEM:ATOM:OBJ', 'BIND'))), 'BIND': ('EXP:ALT', ('ITEM_OP:ITEM:EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'ARGLIST'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'NAME')), ('ITEM_OP:ITEM:ATOM:CHARSET', '[:]'), ('ITEM_OP:ITEM:ATOM:OBJ', 'EXP')), 'ARGLIST': ('EXP:ALT:ITEM_OP:ITEM:MACRO', '%LST', ('ITEMS', ('ITEM:ATOM:STR', '"["'), ('ITEM:ATOM:STR', '"]"'), ('ITEM:ATOM:CHARSET', '[,]'), ('ITEM:EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'NAME'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'ARGLIST')))), 'LAMBDA': ('EXP:ALT', ('ITEM_OP:ITEM:EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'PARAMS'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'NAME')), ('ITEM_OP:ITEM:ATOM:STR', '"->"'), ('ITEM_OP:ITEM:ATOM:OBJ', 'EXP')), 'ITEM_OP': ('EXP', ('ALT', ('ITEM_OP:ITEM:ATOM:OBJ', 'UNL_OP'), ('ITEM_OP:ITEM:ATOM:OBJ', 'ITEM')), ('ALT', ('ITEM_OP:ITEM:ATOM:OBJ', 'ITEM'), ('ITEM_OP:ITEM:ATOM:OBJ', 'UNR_OP')), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'ITEM')), 'ITEM': ('EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'GROUP'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'WHEN'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'FUNC'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'LIST'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'ATOM')), 'GROUP': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:CHARSET', '[(]'), ('ITEM_OP:ITEM:ATOM:OBJ', 'EXP'), ('ITEM_OP:ITEM:ATOM:CHARSET', '[)]')), 'WHEN': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:STR', '"when"'), ('ITEM_OP:ITEM:ATOM:OBJ', 'CASES'), ('ITEM_OP:ITEM:ATOM:CHARSET', '[;]'), ('ITEM_OP:ITEM:ATOM:OBJ', 'EXP')), 'CASES': ('EXP:ALT:ITEM_OP:ITEM:MACRO', '%LST', ('ITEMS', ('ITEM:ATOM:CHARSET', '[(]'), ('ITEM:ATOM:CHARSET', '[)]'), ('ITEM:ATOM:CHARSET', '[;]'), ('ITEM:EXP:ALT', ('ITEM_OP:ITEM:ATOM:OBJ', 'EXP'), ('ITEM_OP:ITEM:ATOM:CHARSET', '[,]'), ('ITEM_OP:ITEM:ATOM:OBJ', 'EXP')))), 'FUNC': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:OBJ', 'NAME'), ('ITEM_OP:ITEM:ATOM:CHARSET', '[(]'), ('ITEM_OP:ITEM:ATOM:OBJ', 'EXPS'), ('ITEM_OP:ITEM:ATOM:CHARSET', '[)]')), 'EXPS': ('EXP:ALT:ITEM_OP:ITEM:MACRO', '%SEQ', ('ITEMS', ('ITEM:ATOM:CHARSET', '[,]'), ('ITEM:ATOM:OBJ', 'EXP'))), 'LIST': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:STR', '"["'), ('ITEM_OP:ITEM:EXP', ('ALT:ITEM_OP:ITEM:MACRO', '%SEQ', ('ITEMS', ('ITEM:ATOM:CHARSET', '[;]'), ('ITEM:ATOM:OBJ', 'EXPS'))), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'EXPS')), ('ITEM_OP:ITEM:ATOM:STR', '"]"')), 'ATOM': ('EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'NUM'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'NAME'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'SYMBOL'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'ANS')), 'SYMBOL': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:CHARSET', "[']"), ('ITEM_OP:ITEM:ATOM:OBJ', 'NAME')), 'ANS': ('EXP:ALT:ITEM_OP:ITEM:ATOM:REGEX', '/_(\\d+|_*)/'), 'NUM': ('EXP', ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'COMPLEX'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'FLOAT'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'INT'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'BIN_NUM'), ('ALT:ITEM_OP:ITEM:ATOM:OBJ', 'HEX_NUM')), 'COMPLEX': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:OBJ', 'FLOAT'), ('ITEM_OP:ITEM:ATOM:CHARSET', '[+-]'), ('ITEM_OP:ITEM:ATOM:OBJ', 'FLOAT'), ('ITEM_OP:ITEM:ATOM:CHARSET', '[I]')), 'FLOAT': ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:OBJ', 'INT'), ('ITEM_OP:ITEM:ATOM:REGEX', '/\\.\\d*/'), ('ITEM_OP', ('ITEM:EXP:ALT', ('ITEM_OP:ITEM:ATOM:CHARSET', '[eE]'), ('ITEM_OP:ITEM:ATOM:OBJ', 'INT')), ('OP', '?'))), 'INT': ('EXP:ALT:ITEM_OP:ITEM:ATOM:REGEX', '/-?\\d+/'), 'BIN_NUM': ('EXP:ALT:ITEM_OP:ITEM:ATOM:REGEX', '/0b[01]+/'), 'HEX_NUM': ('EXP:ALT:ITEM_OP:ITEM:ATOM:REGEX', '/0x[0-9a-fA-F]+/'), '%LST': (('VARS', ('VAR', '$OPN'), ('VAR', '$CLS'), ('VAR', '$SEP'), ('VAR', '$ITM')), ('EXP:ALT', ('ITEM_OP:ITEM:ATOM:VAR', '$OPN'), ('ITEM_OP', ('ITEM:ATOM:VAR', '$ITM'), ('OP', '?')), ('ITEM_OP', ('ITEM:EXP:ALT', ('ITEM_OP:ITEM:ATOM:VAR', '$SEP'), ('ITEM_OP:ITEM:ATOM:VAR', '$ITM')), ('OP', '*')), ('ITEM_OP:ITEM:ATOM:VAR', '$CLS'))), '%SEQ': (('VARS', ('VAR', '$SEP'), ('VAR', '$ITM')), ('EXP:ALT', ('ITEM_OP', ('ITEM:ATOM:VAR', '$ITM'), ('OP', '?')), ('ITEM_OP', ('ITEM:EXP:ALT', ('ITEM_OP:ITEM:ATOM:VAR', '$SEP'), ('ITEM_OP:ITEM:ATOM:VAR', '$ITM')), ('OP', '*')))), 'BIN_OP': ('EXP', ('ALT:ITEM_OP:ITEM:ATOM:STR', '"+"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"-"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"*"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '".*"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"/"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"//"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"^"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"%"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"="'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"!="'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"<"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '">"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"<="'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '">="'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"xor"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"in"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"outof"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"~"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '".."'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"and"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"or"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"/\\"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"\\/"')), 'UNL_OP': ('EXP', ('ALT:ITEM_OP:ITEM:ATOM:STR', '"-"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"not"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"!"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"@"')), 'UNR_OP': ('EXP', ('ALT:ITEM_OP:ITEM:ATOM:STR', '"!"'), ('ALT:ITEM_OP:ITEM:ATOM:STR', '"!!"'))}
-    for obj in grammar:
-        if grammar[obj] != expected[obj]:
-            print('grammar changed!')
-            print('From:', expected[obj])
-            print('To:', grammar[obj], end='\n\n')
-    else: print('grammar unchanged', end='\n\n')
-
 def simple_parse_egs():
     print(parse('3'))
     print(parse('x'))
-    print(parse('x := 5'))
-    print(parse('x := 3 * (4+5)'))
-    print(parse('x * (y+2)'))
+    print(parse('3+4'))
+    print(parse('4!'))
+    print(parse('[]'))
+    # print(parse('x := 5'))
+    # print(parse('x := 3 * f()'))
+    # print(parse('(x*(y+2))/3'))
     # print(parse('f(x):=1/x'))
     # print(parse('[x+f(f(3*6)^2), [2, 6], g(3, 6)]'))
 
@@ -317,8 +306,7 @@ def bad_syntax_egs():
     print(parse('[3, f(4])'))
 
 def test():
-    # show_grammar(1)
-    test_grammar()
+    # show_grammar()
     simple_parse_egs()
 
 test()
