@@ -33,7 +33,7 @@
       "program": "${file}",
       "cwd": "${cwd}",
       "console": "integratedTerminal",
-      "justMyCode": false
+      // "justMyCode": false
     },
   ]
 }

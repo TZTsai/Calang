@@ -309,7 +309,6 @@ unary_r_ops = {'!': (factorial, 99), '!!': (double_factorial, 99)}
 reconstruct(unary_r_ops, 'uni_r')
 
 op_list = set(binary_ops).union(set(unary_l_ops)).union(set(unary_r_ops))
-op_list.add('.')  # special op: getattr
 
 special_words = {'if', 'else', 'in', 'ENV', 'load', 'format', 'when',
                  'import', 'del', 'lambda', 'with'}

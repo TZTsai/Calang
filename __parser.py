@@ -1,13 +1,12 @@
 from __builtins import op_list, special_words, inf, first
 from utils.greek import escape_to_greek
+from myutils import trace, log
 import re
-
 
 def match(exp, pattern, start=0):
     exp = exp[start:]
     m = re.match(f'{pattern}', exp)
     return start + m.end() if m else start
-
 
 def match_name(exp):
     exp = exp.strip()
@@ -80,8 +79,8 @@ def get_token(exp):
     if exp[0].isdigit():  # number
         m = match(exp, r'\d*')
         if m < len(exp) and exp[m] == '.':
-            try: assert exp[m+1] == '.'  # double dot - a range
-            except: m = match(exp, r'\d*', m+1)
+            if exp[m+1] != '.':  # double dot - a range
+                m = match(exp, r'\d*', start=m+1)
         if m+1 < len(exp) and exp[m] == 'e':  # scientific notation
             start = m+2 if exp[m+1] == '-' else m+1
             m = match(exp, r'\d*', start)

@@ -209,7 +209,7 @@ def calc_eval(exp, env):
             continue
 
         if all(is_replacable(t, 'number', 'symbol') for t in (type_, prev_type)):
-            CM.push_op(binary_ops['\\.'])
+            CM.push_op(binary_ops['.*'])
 
         if type_ == 'ans':
             try:
@@ -239,11 +239,7 @@ def calc_eval(exp, env):
         elif type_ == 'symbol':
             CM.push_val(Symbol(token[1:]))
         elif type_ == 'op':
-            if token == '.':  # get attribute
-                type_, token, exp = get_token(exp)
-                result = getattr(CM.vals.pop(), token)
-                CM.push_val(result)
-            elif (prev_type in (None, 'op')) and token in unitary_l_ops:
+            if (prev_type in (None, 'op')) and token in unitary_l_ops:
                 CM.push_op(unitary_l_ops[token])
             elif exp and token in binary_ops:
                 CM.push_op(binary_ops[token])
