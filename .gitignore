@@ -4,4 +4,4 @@ __pychache__/*
 .vscode/settings.json
 *.mp4
 bash.exe.stackdump
-syntax tree/log.txt
+syntax tree/log.yaml

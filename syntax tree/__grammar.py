@@ -6,7 +6,7 @@ import re
 from __builtins import binary_ops, unary_l_ops, unary_r_ops
 
 
-log.out = open('syntax tree/log.txt', 'w')
+log.out = open('syntax tree/log.yaml', 'w')
 # log.maxdepth = 1
 # trace = disabled
 
@@ -24,61 +24,69 @@ VAR     := \$[A-Z_]+
 EXP     := ALT [|] EXP | ALT
 ALT     := ITEM_OP ALT | ITEM_OP
 ITEM_OP := ITEM OP | ITEM
-OP      := [*?+\-]
+OP      := [*?+-]
 ITEM    := GROUP | MACRO | ATOM
 ITEMS   := ITEM ITEMS | ITEM
 GROUP   := [(] EXP [)]
-ATOM    := OBJ | STR | RE | CHARS | VAR
+ATOM    := OBJ | STR | RE | CHARS | VAR | MARK
 STR     := ".*?"
 RE      := /.*?/
 CHARS   := \[.*?\]
+MARK    := (?![>|)]) \S+
 """, '\n')
 
+###  COMMENTS ON METAGRAMMAR  ###
+# OP:       * for 0 or more matches, + for 1 or more, ? for 0 or 1, 
+#           - for 1 match but it will not be included in the result
+# MARK:     a token in the grammar that will be matched but not included in the
+#           result; be cautious of conflicts with other symbols in MetaGrammar
+# MACRO:    used for sub_macro; will not exist in the processed grammar
 
 Grammar = split(r"""
 LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) COMM ?
 
-DEF      := ( NAME | FUNC ) ":=" EXP
+DEF      := ( NAME | FUNC ) := EXP
 NAME    := /[a-zA-Z\u0374-\u03FF][a-zA-Z\u0374-\u03FF\d_]*[?]?/
 FUNC    := NAME PARS
-PARS    := %LST<"(" ")" "," NAME>
+PARS    := %LST < "(" ")" , NAME >
 
-CONF    := "conf" NAME /\d+|on|off/ ?
+CONF    := conf NAME /\d+|on|off/ ?
 CMD     := "ENV" | "del" NAME +
-LOAD    := "load" NAME /-[tvp]/ *
-IMPORT  := "import" NAME /-[tvp]/ *
+LOAD    := load NAME /-[tvp]/ *
+IMPORT  := import NAME /-[tvp]/ *
 COMM    := [#] /.*/
 
 EXP     := LOCAL | LAMBDA | IF_ELSE | OP_SEQ
-IF_ELSE := OP_SEQ "if" OP_SEQ "else" EXP
-OP_SEQ  := %SEQ<BOP UOP_IT>
-LOCAL   := ( BIND_LS | BIND ) "->" EXP
-BIND_LS := %LST<"(" ")" "," BIND>
-BIND    := ( NAME_LS | NAME ) ":" EXP
-NAME_LS := %LST<"[" "]" "," ( NAME | NAME_LS )>
-LAMBDA  := ( PARS | NAME ) "->" EXP
+IF_ELSE := OP_SEQ if OP_SEQ else EXP
+OP_SEQ  := %SEQ < BOP UOP_IT >
+LOCAL   := ( BIND_LS | BIND ) -> EXP
+BIND_LS := %LST < "(" ")" , BIND >
+BIND    := ( NAME_LS | NAME ) : EXP
+NAME_LS := %LST < "[" "]" , ( NAME | NAME_LS ) >
+LAMBDA  := ( PARS | NAME ) -> - EXP
 
 UOP_IT  := LUOP ? ITEM RUOP ?
 ITEM    := GROUP | WHEN | APPLY | LIST | ATOM
 GROUP   := "(" EXP ")"
 WHEN    := "when" "(" CASES ")"
-CASES   := %SEQ<";" ( EXP "," EXP )> ";" EXP
-APPLY   := NAME %LST<"(" ")" "," EXP>
-LIST    := %LST<"[" "]" ";" %SEQ<"," EXP>> | %LST<"[" "]" "," EXP>
+CASES   := %SEQ < ; ( EXP , EXP ) > ; EXP
+APPLY   := NAME ARG_LS
+ARG_LS  := %LST < "(" ")" , EXP >
+LIST    := %LST < "[" "]" ; %SEQ < , EXP > > | %LST < "[" "]" , EXP >
 ATOM    := NUM | NAME | SYM | ANS
 
-SYM     := "'" NAME
+SYM     := ' NAME
 ANS     := /_(\d+|_*)/
 
 NUM     := COMPLEX | FLOAT | INT | BIN_NUM | HEX_NUM
-COMPLEX := FLOAT [+-] FLOAT "I"
+COMPLEX := FLOAT [+-] FLOAT I
 FLOAT   := INT /\.\d*/ ( [eE] INT ) ?
 INT     := /-?\d+/
 BIN_NUM := /0b[01]+/
 HEX_NUM := /0x[0-9a-fA-F]+/
 
-%LST<$OPN $CLS $SEP $ITM>   := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS
-%SEQ<$SEP $ITM>             := $ITM ? ( $SEP $ITM ) *
+%LST < $OPN $CLS $SEP $ITM >   := $OPN - $CLS - | $OPN - $ITM ( $SEP $ITM ) * $CLS -
+%SEQ < $SEP $ITM >             := $ITM ? ( $SEP $ITM ) *
 """, '\n')
 
 
@@ -90,7 +98,7 @@ Grammar.append('LUOP   := ' + unl_op)
 Grammar.append('RUOP   := ' + unr_op)
 
 
-def simple_grammar(rules, whitespace=r'\s*'):
+def simple_grammar(rules, whitespace=r'\s+'):
     G = {' ': whitespace}
     for line in rules:
         obj, exp = split(line, ':=', 1)
@@ -101,7 +109,7 @@ def simple_grammar(rules, whitespace=r'\s*'):
 metagrammar = simple_grammar(MetaGrammar)
 
 
-def grammar_parse(type_, text, grammar=metagrammar):
+def parse_grammar(type_, text, grammar=metagrammar):
 
     tokenizer = grammar[' '] + '(%s)'
 
@@ -110,9 +118,10 @@ def grammar_parse(type_, text, grammar=metagrammar):
         for atom in seq:
             tree, text = parse_atom(atom, text)
             if text is None: return (None, None)
-            result.append(tree)
+            if tree is not None: result.append(tree)
         return result, text
 
+    @trace
     @memo  # avoid parsing the same atom again
     def parse_atom(atom, text):
         if atom in grammar:
@@ -123,16 +132,22 @@ def grammar_parse(type_, text, grammar=metagrammar):
             return (None, None)
         else:
             m = re.match(tokenizer % atom, text)
-            return (None, None) if not m else (m[1], text[m.end():])
+            if not m: 
+                return (None, None)
+            elif atom[:3] == '(?!' and atom[-1] == ')':
+                # negative lookahead, should not consume the space
+                return (None, text)
+            else: 
+                return (m[1], text[m.end():])
 
-    return parse_atom(type_, text)
+    return parse_atom(type_, ' '+text)
 
 
-def calc_grammar(rules, whitespace=r'\s*'):
+def calc_grammar(rules, whitespace=r'\s+'):
     G = {' ': whitespace}
     M = {}
     for rule in rules:
-        tree, rem = grammar_parse('DEF', rule)
+        tree, rem = parse_grammar('DEF', rule)
         assert tree[0] == 'DEF' and not rem
         name, body = tree[1][1], refactor_tree(tree[3])
         if name[0] == '%': 
@@ -146,9 +161,6 @@ def calc_grammar(rules, whitespace=r'\s*'):
 
 def refactor_tree(tree: list):
 
-    trace = disabled
-
-    @trace
     def prune(tree):
         if type(tree) is list:
             if tree[0] == 'GROUP':
@@ -157,7 +169,6 @@ def refactor_tree(tree: list):
                 tree.pop(2)
             for t in tree: prune(t)
 
-    @trace
     def flatten_nested(tree):
         if type(tree) is list:
             while tree[-1][0] == tree[0]:
@@ -165,7 +176,6 @@ def refactor_tree(tree: list):
                 tree.extend(last[1:])
             for t in tree: flatten_nested(t)            
 
-    @trace
     def simplify_tag(tree):  # also convert the tree into a pure tuple
         if type(tree) is list:
             while len(tree) == 2 and type(tree[1]) is list:
@@ -198,45 +208,72 @@ def sub_macro(tree, macros, bindings=None):
         return tree
 
 
+## tests
+def check(f, args, expected):
+    actual = f(*args)
+    if actual != expected:
+        comp_list(expected, actual)
+        raise AssertionError(f'Wrong Answer of {f.__name__}{tuple(args)}\n' +
+                             f'Expected: {expected}\n' +
+                             f'Actual: {actual}\n')
+
+def comp_list(l1, l2):
+    if type(l1) not in (tuple, list, dict):
+        if l1 != l2: print(l1, l2)
+    elif len(l1) != len(l2):
+        print(l1, l2)
+    else:
+        for i1, i2 in zip(l1, l2):
+            if type(l1) is dict: comp_list(l1[i1], l2[i2])
+            else: comp_list(i1, i2)
+
 def test_grammar():
 
+    def test_parse():
+        check(parse_grammar, ('ALT', ', -'), (['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['MARK', ',']]], ['OP', '-']]], ''))
+        check(parse_grammar, 
+        ('DEF', 'LIST    := %LST < "[" "]" ; %SEQ < , /.*/ > >'), 
+        (['DEF', ['OBJ', 'LIST'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['MACRO', '%LST', '<', ['ITEMS', ['ITEM', ['ATOM', ['STR', '"["']]], ['ITEMS', ['ITEM', ['ATOM', ['STR', '"]"']]], ['ITEMS', ['ITEM', ['ATOM', ['MARK', ';']]], ['ITEMS', ['ITEM', ['MACRO', '%SEQ', '<', ['ITEMS', ['ITEM', ['ATOM', ['MARK', ',']]], ['ITEMS', ['ITEM', ['ATOM', ['RE', '/.*/']]]]], '>']]]]]], '>']]]]]], ''))
+        check(parse_grammar, 
+        ('DEF', 'EXP := LOCAL | LAMBDA | IF_ELSE | OP_SEQ'), 
+        (['DEF', ['OBJ', 'EXP'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LOCAL']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LAMBDA']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'IF_ELSE']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'OP_SEQ']]]]]]]]]], ''))
+        check(parse_grammar,
+        ('DEF', 'LC := ( BIND_LS | BIND * ) ? "->" EXP'),
+        (['DEF', ['OBJ', 'LC'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND_LS']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"->"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]], ''))
+
     def test_refactor():
-        t = grammar_parse('DEF', 'EXP := LOCAL | LAMBDA | IF_ELSE | OP_SEQ')[0][3]
-        assert refactor_tree(t) == ('EXP', ('OBJ', 'LOCAL'), ('OBJ', 'LAMBDA'), 
-                                    ('OBJ', 'IF_ELSE'), ('OBJ', 'OP_SEQ'))
-        t = grammar_parse('DEF', 'LC := ( BIND_LS | BIND * ) ? "->" EXP')[0][3]
-        assert (refactor_tree(t) == 
-('ALT',
- ('ITEM_OP',
-  ('EXP', ('OBJ', 'BIND_LS'), ('ITEM_OP', ('OBJ', 'BIND'), ('OP', '*'))),
-  ('OP', '?')),
- ('STR', '"->"'),
- ('OBJ', 'EXP')))
+        check(refactor_tree, 
+        [['DEF', ['OBJ', 'EXP'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LOCAL']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LAMBDA']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'IF_ELSE']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'OP_SEQ']]]]]]]]]]], 
+        ('DEF', ('OBJ', 'EXP'), ':=', ('EXP', ('OBJ', 'LOCAL'), ('OBJ', 'LAMBDA'), ('OBJ', 'IF_ELSE'), ('OBJ', 'OP_SEQ'))))
+        check(refactor_tree, 
+        [['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND_LS']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"->"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]],
+        ('ALT', ('ITEM_OP', ('EXP', ('OBJ', 'BIND_LS'), ('ITEM_OP', ('OBJ', 'BIND'), ('OP', '*'))), ('OP', '?')), ('STR', '"->"'), ('OBJ', 'EXP')))
 
     def test_macro():    
-        rules = ['LIST    := %LST<"[" "]" ";" %SEQ<"," /.*/>>',
-                '%LST<$OPN $CLS $SEP $ITM> := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS',
-                '%SEQ<$SEP $ITM>           := $ITM ? ( $SEP $ITM ) *']
-        assert (calc_grammar(rules) ==
-{' ': '\\s*',
+        rules = ['LIST    := %LST < "[" "]" ; %SEQ < , /.*/ > >',
+                '%LST < $OPN $CLS $SEP $ITM > := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS',
+                '%SEQ < $SEP $ITM >           := $ITM ? ( $SEP $ITM ) *']
+        check(calc_grammar, [rules],
+{' ': '\\s+',
  'LIST': ('EXP',
           ('ALT', ('STR', '"["'), ('STR', '"]"')),
           ('ALT',
            ('STR', '"["'),
            ('ALT',
             ('ITEM_OP', ('RE', '/.*/'), ('OP', '?')),
-            ('ITEM_OP', ('ALT', ('STR', '","'), ('RE', '/.*/')), ('OP', '*'))),
+            ('ITEM_OP', ('ALT', ('MARK', ','), ('RE', '/.*/')), ('OP', '*'))),
            ('ITEM_OP',
             ('ALT',
-             ('STR', '";"'),
+             ('MARK', ';'),
              ('ALT',
               ('ITEM_OP', ('RE', '/.*/'), ('OP', '?')),
               ('ITEM_OP',
-               ('ALT', ('STR', '","'), ('RE', '/.*/')),
+               ('ALT', ('MARK', ','), ('RE', '/.*/')),
                ('OP', '*')))),
             ('OP', '*')),
            ('STR', '"]"')))})
 
+    test_parse()
     test_refactor()
     test_macro()
 
@@ -249,211 +286,3 @@ with open('syntax tree/grammar.json', 'w') as gf:
     dump(grammar, gf, indent=2)
 
 # pprint(grammar)
-"""
-{' ': '\\s*',
- 'ANS': ('RE', '/_(\\d+|_*)/'),
- 'APPLY': ('ALT',
-           ('OBJ', 'NAME'),    
-           ('EXP',
-            ('ALT', ('STR', '"("'), ('STR', '")"')),
-            ('ALT',
-             ('STR', '"("'),
-             ('OBJ', 'EXP'),
-             ('ITEM_OP', ('ALT', ('STR', '","'), ('OBJ', 'EXP')), ('OP', '*')),
-             ('STR', '")"')))),
- 'DEF': ('ALT',
-        ('EXP', ('OBJ', 'NAME'), ('OBJ', 'FUNC')),
-        ('STR', '":="'),
-        ('OBJ', 'EXP')),
- 'ATOM': ('EXP',
-          ('OBJ', 'NUM'),
-          ('OBJ', 'NAME'),
-          ('OBJ', 'SYM'),
-          ('OBJ', 'ANS')),
- 'BIND': ('ALT',
-          ('EXP', ('OBJ', 'NAME_LS'), ('OBJ', 'NAME')),
-          ('STR', '":"'),
-          ('OBJ', 'EXP')),
- 'BIND_LS': ('EXP',
-             ('ALT', ('STR', '"("'), ('STR', '")"')),
-             ('ALT',
-              ('STR', '"("'),
-              ('OBJ', 'BIND'),
-              ('ITEM_OP',
-               ('ALT', ('STR', '","'), ('OBJ', 'BIND')),
-               ('OP', '*')),
-              ('STR', '")"'))),
- 'BIN_NUM': ('RE', '/0b[01]+/'),
- 'BOP': ('EXP',
-         ('STR', '"+"'),
-         ('STR', '"-"'),
-         ('STR', '"*"'),
-         ('STR', '".*"'),
-         ('STR', '"/"'),
-         ('STR', '"//"'),
-         ('STR', '"^"'),
-         ('STR', '"%"'),
-         ('STR', '"="'),
-         ('STR', '"!="'),
-         ('STR', '"<"'),
-         ('STR', '">"'),
-         ('STR', '"<="'),
-         ('STR', '">="'),
-         ('STR', '"xor"'),
-         ('STR', '"in"'),
-         ('STR', '"outof"'),
-         ('STR', '"~"'),
-         ('STR', '".."'),
-         ('STR', '"and"'),
-         ('STR', '"or"'),
-         ('STR', '"/\\"'),
-         ('STR', '"\\/"')),
- 'CASES': ('ALT',
-           ('ALT',
-            ('ITEM_OP',
-             ('ALT', ('OBJ', 'EXP'), ('STR', '","'), ('OBJ', 'EXP')),
-             ('OP', '?')),
-            ('ITEM_OP',
-             ('ALT',
-              ('STR', '";"'),
-              ('ALT', ('OBJ', 'EXP'), ('STR', '","'), ('OBJ', 'EXP'))),
-             ('OP', '*'))),
-           ('STR', '";"'),
-           ('OBJ', 'EXP')),
- 'CMD': ('EXP',
-         ('STR', '"ENV"'),
-         ('ALT', ('STR', '"del"'), ('ITEM_OP', ('OBJ', 'NAME'), ('OP', '+')))),
- 'COMM': ('ALT', ('CHARS', '[#]'), ('RE', '/.*/')),
- 'COMPLEX': ('ALT',
-             ('OBJ', 'FLOAT'),
-             ('CHARS', '[+-]'),
-             ('OBJ', 'FLOAT'),
-             ('STR', '"I"')),
- 'CONF': ('ALT',
-          ('STR', '"conf"'),
-          ('OBJ', 'NAME'),
-          ('ITEM_OP', ('RE', '/\\d+|on|off/'), ('OP', '?'))),
- 'EXP': ('EXP',
-         ('OBJ', 'LOCAL'),
-         ('OBJ', 'LAMBDA'),
-         ('OBJ', 'IF_ELSE'),
-         ('OBJ', 'OP_SEQ')),
- 'FLOAT': ('ALT',
-           ('OBJ', 'INT'),
-           ('RE', '/\\.\\d*/'),
-           ('ITEM_OP',
-            ('ALT', ('CHARS', '[eE]'), ('OBJ', 'INT')),
-            ('OP', '?'))),
- 'FUNC': ('ALT', ('OBJ', 'NAME'), ('OBJ', 'PARS')),
- 'GROUP': ('ALT', ('STR', '"("'), ('OBJ', 'EXP'), ('STR', '")"')),
- 'HEX_NUM': ('RE', '/0x[0-9a-fA-F]+/'),
- 'IF_ELSE': ('ALT',
-             ('OBJ', 'OP_SEQ'),
-             ('STR', '"if"'),
-             ('OBJ', 'OP_SEQ'),
-             ('STR', '"else"'),
-             ('OBJ', 'EXP')),
- 'IMPORT': ('ALT',
-            ('STR', '"import"'),
-            ('OBJ', 'NAME'),
-            ('ITEM_OP', ('RE', '/-[tvp]/'), ('OP', '*'))),
- 'INT': ('RE', '/-?\\d+/'),
- 'ITEM': ('EXP',
-          ('OBJ', 'GROUP'),
-          ('OBJ', 'WHEN'),
-          ('OBJ', 'APPLY'),
-          ('OBJ', 'LIST'),
-          ('OBJ', 'ATOM')),
- 'LAMBDA': ('ALT',
-            ('EXP', ('OBJ', 'PARS'), ('OBJ', 'NAME')),
-            ('STR', '"->"'),
-            ('OBJ', 'EXP')),
- 'LINE': ('ALT',
-          ('EXP',
-           ('OBJ', 'DEF'),
-           ('OBJ', 'CONF'),
-           ('OBJ', 'CMD'),
-           ('OBJ', 'LOAD'),
-           ('OBJ', 'IMPORT'),
-           ('OBJ', 'EXP')),
-          ('ITEM_OP', ('OBJ', 'COMM'), ('OP', '?'))),
- 'LIST': ('EXP',
-          ('EXP',
-           ('ALT', ('STR', '"["'), ('STR', '"]"')),
-           ('ALT',
-            ('STR', '"["'),
-            ('ALT',
-             ('ITEM_OP', ('OBJ', 'EXP'), ('OP', '?')),
-             ('ITEM_OP', ('ALT', ('STR', '","'), ('OBJ', 'EXP')), ('OP', '*'))),
-            ('ITEM_OP',
-             ('ALT',
-              ('STR', '";"'),
-              ('ALT',
-               ('ITEM_OP', ('OBJ', 'EXP'), ('OP', '?')),
-               ('ITEM_OP',
-                ('ALT', ('STR', '","'), ('OBJ', 'EXP')),
-                ('OP', '*')))),
-             ('OP', '*')),
-            ('STR', '"]"'))),
-          ('EXP',
-           ('ALT', ('STR', '"["'), ('STR', '"]"')),
-           ('ALT',
-            ('STR', '"["'),
-            ('OBJ', 'EXP'),
-            ('ITEM_OP', ('ALT', ('STR', '","'), ('OBJ', 'EXP')), ('OP', '*')),
-            ('STR', '"]"')))),
- 'LOAD': ('ALT',
-          ('STR', '"load"'),
-          ('OBJ', 'NAME'),
-          ('ITEM_OP', ('RE', '/-[tvp]/'), ('OP', '*'))),
- 'LOCAL': ('ALT',
-           ('EXP', ('OBJ', 'BIND_LS'), ('OBJ', 'BIND')),
-           ('STR', '"->"'),
-           ('OBJ', 'EXP')),
- 'LUOP': ('EXP',
-          ('STR', '"-"'),
-          ('STR', '"not"'),
-          ('STR', '"!"'),
-          ('STR', '"@"')),
- 'NAME': ('RE', '/[a-zA-Z\\u0374-\\u03FF][a-zA-Z\\u0374-\\u03FF\\d_]*[?]?/'),
- 'NAME_LS': ('EXP',
-             ('ALT', ('STR', '"["'), ('STR', '"]"')),
-             ('ALT',
-              ('STR', '"["'),
-              ('EXP', ('OBJ', 'NAME'), ('OBJ', 'NAME_LS')),
-              ('ITEM_OP',
-               ('ALT',
-                ('STR', '","'),
-                ('EXP', ('OBJ', 'NAME'), ('OBJ', 'NAME_LS'))),
-               ('OP', '*')),
-              ('STR', '"]"'))),
- 'NUM': ('EXP',
-         ('OBJ', 'COMPLEX'),
-         ('OBJ', 'FLOAT'),
-         ('OBJ', 'INT'),
-         ('OBJ', 'BIN_NUM'),
-         ('OBJ', 'HEX_NUM')),
- 'OP_SEQ': ('ALT',
-            ('ITEM_OP', ('OBJ', 'UOP_IT'), ('OP', '?')),
-            ('ITEM_OP',
-             ('ALT', ('OBJ', 'BOP'), ('OBJ', 'UOP_IT')),
-             ('OP', '*'))),
- 'PARS': ('EXP',
-          ('ALT', ('STR', '"("'), ('STR', '")"')),
-          ('ALT',
-           ('STR', '"("'),
-           ('OBJ', 'NAME'),
-           ('ITEM_OP', ('ALT', ('STR', '","'), ('OBJ', 'NAME')), ('OP', '*')),
-           ('STR', '")"'))),
- 'RUOP': ('EXP', ('STR', '"!"'), ('STR', '"!!"')),
- 'SYM': ('ALT', ('STR', '"\'"'), ('OBJ', 'NAME')),
- 'UOP_IT': ('ALT',
-            ('ITEM_OP', ('OBJ', 'LUOP'), ('OP', '?')),
-            ('OBJ', 'ITEM'),
-            ('ITEM_OP', ('OBJ', 'RUOP'), ('OP', '?'))),
- 'WHEN': ('ALT',
-          ('STR', '"when"'),
-          ('STR', '"("'),
-          ('OBJ', 'CASES'),
-          ('STR', '")"'))}
-"""
