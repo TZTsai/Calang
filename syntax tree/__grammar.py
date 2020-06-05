@@ -48,8 +48,8 @@ LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) COMM ?
 
 DEF     := ( FUNC | NAME ) := EXP
 NAME    := /[a-zA-Z\u0374-\u03FF][a-zA-Z\u0374-\u03FF\d_]*[?]?/
-FUNC    := NAME PAR_LS
-PAR_LS  := %LST < "(" ")" , NAME >
+FUNC    := NAME PAR_LST
+PAR_LST := %LST < ( PAR_LST | NAME ) , >
 
 CONF    := conf NAME /\d+|on|off/ ?
 CMD     := "ENV" | "del" NAME +
@@ -59,44 +59,44 @@ COMM    := [#] /.*/
 
 EXP     := LOCAL | LAMBDA | IF_ELSE | OP_SEQ
 IF_ELSE := OP_SEQ if OP_SEQ else EXP
-OP_SEQ  := %SEQ < BOP UOP_IT >
-LOCAL   := ( BIND_LS | BIND ) -> EXP
-BIND_LS := %LST < "(" ")" , BIND >
-BIND    := ( NAME_LS | NAME ) : EXP
-NAME_LS := %LST < "[" "]" , ( NAME | NAME_LS ) >
-LAMBDA  := ( PAR_LS | NAME ) -> - EXP
+OP_SEQ  := %SEQ < ( BOP | EMPTY ) OP_ITEM >
+EMPTY   := []
+LOCAL   := ( BINDS | BIND ) -> EXP
+BINDS   := %GRP < %SEQ < BIND , > >
+BIND    := ( PAR_LST | NAME ) : EXP
+LAMBDA  := ( PAR_LST | NAME ) -> EXP
 
-UOP_IT  := LUOP ? ITEM RUOP ?
-ITEM    := WHEN | APPLY | GROUP | LIST | ATOM
-GROUP   := "(" - EXP ")" -
-WHEN    := "when" "(" CASES ")"
-CASES   := %SEQ < ; ( EXP , EXP ) > ; EXP
-APPLY   := NAME ARG_LS
-ARG_LS  := %LST < "(" ")" , EXP >
-LIST    := %LST < "[" "]" ; %SEQ < , EXP > > | %LST < "[" "]" , EXP >
+OP_ITEM := LOP ? ITEM ROP ?
+ITEM    := WHEN | GROUP | LST | ATOM
+GROUP   := %GRP < EXP >
+WHEN    := "when" CASES
+CASES   := %GRP < %SEQ < CASE , > , EXP >
+CASE    := EMP : EXP
+LST     := %LST < "[" "]" ; %SEQ < , EXP > > | %LST < "[" "]" , EXP >
 ATOM    := NUM | NAME | SYM | ANS
 
 SYM     := ' NAME
 ANS     := /_(\d+|_*)/
 
-NUM     := COMPLEX | FLOAT | INT | BIN_NUM | HEX_NUM
+NUM     := COMPLEX | FLOAT | INT | BIN | HEX
 COMPLEX := FLOAT [+-] FLOAT I
 FLOAT   := INT /\.\d*/ ( [eE] INT ) ?
 INT     := /-?\d+/
-BIN_NUM := /0b[01]+/
-HEX_NUM := /0x[0-9a-fA-F]+/
+BIN     := /0b[01]+/
+HEX     := /0x[0-9a-fA-F]+/
 
-%LST < $OPN $CLS $SEP $ITM >   := $OPN - $CLS - | $OPN - $ITM ( $SEP $ITM ) * & $CLS -
-%SEQ < $SEP $ITM >             := $ITM ? ( $SEP $ITM ) * &
+%LST < $ITM $SEP >  := "[" - "]" - | "[" - %SEQ < $ITM $SEP > "]" -
+%GRP < $EXP >       := "(" - $EXP ")" -
+%SEQ < $ITM $SEP >  := $ITM ( $SEP $ITM ) *
 """, '\n')
 
 
 # add syntax for operations
 bin_op, unl_op, unr_op = ['"' + '" | "'.join(ops) + '"' 
                           for ops in (binary_ops, unary_l_ops, unary_r_ops)]
-Grammar.append('BOP    := ' + bin_op)
-Grammar.append('LUOP   := ' + unl_op)
-Grammar.append('RUOP   := ' + unr_op)
+Grammar.append('BOP := ' + bin_op)
+Grammar.append('LOP := ' + unl_op)
+Grammar.append('ROP := ' + unr_op)
 
 
 def simple_grammar(rules, whitespace=r'\s+'):
@@ -234,16 +234,16 @@ def test_grammar():
         ('DEF', 'EXP := LOCAL | LAMBDA | IF_ELSE | OP_SEQ'), 
         (['DEF', ['OBJ', 'EXP'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LOCAL']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LAMBDA']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'IF_ELSE']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'OP_SEQ']]]]]]]]]], ''))
         check(parse_grammar,
-        ('DEF', 'LC := ( BIND_LS | BIND * ) ? "->" EXP'),
-        (['DEF', ['OBJ', 'LC'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND_LS']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"->"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]], ''))
+        ('DEF', 'LC := ( BLIST | BIND * ) ? "->" EXP'),
+        (['DEF', ['OBJ', 'LC'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BLIST']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"->"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]], ''))
 
     def test_refactor():
         check(refactor_tree, 
         [['DEF', ['OBJ', 'EXP'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LOCAL']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LAMBDA']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'IF_ELSE']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'OP_SEQ']]]]]]]]]]], 
         ('DEF', ('OBJ', 'EXP'), ':=', ('EXP', ('OBJ', 'LOCAL'), ('OBJ', 'LAMBDA'), ('OBJ', 'IF_ELSE'), ('OBJ', 'OP_SEQ'))))
         check(refactor_tree, 
-        [['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND_LS']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"->"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]],
-        ('ALT', ('ITEM_OP', ('EXP', ('OBJ', 'BIND_LS'), ('ITEM_OP', ('OBJ', 'BIND'), ('OP', '*'))), ('OP', '?')), ('STR', '"->"'), ('OBJ', 'EXP')))
+        [['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BLIST']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"->"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]],
+        ('ALT', ('ITEM_OP', ('EXP', ('OBJ', 'BLIST'), ('ITEM_OP', ('OBJ', 'BIND'), ('OP', '*'))), ('OP', '?')), ('STR', '"->"'), ('OBJ', 'EXP')))
 
     def test_macro():    
         rules = ['LIST    := %LST < "[" "]" ; %SEQ < , /.*/ > >',
