@@ -8,7 +8,7 @@ from __builtins import binary_ops, unary_l_ops, unary_r_ops
 
 log.out = open('syntax tree/log.yaml', 'w')
 # log.maxdepth = 1
-# trace = disabled
+trace = disabled
 
 
 def split(text: str, sep=None, maxsplit=-1):
@@ -37,7 +37,8 @@ MARK    := [^>|)\s]\S*
 
 ###  COMMENTS ON METAGRAMMAR  ###
 # OP:       * for 0 or more matches, + for 1 or more, ? for 0 or 1, 
-#           - for 1 match but it will not be included in the result
+#           - for 1 match but it will not be included in the result;
+#           if more than one items are matched, merge them into the seq
 # MARK:     a token in the grammar that will be matched but not included in the
 #           result; be cautious of conflicts with other symbols in MetaGrammar
 # MACRO:    used for sub_macro; will not exist in the processed grammar
@@ -45,10 +46,10 @@ MARK    := [^>|)\s]\S*
 Grammar = split(r"""
 LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) COMM ?
 
-DEF      := ( FUNC | NAME ) := EXP
+DEF     := ( FUNC | NAME ) := EXP
 NAME    := /[a-zA-Z\u0374-\u03FF][a-zA-Z\u0374-\u03FF\d_]*[?]?/
-FUNC    := NAME PARS
-PARS    := %LST < "(" ")" , NAME >
+FUNC    := NAME PAR_LS
+PAR_LS  := %LST < "(" ")" , NAME >
 
 CONF    := conf NAME /\d+|on|off/ ?
 CMD     := "ENV" | "del" NAME +
@@ -63,10 +64,10 @@ LOCAL   := ( BIND_LS | BIND ) -> EXP
 BIND_LS := %LST < "(" ")" , BIND >
 BIND    := ( NAME_LS | NAME ) : EXP
 NAME_LS := %LST < "[" "]" , ( NAME | NAME_LS ) >
-LAMBDA  := ( PARS | NAME ) -> - EXP
+LAMBDA  := ( PAR_LS | NAME ) -> - EXP
 
 UOP_IT  := LUOP ? ITEM RUOP ?
-ITEM    := GROUP | WHEN | APPLY | LIST | ATOM
+ITEM    := WHEN | APPLY | GROUP | LIST | ATOM
 GROUP   := "(" - EXP ")" -
 WHEN    := "when" "(" CASES ")"
 CASES   := %SEQ < ; ( EXP , EXP ) > ; EXP
@@ -85,8 +86,8 @@ INT     := /-?\d+/
 BIN_NUM := /0b[01]+/
 HEX_NUM := /0x[0-9a-fA-F]+/
 
-%LST < $OPN $CLS $SEP $ITM >   := $OPN - $CLS - | $OPN - $ITM ( $SEP $ITM ) * $CLS -
-%SEQ < $SEP $ITM >             := $ITM ? ( $SEP $ITM ) *
+%LST < $OPN $CLS $SEP $ITM >   := $OPN - $CLS - | $OPN - $ITM ( $SEP $ITM ) * & $CLS -
+%SEQ < $SEP $ITM >             := $ITM ? ( $SEP $ITM ) * &
 """, '\n')
 
 

@@ -1,4 +1,4 @@
-from myutils import trace, log
+from myutils import trace, log, interact
 from mydecorators import memo
 from json import load
 from pprint import pprint, pformat
@@ -8,6 +8,7 @@ from __builtins import op_list
 
 log.out = open('syntax tree/log.yaml', 'w')
 # trace.maxdepth = -1
+interact = lambda: 0
 
 
 try:
@@ -31,8 +32,7 @@ def lstrip(text):
 
 def calc_parse(type_, text):
 
-    @trace
-    def parse(syntax, text):
+    def parse_tree(syntax, text):
         tag, body = syntax[0], syntax[1:]
 
         if text == '':
@@ -55,7 +55,7 @@ def calc_parse(type_, text):
     # @trace
     def parse_alts(alts, text):
         for alt in alts:
-            tree, rem = parse(alt, text)
+            tree, rem = parse_tree(alt, text)
             if rem is not None: return tree, rem
         return None, None
 
@@ -68,14 +68,13 @@ def calc_parse(type_, text):
                 if item[1][1:-1] not in text:
                     return None, None
         for item in seq:
-            tr, rem = parse(item, rem)
+            tr, rem = parse_tree(item, rem)
             if rem is None: return None, None
             if tr:
-                if type(tr[0]) is list:
-                    tree.extend(tr)
+                if tr[0] == '...':  # resulted from OP; merge the tree
+                    tree.extend(tr[1])
                 else:
                     tree.append(tr)
-        if len(tree) == 1: tree = tree[0]
         return tree, rem
 
     # @memo
@@ -101,31 +100,40 @@ def calc_parse(type_, text):
         # precheck for the OP object
         if obj[-2:] == 'OP' and op_start.match(text) is None:
             return None, None
-        tree, rem = parse(grammar[obj], text)
+        tree, rem = parse_tree(grammar[obj], text)
         if rem is None: return None, None
         tree = process_tag(obj, tree)
         return tree, rem
 
-    # @trace
+    @trace
     def parse_op(item, op, text):
         tree, rem = [], text
         rep, maxrep = 0, (1 if op in '?-' else -1)
         while maxrep < 0 or rep < maxrep:
-            tr, _rem = parse(item, rem)
+            tr, _rem = parse_tree(item, rem)
             if _rem is None: break
-            if tr: tree.append(tr)
+            if type(tr[0]) is list: 
+                tree.extend(tr)
+            else:
+                tree.append(tr)
             rem = _rem
             rep += 1
         if op in '+-' and rep == 0:
             return None, None
-        if op == '-': tree = []
-        elif len(tree) == 1: tree = tree[0]
+        if op == '-' or not tree:
+            tree = []
+        elif len(tree) == 1:
+            tree = tree[0]
+        else: 
+            tree = ['...', tree]
         return tree, rem
 
+    prefixes = ['NUM', 'EXP', 'SYM']
     def process_tag(tag, tree):
-        prefixes = ['NUM', 'EXP', 'SYM']
         if type(tree) is str:
             tree = [tag, tree]
+        elif len(tree) == 1 and type(tree[0]) is list: 
+            if tag[-3:] != '_LS': tree = tree[0]
         try:
             assert obj_pat.match(tree[0])
             if tag in prefixes:
@@ -134,7 +142,8 @@ def calc_parse(type_, text):
             tree = [tag] + tree
         return tree
 
-    return parse(grammar[type_], text)
+    interact()
+    return parse_obj('LINE', text)
 
 
 def parse(exp):
@@ -152,8 +161,15 @@ def check_parse(exp, expected):
                              'Actual: %s\n'%pformat(actual))
 
 def simple_egs():
-    # check_parse('3', (['EXP:NUM:INT', '3'], ''))
-    # check_parse('x', (['EXP:NAME', 'x'], ''))
+    check_parse('3', (['EXP:NUM:INT', '3'], ''))
+    check_parse('x', (['EXP:NAME', 'x'], ''))
+    check_parse('1+2*3', (['EXP:OP_SEQ',
+                            ['NUM:INT', '1'],
+                            ['BOP', '+'],
+                            ['NUM:INT', '2'],
+                            ['BOP', '*'],
+                            ['NUM:INT', '3']],
+                        ''))
     check_parse('3!+4', (['EXP:OP_SEQ', ['UOP_IT', ['NUM:INT', '3'], ['RUOP', '!']], 
                          ['BOP', '+'], ['NUM:INT', '4']], ''))
     check_parse('4!', (['EXP:UOP_IT', ['NUM:INT', '4'], ['RUOP', '!']], ''))
@@ -184,10 +200,37 @@ def simple_egs():
                     ['BOP', '/'],
                     ['NUM:INT', '3']],
                 ''))
-    pprint(parse('f(x):=1/x'))
-    pprint(parse('f():=1'))
-    pprint(parse('f(x, y):=x*y'))
-    # print(parse('[x+f(f(3*6)^2), [2, 6], g(3, 6)]'))
+    check_parse('f(x):=1/x',
+                (['DEF',
+                    ['FUNC', ['NAME', 'f'], ['PAR_LS', ['NAME', 'x']]],
+                    ['EXP:OP_SEQ', ['NUM:INT', '1'], ['BOP', '/'], ['NAME', 'x']]],
+                ''))
+    check_parse('f():=1',
+                (['DEF', ['FUNC', ['NAME', 'f'], ['PAR_LS']], 
+                 ['EXP:NUM:INT', '1']], ''))
+    check_parse('f(x, y):=x*y',
+                (['DEF',
+                ['FUNC', ['NAME', 'f'], ['PAR_LS', ['NAME', 'x'], ['NAME', 'y']]],
+                ['EXP:OP_SEQ', ['NAME', 'x'], ['BOP', '*'], ['NAME', 'y']]],
+                ''))
+    check_parse('[x+f(f(3*6)^2), [2, 6], g(3, 6)]',
+                (['EXP:LIST', 
+                ['EXP:OP_SEQ', 
+                        ['NAME', 'x'], 
+                        ['BOP', '+'], 
+                        ['APPLY', ['NAME', 'f'], 
+                            ['ARG_LS', 
+                                ['EXP:OP_SEQ', 
+                                    ['APPLY', ['NAME', 'f'], 
+                                        ['ARG_LS', ['EXP:OP_SEQ', ['NUM:INT', '3'], ['BOP', '*'], ['NUM:INT', '6']]]], 
+                                    ['BOP', '^'], 
+                                    ['NUM:INT', '2']]]]], 
+                ['EXP:LIST', ['EXP:NUM:INT', '2'], ['EXP:NUM:INT', '6']], 
+                ['EXP:APPLY', ['NAME', 'g'], 
+                    ['ARG_LS', ['EXP:NUM:INT', '3'], ['EXP:NUM:INT', '6']]]], 
+                ''))
+    check_parse('[1,2;3,4]', 0)
+    check_parse('when(1, 3; 2, 4; 5)', 0)
 
 def ill_egs():
     print(parse('(3'))
@@ -195,5 +238,6 @@ def ill_egs():
 
 def test():
     simple_egs()
+    ill_egs()
 
 test()
