@@ -6,7 +6,7 @@ import re
 from __builtins import op_list
 
 
-log.out = open('syntax tree/log.txt', 'w')
+log.out = open('syntax tree/log.yaml', 'w')
 trace.maxdepth = 5
 
 
@@ -84,8 +84,8 @@ def calc_parse(type_, text):
         if tag in ('RE', 'CHARS'):
             m = re.match(pattern, text)
             if not m: return None, None
-            else: return m[1], text[m.end():]
-        else:
+            else: return m[0], text[m.end():]
+        else:  # STR or MARK
             try:
                 pre, rem = text.split(pattern, 1)
                 assert not pre

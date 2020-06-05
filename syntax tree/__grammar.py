@@ -24,7 +24,7 @@ VAR     := \$[A-Z_]+
 EXP     := ALT [|] EXP | ALT
 ALT     := ITEM_OP ALT | ITEM_OP
 ITEM_OP := ITEM OP | ITEM
-OP      := [*?+-]
+OP      := [*?+-](?=\s|$)
 ITEM    := GROUP | MACRO | ATOM
 ITEMS   := ITEM ITEMS | ITEM
 GROUP   := [(] EXP [)]
@@ -143,7 +143,7 @@ def parse_grammar(type_, text, grammar=metagrammar):
     return parse_atom(type_, ' '+text)
 
 
-def calc_grammar(rules, whitespace=r'\s+'):
+def calc_grammar(rules, whitespace=r'\s*'):
     G = {' ': whitespace}
     M = {}
     for rule in rules:
@@ -254,7 +254,7 @@ def test_grammar():
                 '%LST < $OPN $CLS $SEP $ITM > := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS',
                 '%SEQ < $SEP $ITM >           := $ITM ? ( $SEP $ITM ) *']
         check(calc_grammar, [rules],
-{' ': '\\s+',
+{' ': '\\s*',
  'LIST': ('EXP',
           ('ALT', ('STR', '"["'), ('STR', '"]"')),
           ('ALT',
@@ -285,4 +285,4 @@ grammar = calc_grammar(Grammar)
 with open('syntax tree/grammar.json', 'w') as gf:
     dump(grammar, gf, indent=2)
 
-# pprint(grammar)
+pprint(grammar)
