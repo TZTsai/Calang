@@ -44,7 +44,7 @@ MARK    := [^>|)\s]\S*
 # MACRO:    used for sub_macro; will not exist in the processed grammar
 
 Grammar = split(r"""
-LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) [;] ? COMM ?
+LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) [;] ? COMM ? | EMPTY
 
 DEF     := ( FUNC | NAME ) := EXP
 NAME    := /[a-zA-Z\u0374-\u03FF][a-zA-Z\u0374-\u03FF\d_]*[?]?/
@@ -70,8 +70,8 @@ OP_ITEM := LOP ? ITEM ROP ?
 ITEM    := WHEN | GROUP | LST | ATOM
 GROUP   := %GRP < EXP >
 WHEN    := "when" CASES
-CASES   := %GRP < %SEQ < CASE , > > , EXP
-CASE    := EMP : EXP
+CASES   := %GRP < ( %SEQ < CASE , > , EXP ) >
+CASE    := EXP : EXP
 LST     := %LST < %SEQ < EXP , > ; > | %LST < EXP , >
 ATOM    := NUM | NAME | SYM | ANS
 

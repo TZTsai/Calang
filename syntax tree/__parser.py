@@ -35,10 +35,9 @@ def calc_parse(type_, text):
     def parse_tree(syntax, text):
         tag, body = syntax[0], syntax[1:]
 
-        if text == '':
+        if text == '' and tag != 'ITEM_OP':
             # only an item decorated by '?' or '*' can be matched to nothing
-            if tag == 'ITEM_OP': return [], ''
-            else: return None, None
+            return None, None
 
         if tag == 'EXP':
             return parse_alts(body, text)
@@ -75,6 +74,7 @@ def calc_parse(type_, text):
                     tree.extend(tr[1])
                 else:
                     tree.append(tr)
+        if len(tree) == 1: tree = tree[0]
         return tree, rem
 
     # @memo
@@ -129,6 +129,7 @@ def calc_parse(type_, text):
         return tree, rem
 
     prefixes = ['NUM', 'EXP', 'SYM']
+    # @trace
     def process_tag(tag, tree):
         if type(tree) is str:
             tree = [tag, tree]
@@ -139,7 +140,6 @@ def calc_parse(type_, text):
             if tag in prefixes:
                 tree[0] = tag + ':' + tree[0]
         except:
-            # if tree or 
             tree = [tag] + tree
         return tree
 
@@ -164,59 +164,41 @@ def check_parse(exp, expected):
 def simple_egs():
     check_parse('3', (['EXP:NUM:INT', '3'], ''))
     check_parse('x', (['EXP:NAME', 'x'], ''))
-    check_parse('1+2*3', (['EXP:OP_SEQ',
-                            ['NUM:INT', '1'],
-                            ['BOP', '+'],
-                            ['NUM:INT', '2'],
-                            ['BOP', '*'],
-                            ['NUM:INT', '3']],
-                        ''))
+    check_parse('1+2*3', 
+                (['EXP:OP_SEQ', ['NUM:INT', '1'], ['BOP', '+'], ['NUM:INT', '2'], ['BOP', '*'], ['NUM:INT', '3']], ''))
     check_parse('3!+4', (['EXP:OP_SEQ', ['OP_ITEM', ['NUM:INT', '3'], ['ROP', '!']], 
                          ['BOP', '+'], ['NUM:INT', '4']], ''))
     check_parse('4!', (['EXP:OP_ITEM', ['NUM:INT', '4'], ['ROP', '!']], ''))
     check_parse('[]', (['EXP:LST'], ''))
     check_parse('[3, 4, 6]', (['EXP:LST', ['EXP:NUM:INT', '3'], 
                               ['EXP:NUM:INT', '4'], ['EXP:NUM:INT', '6']], ''))
-    check_parse('f[]', 0)
+    check_parse('f[]',  (['EXP:OP_SEQ', ['NAME', 'f'], ['EMPTY', ''], ['LST']], ''))
     check_parse('x := 5', (['DEF', ['NAME', 'x'], ['EXP:NUM:INT', '5']], ''))
     check_parse('x := 3 * f[3, 5, 7]',
-                (0,
-                ''))
+                (['DEF', ['NAME', 'x'], ['EXP:OP_SEQ', ['NUM:INT', '3'], ['BOP', '*'], ['NAME', 'f'], ['EMPTY', ''], ['LST', ['EXP:NUM:INT', '3'], ['EXP:NUM:INT', '5'], ['EXP:NUM:INT', '7']]]], ''))
     check_parse("(x*('y+2))/3",
-                (['EXP:OP_SEQ',
-                    ['EXP:OP_SEQ',
-                        ['NAME', 'x'],
-                        ['BOP', '*'],
-                        ['EXP:OP_SEQ', ['SYM:NAME', 'y'], 
-                                        ['BOP', '+'], 
-                                        ['NUM:INT', '2']]],
-                    ['BOP', '/'],
-                    ['NUM:INT', '3']],
-                ''))
+                (['EXP:OP_SEQ', ['EXP:OP_SEQ', ['NAME', 'x'], ['BOP', '*'], ['EXP:OP_SEQ', ['SYM:NAME', 'y'], ['BOP', '+'], ['NUM:INT', '2']]], ['BOP', '/'], ['NUM:INT', '3']], ''))
     check_parse('f[x]:=1/x',
-                (['DEF',
-                    ['FUNC', ['NAME', 'f'], ['PAR_LS', ['NAME', 'x']]],
-                    ['EXP:OP_SEQ', ['NUM:INT', '1'], ['BOP', '/'], ['NAME', 'x']]],
-                ''))
+                (['DEF', ['FUNC', ['NAME', 'f'], ['NAME', 'x']], ['EXP:OP_SEQ', ['NUM:INT', '1'], ['BOP', '/'], ['NAME', 'x']]], ''))
     check_parse('f[]:=1',
-                (['DEF', ['FUNC', ['NAME', 'f'], ['PAR_LS']], 
-                 ['EXP:NUM:INT', '1']], ''))
+                (['DEF', ['FUNC', ['NAME', 'f'], ['PAR_LST']], ['EXP:NUM:INT', '1']], ''))
     check_parse('f[x, y]:=x*y',
-                (['DEF',
-                ['FUNC', ['NAME', 'f'], ['PAR_LS', ['NAME', 'x'], ['NAME', 'y']]],
-                ['EXP:OP_SEQ', ['NAME', 'x'], ['BOP', '*'], ['NAME', 'y']]],
-                ''))
+                (['DEF', ['FUNC', ['NAME', 'f'], ['PAR_LST', ['NAME', 'x'], ['NAME', 'y']]], ['EXP:OP_SEQ', ['NAME', 'x'], ['BOP', '*'], ['NAME', 'y']]], ''))
     check_parse('[x+f[f[3*6]^2], [2, 6], g[3, 6]]',
-                0)
-    check_parse('[1,2;3,4]', 0)
-    check_parse('when(1: 2, 3: 4, 5)', 0)
+                (['EXP:LST', ['EXP:OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'f'], ['EMPTY', ''], ['EXP:OP_SEQ', ['NAME', 'f'], ['EMPTY', ''], ['EXP:OP_SEQ', ['NUM:INT', '3'], ['BOP', '*'], ['NUM:INT', '6']], ['BOP', '^'], ['NUM:INT', '2']]], ['EXP:LST', ['EXP:NUM:INT', '2'], ['EXP:NUM:INT', '6']], ['EXP:OP_SEQ', ['NAME', 'g'], ['EMPTY', ''], ['LST', ['EXP:NUM:INT', '3'], ['EXP:NUM:INT', '6']]]], ''))
+    check_parse('[1,2;3,4]', 
+                (['EXP:LST', [['EXP:NUM:INT', '1'], ['EXP:NUM:INT', '2']], ['EXP:NUM:INT', '3'], ['EXP:NUM:INT', '4']], ''))
+    check_parse('when(1: 2, 3: 4, 5)', 
+                (['EXP:WHEN', 'when', ['CASES', [['CASE', ['EXP:NUM:INT', '1'], ['EXP:NUM:INT', '2']], ['CASE', ['EXP:NUM:INT', '3'], ['EXP:NUM:INT', '4']]], ['EXP:NUM:INT', '5']]], ''))
 
 def ill_egs():
-    print(parse('(3'))
-    print(parse('[3, f(4])'))
+    check_parse('(3', (['EMPTY', ''], '(3'))
+    check_parse('[3, f(4])', (['EMPTY', ''], '[3, f(4])'))
+    check_parse('f[3, [5]', (['EXP:NAME', 'f'], '[3, [5]'))
+    check_parse('[2, 4] + [6, 7', 0)
 
 def test():
-    simple_egs()
+    # simple_egs()
     ill_egs()
 
 test()

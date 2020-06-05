@@ -1,55 +1,62 @@
 {
   " ": "\\s*",
   "LINE": [
-    "ALT",
+    "EXP",
     [
-      "EXP",
+      "ALT",
       [
-        "OBJ",
-        "DEF"
+        "EXP",
+        [
+          "OBJ",
+          "DEF"
+        ],
+        [
+          "OBJ",
+          "CONF"
+        ],
+        [
+          "OBJ",
+          "CMD"
+        ],
+        [
+          "OBJ",
+          "LOAD"
+        ],
+        [
+          "OBJ",
+          "IMPORT"
+        ],
+        [
+          "OBJ",
+          "EXP"
+        ]
       ],
       [
-        "OBJ",
-        "CONF"
+        "ITEM_OP",
+        [
+          "CHARS",
+          "[;]"
+        ],
+        [
+          "OP",
+          "?"
+        ]
       ],
       [
-        "OBJ",
-        "CMD"
-      ],
-      [
-        "OBJ",
-        "LOAD"
-      ],
-      [
-        "OBJ",
-        "IMPORT"
-      ],
-      [
-        "OBJ",
-        "EXP"
+        "ITEM_OP",
+        [
+          "OBJ",
+          "COMM"
+        ],
+        [
+          "OP",
+          "?"
+        ]
       ]
     ],
     [
-      "ITEM_OP",
-      [
-        "CHARS",
-        "[;]"
-      ],
-      [
-        "OP",
-        "?"
-      ]
-    ],
-    [
-      "ITEM_OP",
-      [
-        "OBJ",
-        "COMM"
-      ],
-      [
-        "OP",
-        "?"
-      ]
+      "OBJ",
+      "EMPTY"
     ]
   ],
   "DEF": [
@@ -568,18 +575,18 @@
   "CASES": [
     "ALT",
     [
-      "ALT",
+      "ITEM_OP",
       [
-        "ITEM_OP",
-        [
-          "STR",
-          "\"(\""
-        ],
-        [
-          "OP",
-          "-"
-        ]
+        "STR",
+        "\"(\""
       ],
+      [
+        "OP",
+        "-"
+      ]
+    ],
+    [
+      "ALT",
       [
         "ALT",
         [
@@ -606,31 +613,31 @@
         ]
       ],
       [
-        "ITEM_OP",
-        [
-          "STR",
-          "\")\""
-        ],
-        [
-          "OP",
-          "-"
-        ]
+        "MARK",
+        ","
+      ],
+      [
+        "OBJ",
+        "EXP"
       ]
     ],
     [
-      "MARK",
-      ","
-    ],
-    [
-      "OBJ",
-      "EXP"
+      "ITEM_OP",
+      [
+        "STR",
+        "\")\""
+      ],
+      [
+        "OP",
+        "-"
+      ]
     ]
   ],
   "CASE": [
     "ALT",
     [
       "OBJ",
-      "EMP"
+      "EXP"
     ],
     [
       "MARK",
