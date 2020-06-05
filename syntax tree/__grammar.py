@@ -6,9 +6,9 @@ import re
 from __builtins import binary_ops, unary_l_ops, unary_r_ops
 
 
-# log.out = open('syntax tree/log.yaml', 'w')
+log.out = open('syntax tree/log.yaml', 'w')
 # log.maxdepth = 1
-trace = disabled
+# trace = disabled
 
 
 def split(text: str, sep=None, maxsplit=-1):
@@ -44,7 +44,7 @@ MARK    := [^>|)\s]\S*
 # MACRO:    used for sub_macro; will not exist in the processed grammar
 
 Grammar = split(r"""
-LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) COMM ?
+LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) [;] ? COMM ?
 
 DEF     := ( FUNC | NAME ) := EXP
 NAME    := /[a-zA-Z\u0374-\u03FF][a-zA-Z\u0374-\u03FF\d_]*[?]?/
@@ -59,8 +59,8 @@ COMM    := [#] /.*/
 
 EXP     := LOCAL | LAMBDA | IF_ELSE | OP_SEQ
 IF_ELSE := OP_SEQ if OP_SEQ else EXP
-OP_SEQ  := %SEQ < ( BOP | EMPTY ) OP_ITEM >
-EMPTY   := []
+OP_SEQ  := %SEQ < OP_ITEM ( BOP | EMPTY ) >
+EMPTY   := //
 LOCAL   := ( BINDS | BIND ) -> EXP
 BINDS   := %GRP < %SEQ < BIND , > >
 BIND    := ( PAR_LST | NAME ) : EXP
@@ -70,9 +70,9 @@ OP_ITEM := LOP ? ITEM ROP ?
 ITEM    := WHEN | GROUP | LST | ATOM
 GROUP   := %GRP < EXP >
 WHEN    := "when" CASES
-CASES   := %GRP < %SEQ < CASE , > , EXP >
+CASES   := %GRP < %SEQ < CASE , > > , EXP
 CASE    := EMP : EXP
-LST     := %LST < "[" "]" ; %SEQ < , EXP > > | %LST < "[" "]" , EXP >
+LST     := %LST < %SEQ < EXP , > ; > | %LST < EXP , >
 ATOM    := NUM | NAME | SYM | ANS
 
 SYM     := ' NAME
@@ -171,9 +171,10 @@ def flatten_nested(tree):
             tree.extend(last[1:])
         for t in tree: flatten_nested(t)            
 
+@trace
 def simplify_tag(tree):  # also convert the tree into a pure tuple
     if type(tree) is list:
-        while len(tree) == 2 and type(tree[1]) is list:
+        while len(tree) == 2 and type(tree[1]) is list and tree[0] != 'ITEMS':
             tree = tree[1]
         return tuple(simplify_tag(t) for t in tree)
     return tree
@@ -184,7 +185,7 @@ def refactor_tree(tree: list):
     return simplify_tag(tree)
 
 
-@trace
+# @trace
 def sub_macro(tree, macros):
 
     def apply_macro(tree):
@@ -192,6 +193,8 @@ def sub_macro(tree, macros):
         pars, body = macros[name]
         args = args[1:]
         pars = [p[1] for p in pars[1:]]
+        if len(pars) != len(args):
+            raise SyntaxError(f'macro arity mismatch when applying {name}')
         bindings = dict(zip(pars, args))
         body = substitute(body, bindings)
         return sub_macro(body, macros)
@@ -287,11 +290,11 @@ def test_grammar():
     test_macro()
 
 
-if __name__ == "__main__":
-    test_grammar()
-
 grammar = calc_grammar(Grammar)
 with open('syntax tree/grammar.json', 'w') as gf:
     dump(grammar, gf, indent=2)
 
-pprint(grammar)
+
+if __name__ == "__main__":
+    # test_grammar()
+    pprint(grammar)

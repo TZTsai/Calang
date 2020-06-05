@@ -162,33 +162,25 @@ def check_parse(exp, expected):
                              'Actual: %s\n'%pformat(actual))
 
 def simple_egs():
-    # check_parse('3', (['EXP:NUM:INT', '3'], ''))
-    # check_parse('x', (['EXP:NAME', 'x'], ''))
-    # check_parse('1+2*3', (['EXP:OP_SEQ',
-    #                         ['NUM:INT', '1'],
-    #                         ['BOP', '+'],
-    #                         ['NUM:INT', '2'],
-    #                         ['BOP', '*'],
-    #                         ['NUM:INT', '3']],
-    #                     ''))
-    # check_parse('3!+4', (['EXP:OP_SEQ', ['UOP_IT', ['NUM:INT', '3'], ['RUOP', '!']], 
-    #                      ['BOP', '+'], ['NUM:INT', '4']], ''))
-    # check_parse('4!', (['EXP:UOP_IT', ['NUM:INT', '4'], ['RUOP', '!']], ''))
-    # check_parse('()', (['EXP:EXP:OP_SEQ'], ''))
-    check_parse('[]', (['EXP:LIST'], ''))
-    check_parse('[3, 4, 6]', (['EXP:LIST', ['EXP:NUM:INT', '3'], 
+    check_parse('3', (['EXP:NUM:INT', '3'], ''))
+    check_parse('x', (['EXP:NAME', 'x'], ''))
+    check_parse('1+2*3', (['EXP:OP_SEQ',
+                            ['NUM:INT', '1'],
+                            ['BOP', '+'],
+                            ['NUM:INT', '2'],
+                            ['BOP', '*'],
+                            ['NUM:INT', '3']],
+                        ''))
+    check_parse('3!+4', (['EXP:OP_SEQ', ['OP_ITEM', ['NUM:INT', '3'], ['ROP', '!']], 
+                         ['BOP', '+'], ['NUM:INT', '4']], ''))
+    check_parse('4!', (['EXP:OP_ITEM', ['NUM:INT', '4'], ['ROP', '!']], ''))
+    check_parse('[]', (['EXP:LST'], ''))
+    check_parse('[3, 4, 6]', (['EXP:LST', ['EXP:NUM:INT', '3'], 
                               ['EXP:NUM:INT', '4'], ['EXP:NUM:INT', '6']], ''))
-    check_parse('f()', (['EXP:APPLY', ['NAME', 'f'], ['ARG_LS']], ''))
+    check_parse('f[]', 0)
     check_parse('x := 5', (['DEF', ['NAME', 'x'], ['EXP:NUM:INT', '5']], ''))
-    check_parse('x := 3 * f(3, 5, 7)',
-                (['DEF', ['NAME', 'x'],
-                        ['EXP:OP_SEQ', ['NUM:INT', '3'],
-                                        ['BOP', '*'],
-                                        ['APPLY', ['NAME', 'f'],
-                                                ['ARG_LS',
-                                                    ['EXP:NUM:INT', '3'],
-                                                    ['EXP:NUM:INT', '5'],
-                                                    ['EXP:NUM:INT', '7']]]]],
+    check_parse('x := 3 * f[3, 5, 7]',
+                (0,
                 ''))
     check_parse("(x*('y+2))/3",
                 (['EXP:OP_SEQ',
@@ -201,37 +193,23 @@ def simple_egs():
                     ['BOP', '/'],
                     ['NUM:INT', '3']],
                 ''))
-    check_parse('f(x):=1/x',
+    check_parse('f[x]:=1/x',
                 (['DEF',
                     ['FUNC', ['NAME', 'f'], ['PAR_LS', ['NAME', 'x']]],
                     ['EXP:OP_SEQ', ['NUM:INT', '1'], ['BOP', '/'], ['NAME', 'x']]],
                 ''))
-    check_parse('f():=1',
+    check_parse('f[]:=1',
                 (['DEF', ['FUNC', ['NAME', 'f'], ['PAR_LS']], 
                  ['EXP:NUM:INT', '1']], ''))
-    check_parse('f(x, y):=x*y',
+    check_parse('f[x, y]:=x*y',
                 (['DEF',
                 ['FUNC', ['NAME', 'f'], ['PAR_LS', ['NAME', 'x'], ['NAME', 'y']]],
                 ['EXP:OP_SEQ', ['NAME', 'x'], ['BOP', '*'], ['NAME', 'y']]],
                 ''))
-    check_parse('[x+f(f(3*6)^2), [2, 6], g(3, 6)]',
-                (['EXP:LIST', 
-                ['EXP:OP_SEQ', 
-                        ['NAME', 'x'], 
-                        ['BOP', '+'], 
-                        ['APPLY', ['NAME', 'f'], 
-                            ['ARG_LS', 
-                                ['EXP:OP_SEQ', 
-                                    ['APPLY', ['NAME', 'f'], 
-                                        ['ARG_LS', ['EXP:OP_SEQ', ['NUM:INT', '3'], ['BOP', '*'], ['NUM:INT', '6']]]], 
-                                    ['BOP', '^'], 
-                                    ['NUM:INT', '2']]]]], 
-                ['EXP:LIST', ['EXP:NUM:INT', '2'], ['EXP:NUM:INT', '6']], 
-                ['EXP:APPLY', ['NAME', 'g'], 
-                    ['ARG_LS', ['EXP:NUM:INT', '3'], ['EXP:NUM:INT', '6']]]], 
-                ''))
+    check_parse('[x+f[f[3*6]^2], [2, 6], g[3, 6]]',
+                0)
     check_parse('[1,2;3,4]', 0)
-    check_parse('when(1, 3; 2, 4; 5)', 0)
+    check_parse('when(1: 2, 3: 4, 5)', 0)
 
 def ill_egs():
     print(parse('(3'))
