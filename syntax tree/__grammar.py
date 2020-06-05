@@ -6,7 +6,7 @@ import re
 from __builtins import binary_ops, unary_l_ops, unary_r_ops
 
 
-log.out = open('syntax tree/log.yaml', 'w')
+# log.out = open('syntax tree/log.yaml', 'w')
 # log.maxdepth = 1
 trace = disabled
 
@@ -122,7 +122,7 @@ def parse_grammar(type_, text, grammar=metagrammar):
             if tree is not None: result.append(tree)
         return result, text
 
-    @trace
+    # @trace
     @memo  # avoid parsing the same atom again
     def parse_atom(atom, text):
         if atom in grammar:
@@ -148,60 +148,70 @@ def calc_grammar(rules, whitespace=r'\s*'):
         name, body = tree[1][1], refactor_tree(tree[3])
         if name[0] == '%': 
             pars = tree[1][3]
-            M[name] = [refactor_tree(pars), body]  # MACRO
+            flatten_nested(pars)
+            M[name] = [pars, body]  # MACRO
         else: G[name] = body
     for obj in G: 
         G[obj] = sub_macro(G[obj], M)
     return G
 
 
+def prune(tree):
+    if type(tree) is list:
+        if tree[0] == 'GROUP':
+            tree[:] = tree[2]
+        if tree[0] == 'EXP' and len(tree) > 2:  # pop |
+            tree.pop(2)
+        for t in tree: prune(t)
+
+def flatten_nested(tree):
+    if type(tree) is list:
+        while tree[-1][0] == tree[0]:
+            last = tree.pop(-1)
+            tree.extend(last[1:])
+        for t in tree: flatten_nested(t)            
+
+def simplify_tag(tree):  # also convert the tree into a pure tuple
+    if type(tree) is list:
+        while len(tree) == 2 and type(tree[1]) is list:
+            tree = tree[1]
+        return tuple(simplify_tag(t) for t in tree)
+    return tree
+
 def refactor_tree(tree: list):
-
-    def prune(tree):
-        if type(tree) is list:
-            if tree[0] == 'GROUP':
-                tree[:] = tree[2]
-            if tree[0] == 'EXP' and len(tree) > 2:  # pop |
-                tree.pop(2)
-            for t in tree: prune(t)
-
-    def flatten_nested(tree):
-        if type(tree) is list:
-            while tree[-1][0] == tree[0]:
-                last = tree.pop(-1)
-                tree.extend(last[1:])
-            for t in tree: flatten_nested(t)            
-
-    def simplify_tag(tree):  # also convert the tree into a pure tuple
-        if type(tree) is list:
-            while len(tree) == 2 and type(tree[1]) is list:
-                tree = tree[1]
-            return tuple(simplify_tag(t) for t in tree)
-        return tree
-    
     prune(tree)
     flatten_nested(tree)
     return simplify_tag(tree)
 
 
-# @trace
-def sub_macro(tree, macros, bindings=None):
-    if type(tree) is tuple:
-        if tree[0] == 'MACRO':
-            name, args = tree[1], tree[3]
-            pars, body = macros[name]
-            args = args[1:]
-            pars = [p[1] for p in pars[1:]]
-            bindings = dict(zip(pars, args))
-            return sub_macro(body, macros, bindings)
+@trace
+def sub_macro(tree, macros):
+
+    def apply_macro(tree):
+        name, args = tree[1], tree[3]
+        pars, body = macros[name]
+        args = args[1:]
+        pars = [p[1] for p in pars[1:]]
+        bindings = dict(zip(pars, args))
+        body = substitute(body, bindings)
+        return sub_macro(body, macros)
+        
+    def substitute(tree, bindings):
+        if type(tree) is not tuple:
+            return tree
         elif tree[0] == 'VAR':
             var = tree[1]
-            try: return sub_macro(bindings[var], macros, bindings)
-            except: raise SyntaxError('failed to substitute the macro')
+            try: return bindings[var]
+            except KeyError: raise SyntaxError('unbound macro var: '+var)
         else:
-            return tuple(sub_macro(t, macros, bindings) for t in tree)
-    else:
+            return tuple(substitute(t, bindings) for t in tree)
+
+    if type(tree) is not tuple:
         return tree
+    elif tree[0] == 'MACRO':
+        return apply_macro(tree)
+    else:
+        return tuple(sub_macro(t, macros) for t in tree)
 
 
 ## tests
@@ -236,6 +246,9 @@ def test_grammar():
         check(parse_grammar,
         ('DEF', 'LC := ( BLIST | BIND * ) ? "->" EXP'),
         (['DEF', ['OBJ', 'LC'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BLIST']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"->"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]], ''))
+        check(parse_grammar,
+        ('DEF', '%M < $A > := $A $A +'),
+        (['DEF', ['MACRO', '%M', '<', ['VARS', ['VAR', '$A']], '>'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['VAR', '$A']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['VAR', '$A']]], ['OP', '+']]]]]], ''))
 
     def test_refactor():
         check(refactor_tree, 
@@ -281,4 +294,4 @@ grammar = calc_grammar(Grammar)
 with open('syntax tree/grammar.json', 'w') as gf:
     dump(grammar, gf, indent=2)
 
-# pprint(grammar)
+pprint(grammar)
