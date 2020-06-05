@@ -7,7 +7,7 @@ from __builtins import op_list
 
 
 log.out = open('syntax tree/log.yaml', 'w')
-trace.maxdepth = 5
+# trace.maxdepth = -1
 
 
 try:
@@ -17,7 +17,7 @@ except:
     from __grammar import grammar
 
 
-whitespace = re.compile(grammar[' '])
+whitespace = grammar[' ']
 op_start = ''.join(set(('\\' if op[0] in '-\\' else '') + op[0] 
                        for op in op_list))
 op_start = re.compile(f'{whitespace}[{op_start}]')
@@ -52,12 +52,14 @@ def calc_parse(type_, text):
         else:
             return parse_atom(tag, body[0], text)
 
+    # @trace
     def parse_alts(alts, text):
         for alt in alts:
             tree, rem = parse(alt, text)
             if rem is not None: return tree, rem
         return None, None
 
+    # @trace
     def parse_seq(seq, text):
         tree, rem = [], text
         # precheck if the keywords are in the text
@@ -76,7 +78,7 @@ def calc_parse(type_, text):
         if len(tree) == 1: tree = tree[0]
         return tree, rem
 
-    @memo
+    # @memo
     def parse_atom(tag, pattern, text):
         text = lstrip(text)
         if tag in ('STR', 'RE'):
@@ -92,8 +94,8 @@ def calc_parse(type_, text):
             except:
                 return None, None
             return pattern if tag == 'STR' else [], rem
-            
 
+    @trace
     @memo
     def parse_obj(obj, text):
         # precheck for the OP object
@@ -104,6 +106,7 @@ def calc_parse(type_, text):
         tree = process_tag(obj, tree)
         return tree, rem
 
+    # @trace
     def parse_op(item, op, text):
         tree, rem = [], text
         rep, maxrep = 0, (1 if op in '?-' else -1)
@@ -120,7 +123,7 @@ def calc_parse(type_, text):
         return tree, rem
 
     def process_tag(tag, tree):
-        prefixes = ['NUM', 'EXP']
+        prefixes = ['NUM', 'EXP', 'SYM']
         if type(tree) is str:
             tree = [tag, tree]
         try:
@@ -149,8 +152,8 @@ def check_parse(exp, expected):
                              'Actual: %s\n'%pformat(actual))
 
 def simple_egs():
-    check_parse('3', (['EXP:NUM:INT', '3'], ''))
-    check_parse('x', (['EXP:NAME', 'x'], ''))
+    # check_parse('3', (['EXP:NUM:INT', '3'], ''))
+    # check_parse('x', (['EXP:NAME', 'x'], ''))
     check_parse('3!+4', (['EXP:OP_SEQ', ['UOP_IT', ['NUM:INT', '3'], ['RUOP', '!']], 
                          ['BOP', '+'], ['NUM:INT', '4']], ''))
     check_parse('4!', (['EXP:UOP_IT', ['NUM:INT', '4'], ['RUOP', '!']], ''))
@@ -170,11 +173,23 @@ def simple_egs():
                                                     ['EXP:NUM:INT', '5'],
                                                     ['EXP:NUM:INT', '7']]]]],
                 ''))
-    pprint(parse("(x*('y+2))/3"))
+    check_parse("(x*('y+2))/3",
+                (['EXP:OP_SEQ',
+                    ['EXP:OP_SEQ',
+                        ['NAME', 'x'],
+                        ['BOP', '*'],
+                        ['EXP:OP_SEQ', ['SYM:NAME', 'y'], 
+                                        ['BOP', '+'], 
+                                        ['NUM:INT', '2']]],
+                    ['BOP', '/'],
+                    ['NUM:INT', '3']],
+                ''))
     pprint(parse('f(x):=1/x'))
+    pprint(parse('f():=1'))
+    pprint(parse('f(x, y):=x*y'))
     # print(parse('[x+f(f(3*6)^2), [2, 6], g(3, 6)]'))
 
-def bad_syntax_egs():
+def ill_egs():
     print(parse('(3'))
     print(parse('[3, f(4])'))
 

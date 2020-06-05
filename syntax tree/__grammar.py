@@ -32,7 +32,7 @@ ATOM    := OBJ | STR | RE | CHARS | VAR | MARK
 STR     := ".*?"
 RE      := /.*?/
 CHARS   := \[.*?\]
-MARK    := (?![>|)]) \S+
+MARK    := [^>|)\s]\S*
 """, '\n')
 
 ###  COMMENTS ON METAGRAMMAR  ###
@@ -45,7 +45,7 @@ MARK    := (?![>|)]) \S+
 Grammar = split(r"""
 LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) COMM ?
 
-DEF      := ( NAME | FUNC ) := EXP
+DEF      := ( FUNC | NAME ) := EXP
 NAME    := /[a-zA-Z\u0374-\u03FF][a-zA-Z\u0374-\u03FF\d_]*[?]?/
 FUNC    := NAME PARS
 PARS    := %LST < "(" ")" , NAME >
@@ -67,7 +67,7 @@ LAMBDA  := ( PARS | NAME ) -> - EXP
 
 UOP_IT  := LUOP ? ITEM RUOP ?
 ITEM    := GROUP | WHEN | APPLY | LIST | ATOM
-GROUP   := "(" EXP ")"
+GROUP   := "(" - EXP ")" -
 WHEN    := "when" "(" CASES ")"
 CASES   := %SEQ < ; ( EXP , EXP ) > ; EXP
 APPLY   := NAME ARG_LS
@@ -132,13 +132,8 @@ def parse_grammar(type_, text, grammar=metagrammar):
             return (None, None)
         else:
             m = re.match(tokenizer % atom, text)
-            if not m: 
-                return (None, None)
-            elif atom[:3] == '(?!' and atom[-1] == ')':
-                # negative lookahead, should not consume the space
-                return (None, text)
-            else: 
-                return (m[1], text[m.end():])
+            if not m: return (None, None)
+            else: return (m[1], text[m.end():])
 
     return parse_atom(type_, ' '+text)
 
@@ -285,4 +280,4 @@ grammar = calc_grammar(Grammar)
 with open('syntax tree/grammar.json', 'w') as gf:
     dump(grammar, gf, indent=2)
 
-pprint(grammar)
+# pprint(grammar)
