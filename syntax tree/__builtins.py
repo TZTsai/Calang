@@ -310,8 +310,7 @@ reconstruct(unary_r_ops, 'uni_r')
 
 op_list = set(binary_ops).union(set(unary_l_ops)).union(set(unary_r_ops))
 
-special_words = {'if', 'else', 'in', 'ENV', 'load', 'format', 'when',
-                 'import', 'del', 'lambda', 'with'}
+keywords = {'if', 'else', 'in', 'ENV', 'load', 'format', 'when', 'import', 'del'}
 
 builtins = {'add': add_, 'sub': sub_, 'mul': mul_, 'div': div_,
             'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos,

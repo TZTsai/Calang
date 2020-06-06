@@ -136,7 +136,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
 * List subscription  
 
   **Syntax**: `list`[`i1`, `i2`, ..., `in`]  
-  The list is sequentially subscripted by `i1`, `i2`, ... Each of the subscripts is either a natural number or an iterable value (List or Range). For an iterable subscript, it just maps each integer atom within it to the corresponding item in `list`.    
+  The list is sequentially subscripted by `i1`, `i2`, ... Each of the subscripts is either a natural number or an iterable value (List or Range). For an iterable subscript, it just maps each integer atom within it to the corresponding item in `list`.  
 
   **Examples**:  
   * [1, 2, 3][1]

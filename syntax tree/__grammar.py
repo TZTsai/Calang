@@ -17,7 +17,7 @@ def split(text: str, sep=None, maxsplit=-1):
 
 MetaGrammar = split(r"""
 DEF     := OBJ := EXP | MACRO := EXP
-OBJ     := [A-Z_]+
+OBJ     := [A-Z][A-Z_]*
 MACRO   := %[A-Z_]+ < VARS > | %[A-Z_]+ < ITEMS >
 VARS    := VAR VARS | VAR
 VAR     := \$[A-Z_]+
@@ -44,39 +44,46 @@ MARK    := [^>|)\s]\S*
 # MACRO:    used for sub_macro; will not exist in the processed grammar
 
 Grammar = split(r"""
-LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) [;] ? COMM ? | EMPTY
+LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) HIDE ? COMMENT ? | EMPTY
 
 DEF     := ( FUNC | NAME ) := EXP
 NAME    := /[a-zA-Z\u0374-\u03FF][a-zA-Z\u0374-\u03FF\d_]*[?]?/
 FUNC    := NAME PAR_LST
-PAR_LST := %LST < ( PAR_LST | NAME ) , >
+PAR_LST := %BKT < ( %SEQ < ( PAR_LST | NAME ) , > OPT_PAR ? ) >
+OPT_PAR := , [*] - NAME
 
-CONF    := conf NAME /\d+|on|off/ ?
-CMD     := "ENV" | "del" NAME +
-LOAD    := load NAME /-[tvp]/ *
-IMPORT  := import NAME /-[tvp]/ *
-COMM    := [#] /.*/
+CONF    := conf /\w+/ /\d+|on|off/ ?
+CMD     := "ENV" | "del" %SEQ < NAME , >
+LOAD    := load /\w+/ /-[tvp]/ *
+IMPORT  := import /\w+/ /-[tvp]/ *
+HIDE    := ;
+COMMENT := [#] - /.*/
 
 EXP     := LOCAL | LAMBDA | IF_ELSE | OP_SEQ
 IF_ELSE := OP_SEQ if OP_SEQ else EXP
 OP_SEQ  := %SEQ < OP_ITEM ( BOP | EMPTY ) >
+OP_ITEM := LOP ? ITEM ROP ?
 EMPTY   := //
 LOCAL   := ( BINDS | BIND ) -> EXP
 BINDS   := %GRP < %SEQ < BIND , > >
 BIND    := ( PAR_LST | NAME ) : EXP
 LAMBDA  := ( PAR_LST | NAME ) -> EXP
 
-OP_ITEM := LOP ? ITEM ROP ?
-ITEM    := WHEN | GROUP | LST | ATOM
-GROUP   := %GRP < EXP >
-WHEN    := "when" CASES
-CASES   := %GRP < ( %SEQ < CASE , > , EXP ) >
-CASE    := EXP : EXP
-LST     := %LST < %SEQ < EXP , > ; > | %LST < EXP , >
-ATOM    := NUM | NAME | SYM | ANS
+ITEM    := LST SUBSCR ? | WHEN | GROUP | NAME | SYM | ANS | NUM
+LST     := COMPRE | %LST < LS_ITEM , > | MAT_LST
+COMPRE  := %BKT < EXP [|] - %SEQ < CONSTR ( [|] - ) >
+CONSTR  := NAME in EXP ( and EXP ) ?
+MAT_LST := %LST < ROW_LST ; >
+ROW_LST := %SEQ < LS_ITEM , >
+LS_ITEM := [*] ? EXP
+SUBSCR  := %LST < ( SLICE | EXP ) , >
+SLICE   := ( EXP | EMPTY ) : ( EXP | EMPTY ) ( : ( EXP | EMPTY ) ) ? 
 
+GROUP   := %GRP < EXP >
+WHEN    := when %GRP < ( %SEQ < CASE , > , EXP ) >
+CASE    := EXP : EXP
 SYM     := ' NAME
-ANS     := /_(\d+|_*)/
+ANS     := _ /(\d+|_*)/
 
 NUM     := COMPLEX | FLOAT | INT | BIN | HEX
 COMPLEX := FLOAT [+-] FLOAT I
@@ -85,7 +92,8 @@ INT     := /-?\d+/
 BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
-%LST < $ITM $SEP >  := "[" - "]" - | "[" - %SEQ < $ITM $SEP > "]" -
+%LST < $ITM $SEP >  := %BKT < %SEQ < $ITM $SEP > >
+%BKT < $EXP >       := "[" - "]" - | "[" - $EXP "]" -
 %GRP < $EXP >       := "(" - $EXP ")" -
 %SEQ < $ITM $SEP >  := $ITM ( $SEP $ITM ) *
 """, '\n')
@@ -296,5 +304,5 @@ with open('syntax tree/grammar.json', 'w') as gf:
 
 
 if __name__ == "__main__":
-    # test_grammar()
-    pprint(grammar)
+    test_grammar()
+    # pprint(grammar)
