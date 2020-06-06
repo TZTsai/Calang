@@ -1,11 +1,11 @@
-LINE    := ( DEF | CMD | EXP ) HIDE ? COMMENT ? | EMPTY
+LINE    := ( CMD | DEF | EXP ) HIDE ? COMMENT ? | EMPTY
 
 DEF     := ( FUNC | FIELD ) := EXP
-FUNC    := FIELD PAR_LST
+FUNC    := FIELD PARS
 FIELD   := %SEQ < NAME ( . / ) >   ## '/' forces no space between
 NAME    := [\u0374-\u03FFa-zA-Z] / /[a-zA-Z\d_]*[?]?/   ## can begin with a Greek letter
-PAR_LST := "[" - "]" - | %BKT < ( %SEQ < ( PAR_LST | NAME ) , > OPT_PAR ? ) >
-OPT_PAR := , [*] - NAME
+PARS    := %BKT < ( %SEQ < ( BIND | PARS | NAME ) , > ? EXT_PAR ? ) >
+EXT_PAR := , [*] - NAME
 
 CMD     := CONF | DIR | DEL | LOAD | IMPORT
 CONF    := conf /\w+/ /\d+|on|off/ ?
@@ -16,26 +16,25 @@ IMPORT  := import /\w+/ /-[tvp]/ *
 HIDE    := ;
 COMMENT := [#] - /.*/
 
-EXP     := MAP | SUBS | IF_ELSE | OP_SEQ
-MAP     := ( PAR_LST | NAME ) -> EXP
-SUBS    := ( BINDS | FIELD ) -> EXP
+EXP     := MAP | ENV | IF_ELSE | OP_SEQ
+MAP     := ( PARS | NAME ) -> EXP
+ENV     := ( BINDS | FIELD ) :: EXP
+BINDS   := %GRP < %SEQ < BIND , > >
+BIND    := ( PARS | NAME ) : EXP
 IF_ELSE := OP_SEQ if OP_SEQ else EXP
 OP_SEQ  := %SEQ < TERM ( BOP | EMPTY ) > EXEC ?
 TERM    := LOP ? ITEM ROP ?
 EMPTY   := //
-BINDS   := %GRP < %SEQ < BIND , > > | BIND
-BIND    := ( PAR_LST | NAME ) : EXP
 
-ITEM    := WHEN | GROUP | FIELD | SYM | ANS | NUM | LST | SUBSCR
-LST     := "[" - "]" - | GEN_LST | %LST < LS_ITEM , > | MAT_LST
+ITEM    := WHEN | BINDS | GROUP | FIELD | SYM | ANS | NUM | LST
+LST     := GEN_LST | %LST < LS_ITEM , > | MAT_LST
 GEN_LST := %BKT < ( EXP [|] - CONSTRS ) >
 CONSTRS := %SEQ < CONSTR ( [|] - ) >
 CONSTR  := NAME in EXP ( and EXP ) ?
 MAT_LST := %LST < ROW_LST ; >
 ROW_LST := %SEQ < LS_ITEM , >
-LS_ITEM := [*] ? EXP
-SUBSCR  := %LST < ( SLICE | EXP ) , >
-SLICE   := ( EXP | EMPTY ) : ( EXP | EMPTY ) ( : ( EXP | EMPTY ) ) ? 
+LS_ITEM := SLICE | [*] ? EXP
+SLICE   := ( OP_SEQ | EMPTY ) : ( OP_SEQ | EMPTY ) ( : ( OP_SEQ | EMPTY ) ) ? 
 
 GROUP   := %GRP < EXP >
 WHEN    := when %GRP < ( %SEQ < CASE , > , EXP ) >
@@ -49,7 +48,7 @@ REAL    := /-?\d+(\.\d*)?/ ( [eE] - /-?\d+/ ) ?
 BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
-%LST < $ITM $SEP >  := %BKT < %SEQ < $ITM $SEP > >
+%LST < $ITM $SEP >  := %BKT < ( %SEQ < $ITM $SEP > ? ) >
 %BKT < $EXP >       := "[" - $EXP "]" -
 %GRP < $EXP >       := "(" - $EXP ")" -
 %SEQ < $ITM $SEP >  := $ITM ( $SEP $ITM ) *

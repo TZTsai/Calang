@@ -83,24 +83,33 @@ class CalcStack:
 class Env(dict):
     def __init__(self, val=None, binds=None, parent=None):
         if binds: self.update(binds)
-        self._val = self if val is None else val
-        self._parent = parent
+        self._this = self if val is None else val
+        self._super = parent
         self._depth = 0 if parent is None else parent._depth + 1
 
     def __getattr__(self, name):
         if name in self: 
             return self[name]
-        if self._parent: 
-            return getattr(self._parent, name)
+        if self._super: 
+            return getattr(self._super, name)
         raise KeyError
 
-    def child(self, val=None, binds=None):
+    def __setattr__(self, name, value):
+        if name[0] == '_':
+            super().__setattr__(name, value)
+        else:
+            self[name] = value
+
+    def delete(self, name):
+        self.pop(name)
+
+    def __call__(self, val=None, binds=None):
         return Env(val, binds, self)
 
 
 class function:
 
-    evaluator = lambda *args: None  # to be set later
+    eval = lambda *args: None  # to be set later
     vararg_char = "'"
 
     def _default_apply(self, *args):
@@ -113,7 +122,7 @@ class function:
 
         bindings = dict(zip(self._params, args))
         env = self._env.make_subEnv(bindings)
-        result = function.evaluator(self._body, env)
+        result = function.eval(self._body, env)
 
         if config.debug and self._name:
             print(f"{'  '*env.frame}{self._name}({', '.join(map(str, args))}) = {result}")
