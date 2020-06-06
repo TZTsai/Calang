@@ -1,4 +1,4 @@
-class Stack:
+class stack:
     def __init__(self):
         self.lst = []
 
@@ -6,12 +6,12 @@ class Stack:
         self.lst.append(obj)
 
     def pop(self):
-        assert(not self.empty())
+        assert not self.empty()
         return self.lst.pop()
 
-    def peek(self):
-        if self.empty(): return None
-        else: return self.lst[-1]
+    def peek(self, i=-1):
+        try: return self.lst[i]
+        except: return None
 
     def empty(self):
         return self.lst == []
@@ -23,110 +23,79 @@ class Stack:
 class Op:
     def __init__(self, type, function, priority):
         self.type = type
-        self.function = function
-        self.priority = priority
-
-    def isStopMark(self):
-        return self.type == 'stop'
+        self.func = function
+        self.prior = priority
 
     def __call__(self, *args):
-        return self.function(*args)
+        return self.func(*args)
 
     def __repr__(self):
-        if self.type == 'stop':
-            return 'stop'
-        try: return self.function.str
-        except: return f"Op({self.type}, {self.function}, {self.priority})"
+        try: return self.func.str
+        except: return f"Op({self.type}, {self.func}, {self.prior})"
 
 
-class CalcMachine:
+class CalcStack:
     def __init__(self):
-        self.vals = Stack()
-        self.ops = Stack()
+        self._stk = stack()
+        self._next = 'val'
 
-    def __calc(self):  # carry out a single operation
-        op = self.ops.pop()
-        if op.isStopMark():
-            return 'stop'
-        elif op.type == 'uni_l':
-            self.vals.push(op(self.vals.pop()))
+    def _calc(self):  # carry out a single operation
+        v2 = self._stk.pop()
+        op = self._stk.pop()
+        v1 = self._stk.pop()
+        self._stk.push(op(v1, v2))
+
+    @property
+    def _last_op(self):
+        if self._next == 'val':
+            return self._stk.peek()
         else:
-            n2 = self.vals.pop()
-            n1 = self.vals.pop()
-            self.vals.push(op(n1, n2))
-
-    def begin(self):
-        self.ops.push(Op('stop', None, -99))
-        # add a stop_mark in op_stack
+            return self._stk.peek(-2)
 
     def reset(self):
-        self.ops.clear()
-        self.vals.clear()
+        self._stk.clear()
+
+    def empty(self):
+        return self._stk.empty()
 
     def calc(self):
         # calculate until the stack is empty or reaches a stop_mark
-        while not self.ops.empty() and self.__calc() != 'stop':
-            pass
-        if not self.vals.empty():
-            return self.vals.pop()
+        while len(self._stk) > 1: self._calc()
+        try: 
+            return self._stk.pop()
+        except AssertionError:
+            raise RuntimeError('CalcStack Error: no value left')
 
-    def push_val(self, val):
-        self.vals.push(val)
-
-    def push_op(self, op):
-        if op.type == 'uni_r':
-            if self.vals.empty():
-                raise SyntaxError
-            self.vals.push(op(self.vals.pop()))
-            return
-        while not (self.ops.empty() or op.isStopMark()):
-            last_op = self.ops.peek()
-            if op.priority <= last_op.priority:
-                try: self.__calc()
-                except AssertionError: raise SyntaxError('invalid expression!')
-            else: break
-        self.ops.push(op)
+    def push(self, val):
+        if isinstance(val, Op) and self._next == 'op':
+            while not self.empty():
+                if val.prior <= self._last_op.priority: self._calc()
+                else: break
+            self._stk.push(val)
+            self._next = 'val'
+        elif not isinstance(val, Op) and self._next == 'val':
+            self._stk.push(val)
+            self._next = 'op'
+        else:
+            raise RuntimeError('CalcStack Error: illegal push')
 
 
-class Env:
-    def __init__(self, bindings=None, parent=None):
-        self.parent = parent
-        self.frame = 0 if parent is None else parent.frame + 1
-        self.bindings = {}
-        if bindings: self.bindings.update(bindings)
+class Env(dict):
+    def __init__(self, val=None, binds=None, parent=None):
+        if binds: self.update(binds)
+        self._val = self if val is None else val
+        self._parent = parent
+        self._depth = 0 if parent is None else parent._depth + 1
 
-    def __setitem__(self, name, val):
-        self.bindings[name] = val
+    def __getattr__(self, name):
+        if name in self: 
+            return self[name]
+        if self._parent: 
+            return getattr(self._parent, name)
+        raise KeyError
 
-    def __getitem__(self, name):
-        try:
-            return self.bindings[name]
-        except KeyError:
-            if self.parent: return self.parent[name]
-            else: raise KeyError
-        
-    def __contains__(self, name):
-        try: self[name]
-        except: return False
-        return True
-
-    def all_bindings(self):
-        result = dict()
-        env = self
-        while env:
-            for name, val in env.bindings.items():
-                if name not in result: result[name] = val
-            env = env.parent
-        return result
-
-    def remove(self, name):
-        self.bindings.pop(name)
-
-    def update(self, other):
-        self.bindings.update(other.bindings)
-
-    def make_subEnv(self, bindings=None):
-        return Env(bindings, self)
+    def child(self, val=None, binds=None):
+        return Env(val, binds, self)
 
 
 class function:
@@ -225,45 +194,6 @@ class Range:
         
     def __iter__(self):
         return iter(self.range)
-
-
-# class struct(dict):
-
-#     class obj(dict):
-#         def __init__(self, val, class_):
-#             self.val = val
-#             self._class = class_
-
-#         def __getattr__(self, name):
-#             return self[name]
-        
-#         def __setattr__(self, name, value):
-#             self[name] = value
-
-#     def __init__(self, attributes, constructor=None, name='no-name', parent=None):
-#         self.attributes = attributes
-#         self.name = name
-#         self.parent = parent
-#         if constructor is None and parent: 
-#             self.constructor = parent.constructor
-#         else: 
-#             self.constructor = constructor
-
-#     def __getattr__(self, name):
-#         return self[name]
-    
-#     def __setattr__(self, name, value):
-#         self[name] = value
-
-#     def __call__(self, *args):
-#         try: return self[self.name](*args)
-#         except: raise RuntimeError('cannot construct object "%s"'%self.name)
-
-#     def make_subClass(self, name=None):
-#         return struct(name, self)
-
-#     def __repr__(self):
-#         return f'<{self.parent.name}: {self.name}>'
 
 
 class config:

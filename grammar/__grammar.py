@@ -6,7 +6,7 @@ import re
 from __builtins import binary_ops, unary_l_ops, unary_r_ops
 
 
-log.out = open('syntax tree/log.yaml', 'w')
+log.out = open('grammar/log.yaml', 'w')
 # log.maxdepth = 1
 # trace = disabled
 
@@ -17,14 +17,14 @@ def split(text: str, sep=None, maxsplit=-1):
 
 MetaGrammar = split(r"""
 DEF     := OBJ := EXP | MACRO := EXP
-OBJ     := [A-Z][A-Z_]*
+OBJ     := [A-Z_]+
 MACRO   := %[A-Z_]+ < VARS > | %[A-Z_]+ < ITEMS >
 VARS    := VAR VARS | VAR
 VAR     := \$[A-Z_]+
 EXP     := ALT [|] EXP | ALT
 ALT     := ITEM_OP ALT | ITEM_OP
 ITEM_OP := ITEM OP | ITEM
-OP      := [*?+-](?=\s|$)
+OP      := [*?/+-](?=\s|$)
 ITEM    := GROUP | MACRO | ATOM
 ITEMS   := ITEM ITEMS | ITEM
 GROUP   := [(] EXP [)]
@@ -38,67 +38,16 @@ MARK    := [^>|)\s]\S*
 ###  COMMENTS ON METAGRAMMAR  ###
 # OP:       * for 0 or more matches, + for 1 or more, ? for 0 or 1, 
 #           - for 1 match but it will not be included in the result;
+#           / for no space between its prev and its next items
 #           if more than one items are matched, merge them into the seq
 # MARK:     a token in the grammar that will be matched but not included in the
 #           result; be cautious of conflicts with other symbols in MetaGrammar
 # MACRO:    used for sub_macro; will not exist in the processed grammar
 
-Grammar = split(r"""
-LINE    := ( DEF | CONF | CMD | LOAD | IMPORT | EXP ) HIDE ? COMMENT ? | EMPTY
 
-DEF     := ( FUNC | NAME ) := EXP
-NAME    := /[a-zA-Z\u0374-\u03FF][a-zA-Z\u0374-\u03FF\d_]*[?]?/
-FUNC    := NAME PAR_LST
-PAR_LST := %BKT < ( %SEQ < ( PAR_LST | NAME ) , > OPT_PAR ? ) >
-OPT_PAR := , [*] - NAME
-
-CONF    := conf /\w+/ /\d+|on|off/ ?
-CMD     := "ENV" | "del" %SEQ < NAME , >
-LOAD    := load /\w+/ /-[tvp]/ *
-IMPORT  := import /\w+/ /-[tvp]/ *
-HIDE    := ;
-COMMENT := [#] - /.*/
-
-EXP     := LOCAL | LAMBDA | IF_ELSE | OP_SEQ
-IF_ELSE := OP_SEQ if OP_SEQ else EXP
-OP_SEQ  := %SEQ < OP_ITEM ( BOP | EMPTY ) >
-OP_ITEM := LOP ? ITEM ROP ?
-EMPTY   := //
-LOCAL   := ( BINDS | BIND ) -> EXP
-BINDS   := %GRP < %SEQ < BIND , > >
-BIND    := ( PAR_LST | NAME ) : EXP
-LAMBDA  := ( PAR_LST | NAME ) -> EXP
-
-ITEM    := LST SUBSCR ? | WHEN | GROUP | NAME | SYM | ANS | NUM
-LST     := COMPRE | %LST < LS_ITEM , > | MAT_LST
-COMPRE  := %BKT < EXP [|] - %SEQ < CONSTR ( [|] - ) >
-CONSTR  := NAME in EXP ( and EXP ) ?
-MAT_LST := %LST < ROW_LST ; >
-ROW_LST := %SEQ < LS_ITEM , >
-LS_ITEM := [*] ? EXP
-SUBSCR  := %LST < ( SLICE | EXP ) , >
-SLICE   := ( EXP | EMPTY ) : ( EXP | EMPTY ) ( : ( EXP | EMPTY ) ) ? 
-
-GROUP   := %GRP < EXP >
-WHEN    := when %GRP < ( %SEQ < CASE , > , EXP ) >
-CASE    := EXP : EXP
-SYM     := ' NAME
-ANS     := _ /(\d+|_*)/
-
-NUM     := COMPLEX | FLOAT | INT | BIN | HEX
-COMPLEX := FLOAT [+-] FLOAT I
-FLOAT   := INT /\.\d*/ ( [eE] INT ) ?
-INT     := /-?\d+/
-BIN     := /0b[01]+/
-HEX     := /0x[0-9a-fA-F]+/
-
-%LST < $ITM $SEP >  := %BKT < %SEQ < $ITM $SEP > >
-%BKT < $EXP >       := "[" - "]" - | "[" - $EXP "]" -
-%GRP < $EXP >       := "(" - $EXP ")" -
-%SEQ < $ITM $SEP >  := $ITM ( $SEP $ITM ) *
-""", '\n')
-
-
+GrammarStr = open('grammar/grammar.txt', 'r').read()
+GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment
+Grammar = split(GrammarStr, '\n')
 # add syntax for operations
 bin_op, unl_op, unr_op = ['"' + '" | "'.join(ops) + '"' 
                           for ops in (binary_ops, unary_l_ops, unary_r_ops)]
@@ -130,7 +79,7 @@ def parse_grammar(type_, text, grammar=metagrammar):
             if tree is not None: result.append(tree)
         return result, text
 
-    # @trace
+    @trace
     @memo  # avoid parsing the same atom again
     def parse_atom(atom, text):
         if atom in grammar:
@@ -151,6 +100,7 @@ def calc_grammar(rules, whitespace=r'\s*'):
     G = {' ': whitespace}
     M = {}
     for rule in rules:
+        rule = rule.split('##', 1)[0].strip()
         tree, rem = parse_grammar('DEF', rule)
         assert tree[0] == 'DEF' and not rem
         name, body = tree[1][1], refactor_tree(tree[3])
@@ -159,8 +109,7 @@ def calc_grammar(rules, whitespace=r'\s*'):
             flatten_nested(pars)
             M[name] = [pars, body]  # MACRO
         else: G[name] = body
-    for obj in G: 
-        G[obj] = sub_macro(G[obj], M)
+    post_process(G, M)
     return G
 
 
@@ -194,7 +143,7 @@ def refactor_tree(tree: list):
 
 
 # @trace
-def sub_macro(tree, macros):
+def post_process(grammar, macros):
 
     def apply_macro(tree):
         name, args = tree[1], tree[3]
@@ -205,7 +154,7 @@ def sub_macro(tree, macros):
             raise SyntaxError(f'macro arity mismatch when applying {name}')
         bindings = dict(zip(pars, args))
         body = substitute(body, bindings)
-        return sub_macro(body, macros)
+        return proc_tree(body)
         
     def substitute(tree, bindings):
         if type(tree) is not tuple:
@@ -217,12 +166,18 @@ def sub_macro(tree, macros):
         else:
             return tuple(substitute(t, bindings) for t in tree)
 
-    if type(tree) is not tuple:
-        return tree
-    elif tree[0] == 'MACRO':
-        return apply_macro(tree)
-    else:
-        return tuple(sub_macro(t, macros) for t in tree)
+    def proc_tree(tree):
+        if type(tree) is not tuple:
+            return tree
+        elif tree[0] == 'MACRO':
+            return apply_macro(tree)
+        elif tree[0] == 'OBJ' and tree[1] not in grammar:
+            return 'MARK', tree[1]
+        else:
+            return tuple(proc_tree(t) for t in tree)
+
+    for obj, tree in grammar.items():
+        grammar[obj] = proc_tree(tree)
 
 
 ## tests
@@ -274,24 +229,7 @@ def test_grammar():
                 '%LST < $OPN $CLS $SEP $ITM > := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS',
                 '%SEQ < $SEP $ITM >           := $ITM ? ( $SEP $ITM ) *']
         check(calc_grammar, [rules],
-{' ': '\\s*',
- 'LIST': ('EXP',
-          ('ALT', ('STR', '"["'), ('STR', '"]"')),
-          ('ALT',
-           ('STR', '"["'),
-           ('ALT',
-            ('ITEM_OP', ('RE', '/.*/'), ('OP', '?')),
-            ('ITEM_OP', ('ALT', ('MARK', ','), ('RE', '/.*/')), ('OP', '*'))),
-           ('ITEM_OP',
-            ('ALT',
-             ('MARK', ';'),
-             ('ALT',
-              ('ITEM_OP', ('RE', '/.*/'), ('OP', '?')),
-              ('ITEM_OP',
-               ('ALT', ('MARK', ','), ('RE', '/.*/')),
-               ('OP', '*')))),
-            ('OP', '*')),
-           ('STR', '"]"')))})
+              {' ': '\\s*', 'LIST': ('EXP', ('ALT', ('STR', '"["'), ('STR', '"]"')), ('ALT', ('STR', '"["'), ('ALT', ('ITEM_OP', ('RE', '/.*/'), ('OP', '?')), ('ITEM_OP', ('ALT', ('MARK', ','), ('RE', '/.*/')), ('OP', '*'))), ('ITEM_OP', ('ALT', ('MARK', ';'), ('ALT', ('ITEM_OP', ('RE', '/.*/'), ('OP', '?')), ('ITEM_OP', ('ALT', ('MARK', ','), ('RE', '/.*/')), ('OP', '*')))), ('OP', '*')), ('STR', '"]"')))})
 
     test_parse()
     test_refactor()
@@ -299,10 +237,8 @@ def test_grammar():
 
 
 grammar = calc_grammar(Grammar)
-with open('syntax tree/grammar.json', 'w') as gf:
-    dump(grammar, gf, indent=2)
-
+dump(grammar, open('grammar/grammar.json', 'w'), indent=2)
 
 if __name__ == "__main__":
     test_grammar()
-    # pprint(grammar)
+    pprint(grammar)
