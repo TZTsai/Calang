@@ -3,7 +3,7 @@ from myutils import trace, log
 from pprint import pprint
 from json import dump
 import re
-from __builtins import binary_ops, unary_l_ops, unary_r_ops
+from _builtins import binary_ops, unary_l_ops, unary_r_ops
 
 
 log.out = open('grammar/log.yaml', 'w')
