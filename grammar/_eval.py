@@ -1,14 +1,15 @@
 from __parser import get_list, get_params, get_name, get_token, split
 from __builtins import *
-from __classes import CalcMachine
+from __classes import CalcMachine, Env
 
 
 history = []
 CM = CalcMachine()
-my_globals = {}
 
 
-def eval_list(exp, env):
+def eval_list(tr, env):
+    assert tr[0] == 'LST'
+    
 
     comprehension = get_list(exp, '|')
     if len(comprehension) > 1:
@@ -72,8 +73,6 @@ def eval_comprehension(comprehension, env):
     return tuple(gen_vals(exp, constraints))
 
 
-def eval_when(exp, env):
-    "Support short circuit."
     cases = [split(case, ',', 2) for case in get_list(exp, ';')]
     def value(exp): return calc_eval(exp, env)
     try:
@@ -103,7 +102,7 @@ def eval_ans_id(token):
         try:
             return int(token[1:])
         except:
-            raise SyntaxError('invalid history expression!')
+            raise SyntaxError('invalid history index!')
 
 
 def make_closure(bindings, env, delim='='):
@@ -117,14 +116,6 @@ def make_closure(bindings, env, delim='='):
 def eval_closure(bindings, exp, env, delim='='):
     return calc_eval(exp, make_closure(bindings, env, delim))
 
-
-def eval_singlevar_closure(token, exp, env):
-    try:
-        valexp, exp = split(exp, '->', 2)
-    except ValueError:
-        raise SyntaxError('invalid use of colon')
-    binding = token + valexp
-    return eval_closure([binding], exp, env, delim=':')
 
 
 def add_bindings(lexp, rexp, env):
@@ -254,8 +245,6 @@ def calc_eval(exp, env):
             type_, token, exp = get_token(exp)
             if type_ != 'paren':
                 raise SyntaxError('invalid when expression')
-            CM.push_val(eval_when(token, env))
-        elif type_ == 'paren':
             lst = get_list(token)
             if next_type == 'arrow':
                 if lst and ':' in lst[0]:  # local variables

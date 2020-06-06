@@ -19,7 +19,7 @@ except:
 op_starts = ''.join(set(op[0] for op in op_list))
 
 
-def calc_parse(type_, text, grammar=grammar):
+def calc_parse(text, tag='LINE', grammar=grammar):
 
     whitespace = grammar[' ']
     no_space = False
@@ -54,7 +54,7 @@ def calc_parse(type_, text, grammar=grammar):
             if rem is not None: return tree, rem
         return None, None
 
-    @trace
+    # @trace
     def parse_seq(seq, text):
         tree, rem = [], text
 
@@ -99,7 +99,7 @@ def calc_parse(type_, text, grammar=grammar):
                 return None, None
             return pattern if tag == 'STR' else [], rem
 
-    obj_marks = {'DEF': ':=', 'MAP': '->', 'ENV': '::'}
+    obj_marks = {'DEF': ':=', 'MAP': '->', 'CLS': '::'}
     @trace
     @memo
     def parse_obj(obj, text):
@@ -166,35 +166,25 @@ def calc_parse(type_, text, grammar=grammar):
         else:
             return [tag] + tree
 
-    return parse_obj(type_, text)
-
-
-def parse(exp):
-    return calc_parse('LINE', exp)
-
+    return parse_obj(tag, text)
 
 
 ## tests ##
 
-def comp_list(l1, l2):
-    if type(l1) not in (tuple, list):
-        if l1 != l2: print(l1, l2)
-    elif len(l1) != len(l2):
-        print(l1, '\n', l2)
-    else:
-        for i1, i2 in zip(l1, l2):
-            comp_list(i1, i2)
+def repl():
+    while True:
+        exp = input('>>> ')
+        pprint(calc_parse(exp))
 
 def check_parse(exp, expected, termin=1):
-    actual = parse(exp)
+    actual = calc_parse(exp)
     if actual != expected:
         # comp_list(expected, actual)
-        print('Wrong Answer of parse(%s)\n'%exp +
+        print('Wrong Answer of calc_parse(%s)\n'%exp +
                              'Expected: %s\n'%pformat(expected) +
                              'Actual: %s\n'%pformat(actual))
         if termin: raise AssertionError
         
-
 def simple_tests():
     check_parse('3', (['NUM:REAL', '3'], ''))
     check_parse('x', (['NAME', 'x'], ''))
@@ -231,7 +221,7 @@ def simple_tests():
                 (['MAP', ['PARS', ['NAME', 'a'], ['EXT_PAR:NAME', 'r']], ['LST', ['NAME', 'a'], ['LS_ITEM', '*', ['NAME', 'r']]]], ''))
     check_parse('(x: 2)', (['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ''))
     check_parse('(x:1, y:2) :: x+y',
-                (['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], ''))
+                (['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], ''))
     check_parse('l[x:2]', 
                 (['OP_SEQ', ['NAME', 'l'], ['EMPTY'], ['LST', ['SLICE', ['NAME', 'x'], ['NUM:REAL', '2']]]], ''))
     check_parse('[x|x in [1,2,3]]',
@@ -254,7 +244,7 @@ def more_tests():
     check_parse('f[x, y, z: 0, *w] := 1', 
                 (['DEF', ['FUNC', ['NAME', 'f'], ['PARS', ['NAME', 'x'], ['NAME', 'y'], ['BIND', ['NAME', 'z'], ['NUM:REAL', '0']], ['EXT_PAR:NAME', 'w']]], ['NUM:REAL', '1']], '') )
     check_parse('[3, 4] if x=3 else (x: 2, y: 3) :: x+y',
-                (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], ''))
+                (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], ''))
     check_parse('[x+f[f[3*6]^2], [2, 6], g[3, 6]]',
                 (['LST', ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'f'], ['EMPTY'], ['LST', ['OP_SEQ', ['NAME', 'f'], ['EMPTY'], ['LST', ['OP_SEQ', ['NUM:REAL', '3'], ['BOP', '*'], ['NUM:REAL', '6']]], ['BOP', '^'], ['NUM:REAL', '2']]]], ['LST', ['NUM:REAL', '2'], ['NUM:REAL', '6']], ['OP_SEQ', ['NAME', 'g'], ['EMPTY'], ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '6']]]], ''))
     check_parse('[x, [y, *z], *w] -> [x+y+z, w]',
@@ -280,4 +270,6 @@ def test():
     more_tests()
     test_ill()
 
-test()
+if __name__ == "__main__":
+    test()
+    repl()

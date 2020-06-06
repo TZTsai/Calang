@@ -44,8 +44,8 @@ parse_obj('LINE', '3'):
       parse_obj('MAP', '3'):
       parse_obj('MAP', '3') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '3'):
-      parse_obj('ENV', '3') -> (None, None)
+      parse_obj('CLS', '3'):
+      parse_obj('CLS', '3') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '3'):
         ## 4 ##
@@ -206,8 +206,8 @@ parse_obj('LINE', 'x'):
       parse_obj('MAP', 'x'):
       parse_obj('MAP', 'x') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'x'):
-      parse_obj('ENV', 'x') -> (None, None)
+      parse_obj('CLS', 'x'):
+      parse_obj('CLS', 'x') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'x'):
         ## 4 ##
@@ -338,8 +338,8 @@ parse_obj('LINE', '2.4e-18'):
       parse_obj('MAP', '2.4e-18'):
       parse_obj('MAP', '2.4e-18') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '2.4e-18'):
-      parse_obj('ENV', '2.4e-18') -> (None, None)
+      parse_obj('CLS', '2.4e-18'):
+      parse_obj('CLS', '2.4e-18') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '2.4e-18'):
         ## 4 ##
@@ -503,8 +503,8 @@ parse_obj('LINE', '2.4-1e-10I'):
       parse_obj('MAP', '2.4-1e-10I'):
       parse_obj('MAP', '2.4-1e-10I') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '2.4-1e-10I'):
-      parse_obj('ENV', '2.4-1e-10I') -> (None, None)
+      parse_obj('CLS', '2.4-1e-10I'):
+      parse_obj('CLS', '2.4-1e-10I') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '2.4-1e-10I'):
         ## 4 ##
@@ -680,8 +680,8 @@ parse_obj('LINE', '1+2*3'):
       parse_obj('MAP', '1+2*3'):
       parse_obj('MAP', '1+2*3') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '1+2*3'):
-      parse_obj('ENV', '1+2*3') -> (None, None)
+      parse_obj('CLS', '1+2*3'):
+      parse_obj('CLS', '1+2*3') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '1+2*3'):
         ## 4 ##
@@ -1043,8 +1043,8 @@ parse_obj('LINE', '3!+4'):
       parse_obj('MAP', '3!+4'):
       parse_obj('MAP', '3!+4') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '3!+4'):
-      parse_obj('ENV', '3!+4') -> (None, None)
+      parse_obj('CLS', '3!+4'):
+      parse_obj('CLS', '3!+4') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '3!+4'):
         ## 4 ##
@@ -1307,8 +1307,8 @@ parse_obj('LINE', '4!'):
       parse_obj('MAP', '4!'):
       parse_obj('MAP', '4!') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '4!'):
-      parse_obj('ENV', '4!') -> (None, None)
+      parse_obj('CLS', '4!'):
+      parse_obj('CLS', '4!') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '4!'):
         ## 4 ##
@@ -1478,8 +1478,8 @@ parse_obj('LINE', '[]'):
       parse_obj('MAP', '[]'):
       parse_obj('MAP', '[]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[]'):
-      parse_obj('ENV', '[]') -> (None, None)
+      parse_obj('CLS', '[]'):
+      parse_obj('CLS', '[]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[]'):
         ## 4 ##
@@ -1579,8 +1579,8 @@ parse_obj('LINE', '[]'):
                                 parse_obj('MAP', ']'):
                                 parse_obj('MAP', ']') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', ']'):
-                                parse_obj('ENV', ']') -> (None, None)
+                                parse_obj('CLS', ']'):
+                                parse_obj('CLS', ']') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', ']'):
                                   ## 17 ##
@@ -1808,8 +1808,8 @@ parse_obj('LINE', '[2]'):
       parse_obj('MAP', '[2]'):
       parse_obj('MAP', '[2]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[2]'):
-      parse_obj('ENV', '[2]') -> (None, None)
+      parse_obj('CLS', '[2]'):
+      parse_obj('CLS', '[2]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[2]'):
         ## 4 ##
@@ -1909,8 +1909,8 @@ parse_obj('LINE', '[2]'):
                                 parse_obj('MAP', '2]'):
                                 parse_obj('MAP', '2]') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', '2]'):
-                                parse_obj('ENV', '2]') -> (None, None)
+                                parse_obj('CLS', '2]'):
+                                parse_obj('CLS', '2]') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', '2]'):
                                   ## 17 ##
@@ -2246,8 +2246,8 @@ parse_obj('LINE', '[3, 4, 6]'):
       parse_obj('MAP', '[3, 4, 6]'):
       parse_obj('MAP', '[3, 4, 6]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[3, 4, 6]'):
-      parse_obj('ENV', '[3, 4, 6]') -> (None, None)
+      parse_obj('CLS', '[3, 4, 6]'):
+      parse_obj('CLS', '[3, 4, 6]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[3, 4, 6]'):
         ## 4 ##
@@ -2347,8 +2347,8 @@ parse_obj('LINE', '[3, 4, 6]'):
                                 parse_obj('MAP', '3, 4, 6]'):
                                 parse_obj('MAP', '3, 4, 6]') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', '3, 4, 6]'):
-                                parse_obj('ENV', '3, 4, 6]') -> (None, None)
+                                parse_obj('CLS', '3, 4, 6]'):
+                                parse_obj('CLS', '3, 4, 6]') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', '3, 4, 6]'):
                                   ## 17 ##
@@ -2825,8 +2825,8 @@ parse_obj('LINE', '[3, 4, 6]'):
                                     parse_obj('MAP', ' 4, 6]'):
                                     parse_obj('MAP', ' 4, 6]') -> (None, None)
                                     ## 18 ##
-                                    parse_obj('ENV', ' 4, 6]'):
-                                    parse_obj('ENV', ' 4, 6]') -> (None, None)
+                                    parse_obj('CLS', ' 4, 6]'):
+                                    parse_obj('CLS', ' 4, 6]') -> (None, None)
                                     ## 18 ##
                                     parse_obj('IF_ELSE', ' 4, 6]'):
                                       ## 19 ##
@@ -3074,8 +3074,8 @@ parse_obj('LINE', '[3, 4, 6]'):
                                     parse_obj('MAP', ' 6]'):
                                     parse_obj('MAP', ' 6]') -> (None, None)
                                     ## 18 ##
-                                    parse_obj('ENV', ' 6]'):
-                                    parse_obj('ENV', ' 6]') -> (None, None)
+                                    parse_obj('CLS', ' 6]'):
+                                    parse_obj('CLS', ' 6]') -> (None, None)
                                     ## 18 ##
                                     parse_obj('IF_ELSE', ' 6]'):
                                       ## 19 ##
@@ -3182,8 +3182,8 @@ parse_obj('LINE', 'f[]'):
       parse_obj('MAP', 'f[]'):
       parse_obj('MAP', 'f[]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'f[]'):
-      parse_obj('ENV', 'f[]') -> (None, None)
+      parse_obj('CLS', 'f[]'):
+      parse_obj('CLS', 'f[]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'f[]'):
         ## 4 ##
@@ -3354,8 +3354,8 @@ parse_obj('LINE', 'f[]'):
                                   parse_obj('MAP', ']'):
                                   parse_obj('MAP', ']') -> (None, None)
                                   ## 17 ##
-                                  parse_obj('ENV', ']'):
-                                  parse_obj('ENV', ']') -> (None, None)
+                                  parse_obj('CLS', ']'):
+                                  parse_obj('CLS', ']') -> (None, None)
                                   ## 17 ##
                                   parse_obj('IF_ELSE', ']'):
                                     ## 18 ##
@@ -3618,8 +3618,8 @@ parse_obj('LINE', 'x := 5'):
           parse_obj('MAP', ' 5'):
           parse_obj('MAP', ' 5') -> (None, None)
           ## 5 ##
-          parse_obj('ENV', ' 5'):
-          parse_obj('ENV', ' 5') -> (None, None)
+          parse_obj('CLS', ' 5'):
+          parse_obj('CLS', ' 5') -> (None, None)
           ## 5 ##
           parse_obj('IF_ELSE', ' 5'):
             ## 6 ##
@@ -3822,8 +3822,8 @@ parse_obj('LINE', 'x := 3 * f[3, 5, 7]'):
           parse_obj('MAP', ' 3 * f[3, 5, 7]'):
           parse_obj('MAP', ' 3 * f[3, 5, 7]') -> (None, None)
           ## 5 ##
-          parse_obj('ENV', ' 3 * f[3, 5, 7]'):
-          parse_obj('ENV', ' 3 * f[3, 5, 7]') -> (None, None)
+          parse_obj('CLS', ' 3 * f[3, 5, 7]'):
+          parse_obj('CLS', ' 3 * f[3, 5, 7]') -> (None, None)
           ## 5 ##
           parse_obj('IF_ELSE', ' 3 * f[3, 5, 7]'):
             ## 6 ##
@@ -4093,8 +4093,8 @@ parse_obj('LINE', 'x := 3 * f[3, 5, 7]'):
                                       parse_obj('MAP', '3, 5, 7]'):
                                       parse_obj('MAP', '3, 5, 7]') -> (None, None)
                                       ## 19 ##
-                                      parse_obj('ENV', '3, 5, 7]'):
-                                      parse_obj('ENV', '3, 5, 7]') -> (None, None)
+                                      parse_obj('CLS', '3, 5, 7]'):
+                                      parse_obj('CLS', '3, 5, 7]') -> (None, None)
                                       ## 19 ##
                                       parse_obj('IF_ELSE', '3, 5, 7]'):
                                         ## 20 ##
@@ -4565,8 +4565,8 @@ parse_obj('LINE', 'x := 3 * f[3, 5, 7]'):
                                           parse_obj('MAP', ' 5, 7]'):
                                           parse_obj('MAP', ' 5, 7]') -> (None, None)
                                           ## 21 ##
-                                          parse_obj('ENV', ' 5, 7]'):
-                                          parse_obj('ENV', ' 5, 7]') -> (None, None)
+                                          parse_obj('CLS', ' 5, 7]'):
+                                          parse_obj('CLS', ' 5, 7]') -> (None, None)
                                           ## 21 ##
                                           parse_obj('IF_ELSE', ' 5, 7]'):
                                             ## 22 ##
@@ -4814,8 +4814,8 @@ parse_obj('LINE', 'x := 3 * f[3, 5, 7]'):
                                           parse_obj('MAP', ' 7]'):
                                           parse_obj('MAP', ' 7]') -> (None, None)
                                           ## 21 ##
-                                          parse_obj('ENV', ' 7]'):
-                                          parse_obj('ENV', ' 7]') -> (None, None)
+                                          parse_obj('CLS', ' 7]'):
+                                          parse_obj('CLS', ' 7]') -> (None, None)
                                           ## 21 ##
                                           parse_obj('IF_ELSE', ' 7]'):
                                             ## 22 ##
@@ -5010,8 +5010,8 @@ parse_obj('LINE', 'f[x]:=1/x'):
           parse_obj('MAP', '1/x'):
           parse_obj('MAP', '1/x') -> (None, None)
           ## 5 ##
-          parse_obj('ENV', '1/x'):
-          parse_obj('ENV', '1/x') -> (None, None)
+          parse_obj('CLS', '1/x'):
+          parse_obj('CLS', '1/x') -> (None, None)
           ## 5 ##
           parse_obj('IF_ELSE', '1/x'):
             ## 6 ##
@@ -5319,8 +5319,8 @@ parse_obj('LINE', 'f[]:=1'):
           parse_obj('MAP', '1'):
           parse_obj('MAP', '1') -> (None, None)
           ## 5 ##
-          parse_obj('ENV', '1'):
-          parse_obj('ENV', '1') -> (None, None)
+          parse_obj('CLS', '1'):
+          parse_obj('CLS', '1') -> (None, None)
           ## 5 ##
           parse_obj('IF_ELSE', '1'):
             ## 6 ##
@@ -5598,8 +5598,8 @@ parse_obj('LINE', 'f[x, y]:=x*y'):
           parse_obj('MAP', 'x*y'):
           parse_obj('MAP', 'x*y') -> (None, None)
           ## 5 ##
-          parse_obj('ENV', 'x*y'):
-          parse_obj('ENV', 'x*y') -> (None, None)
+          parse_obj('CLS', 'x*y'):
+          parse_obj('CLS', 'x*y') -> (None, None)
           ## 5 ##
           parse_obj('IF_ELSE', 'x*y'):
             ## 6 ##
@@ -5798,8 +5798,8 @@ parse_obj('LINE', '[1,2;3,4]'):
       parse_obj('MAP', '[1,2;3,4]'):
       parse_obj('MAP', '[1,2;3,4]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[1,2;3,4]'):
-      parse_obj('ENV', '[1,2;3,4]') -> (None, None)
+      parse_obj('CLS', '[1,2;3,4]'):
+      parse_obj('CLS', '[1,2;3,4]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[1,2;3,4]'):
         ## 4 ##
@@ -5899,8 +5899,8 @@ parse_obj('LINE', '[1,2;3,4]'):
                                 parse_obj('MAP', '1,2;3,4]'):
                                 parse_obj('MAP', '1,2;3,4]') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', '1,2;3,4]'):
-                                parse_obj('ENV', '1,2;3,4]') -> (None, None)
+                                parse_obj('CLS', '1,2;3,4]'):
+                                parse_obj('CLS', '1,2;3,4]') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', '1,2;3,4]'):
                                   ## 17 ##
@@ -6377,8 +6377,8 @@ parse_obj('LINE', '[1,2;3,4]'):
                                     parse_obj('MAP', '2;3,4]'):
                                     parse_obj('MAP', '2;3,4]') -> (None, None)
                                     ## 18 ##
-                                    parse_obj('ENV', '2;3,4]'):
-                                    parse_obj('ENV', '2;3,4]') -> (None, None)
+                                    parse_obj('CLS', '2;3,4]'):
+                                    parse_obj('CLS', '2;3,4]') -> (None, None)
                                     ## 18 ##
                                     parse_obj('IF_ELSE', '2;3,4]'):
                                       ## 19 ##
@@ -6662,8 +6662,8 @@ parse_obj('LINE', '[1,2;3,4]'):
                                           parse_obj('MAP', '3,4]'):
                                           parse_obj('MAP', '3,4]') -> (None, None)
                                           ## 21 ##
-                                          parse_obj('ENV', '3,4]'):
-                                          parse_obj('ENV', '3,4]') -> (None, None)
+                                          parse_obj('CLS', '3,4]'):
+                                          parse_obj('CLS', '3,4]') -> (None, None)
                                           ## 21 ##
                                           parse_obj('IF_ELSE', '3,4]'):
                                             ## 22 ##
@@ -6910,8 +6910,8 @@ parse_obj('LINE', '[1,2;3,4]'):
                                             parse_obj('MAP', '4]'):
                                             parse_obj('MAP', '4]') -> (None, None)
                                             ## 22 ##
-                                            parse_obj('ENV', '4]'):
-                                            parse_obj('ENV', '4]') -> (None, None)
+                                            parse_obj('CLS', '4]'):
+                                            parse_obj('CLS', '4]') -> (None, None)
                                             ## 22 ##
                                             parse_obj('IF_ELSE', '4]'):
                                               ## 23 ##
@@ -7031,8 +7031,8 @@ parse_obj('LINE', 'when(1: 2, 3: 4, 5)'):
       parse_obj('MAP', 'when(1: 2, 3: 4, 5)'):
       parse_obj('MAP', 'when(1: 2, 3: 4, 5)') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'when(1: 2, 3: 4, 5)'):
-      parse_obj('ENV', 'when(1: 2, 3: 4, 5)') -> (None, None)
+      parse_obj('CLS', 'when(1: 2, 3: 4, 5)'):
+      parse_obj('CLS', 'when(1: 2, 3: 4, 5)') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'when(1: 2, 3: 4, 5)'):
         ## 4 ##
@@ -7072,8 +7072,8 @@ parse_obj('LINE', 'when(1: 2, 3: 4, 5)'):
                                       parse_obj('MAP', '1: 2, 3: 4, 5)'):
                                       parse_obj('MAP', '1: 2, 3: 4, 5)') -> (None, None)
                                       ## 19 ##
-                                      parse_obj('ENV', '1: 2, 3: 4, 5)'):
-                                      parse_obj('ENV', '1: 2, 3: 4, 5)') -> (None, None)
+                                      parse_obj('CLS', '1: 2, 3: 4, 5)'):
+                                      parse_obj('CLS', '1: 2, 3: 4, 5)') -> (None, None)
                                       ## 19 ##
                                       parse_obj('IF_ELSE', '1: 2, 3: 4, 5)'):
                                         ## 20 ##
@@ -7303,8 +7303,8 @@ parse_obj('LINE', 'when(1: 2, 3: 4, 5)'):
                                       parse_obj('MAP', ' 2, 3: 4, 5)'):
                                       parse_obj('MAP', ' 2, 3: 4, 5)') -> (None, None)
                                       ## 19 ##
-                                      parse_obj('ENV', ' 2, 3: 4, 5)'):
-                                      parse_obj('ENV', ' 2, 3: 4, 5)') -> (None, None)
+                                      parse_obj('CLS', ' 2, 3: 4, 5)'):
+                                      parse_obj('CLS', ' 2, 3: 4, 5)') -> (None, None)
                                       ## 19 ##
                                       parse_obj('IF_ELSE', ' 2, 3: 4, 5)'):
                                         ## 20 ##
@@ -7542,8 +7542,8 @@ parse_obj('LINE', 'when(1: 2, 3: 4, 5)'):
                                         parse_obj('MAP', ' 3: 4, 5)'):
                                         parse_obj('MAP', ' 3: 4, 5)') -> (None, None)
                                         ## 20 ##
-                                        parse_obj('ENV', ' 3: 4, 5)'):
-                                        parse_obj('ENV', ' 3: 4, 5)') -> (None, None)
+                                        parse_obj('CLS', ' 3: 4, 5)'):
+                                        parse_obj('CLS', ' 3: 4, 5)') -> (None, None)
                                         ## 20 ##
                                         parse_obj('IF_ELSE', ' 3: 4, 5)'):
                                           ## 21 ##
@@ -7770,8 +7770,8 @@ parse_obj('LINE', 'when(1: 2, 3: 4, 5)'):
                                         parse_obj('MAP', ' 4, 5)'):
                                         parse_obj('MAP', ' 4, 5)') -> (None, None)
                                         ## 20 ##
-                                        parse_obj('ENV', ' 4, 5)'):
-                                        parse_obj('ENV', ' 4, 5)') -> (None, None)
+                                        parse_obj('CLS', ' 4, 5)'):
+                                        parse_obj('CLS', ' 4, 5)') -> (None, None)
                                         ## 20 ##
                                         parse_obj('IF_ELSE', ' 4, 5)'):
                                           ## 21 ##
@@ -8010,8 +8010,8 @@ parse_obj('LINE', 'when(1: 2, 3: 4, 5)'):
                                         parse_obj('MAP', ' 5)'):
                                         parse_obj('MAP', ' 5)') -> (None, None)
                                         ## 20 ##
-                                        parse_obj('ENV', ' 5)'):
-                                        parse_obj('ENV', ' 5)') -> (None, None)
+                                        parse_obj('CLS', ' 5)'):
+                                        parse_obj('CLS', ' 5)') -> (None, None)
                                         ## 20 ##
                                         parse_obj('IF_ELSE', ' 5)'):
                                           ## 21 ##
@@ -8408,8 +8408,8 @@ parse_obj('LINE', '[x, y] -> x+y'):
             parse_obj('MAP', ' x+y'):
             parse_obj('MAP', ' x+y') -> (None, None)
             ## 6 ##
-            parse_obj('ENV', ' x+y'):
-            parse_obj('ENV', ' x+y') -> (None, None)
+            parse_obj('CLS', ' x+y'):
+            parse_obj('CLS', ' x+y') -> (None, None)
             ## 6 ##
             parse_obj('IF_ELSE', ' x+y'):
               ## 7 ##
@@ -8663,8 +8663,8 @@ parse_obj('LINE', '[]->1'):
             parse_obj('MAP', '1'):
             parse_obj('MAP', '1') -> (None, None)
             ## 6 ##
-            parse_obj('ENV', '1'):
-            parse_obj('ENV', '1') -> (None, None)
+            parse_obj('CLS', '1'):
+            parse_obj('CLS', '1') -> (None, None)
             ## 6 ##
             parse_obj('IF_ELSE', '1'):
               ## 7 ##
@@ -8927,8 +8927,8 @@ parse_obj('LINE', '[a, *r] -> [a, *r]'):
             parse_obj('MAP', ' [a, *r]'):
             parse_obj('MAP', ' [a, *r]') -> (None, None)
             ## 6 ##
-            parse_obj('ENV', ' [a, *r]'):
-            parse_obj('ENV', ' [a, *r]') -> (None, None)
+            parse_obj('CLS', ' [a, *r]'):
+            parse_obj('CLS', ' [a, *r]') -> (None, None)
             ## 6 ##
             parse_obj('IF_ELSE', ' [a, *r]'):
               ## 7 ##
@@ -9028,8 +9028,8 @@ parse_obj('LINE', '[a, *r] -> [a, *r]'):
                                       parse_obj('MAP', 'a, *r]'):
                                       parse_obj('MAP', 'a, *r]') -> (None, None)
                                       ## 19 ##
-                                      parse_obj('ENV', 'a, *r]'):
-                                      parse_obj('ENV', 'a, *r]') -> (None, None)
+                                      parse_obj('CLS', 'a, *r]'):
+                                      parse_obj('CLS', 'a, *r]') -> (None, None)
                                       ## 19 ##
                                       parse_obj('IF_ELSE', 'a, *r]'):
                                         ## 20 ##
@@ -9374,8 +9374,8 @@ parse_obj('LINE', '[a, *r] -> [a, *r]'):
                                           parse_obj('MAP', 'r]'):
                                           parse_obj('MAP', 'r]') -> (None, None)
                                           ## 21 ##
-                                          parse_obj('ENV', 'r]'):
-                                          parse_obj('ENV', 'r]') -> (None, None)
+                                          parse_obj('CLS', 'r]'):
+                                          parse_obj('CLS', 'r]') -> (None, None)
                                           ## 21 ##
                                           parse_obj('IF_ELSE', 'r]'):
                                             ## 22 ##
@@ -9662,8 +9662,8 @@ parse_obj('LINE', '(x: 2)'):
       parse_obj('MAP', '(x: 2)'):
       parse_obj('MAP', '(x: 2)') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '(x: 2)'):
-      parse_obj('ENV', '(x: 2)') -> (None, None)
+      parse_obj('CLS', '(x: 2)'):
+      parse_obj('CLS', '(x: 2)') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '(x: 2)'):
         ## 4 ##
@@ -9720,8 +9720,8 @@ parse_obj('LINE', '(x: 2)'):
                                   parse_obj('MAP', ' 2)'):
                                   parse_obj('MAP', ' 2)') -> (None, None)
                                   ## 17 ##
-                                  parse_obj('ENV', ' 2)'):
-                                  parse_obj('ENV', ' 2)') -> (None, None)
+                                  parse_obj('CLS', ' 2)'):
+                                  parse_obj('CLS', ' 2)') -> (None, None)
                                   ## 17 ##
                                   parse_obj('IF_ELSE', ' 2)'):
                                     ## 18 ##
@@ -10034,7 +10034,7 @@ parse_obj('LINE', '(x:1, y:2) :: x+y'):
       parse_obj('MAP', '(x:1, y:2) :: x+y'):
       parse_obj('MAP', '(x:1, y:2) :: x+y') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '(x:1, y:2) :: x+y'):
+      parse_obj('CLS', '(x:1, y:2) :: x+y'):
         ## 4 ##
         parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '(x:1, y:2) :: x+y'):
           ## 5 ##
@@ -10068,7 +10068,7 @@ parse_obj('LINE', '(x:1, y:2) :: x+y'):
                       parse_obj('MAP', '1, y:2) :: x+y'):
                       parse_obj('MAP', '1, y:2) :: x+y') -> (None, None)
                       ## 11 ##
-                      parse_obj('ENV', '1, y:2) :: x+y'):
+                      parse_obj('CLS', '1, y:2) :: x+y'):
                         ## 12 ##
                         parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '1, y:2) :: x+y'):
                           ## 13 ##
@@ -10090,7 +10090,7 @@ parse_obj('LINE', '(x:1, y:2) :: x+y'):
                             parse_seq([['OBJ', 'NAME'], ['ITEM_OP', ['ALT', ['ITEM_OP', ['MARK', '.'], ['OP', '/']], ['OBJ', 'NAME']], ['OP', '*']]], '1, y:2) :: x+y') -> (None, None)
                           parse_obj('FIELD', '1, y:2) :: x+y') -> (None, None)
                         parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '1, y:2) :: x+y') -> (None, None)
-                      parse_obj('ENV', '1, y:2) :: x+y') -> (None, None)
+                      parse_obj('CLS', '1, y:2) :: x+y') -> (None, None)
                       ## 11 ##
                       parse_obj('IF_ELSE', '1, y:2) :: x+y'):
                         ## 12 ##
@@ -10334,7 +10334,7 @@ parse_obj('LINE', '(x:1, y:2) :: x+y'):
                         parse_obj('MAP', '2) :: x+y'):
                         parse_obj('MAP', '2) :: x+y') -> (None, None)
                         ## 12 ##
-                        parse_obj('ENV', '2) :: x+y'):
+                        parse_obj('CLS', '2) :: x+y'):
                           ## 13 ##
                           parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '2) :: x+y'):
                             ## 14 ##
@@ -10356,7 +10356,7 @@ parse_obj('LINE', '(x:1, y:2) :: x+y'):
                               parse_seq([['OBJ', 'NAME'], ['ITEM_OP', ['ALT', ['ITEM_OP', ['MARK', '.'], ['OP', '/']], ['OBJ', 'NAME']], ['OP', '*']]], '2) :: x+y') -> (None, None)
                             parse_obj('FIELD', '2) :: x+y') -> (None, None)
                           parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '2) :: x+y') -> (None, None)
-                        parse_obj('ENV', '2) :: x+y') -> (None, None)
+                        parse_obj('CLS', '2) :: x+y') -> (None, None)
                         ## 12 ##
                         parse_obj('IF_ELSE', '2) :: x+y'):
                           ## 13 ##
@@ -10586,8 +10586,8 @@ parse_obj('LINE', '(x:1, y:2) :: x+y'):
             parse_obj('MAP', ' x+y'):
             parse_obj('MAP', ' x+y') -> (None, None)
             ## 6 ##
-            parse_obj('ENV', ' x+y'):
-            parse_obj('ENV', ' x+y') -> (None, None)
+            parse_obj('CLS', ' x+y'):
+            parse_obj('CLS', ' x+y') -> (None, None)
             ## 6 ##
             parse_obj('IF_ELSE', ' x+y'):
               ## 7 ##
@@ -10732,18 +10732,18 @@ parse_obj('LINE', '(x:1, y:2) :: x+y'):
           parse_obj('EXP', ' x+y') -> (['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']], '')
         parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '(x:1, y:2) :: x+y') -> ([['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
         ## 4 ##
-        process_tag('ENV', [['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
-        process_tag('ENV', [['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
-      parse_obj('ENV', '(x:1, y:2) :: x+y') -> (['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
+        process_tag('CLS', [['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
+        process_tag('CLS', [['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
+      parse_obj('CLS', '(x:1, y:2) :: x+y') -> (['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
       ## 3 ##
-      process_tag('EXP', ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
-      process_tag('EXP', ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
-    parse_obj('EXP', '(x:1, y:2) :: x+y') -> (['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
-  parse_seq([['EXP', ['OBJ', 'CMD'], ['OBJ', 'DEF'], ['OBJ', 'EXP']], ['ITEM_OP', ['OBJ', 'HIDE'], ['OP', '?']], ['ITEM_OP', ['OBJ', 'COMMENT'], ['OP', '?']]], '(x:1, y:2) :: x+y') -> (['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
+      process_tag('EXP', ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
+      process_tag('EXP', ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
+    parse_obj('EXP', '(x:1, y:2) :: x+y') -> (['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
+  parse_seq([['EXP', ['OBJ', 'CMD'], ['OBJ', 'DEF'], ['OBJ', 'EXP']], ['ITEM_OP', ['OBJ', 'HIDE'], ['OP', '?']], ['ITEM_OP', ['OBJ', 'COMMENT'], ['OP', '?']]], '(x:1, y:2) :: x+y') -> (['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
   ## 1 ##
-  process_tag('LINE', ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
-  process_tag('LINE', ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
-parse_obj('LINE', '(x:1, y:2) :: x+y') -> (['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
+  process_tag('LINE', ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
+  process_tag('LINE', ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
+parse_obj('LINE', '(x:1, y:2) :: x+y') -> (['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
 ## 0 ##
 parse_obj('LINE', 'l[x:2]'):
   ## 1 ##
@@ -10790,8 +10790,8 @@ parse_obj('LINE', 'l[x:2]'):
       parse_obj('MAP', 'l[x:2]'):
       parse_obj('MAP', 'l[x:2]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'l[x:2]'):
-      parse_obj('ENV', 'l[x:2]') -> (None, None)
+      parse_obj('CLS', 'l[x:2]'):
+      parse_obj('CLS', 'l[x:2]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'l[x:2]'):
         ## 4 ##
@@ -10962,8 +10962,8 @@ parse_obj('LINE', 'l[x:2]'):
                                   parse_obj('MAP', 'x:2]'):
                                   parse_obj('MAP', 'x:2]') -> (None, None)
                                   ## 17 ##
-                                  parse_obj('ENV', 'x:2]'):
-                                  parse_obj('ENV', 'x:2]') -> (None, None)
+                                  parse_obj('CLS', 'x:2]'):
+                                  parse_obj('CLS', 'x:2]') -> (None, None)
                                   ## 17 ##
                                   parse_obj('IF_ELSE', 'x:2]'):
                                     ## 18 ##
@@ -11474,8 +11474,8 @@ parse_obj('LINE', '[x|x in [1,2,3]]'):
       parse_obj('MAP', '[x|x in [1,2,3]]'):
       parse_obj('MAP', '[x|x in [1,2,3]]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[x|x in [1,2,3]]'):
-      parse_obj('ENV', '[x|x in [1,2,3]]') -> (None, None)
+      parse_obj('CLS', '[x|x in [1,2,3]]'):
+      parse_obj('CLS', '[x|x in [1,2,3]]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[x|x in [1,2,3]]'):
         ## 4 ##
@@ -11575,8 +11575,8 @@ parse_obj('LINE', '[x|x in [1,2,3]]'):
                                 parse_obj('MAP', 'x|x in [1,2,3]]'):
                                 parse_obj('MAP', 'x|x in [1,2,3]]') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', 'x|x in [1,2,3]]'):
-                                parse_obj('ENV', 'x|x in [1,2,3]]') -> (None, None)
+                                parse_obj('CLS', 'x|x in [1,2,3]]'):
+                                parse_obj('CLS', 'x|x in [1,2,3]]') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', 'x|x in [1,2,3]]'):
                                   ## 17 ##
@@ -11790,8 +11790,8 @@ parse_obj('LINE', '[x|x in [1,2,3]]'):
                                         parse_obj('MAP', ' [1,2,3]]'):
                                         parse_obj('MAP', ' [1,2,3]]') -> (None, None)
                                         ## 20 ##
-                                        parse_obj('ENV', ' [1,2,3]]'):
-                                        parse_obj('ENV', ' [1,2,3]]') -> (None, None)
+                                        parse_obj('CLS', ' [1,2,3]]'):
+                                        parse_obj('CLS', ' [1,2,3]]') -> (None, None)
                                         ## 20 ##
                                         parse_obj('IF_ELSE', ' [1,2,3]]'):
                                           ## 21 ##
@@ -11891,8 +11891,8 @@ parse_obj('LINE', '[x|x in [1,2,3]]'):
                                                                   parse_obj('MAP', '1,2,3]]'):
                                                                   parse_obj('MAP', '1,2,3]]') -> (None, None)
                                                                   ## 33 ##
-                                                                  parse_obj('ENV', '1,2,3]]'):
-                                                                  parse_obj('ENV', '1,2,3]]') -> (None, None)
+                                                                  parse_obj('CLS', '1,2,3]]'):
+                                                                  parse_obj('CLS', '1,2,3]]') -> (None, None)
                                                                   ## 33 ##
                                                                   parse_obj('IF_ELSE', '1,2,3]]'):
                                                                     ## 34 ##
@@ -12366,8 +12366,8 @@ parse_obj('LINE', '[x|x in [1,2,3]]'):
                                                                       parse_obj('MAP', '2,3]]'):
                                                                       parse_obj('MAP', '2,3]]') -> (None, None)
                                                                       ## 35 ##
-                                                                      parse_obj('ENV', '2,3]]'):
-                                                                      parse_obj('ENV', '2,3]]') -> (None, None)
+                                                                      parse_obj('CLS', '2,3]]'):
+                                                                      parse_obj('CLS', '2,3]]') -> (None, None)
                                                                       ## 35 ##
                                                                       parse_obj('IF_ELSE', '2,3]]'):
                                                                         ## 36 ##
@@ -12615,8 +12615,8 @@ parse_obj('LINE', '[x|x in [1,2,3]]'):
                                                                       parse_obj('MAP', '3]]'):
                                                                       parse_obj('MAP', '3]]') -> (None, None)
                                                                       ## 35 ##
-                                                                      parse_obj('ENV', '3]]'):
-                                                                      parse_obj('ENV', '3]]') -> (None, None)
+                                                                      parse_obj('CLS', '3]]'):
+                                                                      parse_obj('CLS', '3]]') -> (None, None)
                                                                       ## 35 ##
                                                                       parse_obj('IF_ELSE', '3]]'):
                                                                         ## 36 ##
@@ -12881,8 +12881,8 @@ parse_obj('LINE', 'f[1:]'):
       parse_obj('MAP', 'f[1:]'):
       parse_obj('MAP', 'f[1:]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'f[1:]'):
-      parse_obj('ENV', 'f[1:]') -> (None, None)
+      parse_obj('CLS', 'f[1:]'):
+      parse_obj('CLS', 'f[1:]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'f[1:]'):
         ## 4 ##
@@ -13053,8 +13053,8 @@ parse_obj('LINE', 'f[1:]'):
                                   parse_obj('MAP', '1:]'):
                                   parse_obj('MAP', '1:]') -> (None, None)
                                   ## 17 ##
-                                  parse_obj('ENV', '1:]'):
-                                  parse_obj('ENV', '1:]') -> (None, None)
+                                  parse_obj('CLS', '1:]'):
+                                  parse_obj('CLS', '1:]') -> (None, None)
                                   ## 17 ##
                                   parse_obj('IF_ELSE', '1:]'):
                                     ## 18 ##
@@ -13496,8 +13496,8 @@ parse_obj('LINE', 'm[1:, :-1]'):
       parse_obj('MAP', 'm[1:, :-1]'):
       parse_obj('MAP', 'm[1:, :-1]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'm[1:, :-1]'):
-      parse_obj('ENV', 'm[1:, :-1]') -> (None, None)
+      parse_obj('CLS', 'm[1:, :-1]'):
+      parse_obj('CLS', 'm[1:, :-1]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'm[1:, :-1]'):
         ## 4 ##
@@ -13668,8 +13668,8 @@ parse_obj('LINE', 'm[1:, :-1]'):
                                   parse_obj('MAP', '1:, :-1]'):
                                   parse_obj('MAP', '1:, :-1]') -> (None, None)
                                   ## 17 ##
-                                  parse_obj('ENV', '1:, :-1]'):
-                                  parse_obj('ENV', '1:, :-1]') -> (None, None)
+                                  parse_obj('CLS', '1:, :-1]'):
+                                  parse_obj('CLS', '1:, :-1]') -> (None, None)
                                   ## 17 ##
                                   parse_obj('IF_ELSE', '1:, :-1]'):
                                     ## 18 ##
@@ -14730,8 +14730,8 @@ parse_obj('LINE', 'f[x] := x;  # the semicolon hides the output'):
           parse_obj('MAP', ' x;  # the semicolon hides the output'):
           parse_obj('MAP', ' x;  # the semicolon hides the output') -> (None, None)
           ## 5 ##
-          parse_obj('ENV', ' x;  # the semicolon hides the output'):
-          parse_obj('ENV', ' x;  # the semicolon hides the output') -> (None, None)
+          parse_obj('CLS', ' x;  # the semicolon hides the output'):
+          parse_obj('CLS', ' x;  # the semicolon hides the output') -> (None, None)
           ## 5 ##
           parse_obj('IF_ELSE', ' x;  # the semicolon hides the output'):
             ## 6 ##
@@ -14993,8 +14993,8 @@ parse_obj('LINE', 'x .f'):
       parse_obj('MAP', 'x .f'):
       parse_obj('MAP', 'x .f') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'x .f'):
-      parse_obj('ENV', 'x .f') -> (None, None)
+      parse_obj('CLS', 'x .f'):
+      parse_obj('CLS', 'x .f') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'x .f'):
         ## 4 ##
@@ -15243,8 +15243,8 @@ parse_obj('LINE', 'f.a.b[x] := f[x]'):
           parse_obj('MAP', ' f[x]'):
           parse_obj('MAP', ' f[x]') -> (None, None)
           ## 5 ##
-          parse_obj('ENV', ' f[x]'):
-          parse_obj('ENV', ' f[x]') -> (None, None)
+          parse_obj('CLS', ' f[x]'):
+          parse_obj('CLS', ' f[x]') -> (None, None)
           ## 5 ##
           parse_obj('IF_ELSE', ' f[x]'):
             ## 6 ##
@@ -15412,8 +15412,8 @@ parse_obj('LINE', 'f.a.b[x] := f[x]'):
                                       parse_obj('MAP', 'x]'):
                                       parse_obj('MAP', 'x]') -> (None, None)
                                       ## 19 ##
-                                      parse_obj('ENV', 'x]'):
-                                      parse_obj('ENV', 'x]') -> (None, None)
+                                      parse_obj('CLS', 'x]'):
+                                      parse_obj('CLS', 'x]') -> (None, None)
                                       ## 19 ##
                                       parse_obj('IF_ELSE', 'x]'):
                                         ## 20 ##
@@ -15831,8 +15831,8 @@ parse_obj('LINE', 'f[x, y, z: 0, *w] := 1'):
                             parse_obj('MAP', ' 0, *w] := 1'):
                             parse_obj('MAP', ' 0, *w] := 1') -> (None, None)
                             ## 14 ##
-                            parse_obj('ENV', ' 0, *w] := 1'):
-                            parse_obj('ENV', ' 0, *w] := 1') -> (None, None)
+                            parse_obj('CLS', ' 0, *w] := 1'):
+                            parse_obj('CLS', ' 0, *w] := 1') -> (None, None)
                             ## 14 ##
                             parse_obj('IF_ELSE', ' 0, *w] := 1'):
                               ## 15 ##
@@ -16125,8 +16125,8 @@ parse_obj('LINE', 'f[x, y, z: 0, *w] := 1'):
           parse_obj('MAP', ' 1'):
           parse_obj('MAP', ' 1') -> (None, None)
           ## 5 ##
-          parse_obj('ENV', ' 1'):
-          parse_obj('ENV', ' 1') -> (None, None)
+          parse_obj('CLS', ' 1'):
+          parse_obj('CLS', ' 1') -> (None, None)
           ## 5 ##
           parse_obj('IF_ELSE', ' 1'):
             ## 6 ##
@@ -16292,7 +16292,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
       parse_obj('MAP', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
       parse_obj('MAP', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
+      parse_obj('CLS', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
         ## 4 ##
         parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
           ## 5 ##
@@ -16314,7 +16314,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
             parse_seq([['OBJ', 'NAME'], ['ITEM_OP', ['ALT', ['ITEM_OP', ['MARK', '.'], ['OP', '/']], ['OBJ', 'NAME']], ['OP', '*']]], '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
           parse_obj('FIELD', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
         parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
-      parse_obj('ENV', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
+      parse_obj('CLS', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
         ## 4 ##
@@ -16402,7 +16402,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                 parse_obj('MAP', '3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                 parse_obj('MAP', '3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', '3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
+                                parse_obj('CLS', '3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                   ## 17 ##
                                   parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                     ## 18 ##
@@ -16424,7 +16424,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                       parse_seq([['OBJ', 'NAME'], ['ITEM_OP', ['ALT', ['ITEM_OP', ['MARK', '.'], ['OP', '/']], ['OBJ', 'NAME']], ['OP', '*']]], '3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
                                     parse_obj('FIELD', '3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
                                   parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], '3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
-                                parse_obj('ENV', '3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
+                                parse_obj('CLS', '3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', '3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                   ## 17 ##
@@ -16889,7 +16889,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                     parse_obj('MAP', ' 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                     parse_obj('MAP', ' 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
                                     ## 18 ##
-                                    parse_obj('ENV', ' 4] if x=3 else (x: 2, y: 3) :: x+y'):
+                                    parse_obj('CLS', ' 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                       ## 19 ##
                                       parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], ' 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                         ## 20 ##
@@ -16899,7 +16899,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                         parse_obj('FIELD', ' 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                         parse_obj('FIELD', ' 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
                                       parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], ' 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
-                                    parse_obj('ENV', ' 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
+                                    parse_obj('CLS', ' 4] if x=3 else (x: 2, y: 3) :: x+y') -> (None, None)
                                     ## 18 ##
                                     parse_obj('IF_ELSE', ' 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                       ## 19 ##
@@ -17333,7 +17333,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
             parse_obj('MAP', ' (x: 2, y: 3) :: x+y'):
             parse_obj('MAP', ' (x: 2, y: 3) :: x+y') -> (None, None)
             ## 6 ##
-            parse_obj('ENV', ' (x: 2, y: 3) :: x+y'):
+            parse_obj('CLS', ' (x: 2, y: 3) :: x+y'):
               ## 7 ##
               parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], ' (x: 2, y: 3) :: x+y'):
                 ## 8 ##
@@ -17364,7 +17364,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                             parse_obj('MAP', ' 2, y: 3) :: x+y'):
                             parse_obj('MAP', ' 2, y: 3) :: x+y') -> (None, None)
                             ## 14 ##
-                            parse_obj('ENV', ' 2, y: 3) :: x+y'):
+                            parse_obj('CLS', ' 2, y: 3) :: x+y'):
                               ## 15 ##
                               parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], ' 2, y: 3) :: x+y'):
                                 ## 16 ##
@@ -17386,7 +17386,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                   parse_seq([['OBJ', 'NAME'], ['ITEM_OP', ['ALT', ['ITEM_OP', ['MARK', '.'], ['OP', '/']], ['OBJ', 'NAME']], ['OP', '*']]], ' 2, y: 3) :: x+y') -> (None, None)
                                 parse_obj('FIELD', ' 2, y: 3) :: x+y') -> (None, None)
                               parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], ' 2, y: 3) :: x+y') -> (None, None)
-                            parse_obj('ENV', ' 2, y: 3) :: x+y') -> (None, None)
+                            parse_obj('CLS', ' 2, y: 3) :: x+y') -> (None, None)
                             ## 14 ##
                             parse_obj('IF_ELSE', ' 2, y: 3) :: x+y'):
                               ## 15 ##
@@ -17627,7 +17627,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                               parse_obj('MAP', ' 3) :: x+y'):
                               parse_obj('MAP', ' 3) :: x+y') -> (None, None)
                               ## 15 ##
-                              parse_obj('ENV', ' 3) :: x+y'):
+                              parse_obj('CLS', ' 3) :: x+y'):
                                 ## 16 ##
                                 parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], ' 3) :: x+y'):
                                   ## 17 ##
@@ -17649,7 +17649,7 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                                     parse_seq([['OBJ', 'NAME'], ['ITEM_OP', ['ALT', ['ITEM_OP', ['MARK', '.'], ['OP', '/']], ['OBJ', 'NAME']], ['OP', '*']]], ' 3) :: x+y') -> (None, None)
                                   parse_obj('FIELD', ' 3) :: x+y') -> (None, None)
                                 parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], ' 3) :: x+y') -> (None, None)
-                              parse_obj('ENV', ' 3) :: x+y') -> (None, None)
+                              parse_obj('CLS', ' 3) :: x+y') -> (None, None)
                               ## 15 ##
                               parse_obj('IF_ELSE', ' 3) :: x+y'):
                                 ## 16 ##
@@ -17876,8 +17876,8 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                   parse_obj('MAP', ' x+y'):
                   parse_obj('MAP', ' x+y') -> (None, None)
                   ## 9 ##
-                  parse_obj('ENV', ' x+y'):
-                  parse_obj('ENV', ' x+y') -> (None, None)
+                  parse_obj('CLS', ' x+y'):
+                  parse_obj('CLS', ' x+y') -> (None, None)
                   ## 9 ##
                   parse_obj('IF_ELSE', ' x+y'):
                     ## 10 ##
@@ -18022,27 +18022,27 @@ parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y'):
                 parse_obj('EXP', ' x+y') -> (['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']], '')
               parse_seq([['EXP', ['OBJ', 'BINDS'], ['OBJ', 'FIELD']], ['MARK', '::'], ['OBJ', 'EXP']], ' (x: 2, y: 3) :: x+y') -> ([['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
               ## 7 ##
-              process_tag('ENV', [['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
-              process_tag('ENV', [['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
-            parse_obj('ENV', ' (x: 2, y: 3) :: x+y') -> (['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
+              process_tag('CLS', [['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
+              process_tag('CLS', [['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
+            parse_obj('CLS', ' (x: 2, y: 3) :: x+y') -> (['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
             ## 6 ##
-            process_tag('EXP', ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
-            process_tag('EXP', ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
-          parse_obj('EXP', ' (x: 2, y: 3) :: x+y') -> (['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
-        parse_seq([['OBJ', 'OP_SEQ'], ['MARK', 'if'], ['OBJ', 'OP_SEQ'], ['MARK', 'else'], ['OBJ', 'EXP']], '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> ([['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
+            process_tag('EXP', ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]):
+            process_tag('EXP', ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]) -> ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]
+          parse_obj('EXP', ' (x: 2, y: 3) :: x+y') -> (['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], '')
+        parse_seq([['OBJ', 'OP_SEQ'], ['MARK', 'if'], ['OBJ', 'OP_SEQ'], ['MARK', 'else'], ['OBJ', 'EXP']], '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> ([['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
         ## 4 ##
-        process_tag('IF_ELSE', [['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]):
-        process_tag('IF_ELSE', [['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]) -> ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]
-      parse_obj('IF_ELSE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
+        process_tag('IF_ELSE', [['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]):
+        process_tag('IF_ELSE', [['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]) -> ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]
+      parse_obj('IF_ELSE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
       ## 3 ##
-      process_tag('EXP', ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]):
-      process_tag('EXP', ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]) -> ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]
-    parse_obj('EXP', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
-  parse_seq([['EXP', ['OBJ', 'CMD'], ['OBJ', 'DEF'], ['OBJ', 'EXP']], ['ITEM_OP', ['OBJ', 'HIDE'], ['OP', '?']], ['ITEM_OP', ['OBJ', 'COMMENT'], ['OP', '?']]], '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
+      process_tag('EXP', ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]):
+      process_tag('EXP', ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]) -> ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]
+    parse_obj('EXP', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
+  parse_seq([['EXP', ['OBJ', 'CMD'], ['OBJ', 'DEF'], ['OBJ', 'EXP']], ['ITEM_OP', ['OBJ', 'HIDE'], ['OP', '?']], ['ITEM_OP', ['OBJ', 'COMMENT'], ['OP', '?']]], '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
   ## 1 ##
-  process_tag('LINE', ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]):
-  process_tag('LINE', ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]) -> ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]
-parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['ENV', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
+  process_tag('LINE', ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]):
+  process_tag('LINE', ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]) -> ['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]]
+parse_obj('LINE', '[3, 4] if x=3 else (x: 2, y: 3) :: x+y') -> (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], '')
 ## 0 ##
 parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
   ## 1 ##
@@ -18089,8 +18089,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
       parse_obj('MAP', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
       parse_obj('MAP', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
-      parse_obj('ENV', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
+      parse_obj('CLS', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
+      parse_obj('CLS', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
         ## 4 ##
@@ -18190,8 +18190,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                 parse_obj('MAP', 'x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                 parse_obj('MAP', 'x+f[f[3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', 'x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
-                                parse_obj('ENV', 'x+f[f[3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
+                                parse_obj('CLS', 'x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
+                                parse_obj('CLS', 'x+f[f[3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', 'x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                   ## 17 ##
@@ -18431,8 +18431,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                                             parse_obj('MAP', 'f[3*6]^2], [2, 6], g[3, 6]]'):
                                                             parse_obj('MAP', 'f[3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
                                                             ## 30 ##
-                                                            parse_obj('ENV', 'f[3*6]^2], [2, 6], g[3, 6]]'):
-                                                            parse_obj('ENV', 'f[3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
+                                                            parse_obj('CLS', 'f[3*6]^2], [2, 6], g[3, 6]]'):
+                                                            parse_obj('CLS', 'f[3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
                                                             ## 30 ##
                                                             parse_obj('IF_ELSE', 'f[3*6]^2], [2, 6], g[3, 6]]'):
                                                               ## 31 ##
@@ -18597,8 +18597,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                                                                         parse_obj('MAP', '3*6]^2], [2, 6], g[3, 6]]'):
                                                                                         parse_obj('MAP', '3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
                                                                                         ## 44 ##
-                                                                                        parse_obj('ENV', '3*6]^2], [2, 6], g[3, 6]]'):
-                                                                                        parse_obj('ENV', '3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
+                                                                                        parse_obj('CLS', '3*6]^2], [2, 6], g[3, 6]]'):
+                                                                                        parse_obj('CLS', '3*6]^2], [2, 6], g[3, 6]]') -> (None, None)
                                                                                         ## 44 ##
                                                                                         parse_obj('IF_ELSE', '3*6]^2], [2, 6], g[3, 6]]'):
                                                                                           ## 45 ##
@@ -19488,8 +19488,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                                           parse_obj('MAP', '2, 6], g[3, 6]]'):
                                                           parse_obj('MAP', '2, 6], g[3, 6]]') -> (None, None)
                                                           ## 29 ##
-                                                          parse_obj('ENV', '2, 6], g[3, 6]]'):
-                                                          parse_obj('ENV', '2, 6], g[3, 6]]') -> (None, None)
+                                                          parse_obj('CLS', '2, 6], g[3, 6]]'):
+                                                          parse_obj('CLS', '2, 6], g[3, 6]]') -> (None, None)
                                                           ## 29 ##
                                                           parse_obj('IF_ELSE', '2, 6], g[3, 6]]'):
                                                             ## 30 ##
@@ -19957,8 +19957,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                                               parse_obj('MAP', ' 6], g[3, 6]]'):
                                                               parse_obj('MAP', ' 6], g[3, 6]]') -> (None, None)
                                                               ## 31 ##
-                                                              parse_obj('ENV', ' 6], g[3, 6]]'):
-                                                              parse_obj('ENV', ' 6], g[3, 6]]') -> (None, None)
+                                                              parse_obj('CLS', ' 6], g[3, 6]]'):
+                                                              parse_obj('CLS', ' 6], g[3, 6]]') -> (None, None)
                                                               ## 31 ##
                                                               parse_obj('IF_ELSE', ' 6], g[3, 6]]'):
                                                                 ## 32 ##
@@ -20123,8 +20123,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                     parse_obj('MAP', ' [2, 6], g[3, 6]]'):
                                     parse_obj('MAP', ' [2, 6], g[3, 6]]') -> (None, None)
                                     ## 18 ##
-                                    parse_obj('ENV', ' [2, 6], g[3, 6]]'):
-                                    parse_obj('ENV', ' [2, 6], g[3, 6]]') -> (None, None)
+                                    parse_obj('CLS', ' [2, 6], g[3, 6]]'):
+                                    parse_obj('CLS', ' [2, 6], g[3, 6]]') -> (None, None)
                                     ## 18 ##
                                     parse_obj('IF_ELSE', ' [2, 6], g[3, 6]]'):
                                       ## 19 ##
@@ -20318,8 +20318,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                                             parse_obj('MAP', '3, 6]]'):
                                                             parse_obj('MAP', '3, 6]]') -> (None, None)
                                                             ## 30 ##
-                                                            parse_obj('ENV', '3, 6]]'):
-                                                            parse_obj('ENV', '3, 6]]') -> (None, None)
+                                                            parse_obj('CLS', '3, 6]]'):
+                                                            parse_obj('CLS', '3, 6]]') -> (None, None)
                                                             ## 30 ##
                                                             parse_obj('IF_ELSE', '3, 6]]'):
                                                               ## 31 ##
@@ -20787,8 +20787,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                                                 parse_obj('MAP', ' 6]]'):
                                                                 parse_obj('MAP', ' 6]]') -> (None, None)
                                                                 ## 32 ##
-                                                                parse_obj('ENV', ' 6]]'):
-                                                                parse_obj('ENV', ' 6]]') -> (None, None)
+                                                                parse_obj('CLS', ' 6]]'):
+                                                                parse_obj('CLS', ' 6]]') -> (None, None)
                                                                 ## 32 ##
                                                                 parse_obj('IF_ELSE', ' 6]]'):
                                                                   ## 33 ##
@@ -20954,8 +20954,8 @@ parse_obj('LINE', '[x+f[f[3*6]^2], [2, 6], g[3, 6]]'):
                                     parse_obj('MAP', ' g[3, 6]]'):
                                     parse_obj('MAP', ' g[3, 6]]') -> (None, None)
                                     ## 18 ##
-                                    parse_obj('ENV', ' g[3, 6]]'):
-                                    parse_obj('ENV', ' g[3, 6]]') -> (None, None)
+                                    parse_obj('CLS', ' g[3, 6]]'):
+                                    parse_obj('CLS', ' g[3, 6]]') -> (None, None)
                                     ## 18 ##
                                     parse_obj('IF_ELSE', ' g[3, 6]]'):
                                       ## 19 ##
@@ -21254,8 +21254,8 @@ parse_obj('LINE', '[x, [y, *z], *w] -> [x+y+z, w]'):
             parse_obj('MAP', ' [x+y+z, w]'):
             parse_obj('MAP', ' [x+y+z, w]') -> (None, None)
             ## 6 ##
-            parse_obj('ENV', ' [x+y+z, w]'):
-            parse_obj('ENV', ' [x+y+z, w]') -> (None, None)
+            parse_obj('CLS', ' [x+y+z, w]'):
+            parse_obj('CLS', ' [x+y+z, w]') -> (None, None)
             ## 6 ##
             parse_obj('IF_ELSE', ' [x+y+z, w]'):
               ## 7 ##
@@ -21355,8 +21355,8 @@ parse_obj('LINE', '[x, [y, *z], *w] -> [x+y+z, w]'):
                                       parse_obj('MAP', 'x+y+z, w]'):
                                       parse_obj('MAP', 'x+y+z, w]') -> (None, None)
                                       ## 19 ##
-                                      parse_obj('ENV', 'x+y+z, w]'):
-                                      parse_obj('ENV', 'x+y+z, w]') -> (None, None)
+                                      parse_obj('CLS', 'x+y+z, w]'):
+                                      parse_obj('CLS', 'x+y+z, w]') -> (None, None)
                                       ## 19 ##
                                       parse_obj('IF_ELSE', 'x+y+z, w]'):
                                         ## 20 ##
@@ -21896,8 +21896,8 @@ parse_obj('LINE', '[x, [y, *z], *w] -> [x+y+z, w]'):
                                           parse_obj('MAP', ' w]'):
                                           parse_obj('MAP', ' w]') -> (None, None)
                                           ## 21 ##
-                                          parse_obj('ENV', ' w]'):
-                                          parse_obj('ENV', ' w]') -> (None, None)
+                                          parse_obj('CLS', ' w]'):
+                                          parse_obj('CLS', ' w]') -> (None, None)
                                           ## 21 ##
                                           parse_obj('IF_ELSE', ' w]'):
                                             ## 22 ##
@@ -22013,8 +22013,8 @@ parse_obj('LINE', "(x*('y+2))/3"):
       parse_obj('MAP', "(x*('y+2))/3"):
       parse_obj('MAP', "(x*('y+2))/3") -> (None, None)
       ## 3 ##
-      parse_obj('ENV', "(x*('y+2))/3"):
-      parse_obj('ENV', "(x*('y+2))/3") -> (None, None)
+      parse_obj('CLS', "(x*('y+2))/3"):
+      parse_obj('CLS', "(x*('y+2))/3") -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', "(x*('y+2))/3"):
         ## 4 ##
@@ -22080,8 +22080,8 @@ parse_obj('LINE', "(x*('y+2))/3"):
                             parse_obj('MAP', "x*('y+2))/3"):
                             parse_obj('MAP', "x*('y+2))/3") -> (None, None)
                             ## 14 ##
-                            parse_obj('ENV', "x*('y+2))/3"):
-                            parse_obj('ENV', "x*('y+2))/3") -> (None, None)
+                            parse_obj('CLS', "x*('y+2))/3"):
+                            parse_obj('CLS', "x*('y+2))/3") -> (None, None)
                             ## 14 ##
                             parse_obj('IF_ELSE', "x*('y+2))/3"):
                               ## 15 ##
@@ -22206,8 +22206,8 @@ parse_obj('LINE', "(x*('y+2))/3"):
                                                     parse_obj('MAP', "'y+2))/3"):
                                                     parse_obj('MAP', "'y+2))/3") -> (None, None)
                                                     ## 26 ##
-                                                    parse_obj('ENV', "'y+2))/3"):
-                                                    parse_obj('ENV', "'y+2))/3") -> (None, None)
+                                                    parse_obj('CLS', "'y+2))/3"):
+                                                    parse_obj('CLS', "'y+2))/3") -> (None, None)
                                                     ## 26 ##
                                                     parse_obj('IF_ELSE', "'y+2))/3"):
                                                       ## 27 ##
@@ -22820,8 +22820,8 @@ parse_obj('LINE', '[x+y | x in 1~10 | y in range[x]]'):
       parse_obj('MAP', '[x+y | x in 1~10 | y in range[x]]'):
       parse_obj('MAP', '[x+y | x in 1~10 | y in range[x]]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[x+y | x in 1~10 | y in range[x]]'):
-      parse_obj('ENV', '[x+y | x in 1~10 | y in range[x]]') -> (None, None)
+      parse_obj('CLS', '[x+y | x in 1~10 | y in range[x]]'):
+      parse_obj('CLS', '[x+y | x in 1~10 | y in range[x]]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[x+y | x in 1~10 | y in range[x]]'):
         ## 4 ##
@@ -22921,8 +22921,8 @@ parse_obj('LINE', '[x+y | x in 1~10 | y in range[x]]'):
                                 parse_obj('MAP', 'x+y | x in 1~10 | y in range[x]]'):
                                 parse_obj('MAP', 'x+y | x in 1~10 | y in range[x]]') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', 'x+y | x in 1~10 | y in range[x]]'):
-                                parse_obj('ENV', 'x+y | x in 1~10 | y in range[x]]') -> (None, None)
+                                parse_obj('CLS', 'x+y | x in 1~10 | y in range[x]]'):
+                                parse_obj('CLS', 'x+y | x in 1~10 | y in range[x]]') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', 'x+y | x in 1~10 | y in range[x]]'):
                                   ## 17 ##
@@ -23205,8 +23205,8 @@ parse_obj('LINE', '[x+y | x in 1~10 | y in range[x]]'):
                                         parse_obj('MAP', ' 1~10 | y in range[x]]'):
                                         parse_obj('MAP', ' 1~10 | y in range[x]]') -> (None, None)
                                         ## 20 ##
-                                        parse_obj('ENV', ' 1~10 | y in range[x]]'):
-                                        parse_obj('ENV', ' 1~10 | y in range[x]]') -> (None, None)
+                                        parse_obj('CLS', ' 1~10 | y in range[x]]'):
+                                        parse_obj('CLS', ' 1~10 | y in range[x]]') -> (None, None)
                                         ## 20 ##
                                         parse_obj('IF_ELSE', ' 1~10 | y in range[x]]'):
                                           ## 21 ##
@@ -23552,8 +23552,8 @@ parse_obj('LINE', '[x+y | x in 1~10 | y in range[x]]'):
                                           parse_obj('MAP', ' range[x]]'):
                                           parse_obj('MAP', ' range[x]]') -> (None, None)
                                           ## 21 ##
-                                          parse_obj('ENV', ' range[x]]'):
-                                          parse_obj('ENV', ' range[x]]') -> (None, None)
+                                          parse_obj('CLS', ' range[x]]'):
+                                          parse_obj('CLS', ' range[x]]') -> (None, None)
                                           ## 21 ##
                                           parse_obj('IF_ELSE', ' range[x]]'):
                                             ## 22 ##
@@ -23721,8 +23721,8 @@ parse_obj('LINE', '[x+y | x in 1~10 | y in range[x]]'):
                                                                       parse_obj('MAP', 'x]]'):
                                                                       parse_obj('MAP', 'x]]') -> (None, None)
                                                                       ## 35 ##
-                                                                      parse_obj('ENV', 'x]]'):
-                                                                      parse_obj('ENV', 'x]]') -> (None, None)
+                                                                      parse_obj('CLS', 'x]]'):
+                                                                      parse_obj('CLS', 'x]]') -> (None, None)
                                                                       ## 35 ##
                                                                       parse_obj('IF_ELSE', 'x]]'):
                                                                         ## 36 ##
@@ -24182,8 +24182,8 @@ parse_obj('LINE', 'a . b'):
       parse_obj('MAP', 'a . b'):
       parse_obj('MAP', 'a . b') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'a . b'):
-      parse_obj('ENV', 'a . b') -> (None, None)
+      parse_obj('CLS', 'a . b'):
+      parse_obj('CLS', 'a . b') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'a . b'):
         ## 4 ##
@@ -24443,8 +24443,8 @@ parse_obj('LINE', 'x : 2'):
       parse_obj('MAP', 'x : 2'):
       parse_obj('MAP', 'x : 2') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'x : 2'):
-      parse_obj('ENV', 'x : 2') -> (None, None)
+      parse_obj('CLS', 'x : 2'):
+      parse_obj('CLS', 'x : 2') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'x : 2'):
         ## 4 ##
@@ -24698,8 +24698,8 @@ parse_obj('LINE', '(3'):
       parse_obj('MAP', '(3'):
       parse_obj('MAP', '(3') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '(3'):
-      parse_obj('ENV', '(3') -> (None, None)
+      parse_obj('CLS', '(3'):
+      parse_obj('CLS', '(3') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '(3'):
         ## 4 ##
@@ -24762,8 +24762,8 @@ parse_obj('LINE', '(3'):
                             parse_obj('MAP', '3'):
                             parse_obj('MAP', '3') -> (None, None)
                             ## 14 ##
-                            parse_obj('ENV', '3'):
-                            parse_obj('ENV', '3') -> (None, None)
+                            parse_obj('CLS', '3'):
+                            parse_obj('CLS', '3') -> (None, None)
                             ## 14 ##
                             parse_obj('IF_ELSE', '3'):
                               ## 15 ##
@@ -25007,8 +25007,8 @@ parse_obj('LINE', '[3, f(4])'):
       parse_obj('MAP', '[3, f(4])'):
       parse_obj('MAP', '[3, f(4])') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[3, f(4])'):
-      parse_obj('ENV', '[3, f(4])') -> (None, None)
+      parse_obj('CLS', '[3, f(4])'):
+      parse_obj('CLS', '[3, f(4])') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[3, f(4])'):
         ## 4 ##
@@ -25108,8 +25108,8 @@ parse_obj('LINE', '[3, f(4])'):
                                 parse_obj('MAP', '3, f(4])'):
                                 parse_obj('MAP', '3, f(4])') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', '3, f(4])'):
-                                parse_obj('ENV', '3, f(4])') -> (None, None)
+                                parse_obj('CLS', '3, f(4])'):
+                                parse_obj('CLS', '3, f(4])') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', '3, f(4])'):
                                   ## 17 ##
@@ -25495,8 +25495,8 @@ parse_obj('LINE', '[3, f(4])'):
                                                         parse_obj('MAP', '4])'):
                                                         parse_obj('MAP', '4])') -> (None, None)
                                                         ## 28 ##
-                                                        parse_obj('ENV', '4])'):
-                                                        parse_obj('ENV', '4])') -> (None, None)
+                                                        parse_obj('CLS', '4])'):
+                                                        parse_obj('CLS', '4])') -> (None, None)
                                                         ## 28 ##
                                                         parse_obj('IF_ELSE', '4])'):
                                                           ## 29 ##
@@ -25802,8 +25802,8 @@ parse_obj('LINE', '[3, f(4])'):
                                     parse_obj('MAP', ' f(4])'):
                                     parse_obj('MAP', ' f(4])') -> (None, None)
                                     ## 18 ##
-                                    parse_obj('ENV', ' f(4])'):
-                                    parse_obj('ENV', ' f(4])') -> (None, None)
+                                    parse_obj('CLS', ' f(4])'):
+                                    parse_obj('CLS', ' f(4])') -> (None, None)
                                     ## 18 ##
                                     parse_obj('IF_ELSE', ' f(4])'):
                                       ## 19 ##
@@ -25931,8 +25931,8 @@ parse_obj('LINE', 'f[3, [5]'):
       parse_obj('MAP', 'f[3, [5]'):
       parse_obj('MAP', 'f[3, [5]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', 'f[3, [5]'):
-      parse_obj('ENV', 'f[3, [5]') -> (None, None)
+      parse_obj('CLS', 'f[3, [5]'):
+      parse_obj('CLS', 'f[3, [5]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', 'f[3, [5]'):
         ## 4 ##
@@ -26103,8 +26103,8 @@ parse_obj('LINE', 'f[3, [5]'):
                                   parse_obj('MAP', '3, [5]'):
                                   parse_obj('MAP', '3, [5]') -> (None, None)
                                   ## 17 ##
-                                  parse_obj('ENV', '3, [5]'):
-                                  parse_obj('ENV', '3, [5]') -> (None, None)
+                                  parse_obj('CLS', '3, [5]'):
+                                  parse_obj('CLS', '3, [5]') -> (None, None)
                                   ## 17 ##
                                   parse_obj('IF_ELSE', '3, [5]'):
                                     ## 18 ##
@@ -26456,8 +26456,8 @@ parse_obj('LINE', 'f[3, [5]'):
                                                             parse_obj('MAP', '5]'):
                                                             parse_obj('MAP', '5]') -> (None, None)
                                                             ## 30 ##
-                                                            parse_obj('ENV', '5]'):
-                                                            parse_obj('ENV', '5]') -> (None, None)
+                                                            parse_obj('CLS', '5]'):
+                                                            parse_obj('CLS', '5]') -> (None, None)
                                                             ## 30 ##
                                                             parse_obj('IF_ELSE', '5]'):
                                                               ## 31 ##
@@ -26740,8 +26740,8 @@ parse_obj('LINE', 'f[3, [5]'):
                                       parse_obj('MAP', ' [5]'):
                                       parse_obj('MAP', ' [5]') -> (None, None)
                                       ## 19 ##
-                                      parse_obj('ENV', ' [5]'):
-                                      parse_obj('ENV', ' [5]') -> (None, None)
+                                      parse_obj('CLS', ' [5]'):
+                                      parse_obj('CLS', ' [5]') -> (None, None)
                                       ## 19 ##
                                       parse_obj('IF_ELSE', ' [5]'):
                                         ## 20 ##
@@ -26873,8 +26873,8 @@ parse_obj('LINE', '[2, 4] + [6, 7'):
       parse_obj('MAP', '[2, 4] + [6, 7'):
       parse_obj('MAP', '[2, 4] + [6, 7') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[2, 4] + [6, 7'):
-      parse_obj('ENV', '[2, 4] + [6, 7') -> (None, None)
+      parse_obj('CLS', '[2, 4] + [6, 7'):
+      parse_obj('CLS', '[2, 4] + [6, 7') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[2, 4] + [6, 7'):
         ## 4 ##
@@ -26974,8 +26974,8 @@ parse_obj('LINE', '[2, 4] + [6, 7'):
                                 parse_obj('MAP', '2, 4] + [6, 7'):
                                 parse_obj('MAP', '2, 4] + [6, 7') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', '2, 4] + [6, 7'):
-                                parse_obj('ENV', '2, 4] + [6, 7') -> (None, None)
+                                parse_obj('CLS', '2, 4] + [6, 7'):
+                                parse_obj('CLS', '2, 4] + [6, 7') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', '2, 4] + [6, 7'):
                                   ## 17 ##
@@ -27452,8 +27452,8 @@ parse_obj('LINE', '[2, 4] + [6, 7'):
                                     parse_obj('MAP', ' 4] + [6, 7'):
                                     parse_obj('MAP', ' 4] + [6, 7') -> (None, None)
                                     ## 18 ##
-                                    parse_obj('ENV', ' 4] + [6, 7'):
-                                    parse_obj('ENV', ' 4] + [6, 7') -> (None, None)
+                                    parse_obj('CLS', ' 4] + [6, 7'):
+                                    parse_obj('CLS', ' 4] + [6, 7') -> (None, None)
                                     ## 18 ##
                                     parse_obj('IF_ELSE', ' 4] + [6, 7'):
                                       ## 19 ##
@@ -27594,8 +27594,8 @@ parse_obj('LINE', '[2, 4] + [6, 7'):
                                   parse_obj('MAP', '6, 7'):
                                   parse_obj('MAP', '6, 7') -> (None, None)
                                   ## 17 ##
-                                  parse_obj('ENV', '6, 7'):
-                                  parse_obj('ENV', '6, 7') -> (None, None)
+                                  parse_obj('CLS', '6, 7'):
+                                  parse_obj('CLS', '6, 7') -> (None, None)
                                   ## 17 ##
                                   parse_obj('IF_ELSE', '6, 7'):
                                     ## 18 ##
@@ -27958,8 +27958,8 @@ parse_obj('LINE', '[2, 4] + [6, 7'):
                                       parse_obj('MAP', ' 7'):
                                       parse_obj('MAP', ' 7') -> (None, None)
                                       ## 19 ##
-                                      parse_obj('ENV', ' 7'):
-                                      parse_obj('ENV', ' 7') -> (None, None)
+                                      parse_obj('CLS', ' 7'):
+                                      parse_obj('CLS', ' 7') -> (None, None)
                                       ## 19 ##
                                       parse_obj('IF_ELSE', ' 7'):
                                         ## 20 ##
@@ -28142,8 +28142,8 @@ parse_obj('LINE', '[*a, *b] -> [a; b]'):
         parse_seq([['EXP', ['OBJ', 'PARS'], ['OBJ', 'NAME']], ['MARK', '->'], ['OBJ', 'EXP']], '[*a, *b] -> [a; b]') -> (None, None)
       parse_obj('MAP', '[*a, *b] -> [a; b]') -> (None, None)
       ## 3 ##
-      parse_obj('ENV', '[*a, *b] -> [a; b]'):
-      parse_obj('ENV', '[*a, *b] -> [a; b]') -> (None, None)
+      parse_obj('CLS', '[*a, *b] -> [a; b]'):
+      parse_obj('CLS', '[*a, *b] -> [a; b]') -> (None, None)
       ## 3 ##
       parse_obj('IF_ELSE', '[*a, *b] -> [a; b]'):
         ## 4 ##
@@ -28249,8 +28249,8 @@ parse_obj('LINE', '[*a, *b] -> [a; b]'):
                                   parse_seq([['EXP', ['OBJ', 'PARS'], ['OBJ', 'NAME']], ['MARK', '->'], ['OBJ', 'EXP']], '*a, *b] -> [a; b]') -> (None, None)
                                 parse_obj('MAP', '*a, *b] -> [a; b]') -> (None, None)
                                 ## 16 ##
-                                parse_obj('ENV', '*a, *b] -> [a; b]'):
-                                parse_obj('ENV', '*a, *b] -> [a; b]') -> (None, None)
+                                parse_obj('CLS', '*a, *b] -> [a; b]'):
+                                parse_obj('CLS', '*a, *b] -> [a; b]') -> (None, None)
                                 ## 16 ##
                                 parse_obj('IF_ELSE', '*a, *b] -> [a; b]'):
                                   ## 17 ##
@@ -28413,8 +28413,8 @@ parse_obj('LINE', '[*a, *b] -> [a; b]'):
                                     parse_seq([['EXP', ['OBJ', 'PARS'], ['OBJ', 'NAME']], ['MARK', '->'], ['OBJ', 'EXP']], 'a, *b] -> [a; b]') -> (None, None)
                                   parse_obj('MAP', 'a, *b] -> [a; b]') -> (None, None)
                                   ## 17 ##
-                                  parse_obj('ENV', 'a, *b] -> [a; b]'):
-                                  parse_obj('ENV', 'a, *b] -> [a; b]') -> (None, None)
+                                  parse_obj('CLS', 'a, *b] -> [a; b]'):
+                                  parse_obj('CLS', 'a, *b] -> [a; b]') -> (None, None)
                                   ## 17 ##
                                   parse_obj('IF_ELSE', 'a, *b] -> [a; b]'):
                                     ## 18 ##
@@ -28748,8 +28748,8 @@ parse_obj('LINE', '[*a, *b] -> [a; b]'):
                                       parse_seq([['EXP', ['OBJ', 'PARS'], ['OBJ', 'NAME']], ['MARK', '->'], ['OBJ', 'EXP']], 'b] -> [a; b]') -> (None, None)
                                     parse_obj('MAP', 'b] -> [a; b]') -> (None, None)
                                     ## 18 ##
-                                    parse_obj('ENV', 'b] -> [a; b]'):
-                                    parse_obj('ENV', 'b] -> [a; b]') -> (None, None)
+                                    parse_obj('CLS', 'b] -> [a; b]'):
+                                    parse_obj('CLS', 'b] -> [a; b]') -> (None, None)
                                     ## 18 ##
                                     parse_obj('IF_ELSE', 'b] -> [a; b]'):
                                       ## 19 ##

@@ -16,9 +16,9 @@ IMPORT  := import /\w+/ /-[tvp]/ *
 HIDE    := ;
 COMMENT := [#] - /.*/
 
-EXP     := MAP | ENV | IF_ELSE | OP_SEQ
+EXP     := MAP | CLS | IF_ELSE | OP_SEQ
 MAP     := ( PARS | NAME ) -> EXP
-ENV     := ( BINDS | FIELD ) :: EXP
+CLS     := ( BINDS | FIELD ) :: EXP
 BINDS   := %GRP < %SEQ < BIND , > >
 BIND    := ( PARS | NAME ) : EXP
 IF_ELSE := OP_SEQ if OP_SEQ else EXP
