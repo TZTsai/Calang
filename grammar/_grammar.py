@@ -51,7 +51,7 @@ MARK    := [^>|)\s]\S*
 
 
 GrammarStr = open('grammar/grammar.txt', 'r').read()
-GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment
+GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
 Grammar = split(GrammarStr, '\n')
 # add syntax for operations
 bin_op, unl_op, unr_op = ['"' + '" | "'.join(sorted(ops, reverse=1, key=len)) + '"' 
@@ -106,6 +106,7 @@ def calc_grammar(rules, whitespace=r'\s*'):
     M = {}
     for rule in rules:
         rule = rule.split('##', 1)[0].strip()
+        if not rule: continue
         tree, rem = parse_grammar('DEF', rule)
         assert tree[0] == 'DEF' and not rem
         name, body = tree[1][1], refactor_tree(tree[3])

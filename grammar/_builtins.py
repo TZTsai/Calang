@@ -49,7 +49,7 @@ def construct_ops(op_dict, type_):
         op_dict[op] = Op(type_, process_func(op, fun), pri)
 
 
-binary_ops = {'+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '*.': (dot, 7), '/': (div_, 8), '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '=': (equal, 0), '/=': (ne, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'outof': (lambda x, y: x not in y, -2), '~': (Range, 5), '..': (range_, 5), 'and': (and_, -5), 'is': (None, 0), 'or': (or_, -6), '&.': (and_, 8), '|.': (or_, 7)}
+binary_ops = {'+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '*.': (dot, 7), '/': (div_, 8), '//': (floordiv, 8), '^': (power, 14), '%': (mod, 8), '=': (equal, 0), '/=': (ne, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'outof': (lambda x, y: x not in y, -2), '~': (Range, 5), '..': (range_, 5), 'and': (and_, -5), 'is': (None, 0), 'or': (or_, -6), '&.': (and_, 8), '|.': (or_, 7), '@': (None, 0)}
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~.': (inv, 10), '@': (transpose, 10)}
 unary_r_ops = {'!': (factorial, 20), '!!': (db_fact, 20)}
 

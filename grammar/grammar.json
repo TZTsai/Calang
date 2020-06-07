@@ -47,193 +47,9 @@
       "EMPTY"
     ]
   ],
-  "DEF": [
-    "ALT",
-    [
-      "EXP",
-      [
-        "OBJ",
-        "FUNC"
-      ],
-      [
-        "OBJ",
-        "FIELD"
-      ]
-    ],
-    [
-      "MARK",
-      ":="
-    ],
-    [
-      "OBJ",
-      "EXP"
-    ]
-  ],
-  "FUNC": [
-    "ALT",
-    [
-      "OBJ",
-      "FIELD"
-    ],
-    [
-      "OBJ",
-      "FORMAL"
-    ]
-  ],
-  "FIELD": [
-    "ALT",
-    [
-      "OBJ",
-      "NAME"
-    ],
-    [
-      "ITEM_OP",
-      [
-        "ALT",
-        [
-          "ITEM_OP",
-          [
-            "MARK",
-            "."
-          ],
-          [
-            "OP",
-            "/"
-          ]
-        ],
-        [
-          "OBJ",
-          "NAME"
-        ]
-      ],
-      [
-        "OP",
-        "*"
-      ]
-    ]
-  ],
-  "NAME": [
+  "EMPTY": [
     "RE",
-    "/[\\u0374-\\u03FFa-zA-Z][a-zA-Z\\d_]*[?]?/"
-  ],
-  "FORMAL": [
-    "ALT",
-    [
-      "ITEM_OP",
-      [
-        "STR",
-        "\"[\""
-      ],
-      [
-        "OP",
-        "-"
-      ]
-    ],
-    [
-      "ALT",
-      [
-        "ITEM_OP",
-        [
-          "OBJ",
-          "_PARS"
-        ],
-        [
-          "OP",
-          "?"
-        ]
-      ],
-      [
-        "ITEM_OP",
-        [
-          "OBJ",
-          "EXT_PAR"
-        ],
-        [
-          "OP",
-          "?"
-        ]
-      ]
-    ],
-    [
-      "ITEM_OP",
-      [
-        "STR",
-        "\"]\""
-      ],
-      [
-        "OP",
-        "-"
-      ]
-    ]
-  ],
-  "_PARS": [
-    "ALT",
-    [
-      "EXP",
-      [
-        "OBJ",
-        "BIND"
-      ],
-      [
-        "OBJ",
-        "FORMAL"
-      ],
-      [
-        "OBJ",
-        "NAME"
-      ]
-    ],
-    [
-      "ITEM_OP",
-      [
-        "ALT",
-        [
-          "MARK",
-          ","
-        ],
-        [
-          "EXP",
-          [
-            "OBJ",
-            "BIND"
-          ],
-          [
-            "OBJ",
-            "FORMAL"
-          ],
-          [
-            "OBJ",
-            "NAME"
-          ]
-        ]
-      ],
-      [
-        "OP",
-        "*"
-      ]
-    ]
-  ],
-  "EXT_PAR": [
-    "ALT",
-    [
-      "MARK",
-      ","
-    ],
-    [
-      "ITEM_OP",
-      [
-        "CHARS",
-        "[*]"
-      ],
-      [
-        "OP",
-        "-"
-      ]
-    ],
-    [
-      "OBJ",
-      "NAME"
-    ]
+    "//"
   ],
   "CMD": [
     "EXP",
@@ -403,37 +219,310 @@
       "/.*/"
     ]
   ],
+  "DEF": [
+    "ALT",
+    [
+      "OBJ",
+      "PATTERN"
+    ],
+    [
+      "MARK",
+      ":="
+    ],
+    [
+      "OBJ",
+      "EXP"
+    ]
+  ],
+  "PATTERN": [
+    "ALT",
+    [
+      "OBJ",
+      "FIELDS"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "EXP",
+        [
+          "ALT",
+          [
+            "ITEM_OP",
+            [
+              "STR",
+              "\"(\""
+            ],
+            [
+              "OP",
+              "-"
+            ]
+          ],
+          [
+            "OBJ",
+            "NAME"
+          ],
+          [
+            "ITEM_OP",
+            [
+              "STR",
+              "\")\""
+            ],
+            [
+              "OP",
+              "-"
+            ]
+          ]
+        ],
+        [
+          "OBJ",
+          "FORM"
+        ]
+      ],
+      [
+        "OP",
+        "?"
+      ]
+    ]
+  ],
+  "FIELDS": [
+    "ALT",
+    [
+      "OBJ",
+      "FIELD"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "ALT",
+        [
+          "MARK",
+          "@"
+        ],
+        [
+          "OBJ",
+          "FIELD"
+        ]
+      ],
+      [
+        "OP",
+        "*"
+      ]
+    ]
+  ],
+  "FIELD": [
+    "ALT",
+    [
+      "OBJ",
+      "NAME"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "ALT",
+        [
+          "ITEM_OP",
+          [
+            "MARK",
+            "."
+          ],
+          [
+            "OP",
+            "/"
+          ]
+        ],
+        [
+          "OBJ",
+          "NAME"
+        ]
+      ],
+      [
+        "OP",
+        "*"
+      ]
+    ]
+  ],
+  "NAME": [
+    "RE",
+    "/[\\u0374-\\u03FFa-zA-Z][a-zA-Z\\d_]*[?]?/"
+  ],
+  "FORM": [
+    "EXP",
+    [
+      "ALT",
+      [
+        "ITEM_OP",
+        [
+          "STR",
+          "\"[\""
+        ],
+        [
+          "OP",
+          "-"
+        ]
+      ],
+      [
+        "ALT",
+        [
+          "ITEM_OP",
+          [
+            "OBJ",
+            "_PARS"
+          ],
+          [
+            "OP",
+            "?"
+          ]
+        ],
+        [
+          "ITEM_OP",
+          [
+            "OBJ",
+            "EXT_PAR"
+          ],
+          [
+            "OP",
+            "?"
+          ]
+        ]
+      ],
+      [
+        "ITEM_OP",
+        [
+          "STR",
+          "\"]\""
+        ],
+        [
+          "OP",
+          "-"
+        ]
+      ]
+    ],
+    [
+      "OBJ",
+      "NAME"
+    ]
+  ],
+  "_PARS": [
+    "ALT",
+    [
+      "EXP",
+      [
+        "OBJ",
+        "BIND"
+      ],
+      [
+        "OBJ",
+        "FORM"
+      ]
+    ],
+    [
+      "ITEM_OP",
+      [
+        "ALT",
+        [
+          "MARK",
+          ","
+        ],
+        [
+          "EXP",
+          [
+            "OBJ",
+            "BIND"
+          ],
+          [
+            "OBJ",
+            "FORM"
+          ]
+        ]
+      ],
+      [
+        "OP",
+        "*"
+      ]
+    ]
+  ],
+  "EXT_PAR": [
+    "ALT",
+    [
+      "MARK",
+      ","
+    ],
+    [
+      "ITEM_OP",
+      [
+        "CHARS",
+        "[*]"
+      ],
+      [
+        "OP",
+        "-"
+      ]
+    ],
+    [
+      "OBJ",
+      "NAME"
+    ]
+  ],
   "EXP": [
     "EXP",
+    [
+      "ALT",
+      [
+        "OBJ",
+        "MATCH"
+      ],
+      [
+        "ITEM_OP",
+        [
+          "ALT",
+          [
+            "MARK",
+            "->"
+          ],
+          [
+            "OBJ",
+            "EXP"
+          ]
+        ],
+        [
+          "OP",
+          "?"
+        ]
+      ]
+    ],
     [
       "OBJ",
       "MAP"
     ],
     [
       "OBJ",
-      "CLS"
+      "LET"
     ],
     [
       "OBJ",
-      "IF_ELSE"
+      "VAL"
+    ]
+  ],
+  "MATCH": [
+    "ALT",
+    [
+      "OBJ",
+      "VAL"
+    ],
+    [
+      "MARK",
+      "->"
     ],
     [
       "OBJ",
-      "OP_SEQ"
+      "FORM"
     ]
   ],
   "MAP": [
     "ALT",
     [
-      "EXP",
-      [
-        "OBJ",
-        "FORMAL"
-      ],
-      [
-        "OBJ",
-        "NAME"
-      ]
+      "OBJ",
+      "FORM"
     ],
     [
       "MARK",
@@ -444,29 +533,33 @@
       "EXP"
     ]
   ],
-  "CLS": [
+  "LET": [
     "ALT",
     [
-      "EXP",
-      [
-        "OBJ",
-        "BINDS"
-      ],
-      [
-        "OBJ",
-        "FIELD"
-      ]
+      "OBJ",
+      "ENV"
     ],
     [
       "MARK",
-      "::"
+      "->"
     ],
     [
       "OBJ",
       "EXP"
     ]
   ],
-  "BINDS": [
+  "VAL": [
+    "EXP",
+    [
+      "OBJ",
+      "IF_ELSE"
+    ],
+    [
+      "OBJ",
+      "SEQ"
+    ]
+  ],
+  "ENV": [
     "ALT",
     [
       "ITEM_OP",
@@ -519,15 +612,8 @@
   "BIND": [
     "ALT",
     [
-      "EXP",
-      [
-        "OBJ",
-        "FORMAL"
-      ],
-      [
-        "OBJ",
-        "NAME"
-      ]
+      "OBJ",
+      "FORM"
     ],
     [
       "MARK",
@@ -542,7 +628,7 @@
     "ALT",
     [
       "OBJ",
-      "OP_SEQ"
+      "SEQ"
     ],
     [
       "MARK",
@@ -550,7 +636,7 @@
     ],
     [
       "OBJ",
-      "OP_SEQ"
+      "SEQ"
     ],
     [
       "MARK",
@@ -561,7 +647,7 @@
       "EXP"
     ]
   ],
-  "OP_SEQ": [
+  "SEQ": [
     "ALT",
     [
       "ITEM_OP",
@@ -639,27 +725,52 @@
       ]
     ]
   ],
-  "EMPTY": [
-    "RE",
-    "//"
+  "GROUP": [
+    "ALT",
+    [
+      "ITEM_OP",
+      [
+        "STR",
+        "\"(\""
+      ],
+      [
+        "OP",
+        "-"
+      ]
+    ],
+    [
+      "OBJ",
+      "EXP"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "STR",
+        "\")\""
+      ],
+      [
+        "OP",
+        "-"
+      ]
+    ]
   ],
   "ITEM": [
     "EXP",
+    [
+      "OBJ",
+      "ENV"
+    ],
+    [
+      "OBJ",
+      "GROUP"
+    ],
     [
       "OBJ",
       "WHEN"
     ],
     [
       "OBJ",
-      "BINDS"
-    ],
-    [
-      "OBJ",
       "FIT"
-    ],
-    [
-      "OBJ",
-      "GROUP"
     ],
     [
       "OBJ",
@@ -680,6 +791,122 @@
     [
       "OBJ",
       "LST"
+    ]
+  ],
+  "WHEN": [
+    "ALT",
+    [
+      "MARK",
+      "when"
+    ],
+    [
+      "ALT",
+      [
+        "ITEM_OP",
+        [
+          "STR",
+          "\"(\""
+        ],
+        [
+          "OP",
+          "-"
+        ]
+      ],
+      [
+        "ALT",
+        [
+          "ALT",
+          [
+            "OBJ",
+            "CASE"
+          ],
+          [
+            "ITEM_OP",
+            [
+              "ALT",
+              [
+                "MARK",
+                ","
+              ],
+              [
+                "OBJ",
+                "CASE"
+              ]
+            ],
+            [
+              "OP",
+              "*"
+            ]
+          ]
+        ],
+        [
+          "MARK",
+          ","
+        ],
+        [
+          "OBJ",
+          "EXP"
+        ]
+      ],
+      [
+        "ITEM_OP",
+        [
+          "STR",
+          "\")\""
+        ],
+        [
+          "OP",
+          "-"
+        ]
+      ]
+    ]
+  ],
+  "FIT": [
+    "ALT",
+    [
+      "MARK",
+      "->"
+    ],
+    [
+      "OBJ",
+      "FORM"
+    ]
+  ],
+  "CASE": [
+    "ALT",
+    [
+      "OBJ",
+      "EXP"
+    ],
+    [
+      "MARK",
+      ":"
+    ],
+    [
+      "OBJ",
+      "EXP"
+    ]
+  ],
+  "SYM": [
+    "ALT",
+    [
+      "MARK",
+      "'"
+    ],
+    [
+      "OBJ",
+      "NAME"
+    ]
+  ],
+  "ANS": [
+    "ALT",
+    [
+      "MARK",
+      "_"
+    ],
+    [
+      "RE",
+      "/(\\d+|_*)/"
     ]
   ],
   "LST": [
@@ -1010,156 +1237,11 @@
     "EXP",
     [
       "OBJ",
-      "OP_SEQ"
+      "SEQ"
     ],
     [
       "OBJ",
       "EMPTY"
-    ]
-  ],
-  "FIT": [
-    "ALT",
-    [
-      "MARK",
-      "->"
-    ],
-    [
-      "OBJ",
-      "FORMAL"
-    ]
-  ],
-  "GROUP": [
-    "ALT",
-    [
-      "ITEM_OP",
-      [
-        "STR",
-        "\"(\""
-      ],
-      [
-        "OP",
-        "-"
-      ]
-    ],
-    [
-      "OBJ",
-      "EXP"
-    ],
-    [
-      "ITEM_OP",
-      [
-        "STR",
-        "\")\""
-      ],
-      [
-        "OP",
-        "-"
-      ]
-    ]
-  ],
-  "WHEN": [
-    "ALT",
-    [
-      "MARK",
-      "when"
-    ],
-    [
-      "ALT",
-      [
-        "ITEM_OP",
-        [
-          "STR",
-          "\"(\""
-        ],
-        [
-          "OP",
-          "-"
-        ]
-      ],
-      [
-        "ALT",
-        [
-          "ALT",
-          [
-            "OBJ",
-            "CASE"
-          ],
-          [
-            "ITEM_OP",
-            [
-              "ALT",
-              [
-                "MARK",
-                ","
-              ],
-              [
-                "OBJ",
-                "CASE"
-              ]
-            ],
-            [
-              "OP",
-              "*"
-            ]
-          ]
-        ],
-        [
-          "MARK",
-          ","
-        ],
-        [
-          "OBJ",
-          "EXP"
-        ]
-      ],
-      [
-        "ITEM_OP",
-        [
-          "STR",
-          "\")\""
-        ],
-        [
-          "OP",
-          "-"
-        ]
-      ]
-    ]
-  ],
-  "CASE": [
-    "ALT",
-    [
-      "OBJ",
-      "EXP"
-    ],
-    [
-      "MARK",
-      ":"
-    ],
-    [
-      "OBJ",
-      "EXP"
-    ]
-  ],
-  "SYM": [
-    "ALT",
-    [
-      "MARK",
-      "'"
-    ],
-    [
-      "OBJ",
-      "NAME"
-    ]
-  ],
-  "ANS": [
-    "ALT",
-    [
-      "MARK",
-      "_"
-    ],
-    [
-      "RE",
-      "/(\\d+|_*)/"
     ]
   ],
   "NUM": [
@@ -1170,15 +1252,15 @@
     ],
     [
       "OBJ",
-      "REAL"
-    ],
-    [
-      "OBJ",
       "BIN"
     ],
     [
       "OBJ",
       "HEX"
+    ],
+    [
+      "OBJ",
+      "REAL"
     ]
   ],
   "COMPLEX": [
@@ -1337,6 +1419,10 @@
     [
       "STR",
       "\"~\""
+    ],
+    [
+      "STR",
+      "\"@\""
     ]
   ],
   "LOP": [

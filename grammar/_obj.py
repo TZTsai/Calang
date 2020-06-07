@@ -214,6 +214,6 @@ class config:
     tolerance = 1e-12
     precision = 6
     latex = False
-    all_symbol = True
+    symbolic = True
     debug = __debug__
 

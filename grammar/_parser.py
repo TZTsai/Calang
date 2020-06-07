@@ -114,8 +114,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
                 return None, None
             return pattern if tag == 'STR' else [], rem
 
-    obj_marks = {'DEF': ':=', 'MAP': '->', 'CLS': '::', 'GEN_LST': '|', 
-                 'FIT': '->'}
+    obj_marks = {'DEF': ':=', 'MAP': '->', 'LET': '->', 'GEN_LST': '|', 
+                 'MATCH': '->', 'ENV': ':', 'SLICE': ':'}
     @trace
     @memo
     def parse_obj(obj, text):
@@ -165,7 +165,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     prefixes = ['NUM', 'SYM', 'LST', 'EXT_PAR', 'CMD', 'FIT']
-    list_obj = lambda tag:  tag[-3:] == 'LST' or tag in ['DIR', 'FORMAL']
+    list_obj = lambda tag:  tag[-3:] == 'LST' or tag in ['DIR']
     @trace
     def process_tag(tag, tree):
         if not tree:
@@ -209,73 +209,73 @@ def check_parse(exp, expected, termin=1):
 def simple_tests():
     check_parse('3', (['NUM:REAL', '3'], ''))
     check_parse('x', (['NAME', 'x'], ''))
-    check_parse('2*.4', (['OP_SEQ', ['NUM:REAL', '2'], ['BOP', '*.'], ['NUM:REAL', '4']], ''))
+    check_parse('2*.4', (['SEQ', ['NUM:REAL', '2'], ['BOP', '*.'], ['NUM:REAL', '4']], ''))
     check_parse('2.4e-18', (['NUM:REAL', '2.4', '-18'], ''))
     check_parse('2.4-1e-10I', 
                 (['NUM:COMPLEX', ['REAL', '2.4'], '-', ['REAL', '1', '-10']], ''))
     check_parse('1+2*3', 
-                (['OP_SEQ', ['NUM:REAL', '1'], ['BOP', '+'], ['NUM:REAL', '2'], ['BOP', '*'], ['NUM:REAL', '3']], ''))
-    check_parse('3!+4', (['OP_SEQ', ['NUM:REAL', '3'], ['ROP', '!'], ['BOP', '+'], ['NUM:REAL', '4']], ''))
+                (['SEQ', ['NUM:REAL', '1'], ['BOP', '+'], ['NUM:REAL', '2'], ['BOP', '*'], ['NUM:REAL', '3']], ''))
+    check_parse('3!+4', (['SEQ', ['NUM:REAL', '3'], ['ROP', '!'], ['BOP', '+'], ['NUM:REAL', '4']], ''))
     check_parse('[]', (['LST'], ''))
     check_parse('[2]', (['LST', ['NUM:REAL', '2']], ''))
     check_parse('[3, 4, 6]', (['LST', ['NUM:REAL', '3'], 
                             ['NUM:REAL', '4'], ['NUM:REAL', '6']], ''))
-    check_parse('f[]',  (['OP_SEQ', ['NAME', 'f'], ['LST']], ''))
+    check_parse('f[]',  (['SEQ', ['NAME', 'f'], ['LST']], ''))
     check_parse('x := 5', (['DEF', ['NAME', 'x'], ['NUM:REAL', '5']], ''))
     check_parse('x := 3 * f[3, 5, 7]',
-                (['DEF', ['NAME', 'x'], ['OP_SEQ', ['NUM:REAL', '3'], ['BOP', '*'], ['NAME', 'f'], ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '5'], ['NUM:REAL', '7']]]], ''))
+                (['DEF', ['NAME', 'x'], ['SEQ', ['NUM:REAL', '3'], ['BOP', '*'], ['NAME', 'f'], ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '5'], ['NUM:REAL', '7']]]], ''))
     check_parse('f[x]:=1/x',
-                (['DEF', ['FUNC', ['NAME', 'f'], ['FORMAL', ['NAME', 'x']]], ['OP_SEQ', ['NUM:REAL', '1'], ['BOP', '/'], ['NAME', 'x']]], ''))
+                (['DEF', ['PATTERN', ['NAME', 'f'], ['NAME', 'x']], ['SEQ', ['NUM:REAL', '1'], ['BOP', '/'], ['NAME', 'x']]], ''))
     check_parse('f[]:=1',
-                (['DEF', ['FUNC', ['NAME', 'f'], ['FORMAL']], ['NUM:REAL', '1']], ''))
+                (['DEF', ['PATTERN', ['NAME', 'f'], ['FORM']], ['NUM:REAL', '1']], ''))
     check_parse('f[x, y]:=x*y',
-                (['DEF', ['FUNC', ['NAME', 'f'], ['FORMAL', ['NAME', 'x'], ['NAME', 'y']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '*'], ['NAME', 'y']]], ''))
+                (['DEF', ['PATTERN', ['NAME', 'f'], ['FORM', ['NAME', 'x'], ['NAME', 'y']]], ['SEQ', ['NAME', 'x'], ['BOP', '*'], ['NAME', 'y']]], ''))
     check_parse('[1,2;3,4]', 
                 (['LST:MAT_LST', ['ROW_LST', ['NUM:REAL', '1'], ['NUM:REAL', '2']], ['ROW_LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']]], ''))
     check_parse('when(1: 2, 3: 4, 5)', 
                 (['WHEN', [['CASE', ['NUM:REAL', '1'], ['NUM:REAL', '2']], ['CASE', ['NUM:REAL', '3'], ['NUM:REAL', '4']]], ['NUM:REAL', '5']], ''))
     check_parse('[x, y] -> x+y',
-                (['MAP', ['FORMAL', ['NAME', 'x'], ['NAME', 'y']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], ''))
-    check_parse('[]->1', (['MAP', ['FORMAL'], ['NUM:REAL', '1']], ''))
+                (['MAP', ['FORM', ['NAME', 'x'], ['NAME', 'y']], ['SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], ''))
+    check_parse('[]->1', (['MAP', ['FORM'], ['NUM:REAL', '1']], ''))
     check_parse('[a, *r] -> [a, *r]', 
-                (['MAP', ['FORMAL', ['NAME', 'a'], ['EXT_PAR:NAME', 'r']], ['LST', ['NAME', 'a'], ['LS_ITEM', '*', ['NAME', 'r']]]], ''))
+                (['MAP', ['FORM', ['NAME', 'a'], ['EXT_PAR:NAME', 'r']], ['LST', ['NAME', 'a'], ['LS_ITEM', '*', ['NAME', 'r']]]], ''))
     check_parse('(x: 2)', (['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ''))
-    check_parse('(x:1, y:2) :: x+y',
-                (['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], ''))
+    check_parse('(x:1, y:2) -> x+y',
+                (['LET', ['ENV', ['BIND', ['NAME', 'x'], ['NUM:REAL', '1']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '2']]], ['SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]], ''))
     check_parse('l[x:2]', 
-                (['OP_SEQ', ['NAME', 'l'], ['LST', ['SLICE', ['NAME', 'x'], ['NUM:REAL', '2']]]], ''))
+                (['SEQ', ['NAME', 'l'], ['LST', ['SLICE', ['NAME', 'x'], ['NUM:REAL', '2']]]], ''))
     check_parse('[x|x in [1,2,3]]',
                 (['LST:GEN_LST', ['NAME', 'x'], ['CONSTR', ['NAME', 'x'], ['LST', ['NUM:REAL', '1'], ['NUM:REAL', '2'], ['NUM:REAL', '3']]]], ''))
     check_parse('f[1:]', 
-                (['OP_SEQ', ['NAME', 'f'], ['LST', ['SLICE', ['NUM:REAL', '1'], ['EMPTY']]]], ''))
+                (['SEQ', ['NAME', 'f'], ['LST', ['SLICE', ['NUM:REAL', '1'], ['EMPTY']]]], ''))
     check_parse('m[1:, :-1]',
-                (['OP_SEQ', ['NAME', 'm'], ['LST', ['SLICE', ['NUM:REAL', '1'], ['EMPTY']], ['SLICE', ['EMPTY'], ['NUM:REAL', '-1']]]], ''))
+                (['SEQ', ['NAME', 'm'], ['LST', ['SLICE', ['NUM:REAL', '1'], ['EMPTY']], ['SLICE', ['EMPTY'], ['NUM:REAL', '-1']]]], ''))
     check_parse('dir x', (['CMD:DIR', ['NAME', 'x']], ''))
     check_parse('del x, y', (['CMD:DEL', ['NAME', 'x'], ['NAME', 'y']], ''))
     check_parse('conf LATEX on', (['CMD:CONF', 'LATEX', 'on'], ''))
     check_parse('import gauss_jordan -t', (['CMD:IMPORT', 'gauss_jordan', '-t'], ''))
     check_parse('f[x] := x;  # the semicolon hides the output', 
-                (['LINE', ['DEF', ['FUNC', ['NAME', 'f'], ['FORMAL', ['NAME', 'x']]], ['NAME', 'x']], ['HIDE'], ['COMMENT', 'the semicolon hides the output']], ''))
+                (['LINE', ['DEF', ['PATTERN', ['NAME', 'f'], ['NAME', 'x']], ['NAME', 'x']], ['HIDE'], ['COMMENT', 'the semicolon hides the output']], ''))
 
 def more_tests():
-    check_parse('2~~.-3', (['OP_SEQ', ['NUM:REAL', '2'], ['BOP', '~'], ['LOP', '~.'], ['NUM:REAL', '-3']], ''))
+    check_parse('2~~.-3', (['SEQ', ['NUM:REAL', '2'], ['BOP', '~'], ['LOP', '~.'], ['NUM:REAL', '-3']], ''))
     check_parse('[1,2,3]->[a,*b]', 
-                (['OP_SEQ', ['LST', ['NUM:REAL', '1'], ['NUM:REAL', '2'], ['NUM:REAL', '3']], ['FIT:FORMAL', ['NAME', 'a'], ['EXT_PAR:NAME', 'b']]], ''))
+                (['SEQ', ['LST', ['NUM:REAL', '1'], ['NUM:REAL', '2'], ['NUM:REAL', '3']], ['FIT:FORM', ['NAME', 'a'], ['EXT_PAR:NAME', 'b']]], ''))
     check_parse('x .f', (['FIELD', ['NAME', 'x'], ['NAME', 'f']], ''))
     check_parse('f.a.b[x] := f[x]', 
-                (['DEF', ['FUNC', ['FIELD', ['NAME', 'f'], ['NAME', 'a'], ['NAME', 'b']], ['FORMAL', ['NAME', 'x']]], ['OP_SEQ', ['NAME', 'f'], ['LST', ['NAME', 'x']]]], ''))
+                (['DEF', ['PATTERN', ['FIELD', ['NAME', 'f'], ['NAME', 'a'], ['NAME', 'b']], ['NAME', 'x']], ['SEQ', ['NAME', 'f'], ['LST', ['NAME', 'x']]]], ''))
     check_parse('f[x, y, z: 0, *w] := 1', 
-                (['DEF', ['FUNC', ['NAME', 'f'], ['FORMAL', ['NAME', 'x'], ['NAME', 'y'], ['BIND', ['NAME', 'z'], ['NUM:REAL', '0']], ['EXT_PAR:NAME', 'w']]], ['NUM:REAL', '1']], '') )
-    check_parse('[3, 4] if x=3 else (x: 2, y: 3) :: x+y',
-                (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['OP_SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['CLS', ['BINDS', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], ''))
+                (['DEF', ['PATTERN', ['NAME', 'f'], ['FORM', ['NAME', 'x'], ['NAME', 'y'], ['BIND', ['NAME', 'z'], ['NUM:REAL', '0']], ['EXT_PAR:NAME', 'w']]], ['NUM:REAL', '1']], ''))
+    check_parse('[3, 4] if x=3 else (x: 2, y: 3) -> x+y',
+                (['IF_ELSE', ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '4']], ['SEQ', ['NAME', 'x'], ['BOP', '='], ['NUM:REAL', '3']], ['LET', ['ENV', ['BIND', ['NAME', 'x'], ['NUM:REAL', '2']], ['BIND', ['NAME', 'y'], ['NUM:REAL', '3']]], ['SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']]]], ''))
     check_parse('[x+f[f[3*6]^2], [2, 6], g[3, 6]]',
-                (['LST', ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'f'], ['LST', ['OP_SEQ', ['NAME', 'f'], ['LST', ['OP_SEQ', ['NUM:REAL', '3'], ['BOP', '*'], ['NUM:REAL', '6']]], ['BOP', '^'], ['NUM:REAL', '2']]]], ['LST', ['NUM:REAL', '2'], ['NUM:REAL', '6']], ['OP_SEQ', ['NAME', 'g'], ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '6']]]], ''))
+                (['LST', ['SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'f'], ['LST', ['SEQ', ['NAME', 'f'], ['LST', ['SEQ', ['NUM:REAL', '3'], ['BOP', '*'], ['NUM:REAL', '6']]], ['BOP', '^'], ['NUM:REAL', '2']]]], ['LST', ['NUM:REAL', '2'], ['NUM:REAL', '6']], ['SEQ', ['NAME', 'g'], ['LST', ['NUM:REAL', '3'], ['NUM:REAL', '6']]]], ''))
     check_parse('[x, [y, *z], *w] -> [x+y+z, w]',
-                (['MAP', ['FORMAL', ['NAME', 'x'], ['FORMAL', ['NAME', 'y'], ['EXT_PAR:NAME', 'z']], ['EXT_PAR:NAME', 'w']], ['LST', ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y'], ['BOP', '+'], ['NAME', 'z']], ['NAME', 'w']]], ''))
+                (['MAP', ['FORM', ['NAME', 'x'], ['FORM', ['NAME', 'y'], ['EXT_PAR:NAME', 'z']], ['EXT_PAR:NAME', 'w']], ['LST', ['SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y'], ['BOP', '+'], ['NAME', 'z']], ['NAME', 'w']]], ''))
     check_parse("(x*('y+2))/3",
-                (['OP_SEQ', ['OP_SEQ', ['NAME', 'x'], ['BOP', '*'], ['OP_SEQ', ['SYM:NAME', 'y'], ['BOP', '+'], ['NUM:REAL', '2']]], ['BOP', '/'], ['NUM:REAL', '3']], ''))
+                (['SEQ', ['SEQ', ['NAME', 'x'], ['BOP', '*'], ['SEQ', ['SYM:NAME', 'y'], ['BOP', '+'], ['NUM:REAL', '2']]], ['BOP', '/'], ['NUM:REAL', '3']], ''))
     check_parse('[x+y | x in 1~10 | y in range[x]]', 
-                (['LST:GEN_LST', ['OP_SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']], ['CONSTRS', ['CONSTR', ['NAME', 'x'], ['OP_SEQ', ['NUM:REAL', '1'], ['BOP', '~'], ['NUM:REAL', '10']]], ['CONSTR', ['NAME', 'y'], ['OP_SEQ', ['NAME', 'range'], ['LST', ['NAME', 'x']]]]]], ''))
+                (['LST:GEN_LST', ['SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']], ['CONSTRS', ['CONSTR', ['NAME', 'x'], ['SEQ', ['NUM:REAL', '1'], ['BOP', '~'], ['NUM:REAL', '10']]], ['CONSTR', ['NAME', 'y'], ['SEQ', ['NAME', 'range'], ['LST', ['NAME', 'x']]]]]], ''))
 
 def test_ill():
     check_parse('a . b', (['NAME', 'a'], ' . b'))
@@ -284,9 +284,9 @@ def test_ill():
     check_parse('[3, f(4])', (['EMPTY'], '[3, f(4])'))
     check_parse('f[3, [5]', (['NAME', 'f'], '[3, [5]'))
     check_parse('[2, 4] + [6, 7', 
-                (['OP_SEQ', ['LST', ['NUM:REAL', '2'], ['NUM:REAL', '4']], ['BOP', '+']], ' [6, 7'))
+                (['SEQ', ['LST', ['NUM:REAL', '2'], ['NUM:REAL', '4']], ['BOP', '+']], ' [6, 7'))
     check_parse('[*a, *b] -> [a; b]', 
-                (['OP_SEQ', ['LST', ['LS_ITEM', '*', ['NAME', 'a']], ['LS_ITEM', '*', ['NAME', 'b']]], ['BOP', '-']], '> [a; b]'))
+                (['SEQ', ['LST', ['LS_ITEM', '*', ['NAME', 'a']], ['LS_ITEM', '*', ['NAME', 'b']]], ['BOP', '-']], '> [a; b]'))
                 
 def test():
     simple_tests()
@@ -295,5 +295,5 @@ def test():
     print('all tests passed')
 
 if __name__ == "__main__":
-    repl()
+    # repl()
     test()
