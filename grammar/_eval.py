@@ -1,10 +1,15 @@
 from _builtins import *
+from _funcs import *
 from _obj import CalcStack, Env
 
 
+Global = Env()
+Global._ans = []
 history = []
-CM = CalcMachine()
 
+eval_rules = {
+    'ANS'
+}
 
 
 
@@ -96,14 +101,12 @@ def eval_name(token, env):
     return val
 
 
-def eval_ans_id(token):
-    if all(c == '_' for c in token):
-        return -len(token)
-    else:
-        try:
-            return int(token[1:])
-        except:
-            raise SyntaxError('invalid history index!')
+def eval_ans(exp):
+    try: 
+        id = -len(exp) if same(exp) else int(exp[1:])
+        return Global._ans[id]
+    except: 
+        raise SyntaxError('invalid history index!')
 
 
 def make_closure(bindings, env, delim='='):

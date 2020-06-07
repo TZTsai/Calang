@@ -63,22 +63,19 @@ class CalcStack:
         self.vals.clear()
         self.stk.clear()
 
-    def empty(self):
-        return not self.stk
-
     def calc(self):
         # calculate until the stack is empty or reaches a stop_mark
-        while not self.empty():
+        while self.ops:
             try: self._calc()
             except AssertionError:
                 raise RuntimeError('CalcStack Error: sequence disorder')
         try: return self._pop_val()
-        except IndentationError:
+        except IndexError:
             raise RuntimeError('CalcStack Error: no value left')
 
     def push(self, x):
         if isinstance(x, Op):
-            while not self.empty():
+            while self.ops:
                 op = self.ops.peek()
                 if x.prior <= op.priority: self._calc()
                 else: break
