@@ -1,23 +1,9 @@
-class stack:
-    def __init__(self):
-        self.lst = []
-
+class stack(list):
     def push(self, obj):
-        self.lst.append(obj)
-
-    def pop(self):
-        assert not self.empty()
-        return self.lst.pop()
-
+        self.append(obj)
     def peek(self, i=-1):
-        try: return self.lst[i]
+        try: return self[i]
         except: return None
-
-    def empty(self):
-        return self.lst == []
-
-    def clear(self):
-        self.lst = []
 
 
 class Op:
@@ -25,59 +11,80 @@ class Op:
         self.type = type
         self.func = function
         self.prior = priority
-
     def __call__(self, *args):
         return self.func(*args)
-
     def __repr__(self):
-        try: return self.func.str
-        except: return f"Op({self.type}, {self.func}, {self.prior})"
+        return f"{self.type}_OP({self.func.__name__}, {self.prior})"
 
 
 class CalcStack:
     def __init__(self):
-        self._stk = stack()
-        self._next = 'val'
+        self.vals = stack()
+        self.ops = stack()
+        self.stk = stack()
+    
+    def _push_val(self, v):
+        self.vals.push(v)
+        self.stk.push(v)
+    
+    def _pop_val(self):
+        v = self.vals.pop()
+        assert v == self.stk.pop()
+        return v
+
+    def _push_op(self, op):
+        self.ops.push(op)
+        self.stk.push(op)
+
+    def _pop_op(self):
+        op = self.ops.pop()
+        assert op == self.stk.pop()
+        return op
 
     def _calc(self):  # carry out a single operation
-        v2 = self._stk.pop()
-        op = self._stk.pop()
-        v1 = self._stk.pop()
-        self._stk.push(op(v1, v2))
-
-    @property
-    def _last_op(self):
-        if self._next == 'val':
-            return self._stk.peek()
+        op = self.ops.peek()
+        if op.type == 'BIN':
+            n2 = self._pop_val()
+            op = self._pop_op()
+            n1 = self._pop_val()
+            n = op(n1, n2)
+        elif op.type == 'UNL':
+            n1 = self._pop_val()
+            op = self._pop_op()
+            n = op(n1)
         else:
-            return self._stk.peek(-2)
+            op = self._pop_op()
+            n1 = self._pop_val()
+            n = op(n1)
+        self.vals.push(n)
 
     def reset(self):
-        self._stk.clear()
+        self.ops.clear()
+        self.vals.clear()
+        self.stk.clear()
 
     def empty(self):
-        return self._stk.empty()
+        return not self.stk
 
     def calc(self):
         # calculate until the stack is empty or reaches a stop_mark
-        while len(self._stk) > 1: self._calc()
-        try: 
-            return self._stk.pop()
-        except AssertionError:
+        while not self.empty():
+            try: self._calc()
+            except AssertionError:
+                raise RuntimeError('CalcStack Error: sequence disorder')
+        try: return self._pop_val()
+        except IndentationError:
             raise RuntimeError('CalcStack Error: no value left')
 
-    def push(self, val):
-        if isinstance(val, Op) and self._next == 'op':
+    def push(self, x):
+        if isinstance(x, Op):
             while not self.empty():
-                if val.prior <= self._last_op.priority: self._calc()
+                op = self.ops.peek()
+                if x.prior <= op.priority: self._calc()
                 else: break
-            self._stk.push(val)
-            self._next = 'val'
-        elif not isinstance(val, Op) and self._next == 'val':
-            self._stk.push(val)
-            self._next = 'op'
+            self._push_op(x)
         else:
-            raise RuntimeError('CalcStack Error: illegal push')
+            self._push_val(x)
 
 
 class Env(dict):
