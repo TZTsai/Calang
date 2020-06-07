@@ -36,12 +36,17 @@ MARK    := [^>|)\s]\S*
 """, '\n')
 
 ###  COMMENTS ON METAGRAMMAR  ###
+# OBJ:      OBJ is a tag of the syntax tree to identify its type
+#           it consists of A-Z and _ 
+#           specifically, if an OBJ begins with _ , it is not considered as a real
+#           object; the tree it matches will not be tagged, but merged in the object
+#           at its upper level instead
 # OP:       * for 0 or more matches, + for 1 or more, ? for 0 or 1, 
-#           - for 1 match but it will not be included in the result;
+#           - for 1 match but it will not be included in the result,
 #           / for no space between its prev and its next items
 #           if more than one items are matched, merge them into the seq
-# MARK:     a token in the grammar that will be matched but not included in the
-#           result; be cautious of conflicts with other symbols in MetaGrammar
+# MARK:     a token in the grammar that will be matched but not included in the result
+#           be cautious of conflicts with other symbols in MetaGrammar
 # MACRO:    used for sub_macro; will not exist in the processed grammar
 
 
@@ -49,7 +54,7 @@ GrammarStr = open('grammar/grammar.txt', 'r').read()
 GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment
 Grammar = split(GrammarStr, '\n')
 # add syntax for operations
-bin_op, unl_op, unr_op = ['"' + '" | "'.join(ops) + '"' 
+bin_op, unl_op, unr_op = ['"' + '" | "'.join(sorted(ops, reverse=1, key=len)) + '"' 
                           for ops in (binary_ops, unary_l_ops, unary_r_ops)]
 Grammar.append('BOP := ' + bin_op)
 Grammar.append('LOP := ' + unl_op)

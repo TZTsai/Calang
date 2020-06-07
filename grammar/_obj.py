@@ -193,7 +193,7 @@ class Range:
         self.second = second
         self.last = last
         step = 1 if second is None else second - first
-        self.range = range(first, last+1, step)
+        self._range = range(first, last+1, step)
 
     def __repr__(self):
         if self.second is None:
@@ -202,7 +202,7 @@ class Range:
             return '..'.join(map(str, [self.first, self.second, self.last]))
         
     def __iter__(self):
-        return iter(self.range)
+        return iter(self._range)
 
 
 class config:

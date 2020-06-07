@@ -1,10 +1,9 @@
-from operator import add, sub, mul, floordiv, mod, ne, neg, lt, gt, le, ge, xor, pow as pow_, and_, or_, not_
+from operator import add, sub, mul, pow as pow_
 from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
-from math import inf
-from sympy import Symbol, solve, limit, integrate, diff, simplify, expand, factor, Integer, Float, Matrix, Expr, Add, sqrt, log, exp, gcd, factorial, floor, sin, cos, tan, asin, acos, atan, cosh, sinh, tanh, E, pi
-from __classes import Op, function, Env, config, Range
+from sympy import Matrix, Symbol
+from _obj import config, Range, function
 
 
 def is_number(value):

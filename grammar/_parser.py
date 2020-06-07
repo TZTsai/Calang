@@ -3,18 +3,17 @@ from mydecorators import memo
 from json import load
 from pprint import pprint, pformat
 import re
-from __builtins import op_list, keywords, all_, any_
+from _builtins import op_list, keywords, all_, any_
 
 
 log.out = open('grammar/log.yaml', 'w')
-
+interact = lambda: 0
 
 try:
     with open('grammar/grammar.json', 'r') as gf:
         grammar = load(gf)
 except:
-    from __grammar import grammar
-
+    from _grammar import grammar
 
 op_starts = ''.join(set(op[0] for op in op_list))
 
@@ -24,11 +23,23 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     whitespace = grammar[' ']
     no_space = False
 
-    def lstrip(text):
-        if no_space: return text
-        sp = re.match(whitespace, text)
-        return text[sp.end():]
+    def is_tag(s):
+        try: return s.split(':', 1)[0] in grammar
+        except: return False
 
+    def is_hidden_tag(s):
+        return is_tag(s) and s[0] == '_'
+
+    def lstrip(text):
+        nonlocal no_space
+        if no_space:
+            no_space = False
+            return text
+        else:
+            sp = re.match(whitespace, text)
+            return text[sp.end():]
+
+    # @memo
     def parse_tree(syntax, text):
         tag, body = syntax[0], syntax[1:]
 
@@ -51,10 +62,11 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     def parse_alts(alts, text):
         for alt in alts:
             tree, rem = parse_tree(alt, text)
-            if rem is not None: return tree, rem
+            if rem is not None:
+                return tree, rem
         return None, None
 
-    # @trace
+    @trace
     def parse_seq(seq, text):
         tree, rem = [], text
 
@@ -63,26 +75,29 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             if item[0] == 'STR' and item[1][1:-1] not in text:
                 return None, None
 
-        nonlocal no_space
         for item in seq:
             tr, rem = parse_tree(item, rem)
-            if no_space:
-                no_space = False
-                if tree and type(tree[-1]) is str and type(tr) is str:
-                    tree[-1] += tr; continue
+            if no_space and type(tr) is str:
+                try: tree[-1] += tr; continue
+                except: pass
             if rem is None: return None, None
-            if tr and tr[0] == '++':   # from OP '/'
-                no_space = True
-                tr = tr[1]
             if tr:
-                if tr[0] == '...':      # from OP '*'/'+'
-                    tree.extend(tr[1])
+                if tr[0] == '...': # from OP
+                    for t in tr[1]: add_to_seq(tree, t)
                 else:
-                    tree.append(tr)
+                    add_to_seq(tree, tr)
+
         if len(tree) == 1: tree = tree[0]
         return tree, rem
 
-    @memo
+    def add_to_seq(seq, tr):
+        # the tree with a tag beginning with '_' will be 
+        # merged into the sequence
+        if is_hidden_tag(tr[0]): 
+            seq.extend(tr[1:])
+        else: 
+            seq.append(tr)
+
     def parse_atom(tag, pattern, text):
         text = lstrip(text)
         if tag in ('STR', 'RE'):
@@ -99,7 +114,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
                 return None, None
             return pattern if tag == 'STR' else [], rem
 
-    obj_marks = {'DEF': ':=', 'MAP': '->', 'CLS': '::'}
+    obj_marks = {'DEF': ':=', 'MAP': '->', 'CLS': '::', 'GEN_LST': '|'}
     @trace
     @memo
     def parse_obj(obj, text):
@@ -110,45 +125,46 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             return None, None
 
         tree, rem = parse_tree(grammar[obj], text)
+        if rem is None: 
+            return None, None
         if obj == 'NAME' and tree in keywords:
             return None, None
-        if rem is None: return None, None
+        if tree and tree[0] == '...':  # from an OP that is not in a seq
+            tree = tree[1]
         tree = process_tag(obj, tree)
         return tree, rem
 
-    # @trace
+    @trace
     def parse_op(item, op, text):
         # if op == '/' and re.match(whitespace, text)[0]:
         #     return None, None  # space at start not allowed
         tree, rem = [], text
-        rep, maxrep = 0, (1 if op in '?/-' else -1)
+        rep, maxrep = 0, (-1 if op in '+*' else 1)
+
         while maxrep < 0 or rep < maxrep:
             tr, _rem = parse_tree(item, rem)
             if _rem is None: break
-            if len(tr) > 0 and type(tr[0]) is list: 
-                tree.extend(tr)
-            else:
-                tree.append(tr)
+            if tr:
+                if type(tr[0]) is list:
+                    tree.extend(tr)
+                else: 
+                    tree.append(tr)
             rem = _rem
             rep += 1
+
         if op in '+/-' and rep == 0:
             return None, None
-        if op == '-' or not tree:
+        elif op == '-':
             tree = []
-        elif len(tree) == 1:
-            tree = tree[0]
-        else: 
-            tree = ['...', tree]    # merge the tree
-        if op == '/':
-            tree = ['++', tree]     # force no space in between
+        elif op == '/':
+            nonlocal no_space
+            no_space = True         # force no space in between
+        if tree:
+            tree = ['...', tree]    # send message to merge the tree
         return tree, rem
-
-    def is_tag(s):
-        return s.split(':', 1)[0] in grammar
 
     prefixes = ['NUM', 'SYM', 'LST', 'EXT_PAR', 'CMD']
     list_obj = lambda tag:  tag[-3:] == 'LST' or tag in ['DIR', 'PARS']
-    @memo
     @trace
     def process_tag(tag, tree):
         if not tree:
@@ -156,8 +172,10 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         elif type(tree) is str:
             return [tag, tree]
         elif type(tree[0]) is str and is_tag(tree[0]):
-            if list_obj(tag) and tag not in tree[0]:
-                tree = [tag, tree]
+            if tree[0][0] == '_':
+                tree[0] = tag       # remove this tag
+            elif list_obj(tag) and tag not in tree[0]:
+                tree = [tag, tree]  # keep the list tag
             elif tag in prefixes:
                 tree = [tag + ':' + tree[0], *tree[1:]]
             return tree
@@ -166,6 +184,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         else:
             return [tag] + tree
 
+    interact()
     return parse_obj(tag, text)
 
 
@@ -174,6 +193,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
 def repl():
     while True:
         exp = input('>>> ')
+        if exp == 'q': return
         pprint(calc_parse(exp))
 
 def check_parse(exp, expected, termin=1):
@@ -188,14 +208,13 @@ def check_parse(exp, expected, termin=1):
 def simple_tests():
     check_parse('3', (['NUM:REAL', '3'], ''))
     check_parse('x', (['NAME', 'x'], ''))
+    check_parse('2*.4', (['OP_SEQ', ['NUM:REAL', '2'], ['BOP', '*.'], ['NUM:REAL', '4']], ''))
     check_parse('2.4e-18', (['NUM:REAL', '2.4', '-18'], ''))
     check_parse('2.4-1e-10I', 
                 (['NUM:COMPLEX', ['REAL', '2.4'], '-', ['REAL', '1', '-10']], ''))
     check_parse('1+2*3', 
                 (['OP_SEQ', ['NUM:REAL', '1'], ['BOP', '+'], ['NUM:REAL', '2'], ['BOP', '*'], ['NUM:REAL', '3']], ''))
-    check_parse('3!+4', (['OP_SEQ', ['TERM', ['NUM:REAL', '3'], ['ROP', '!']], 
-                        ['BOP', '+'], ['NUM:REAL', '4']], ''))
-    check_parse('4!', (['TERM', ['NUM:REAL', '4'], ['ROP', '!']], ''))
+    check_parse('3!+4', (['OP_SEQ', ['NUM:REAL', '3'], ['ROP', '!'], ['BOP', '+'], ['NUM:REAL', '4']], ''))
     check_parse('[]', (['LST'], ''))
     check_parse('[2]', (['LST', ['NUM:REAL', '2']], ''))
     check_parse('[3, 4, 6]', (['LST', ['NUM:REAL', '3'], 
@@ -229,7 +248,7 @@ def simple_tests():
     check_parse('f[1:]', 
                 (['OP_SEQ', ['NAME', 'f'], ['EMPTY'], ['LST', ['SLICE', ['NUM:REAL', '1'], ['EMPTY']]]], ''))
     check_parse('m[1:, :-1]',
-                (['OP_SEQ', ['NAME', 'm'], ['EMPTY'], ['LST', ['SLICE', ['NUM:REAL', '1'], ['EMPTY']], ['SLICE', ['EMPTY'], ['TERM', ['LOP', '-'], ['NUM:REAL', '1']]]]], ''))
+                (['OP_SEQ', ['NAME', 'm'], ['EMPTY'], ['LST', ['SLICE', ['NUM:REAL', '1'], ['EMPTY']], ['SLICE', ['EMPTY'], ['OP_SEQ', ['LOP', '-'], ['NUM:REAL', '1']]]]], ''))
     check_parse('dir x', (['CMD:DIR', ['NAME', 'x']], ''))
     check_parse('del x, y', (['CMD:DEL', ['NAME', 'x'], ['NAME', 'y']], ''))
     check_parse('conf LATEX on', (['CMD:CONF', 'LATEX', 'on'], ''))
@@ -238,6 +257,7 @@ def simple_tests():
                 (['LINE', ['DEF', ['FUNC', ['NAME', 'f'], ['PARS', ['NAME', 'x']]], ['NAME', 'x']], ['HIDE'], ['COMMENT', 'the semicolon hides the output']], ''))
 
 def more_tests():
+    check_parse('2~~.-3', (['OP_SEQ', ['NUM:REAL', '2'], ['BOP', '~'], ['LOP', '~.'], ['NUM:REAL', '-3']], ''))
     check_parse('x .f', (['FIELD', ['NAME', 'x'], ['NAME', 'f']], ''))
     check_parse('f.a.b[x] := f[x]', 
                 (['DEF', ['FUNC', ['FIELD', ['NAME', 'f'], ['NAME', 'a'], ['NAME', 'b']], ['PARS', ['NAME', 'x']]], ['OP_SEQ', ['NAME', 'f'], ['EMPTY'], ['LST', ['NAME', 'x']]]], ''))
@@ -269,7 +289,8 @@ def test():
     simple_tests()
     more_tests()
     test_ill()
+    print('all tests passed')
 
 if __name__ == "__main__":
+    # repl()
     test()
-    repl()

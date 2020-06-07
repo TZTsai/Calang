@@ -1,10 +1,11 @@
-from __parser import get_list, get_params, get_name, get_token, split
-from __builtins import *
-from __classes import CalcMachine, Env
+from _builtins import *
+from _obj import CalcStack, Env
 
 
 history = []
 CM = CalcMachine()
+
+
 
 
 def eval_list(tr, env):
@@ -117,7 +118,6 @@ def eval_closure(bindings, exp, env, delim='='):
     return calc_eval(exp, make_closure(bindings, env, delim))
 
 
-
 def add_bindings(lexp, rexp, env):
     if  '[' in lexp:  # need unpacking
         lexp = lexp.strip()
@@ -170,119 +170,3 @@ def log_macro(env):
         if config.debug:
             print(env.frame*'  ' + ', '.join(f'{arg}={value(arg)}' for arg in args))
     return log
-
-
-def calc_eval(exp, env):
-    """ a pure function that evaluates exp in env """
-    if exp == '': return
-
-    # if-else: support short-circuit
-    split_if = split(exp, 'if', 2)
-    if len(split_if) > 1:
-        try: if_exp, cond_exp, else_exp = split_if[0], *split(split_if[1], 'else', 2)
-        except ValueError: raise SyntaxError('"else" not found to match "if"!')
-        if calc_eval(cond_exp, env): return calc_eval(if_exp, env)        
-        else: return calc_eval(else_exp, env)
-
-    CM.begin()
-    prev_type = None
-    next_type, next_token, next_exp = get_token(exp)
-
-    while exp:
-        type_, token, exp = next_type, next_token, next_exp
-        if exp: next_type, next_token, next_exp = get_token(exp)
-        else: next_type = next_token = next_exp = None
-        prev_val = CM.vals.peek()
-
-        if is_applying(prev_val, prev_type, type_):  # apply a function
-            func, args = CM.vals.pop(), eval_list(token, env)
-            CM.push_val(func(*args))
-            continue
-
-        if all(is_replacable(t, 'number', 'symbol') for t in (type_, prev_type)):
-            CM.push_op(binary_ops['\\.'])
-
-        if type_ == 'ans':
-            try:
-                id = eval_ans_id(token)
-                CM.push_val(history[id])
-            except IndexError:
-                raise ValueError(f'Answer No.{id} not found!')
-        elif type_ == 'number':
-            try:
-                CM.push_val(eval(token))
-            except Exception:
-                raise SyntaxError(f'invalid number: {token}')
-        elif type_ == 'name':
-            if next_token == ':':  # single variable closure
-                CM.push_val(eval_singlevar_closure(token, exp, env))
-                break
-            if next_token == '->':
-                CM.push_val(function([token], next_exp, env))
-                break
-            value = eval_name(token, env)
-            CM.push_val(value)
-        elif type_ == 'attribute':
-            names = token.split('.')
-            result = eval_name(names.pop(0), env)
-            while names: result = getattr(result, names.pop(0))
-            CM.push_val(result)
-        elif type_ == 'symbol':
-            CM.push_val(Symbol(token[1:]))
-        elif type_ == 'op':
-            if token == '.':  # get attribute
-                type_, token, exp = get_token(exp)
-                result = getattr(CM.vals.pop(), token)
-                CM.push_val(result)
-            elif (prev_type in (None, 'op')) and token in unitary_l_ops:
-                CM.push_op(unitary_l_ops[token])
-            elif exp and token in binary_ops:
-                CM.push_op(binary_ops[token])
-            else:
-                CM.push_op(unitary_r_ops[token])
-                type_ = prev_type
-        elif type_ == 'when':
-            type_, token, exp = get_token(exp)
-            if type_ != 'paren':
-                raise SyntaxError('invalid when expression')
-            lst = get_list(token)
-            if next_type == 'arrow':
-                if lst and ':' in lst[0]:  # local variables
-                    CM.push_val(eval_closure(lst, next_exp, env, delim=':'))
-                else: # a function
-                    CM.push_val(function(lst, next_exp, env))
-                break
-            if len(lst) != 1:
-                raise SyntaxError('invalid syntax in parentheses')
-            CM.push_val(calc_eval(lst[0], env))
-        elif type_ == 'bracket':
-            if exp and get_token(exp)[1] == ':':  # closure with unpacking
-                CM.push_val(eval_singlevar_closure(token, exp, env))
-                break
-            elif is_iterable(prev_val) and is_replacable(prev_type, 'bracket'):
-                CM.push_val(eval_subscription(CM.vals.pop(), token, env))
-            else:
-                CM.push_val(eval_list(token, env))
-        elif type_ == 'brace':  # eval the token in python
-            my_locals = env.all_bindings()
-            my_locals['log'] = log_macro(env)
-            result = eval(token[1:-1], my_globals, my_locals)
-            if result: exp = str(result) + exp
-            continue
-        elif type_ in ('with', 'lambda'):
-            i = first(lambda c: c.isspace(), token)
-            lst = split(token[i:-1], ',')  # the last char is ':'
-            if type_ == 'lambda':  # lst is the binding list
-                CM.push_val(function(lst, exp, env))
-            else:  # lst is the parameter list
-                CM.push_val(eval_closure(lst, exp, env))
-            break
-        else:
-            raise SyntaxError('invalid token: %s' % token)
-
-        prev_type = type_
-
-    return CM.calc()
-
-
-function.evaluator = calc_eval

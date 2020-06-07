@@ -2,9 +2,10 @@ LINE    := ( CMD | DEF | EXP ) HIDE ? COMMENT ? | EMPTY
 
 DEF     := ( FUNC | FIELD ) := EXP
 FUNC    := FIELD PARS
-FIELD   := %SEQ < NAME ( . / ) >   ## '/' forces no space between
-NAME    := [\u0374-\u03FFa-zA-Z] / /[a-zA-Z\d_]*[?]?/   ## can begin with a Greek letter
-PARS    := %BKT < ( %SEQ < ( BIND | PARS | NAME ) , > ? EXT_PAR ? ) >
+FIELD   := %SEQ < NAME ( . / ) >                      ## '/' forces no space between
+NAME    := /[\u0374-\u03FFa-zA-Z][a-zA-Z\d_]*[?]?/    ## can begin with a Greek letter
+PARS    := %BKT < ( _PARS ? EXT_PAR ? ) >
+_PARS   := %SEQ < ( BIND | PARS | NAME ) , >
 EXT_PAR := , [*] - NAME
 
 CMD     := CONF | DIR | DEL | LOAD | IMPORT
@@ -22,19 +23,21 @@ CLS     := ( BINDS | FIELD ) :: EXP
 BINDS   := %GRP < %SEQ < BIND , > >
 BIND    := ( PARS | NAME ) : EXP
 IF_ELSE := OP_SEQ if OP_SEQ else EXP
-OP_SEQ  := %SEQ < TERM ( BOP | EMPTY ) > EXEC ?
-TERM    := LOP ? ITEM ROP ?
+OP_SEQ  := %SEQ < _TERM ( BOP | EMPTY ) > EXEC ?
+_TERM   := LOP ? ITEM ROP ?
 EMPTY   := //
 
 ITEM    := WHEN | BINDS | GROUP | FIELD | SYM | ANS | NUM | LST
-LST     := GEN_LST | %LST < LS_ITEM , > | MAT_LST
+LST     := GEN_LST | _LST | MAT_LST
 GEN_LST := %BKT < ( EXP [|] - CONSTRS ) >
 CONSTRS := %SEQ < CONSTR ( [|] - ) >
 CONSTR  := NAME in EXP ( and EXP ) ?
+_LST    := %LST < LS_ITEM , >
 MAT_LST := %LST < ROW_LST ; >
 ROW_LST := %SEQ < LS_ITEM , >
 LS_ITEM := SLICE | [*] ? EXP
-SLICE   := ( OP_SEQ | EMPTY ) : ( OP_SEQ | EMPTY ) ( : ( OP_SEQ | EMPTY ) ) ? 
+SLICE   := _SLC : _SLC ( : _SLC ) ? 
+_SLC    := ( OP_SEQ | EMPTY )
 
 GROUP   := %GRP < EXP >
 WHEN    := when %GRP < ( %SEQ < CASE , > , EXP ) >
