@@ -39,7 +39,7 @@ def equal(x, y):
         return abs(x - y) <= config.tolerance
     else: return x == y
 
-    
+
 def db_fact(x):  # returns x!!
     if not isinstance(x, int) or x < 0:
         raise ValueError('invalid argument for factorial!')

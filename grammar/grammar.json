@@ -77,7 +77,7 @@
     ],
     [
       "OBJ",
-      "PARS"
+      "FORMAL"
     ]
   ],
   "FIELD": [
@@ -116,7 +116,7 @@
     "RE",
     "/[\\u0374-\\u03FFa-zA-Z][a-zA-Z\\d_]*[?]?/"
   ],
-  "PARS": [
+  "FORMAL": [
     "ALT",
     [
       "ITEM_OP",
@@ -176,7 +176,7 @@
       ],
       [
         "OBJ",
-        "PARS"
+        "FORMAL"
       ],
       [
         "OBJ",
@@ -199,7 +199,7 @@
           ],
           [
             "OBJ",
-            "PARS"
+            "FORMAL"
           ],
           [
             "OBJ",
@@ -428,7 +428,7 @@
       "EXP",
       [
         "OBJ",
-        "PARS"
+        "FORMAL"
       ],
       [
         "OBJ",
@@ -522,7 +522,7 @@
       "EXP",
       [
         "OBJ",
-        "PARS"
+        "FORMAL"
       ],
       [
         "OBJ",
@@ -564,35 +564,35 @@
   "OP_SEQ": [
     "ALT",
     [
-      "ALT",
+      "ITEM_OP",
       [
-        "OBJ",
-        "_TERM"
-      ],
-      [
-        "ITEM_OP",
+        "ALT",
         [
-          "ALT",
-          [
-            "EXP",
-            [
-              "OBJ",
-              "BOP"
-            ],
-            [
-              "OBJ",
-              "EMPTY"
-            ]
-          ],
+          "ITEM_OP",
           [
             "OBJ",
             "_TERM"
+          ],
+          [
+            "OP",
+            "+"
           ]
         ],
         [
-          "OP",
-          "*"
+          "ITEM_OP",
+          [
+            "OBJ",
+            "BOP"
+          ],
+          [
+            "OP",
+            "?"
+          ]
         ]
+      ],
+      [
+        "OP",
+        "+"
       ]
     ],
     [
@@ -610,19 +610,22 @@
   "_TERM": [
     "ALT",
     [
-      "ITEM_OP",
+      "EXP",
       [
         "OBJ",
-        "LOP"
+        "ITEM"
       ],
       [
-        "OP",
-        "?"
+        "ALT",
+        [
+          "OBJ",
+          "LOP"
+        ],
+        [
+          "OBJ",
+          "ITEM"
+        ]
       ]
-    ],
-    [
-      "OBJ",
-      "ITEM"
     ],
     [
       "ITEM_OP",
@@ -649,6 +652,10 @@
     [
       "OBJ",
       "BINDS"
+    ],
+    [
+      "OBJ",
+      "FIT"
     ],
     [
       "OBJ",
@@ -1008,6 +1015,17 @@
     [
       "OBJ",
       "EMPTY"
+    ]
+  ],
+  "FIT": [
+    "ALT",
+    [
+      "MARK",
+      "->"
+    ],
+    [
+      "OBJ",
+      "FORMAL"
     ]
   ],
   "GROUP": [
