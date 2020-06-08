@@ -376,8 +376,33 @@
         [
           "ITEM_OP",
           [
-            "OBJ",
-            "EXT_PAR"
+            "ALT",
+            [
+              "MARK",
+              ","
+            ],
+            [
+              "OBJ",
+              "_BINDS"
+            ]
+          ],
+          [
+            "OP",
+            "?"
+          ]
+        ],
+        [
+          "ITEM_OP",
+          [
+            "ALT",
+            [
+              "MARK",
+              ","
+            ],
+            [
+              "OBJ",
+              "EXT_PAR"
+            ]
           ],
           [
             "OP",
@@ -405,10 +430,17 @@
   "_PARS": [
     "ALT",
     [
-      "EXP",
+      "ALT",
       [
-        "OBJ",
-        "BIND"
+        "ITEM_OP",
+        [
+          "OBJ",
+          "BIND"
+        ],
+        [
+          "OP",
+          "!"
+        ]
       ],
       [
         "OBJ",
@@ -424,10 +456,17 @@
           ","
         ],
         [
-          "EXP",
+          "ALT",
           [
-            "OBJ",
-            "BIND"
+            "ITEM_OP",
+            [
+              "OBJ",
+              "BIND"
+            ],
+            [
+              "OP",
+              "!"
+            ]
           ],
           [
             "OBJ",
@@ -443,10 +482,6 @@
   ],
   "EXT_PAR": [
     "ALT",
-    [
-      "MARK",
-      ","
-    ],
     [
       "ITEM_OP",
       [
@@ -466,31 +501,6 @@
   "EXP": [
     "EXP",
     [
-      "ALT",
-      [
-        "OBJ",
-        "MATCH"
-      ],
-      [
-        "ITEM_OP",
-        [
-          "ALT",
-          [
-            "MARK",
-            "->"
-          ],
-          [
-            "OBJ",
-            "EXP"
-          ]
-        ],
-        [
-          "OP",
-          "?"
-        ]
-      ]
-    ],
-    [
       "OBJ",
       "MAP"
     ],
@@ -500,22 +510,11 @@
     ],
     [
       "OBJ",
-      "VAL"
-    ]
-  ],
-  "MATCH": [
-    "ALT",
-    [
-      "OBJ",
-      "VAL"
-    ],
-    [
-      "MARK",
-      "->"
+      "MATCH"
     ],
     [
       "OBJ",
-      "FORM"
+      "VAL"
     ]
   ],
   "MAP": [
@@ -536,8 +535,15 @@
   "LET": [
     "ALT",
     [
-      "OBJ",
-      "ENV"
+      "EXP",
+      [
+        "OBJ",
+        "ENV"
+      ],
+      [
+        "OBJ",
+        "MATCH"
+      ]
     ],
     [
       "MARK",
@@ -548,15 +554,19 @@
       "EXP"
     ]
   ],
-  "VAL": [
-    "EXP",
+  "MATCH": [
+    "ALT",
     [
       "OBJ",
-      "IF_ELSE"
+      "VAL"
+    ],
+    [
+      "MARK",
+      "->"
     ],
     [
       "OBJ",
-      "SEQ"
+      "FORM"
     ]
   ],
   "ENV": [
@@ -573,29 +583,8 @@
       ]
     ],
     [
-      "ALT",
-      [
-        "OBJ",
-        "BIND"
-      ],
-      [
-        "ITEM_OP",
-        [
-          "ALT",
-          [
-            "MARK",
-            ","
-          ],
-          [
-            "OBJ",
-            "BIND"
-          ]
-        ],
-        [
-          "OP",
-          "*"
-        ]
-      ]
+      "OBJ",
+      "_BINDS"
     ],
     [
       "ITEM_OP",
@@ -606,6 +595,31 @@
       [
         "OP",
         "-"
+      ]
+    ]
+  ],
+  "_BINDS": [
+    "ALT",
+    [
+      "OBJ",
+      "BIND"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "ALT",
+        [
+          "MARK",
+          ","
+        ],
+        [
+          "OBJ",
+          "BIND"
+        ]
+      ],
+      [
+        "OP",
+        "*"
       ]
     ]
   ],
@@ -622,6 +636,17 @@
     [
       "OBJ",
       "EXP"
+    ]
+  ],
+  "VAL": [
+    "EXP",
+    [
+      "OBJ",
+      "IF_ELSE"
+    ],
+    [
+      "OBJ",
+      "SEQ"
     ]
   ],
   "IF_ELSE": [
@@ -648,49 +673,49 @@
     ]
   ],
   "SEQ": [
-    "ALT",
+    "ITEM_OP",
     [
-      "ITEM_OP",
+      "ALT",
       [
-        "ALT",
+        "ITEM_OP",
         [
-          "ITEM_OP",
-          [
-            "OBJ",
-            "_TERM"
-          ],
-          [
-            "OP",
-            "+"
-          ]
+          "OBJ",
+          "_TERM"
         ],
         [
-          "ITEM_OP",
-          [
-            "OBJ",
-            "BOP"
-          ],
-          [
-            "OP",
-            "?"
-          ]
+          "OP",
+          "+"
         ]
       ],
       [
-        "OP",
-        "+"
+        "ITEM_OP",
+        [
+          "ALT",
+          [
+            "ITEM_OP",
+            [
+              "MARK",
+              "->"
+            ],
+            [
+              "OP",
+              "!"
+            ]
+          ],
+          [
+            "OBJ",
+            "BOP"
+          ]
+        ],
+        [
+          "OP",
+          "?"
+        ]
       ]
     ],
     [
-      "ITEM_OP",
-      [
-        "MARK",
-        "EXEC"
-      ],
-      [
-        "OP",
-        "?"
-      ]
+      "OP",
+      "+"
     ]
   ],
   "_TERM": [
@@ -723,6 +748,51 @@
         "OP",
         "?"
       ]
+    ],
+    [
+      "ITEM_OP",
+      [
+        "ITEM_OP",
+        [
+          "OBJ",
+          "PRINT"
+        ],
+        [
+          "OP",
+          "-"
+        ]
+      ],
+      [
+        "OP",
+        "?"
+      ]
+    ]
+  ],
+  "PRINT": [
+    "STR",
+    "\" /.*?/ \""
+  ],
+  "ITEM": [
+    "EXP",
+    [
+      "OBJ",
+      "ENV"
+    ],
+    [
+      "OBJ",
+      "GROUP"
+    ],
+    [
+      "OBJ",
+      "WHEN"
+    ],
+    [
+      "OBJ",
+      "ATOM"
+    ],
+    [
+      "OBJ",
+      "LST"
     ]
   ],
   "GROUP": [
@@ -752,45 +822,6 @@
         "OP",
         "-"
       ]
-    ]
-  ],
-  "ITEM": [
-    "EXP",
-    [
-      "OBJ",
-      "ENV"
-    ],
-    [
-      "OBJ",
-      "GROUP"
-    ],
-    [
-      "OBJ",
-      "WHEN"
-    ],
-    [
-      "OBJ",
-      "FIT"
-    ],
-    [
-      "OBJ",
-      "FIELD"
-    ],
-    [
-      "OBJ",
-      "SYM"
-    ],
-    [
-      "OBJ",
-      "ANS"
-    ],
-    [
-      "OBJ",
-      "NUM"
-    ],
-    [
-      "OBJ",
-      "LST"
     ]
   ],
   "WHEN": [
@@ -861,17 +892,6 @@
       ]
     ]
   ],
-  "FIT": [
-    "ALT",
-    [
-      "MARK",
-      "->"
-    ],
-    [
-      "OBJ",
-      "FORM"
-    ]
-  ],
   "CASE": [
     "ALT",
     [
@@ -885,6 +905,25 @@
     [
       "OBJ",
       "EXP"
+    ]
+  ],
+  "ATOM": [
+    "EXP",
+    [
+      "OBJ",
+      "FIELD"
+    ],
+    [
+      "OBJ",
+      "SYM"
+    ],
+    [
+      "OBJ",
+      "ANS"
+    ],
+    [
+      "OBJ",
+      "NUM"
     ]
   ],
   "SYM": [
@@ -909,8 +948,90 @@
       "/(\\d+|_*)/"
     ]
   ],
+  "NUM": [
+    "EXP",
+    [
+      "OBJ",
+      "COMPLEX"
+    ],
+    [
+      "OBJ",
+      "BIN"
+    ],
+    [
+      "OBJ",
+      "HEX"
+    ],
+    [
+      "OBJ",
+      "REAL"
+    ]
+  ],
+  "COMPLEX": [
+    "ALT",
+    [
+      "OBJ",
+      "REAL"
+    ],
+    [
+      "CHARS",
+      "[+-]"
+    ],
+    [
+      "OBJ",
+      "REAL"
+    ],
+    [
+      "MARK",
+      "I"
+    ]
+  ],
+  "REAL": [
+    "ALT",
+    [
+      "RE",
+      "/-?\\d+(\\.\\d*)?/"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "ALT",
+        [
+          "ITEM_OP",
+          [
+            "CHARS",
+            "[eE]"
+          ],
+          [
+            "OP",
+            "-"
+          ]
+        ],
+        [
+          "RE",
+          "/-?\\d+/"
+        ]
+      ],
+      [
+        "OP",
+        "?"
+      ]
+    ]
+  ],
+  "BIN": [
+    "RE",
+    "/0b[01]+/"
+  ],
+  "HEX": [
+    "RE",
+    "/0x[0-9a-fA-F]+/"
+  ],
   "LST": [
     "EXP",
+    [
+      "OBJ",
+      "SYM_LST"
+    ],
     [
       "OBJ",
       "GEN_LST"
@@ -923,6 +1044,116 @@
       "OBJ",
       "MAT_LST"
     ]
+  ],
+  "SYM_LST": [
+    "ALT",
+    [
+      "MARK",
+      "'"
+    ],
+    [
+      "ALT",
+      [
+        "ITEM_OP",
+        [
+          "STR",
+          "\"[\""
+        ],
+        [
+          "OP",
+          "-"
+        ]
+      ],
+      [
+        "ITEM_OP",
+        [
+          "ALT",
+          [
+            "EXP",
+            [
+              "ALT",
+              [
+                "ITEM_OP",
+                [
+                  "OBJ",
+                  "UNQUOTE"
+                ],
+                [
+                  "OP",
+                  "?"
+                ]
+              ],
+              [
+                "OBJ",
+                "NAME"
+              ]
+            ],
+            [
+              "OBJ",
+              "SYM_LST"
+            ]
+          ],
+          [
+            "ITEM_OP",
+            [
+              "ALT",
+              [
+                "MARK",
+                ","
+              ],
+              [
+                "EXP",
+                [
+                  "ALT",
+                  [
+                    "ITEM_OP",
+                    [
+                      "OBJ",
+                      "UNQUOTE"
+                    ],
+                    [
+                      "OP",
+                      "?"
+                    ]
+                  ],
+                  [
+                    "OBJ",
+                    "NAME"
+                  ]
+                ],
+                [
+                  "OBJ",
+                  "SYM_LST"
+                ]
+              ]
+            ],
+            [
+              "OP",
+              "*"
+            ]
+          ]
+        ],
+        [
+          "OP",
+          "?"
+        ]
+      ],
+      [
+        "ITEM_OP",
+        [
+          "STR",
+          "\"]\""
+        ],
+        [
+          "OP",
+          "-"
+        ]
+      ]
+    ]
+  ],
+  "UNQUOTE": [
+    "MARK",
+    "`"
   ],
   "GEN_LST": [
     "ALT",
@@ -946,17 +1177,27 @@
       [
         "ITEM_OP",
         [
-          "CHARS",
-          "[|]"
+          "ALT",
+          [
+            "ITEM_OP",
+            [
+              "CHARS",
+              "[|]"
+            ],
+            [
+              "OP",
+              "-"
+            ]
+          ],
+          [
+            "OBJ",
+            "CONSTR"
+          ]
         ],
         [
           "OP",
-          "-"
+          "+"
         ]
-      ],
-      [
-        "OBJ",
-        "CONSTRS"
       ]
     ],
     [
@@ -968,38 +1209,6 @@
       [
         "OP",
         "-"
-      ]
-    ]
-  ],
-  "CONSTRS": [
-    "ALT",
-    [
-      "OBJ",
-      "CONSTR"
-    ],
-    [
-      "ITEM_OP",
-      [
-        "ALT",
-        [
-          "ITEM_OP",
-          [
-            "CHARS",
-            "[|]"
-          ],
-          [
-            "OP",
-            "-"
-          ]
-        ],
-        [
-          "OBJ",
-          "CONSTR"
-        ]
-      ],
-      [
-        "OP",
-        "*"
       ]
     ]
   ],
@@ -1243,84 +1452,6 @@
       "OBJ",
       "EMPTY"
     ]
-  ],
-  "NUM": [
-    "EXP",
-    [
-      "OBJ",
-      "COMPLEX"
-    ],
-    [
-      "OBJ",
-      "BIN"
-    ],
-    [
-      "OBJ",
-      "HEX"
-    ],
-    [
-      "OBJ",
-      "REAL"
-    ]
-  ],
-  "COMPLEX": [
-    "ALT",
-    [
-      "OBJ",
-      "REAL"
-    ],
-    [
-      "CHARS",
-      "[+-]"
-    ],
-    [
-      "OBJ",
-      "REAL"
-    ],
-    [
-      "MARK",
-      "I"
-    ]
-  ],
-  "REAL": [
-    "ALT",
-    [
-      "RE",
-      "/-?\\d+(\\.\\d*)?/"
-    ],
-    [
-      "ITEM_OP",
-      [
-        "ALT",
-        [
-          "ITEM_OP",
-          [
-            "CHARS",
-            "[eE]"
-          ],
-          [
-            "OP",
-            "-"
-          ]
-        ],
-        [
-          "RE",
-          "/-?\\d+/"
-        ]
-      ],
-      [
-        "OP",
-        "?"
-      ]
-    ]
-  ],
-  "BIN": [
-    "RE",
-    "/0b[01]+/"
-  ],
-  "HEX": [
-    "RE",
-    "/0x[0-9a-fA-F]+/"
   ],
   "BOP": [
     "EXP",

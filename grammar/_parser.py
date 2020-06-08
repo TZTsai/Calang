@@ -114,16 +114,18 @@ def calc_parse(text, tag='LINE', grammar=grammar):
                 return None, None
             return pattern if tag == 'STR' else [], rem
 
-    obj_marks = {'DEF': ':=', 'MAP': '->', 'LET': '->', 'GEN_LST': '|', 
+    must_have = {'DEF': ':=', 'MAP': '->', 'LET': '->', 'GEN_LST': '|', 
                  'MATCH': '->', 'ENV': ':', 'SLICE': ':'}
     @trace
     @memo
     def parse_obj(obj, text):
         # prechecks to speed up parsing
-        if obj in obj_marks and obj_marks[obj] not in text:
+        if obj in must_have and must_have[obj] not in text:
             return None, None
-        if obj[-2:] == 'OP' and lstrip(text)[0] not in op_starts:
-            return None, None
+        if obj[-2:] == 'OP':
+            text = lstrip(text)
+            if text[0] not in op_starts:
+                return None, None
 
         tree, rem = parse_tree(grammar[obj], text)
         if rem is None: 
@@ -155,6 +157,9 @@ def calc_parse(text, tag='LINE', grammar=grammar):
 
         if op in '+/-' and rep == 0:
             return None, None
+        elif op == '!':
+            if rep: return None, None
+            else: return [], text 
         elif op == '-':
             tree = []
         elif op == '/':
@@ -164,7 +169,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             tree = ['...', tree]    # send message to merge the tree
         return tree, rem
 
-    prefixes = ['NUM', 'SYM', 'LST', 'EXT_PAR', 'CMD', 'FIT']
+    prefixes = ['NUM', 'SYM', 'LST', 'EXT_PAR', 'CMD']
     list_obj = lambda tag:  tag[-3:] == 'LST' or tag in ['DIR']
     @trace
     def process_tag(tag, tree):
@@ -260,7 +265,7 @@ def simple_tests():
 def more_tests():
     check_parse('2~~.-3', (['SEQ', ['NUM:REAL', '2'], ['BOP', '~'], ['LOP', '~.'], ['NUM:REAL', '-3']], ''))
     check_parse('[1,2,3]->[a,*b]', 
-                (['SEQ', ['LST', ['NUM:REAL', '1'], ['NUM:REAL', '2'], ['NUM:REAL', '3']], ['FIT:FORM', ['NAME', 'a'], ['EXT_PAR:NAME', 'b']]], ''))
+                 (['MATCH', ['LST', ['NUM:REAL', '1'], ['NUM:REAL', '2'], ['NUM:REAL', '3']], ['FORM', ['NAME', 'a'], ['EXT_PAR:NAME', 'b']]], ''))
     check_parse('x .f', (['FIELD', ['NAME', 'x'], ['NAME', 'f']], ''))
     check_parse('f.a.b[x] := f[x]', 
                 (['DEF', ['PATTERN', ['FIELD', ['NAME', 'f'], ['NAME', 'a'], ['NAME', 'b']], ['NAME', 'x']], ['SEQ', ['NAME', 'f'], ['LST', ['NAME', 'x']]]], ''))
@@ -275,7 +280,7 @@ def more_tests():
     check_parse("(x*('y+2))/3",
                 (['SEQ', ['SEQ', ['NAME', 'x'], ['BOP', '*'], ['SEQ', ['SYM:NAME', 'y'], ['BOP', '+'], ['NUM:REAL', '2']]], ['BOP', '/'], ['NUM:REAL', '3']], ''))
     check_parse('[x+y | x in 1~10 | y in range[x]]', 
-                (['LST:GEN_LST', ['SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']], ['CONSTRS', ['CONSTR', ['NAME', 'x'], ['SEQ', ['NUM:REAL', '1'], ['BOP', '~'], ['NUM:REAL', '10']]], ['CONSTR', ['NAME', 'y'], ['SEQ', ['NAME', 'range'], ['LST', ['NAME', 'x']]]]]], ''))
+                (['LST:GEN_LST', ['SEQ', ['NAME', 'x'], ['BOP', '+'], ['NAME', 'y']], ['CONSTR', ['NAME', 'x'], ['SEQ', ['NUM:REAL', '1'], ['BOP', '~'], ['NUM:REAL', '10']]], ['CONSTR', ['NAME', 'y'], ['SEQ', ['NAME', 'range'], ['LST', ['NAME', 'x']]]]], ''))
 
 def test_ill():
     check_parse('a . b', (['NAME', 'a'], ' . b'))
@@ -286,7 +291,7 @@ def test_ill():
     check_parse('[2, 4] + [6, 7', 
                 (['SEQ', ['LST', ['NUM:REAL', '2'], ['NUM:REAL', '4']], ['BOP', '+']], ' [6, 7'))
     check_parse('[*a, *b] -> [a; b]', 
-                (['SEQ', ['LST', ['LS_ITEM', '*', ['NAME', 'a']], ['LS_ITEM', '*', ['NAME', 'b']]], ['BOP', '-']], '> [a; b]'))
+                (['LST', ['LS_ITEM', '*', ['NAME', 'a']], ['LS_ITEM', '*', ['NAME', 'b']]], ' -> [a; b]'))
                 
 def test():
     simple_tests()

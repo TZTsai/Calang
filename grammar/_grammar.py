@@ -24,7 +24,7 @@ VAR     := \$[A-Z_]+
 EXP     := ALT [|] EXP | ALT
 ALT     := ITEM_OP ALT | ITEM_OP
 ITEM_OP := ITEM OP | ITEM
-OP      := [*?/+-](?=\s|$)
+OP      := [*?!/+-](?=\s|$)
 ITEM    := GROUP | MACRO | ATOM
 ITEMS   := ITEM ITEMS | ITEM
 GROUP   := [(] EXP [)]
@@ -43,6 +43,7 @@ MARK    := [^>|)\s]\S*
 #           at its upper level instead
 # OP:       * for 0 or more matches, + for 1 or more, ? for 0 or 1, 
 #           - for 1 match but it will not be included in the result,
+#           ! for prechecking and forbidding 1 match
 #           / for no space between its prev and its next items
 #           if more than one items are matched, merge them into the seq
 # MARK:     a token in the grammar that will be matched but not included in the result

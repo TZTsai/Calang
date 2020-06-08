@@ -17,40 +17,50 @@ PATTERN := FIELDS ( %GRP < NAME > | FORM ) ?
 FIELDS  := %SEQ < FIELD @ >  
 FIELD   := %SEQ < NAME ( . / ) >                      ## '/' forces no space between
 NAME    := /[\u0374-\u03FFa-zA-Z][a-zA-Z\d_]*[?]?/    ## can begin with a Greek letter
-FORM    := %BKT < ( _PARS ? EXT_PAR ? ) > | NAME
-_PARS   := %SEQ < ( BIND | FORM ) , >
-EXT_PAR := , [*] - NAME
+FORM    := %BKT < ( _PARS ? ( , _BINDS ) ? ( , EXT_PAR ) ? ) > | NAME
+_PARS   := %SEQ < ( BIND ! FORM ) , >                 ## '!' forbids the next match
+EXT_PAR := [*] - NAME
 
-EXP     := MATCH ( -> EXP ) ? | MAP | LET | VAL
+EXP     := MAP | LET | MATCH | VAL
 ### RULES for ARROW ###
 ##  FORM -> EXP          ==>  MAP
 ##  ENV  -> EXP          ==>  VAL
 ##  VAL  -> FORM         ==>  ENV
 ##  VAL  -> FORM -> EXP  ==>  ENV -> EXP  <==>  VAL -> MAP  ==>  VAL
 
-MATCH   := VAL -> FORM
 MAP     := FORM -> EXP
-LET     := ENV -> EXP
-VAL     := IF_ELSE | SEQ
-
-ENV     := %GRP < %SEQ < BIND , > >
+LET     := ( ENV | MATCH ) -> EXP
+MATCH   := VAL -> FORM
+ENV     := %GRP < _BINDS >
+_BINDS  := %SEQ < BIND , >
 BIND    := FORM : EXP
+
+VAL     := IF_ELSE | SEQ
 IF_ELSE := SEQ if SEQ else EXP
-SEQ     := ( _TERM + BOP ? ) + EXEC ?
-_TERM   := ( ITEM | LOP ITEM ) ROP ?
+SEQ     := ( _TERM + ( -> ! BOP ) ? ) +
+## a little verbose but the arrow '->' must not be mistaken with the minus op '-'
+_TERM   := ( ITEM | LOP ITEM ) ROP ? ( PRINT - ) ? 
+
+PRINT   := " /.*?/ "
+ITEM    := ENV | GROUP | WHEN | ATOM | LST
 GROUP   := %GRP < EXP >
-
-ITEM    := ENV | GROUP | WHEN | FIT | FIELD | SYM | ANS | NUM | LST
-
 WHEN    := when %GRP < ( %SEQ < CASE , > , EXP ) >
-FIT     := -> FORM
 CASE    := EXP : EXP
+
+ATOM    := FIELD | SYM | ANS | NUM
 SYM     := ' NAME
 ANS     := _ /(\d+|_*)/
 
-LST     := GEN_LST | _LST | MAT_LST
-GEN_LST := %BKT < ( EXP [|] - CONSTRS ) >
-CONSTRS := %SEQ < CONSTR ( [|] - ) >
+NUM     := COMPLEX | BIN | HEX | REAL
+COMPLEX := REAL [+-] REAL I
+REAL    := /-?\d+(\.\d*)?/ ( [eE] - /-?\d+/ ) ?
+BIN     := /0b[01]+/
+HEX     := /0x[0-9a-fA-F]+/
+
+LST     := SYM_LST | GEN_LST | _LST | MAT_LST
+SYM_LST := ' %LST < ( UNQUOTE ? NAME | SYM_LST ) , >
+UNQUOTE := `
+GEN_LST := %BKT < ( EXP ( [|] - CONSTR ) + ) >
 CONSTR  := NAME in EXP ( and EXP ) ?
 _LST    := %LST < LS_ITEM , >
 MAT_LST := %LST < ROW_LST ; >
@@ -58,12 +68,6 @@ ROW_LST := %SEQ < LS_ITEM , >
 LS_ITEM := SLICE | [*] ? EXP
 SLICE   := _SLC : _SLC ( : _SLC ) ?
 _SLC    := ( SEQ | EMPTY )
-
-NUM     := COMPLEX | BIN | HEX | REAL
-COMPLEX := REAL [+-] REAL I
-REAL    := /-?\d+(\.\d*)?/ ( [eE] - /-?\d+/ ) ?
-BIN     := /0b[01]+/
-HEX     := /0x[0-9a-fA-F]+/
 
 %LST < $ITM $SEP >  := %BKT < ( %SEQ < $ITM $SEP > ? ) >
 %BKT < $EXP >       := "[" - $EXP "]" -
