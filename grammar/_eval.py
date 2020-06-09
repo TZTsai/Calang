@@ -17,7 +17,8 @@ subs_rules = {
 }
 
 eval_rules = {
-    'FIELD': FIELD,     'NAME': NAME,       'PRINT': PRINT
+    'FIELD': FIELD,     'NAME': NAME,       'PRINT': PRINT,
+    'UNQUOTE': UNQUOTE
 }
 
 def tag(tr): return tr[0].split(':')[0]
@@ -162,3 +163,6 @@ def FIELD(tr, env):
 
 def PRINT(tr, env):
     if config.debug: exec('print(f"%s")' % tr[1], locals=env)
+
+def UNQUOTE(tr, env):
+    

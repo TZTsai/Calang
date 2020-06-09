@@ -106,7 +106,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
                 return None, None
             return pattern if tag == 'STR' else [], rem
 
-    @trace
+    # @trace
+    @memo
     def parse_op(item, op, text):
         seq, rem = [], text
         rep, maxrep = 0, (-1 if op in '+*' else 1)
@@ -201,6 +202,8 @@ def test():
     for case in testcases.items(): check_parse(*case)
 
 def check_parse(exp, expected):
+    # print('testing: '+exp)
+    # print('expecting: '+str(expected))
     if exp not in testcases:
         testcases[exp] = expected
     actual = calc_parse(exp)
@@ -213,7 +216,7 @@ def check_parse(exp, expected):
         rewrite = True
 
 def rec_comp(l1, l2):
-    if type(l1) not in (tuple, list, dict):
+    if type(l1) not in (tuple, list):
         if l1 != l2:
             print(l1, 'VS', l2)
             return False
@@ -223,14 +226,11 @@ def rec_comp(l1, l2):
         print(l1, 'VS', l2)
         return False
     else:
-        for i1, i2 in zip(l1, l2):
-            if type(l1) is dict:
-                return rec_comp(l1[i1], l2[i2])
-            else:
-                return rec_comp(i1, i2)
+        return all(rec_comp(i1, i2) for i1, i2 in zip(l1, l2))
 
 ## new tests here
 
+####
 
 if __name__ == "__main__":
     # repl()
