@@ -1,13 +1,15 @@
 from myutils import trace, log, interact
-from mydecorators import memo
+from mydecorators import memo, disabled
 from json import load, dump
 from pprint import pprint, pformat
 import re
 from _builtins import op_list, keywords, all_, any_
 
 
-log.out = open('grammar/log.yaml', 'w')
+# log.out = open('grammar/log.yaml', 'w')
 interact = lambda: 0
+trace = disabled
+
 
 try:
     with open('grammar/grammar.json', 'r') as gf:
@@ -16,7 +18,6 @@ except:
     from _grammar import grammar
 
 op_starts = ''.join(set(op[0] for op in op_list))
-
 
 def calc_parse(text, tag='LINE', grammar=grammar):
 
@@ -159,7 +160,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    prefixes = {'NUM', 'CMD', 'BODY', 'UNPACK'}
+    prefixes = {'NUM', 'CMD', 'BODY', 'UNPACK', 'UNQUOTE'}
     list_obj = lambda tag:  tag[-3:] == 'LST' or tag in ['DIR']
     @trace
     def process_tag(tag, tree):
@@ -192,7 +193,7 @@ def repl():
         pprint(calc_parse(exp))
 
 
-testfile = 'grammar/_parser_tests.json'
+testfile = 'grammar/tests/parser_tests.json'
 testcases = load(open(testfile, 'r'))
 rewrite = False
 
@@ -227,6 +228,9 @@ def rec_comp(l1, l2):
                 return rec_comp(l1[i1], l2[i2])
             else:
                 return rec_comp(i1, i2)
+
+## new tests here
+
 
 if __name__ == "__main__":
     # repl()

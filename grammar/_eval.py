@@ -12,8 +12,8 @@ subs_rules = {
     'ANS': ANS,         'SYM': SYM,         'EMPTY': EMPTY, 
     'NUM': NUM,         'SEQ': SEQtoTREE,   'BOP': get_op(binary_ops),
     'LOP': get_op(unary_l_ops),             'ROP': get_op(unary_r_ops),
-    'LST': LIST,        'FORM': FORM,       'SYM_LST': SYMLIST,
-    'ATTR': ATTR,       'BODY': eval_tree
+    'VAL_LST': LIST,    'FORM': FORM,       'BODY': eval_tree,
+    'ATTR': ATTR,       
 }
 
 eval_rules = {

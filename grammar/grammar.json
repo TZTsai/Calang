@@ -1102,8 +1102,15 @@
       [
         "ALT",
         [
-          "PAR",
-          "_SYM_IT"
+          "EXP",
+          [
+            "OBJ",
+            "UNQUOTE"
+          ],
+          [
+            "PAR",
+            "_SYM_IT"
+          ]
         ],
         [
           "ITEM_OP",
@@ -1114,8 +1121,15 @@
               ","
             ],
             [
-              "PAR",
-              "_SYM_IT"
+              "EXP",
+              [
+                "OBJ",
+                "UNQUOTE"
+              ],
+              [
+                "PAR",
+                "_SYM_IT"
+              ]
             ]
           ],
           [
@@ -1141,34 +1155,27 @@
       ]
     ]
   ],
-  "_SYM_IT": [
+  "UNQUOTE": [
     "ALT",
     [
-      "ITEM_OP",
-      [
-        "OBJ",
-        "UNQUOTE"
-      ],
-      [
-        "OP",
-        "?"
-      ]
+      "MARK",
+      "`"
     ],
     [
-      "EXP",
-      [
-        "OBJ",
-        "SYM_LST"
-      ],
-      [
-        "OBJ",
-        "NAME:SYM"
-      ]
+      "PAR",
+      "_SYM_IT"
     ]
   ],
-  "UNQUOTE": [
-    "MARK",
-    "`"
+  "_SYM_IT": [
+    "EXP",
+    [
+      "OBJ",
+      "SYM_LST"
+    ],
+    [
+      "OBJ",
+      "NAME:SYM"
+    ]
   ],
   "GEN_LST": [
     "ALT",
@@ -1420,33 +1427,30 @@
       "SLICE"
     ],
     [
-      "ALT",
-      [
-        "ITEM_OP",
-        [
-          "OBJ",
-          "UNPACK"
-        ],
-        [
-          "OP",
-          "?"
-        ]
-      ],
-      [
-        "OBJ",
-        "EXP"
-      ]
+      "OBJ",
+      "UNPACK"
+    ],
+    [
+      "OBJ",
+      "EXP"
     ]
   ],
   "UNPACK": [
-    "ITEM_OP",
+    "ALT",
     [
-      "CHARS",
-      "[*]"
+      "ITEM_OP",
+      [
+        "CHARS",
+        "[*]"
+      ],
+      [
+        "OP",
+        "-"
+      ]
     ],
     [
-      "OP",
-      "-"
+      "OBJ",
+      "EXP"
     ]
   ],
   "SLICE": [
