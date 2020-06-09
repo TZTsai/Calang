@@ -1,31 +1,62 @@
-from _builtins import *
-from _funcs import *
-from _obj import CalcStack, Env, config, stack, Op
+from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins
+from _funcs import Symbol
+from _obj import Env, config, stack, Op, Attr
 
 
-Global = Env()
+Global = Env(name='_Global_')
 Global._ans = []
 Global.update(builtins)
 
 
 subs_rules = {
-    'ANS': ans, 'SYM': symbol, 'EMPTY': empty, 
-    'NUM': number, 'SEQ': op_tree
+    'ANS': ANS,         'SYM': SYM,         'EMPTY': EMPTY, 
+    'NUM': NUM,         'SEQ': SEQtoTREE,   'BOP': get_op(binary_ops),
+    'LOP': get_op(unary_l_ops),             'ROP': get_op(unary_r_ops),
+    'LST': LIST,        'FORM': FORM,       'SYM_LST': SYMLIST,
+    'ATTR': ATTR,       'BODY': eval_tree
 }
 
-def subs_tree(tr):
-    if type(tr) is str:
-        return tr
-    elif tr[0] in subs_rules:
-        return subs_rules[tr[0]](tr)
-    else:
-        return tuple(subs_tree(t) for t in tr)
+eval_rules = {
+    'FIELD': FIELD,     'NAME': NAME,       'PRINT': PRINT
+}
 
-def symbol(tr): return Symbol(tr[1])
+def tag(tr): return tr[0].split(':')[0]
 
-def empty(tr): return
+def eval_tree(tr, env=None):
+    '''
+    >>> eval_tree(['SEQ', ['NUM:REAL', '1'], ['BOP', '+'], ['NUM:REAL', '2'], ['BOP', '*'], ['NUM:REAL', '3']])
+    7
+    '''
+    for i in range(1, len(tr)):
+        tr[i] = eval_tree(tr[i], env)
+    type_ = tag(tr)
+    if type_ in subs_rules:
+        tr = subs_rules[type_](tr)
+    elif type_ in eval_rules:
+        tr = eval_rules[type_](tr, env)
+    return tr
 
-def ans(tr):
+
+def get_op(ops):
+    def get(name): return ops[name]
+    return get
+
+def SYM(tr): return Symbol(tr[1])
+
+def EMPTY(tr): return None
+
+def ANS(tr):
+    '''
+    >>> Global._ans = [1, 0, 'dd', 2.3]
+    >>> ANS(['ANS'])
+    2.3
+    >>> ANS(['ANS', '0'])
+    1
+    >>> ANS(['ANS', '_'])
+    'dd'
+    >>> ANS(['ANS', '__'])
+    0
+    '''
     if len(tr) == 1:
         id = -1
     else:
@@ -37,50 +68,50 @@ def ans(tr):
             except: raise SyntaxError('invalid history index!')
     return Global._ans[id]
 
-def number(tr):
-    _, type_ = tr[0].split(':')
+def NUM(tr):
+    '''
+    >>> NUM(['NUM:REAL', '2.4', '-18'])
+    2.4e-18
+    >>> NUM(['NUM:COMPLEX', ['REAL', '2.4'], '-', ['REAL', '1', '-10']])
+    (2.4-1e-10j)
+    '''
+    type_ = tag(tr)
     if type_ == 'COMPLEX':
         re, pm, im = tr[1:]
-        re, im = number(re), number(im)
-        if pm == '+': return re + im*1j
-        else: return re - im*1j
+        re, im = NUM(re), NUM(im)
+        if pm == '+':   return re + im*1j
+        else:           return re - im*1j
     elif type_ == 'REAL' and len(tr) == 3:
         return eval(tr[1]+'e'+tr[2])
     else:
         return eval(tr[1])
 
-def op_tree(tr):
-    
+def is_tree(tr): return type(tr) is list
+
+def SEQtoTREE(tr):
     stk = stack()
     ops = stack()
     
     def pop_val():
         v = stk.pop()
-        if isinstance(v, Op):
-            raise SyntaxError('op sequence in disorder')
+        if isinstance(v, Op): raise SyntaxError('op sequence in disorder')
         return v
 
     def pop_op():
         op = stk.pop()
-        if op != ops.pop():
-            raise SyntaxError('op sequence in disorder')
+        if op != ops.pop(): raise SyntaxError('op sequence in disorder')
         return op
 
-    def can_simp(n):
-        return not (n and isinstance(n, tuple) and isinstance(n[1], str))
-        
     def shrink():
         # try to evaluate or shrink several previous trees into a bigger tree
-        tag, op = ops.peek()
+        op = ops.peek()
+        tag = op.type
         if tag == 'BOP':
             n2 = pop_val()
             op = pop_op()
             n1 = pop_val()
-            try:
-                assert can_simp(n1) and can_simp(n2)
-                n = op(n1, n2)
-            except:
-                n = (tag, op, n1, n2)
+            if is_tree(n1) or is_tree(n2): n = [tag, op, n1, n2]
+            else: n = op(n1, n2)
         else:
             if tag == 'LOP':
                 n1 = pop_val()
@@ -88,81 +119,46 @@ def op_tree(tr):
             else:
                 op = pop_op()
                 n1 = pop_val()
-            try:
-                assert can_simp(n1)
-                n = op(n1)
-            except:
-                n = (tag, op, n1)
+            if is_tree(n1): n = [tag, op, n1]
+            else: n = op(n1)
         stk.push(n)
 
     def push(x):
-        tag, sym = x
-        if tag == 'BOP':
-            x[1] = binary_ops[sym]
-        elif tag == 'LOP':
-            x[1] = unary_l_ops[sym]
-        elif tag == 'ROP':
-            x[1] = unary_r_ops[sym]
-        if isinstance(x[1], Op):
+        if isinstance(x, Op):
             while ops:
                 op = ops.peek()
-                if x[1].prior <= op.priority: shrink()
+                if x.prior <= op.priority: shrink()
                 else: break
             ops.push(x)
-        else:
-            x = subs_tree(x)
         stk.push(x)
 
     for x in tr[1:]: push(x)
-    while ops: shrink
+    while ops: shrink()
     return pop_val()
 
+def LIST(tr):
+    ""
 
-eval_rules = {
-    'LST': eval_list, 'FORMAL': eval_formal
-}
+def SYMLIST(tr):
+    pass
+
+def FORM(tr): return tr
+
+def ATTR(tr): return Attr(tr[1])
 
 
-
-def eval_name(tr, env):
-    s = tr[1]
-    try:
-        val = env[tr]
+def NAME(tr, env):
+    name = tr[1]
+    try: return getattr(env, name)
     except KeyError:
-        if config.symbolic: val = Symbol(tr)
+        if config.symbolic: return Symbol(name)
         else: raise NameError(f'unbound symbol \'{tr}\'')
-    return val
 
-def eval_list(tr, env):
-    pass
+def FIELD(tr, env):
+    subfields = [t[1] for t in tr]
+    while subfields:
+        env = getattr(env, subfields.pop(0))
+    return env
 
-def eval_formal(tr, env):
-    optpar_only = False
-    def simp(t):
-        nonlocal optpar_only
-        if 'BIND' in t[0]:
-            _, formal, exp = t
-            optpar_only = True
-            return eval_formal(formal, env), eval_exp(exp, env)
-        elif 'EXT_PAR' in t[0]:
-            return t[1]
-        elif t[0] == 'FORMAL':
-            return eval_formal(t, env)
-        elif not optpar_only:  # NAME
-            return t[1]
-        raise SyntaxError('optional parameter before necessary parameter')
-    return tuple(simp(t) for t in tr[1:])
-
-
-def eval_exp(tr, env):
-    pass
-
-
-def log_macro(env):
-    def value(arg):
-        try: return env[arg]
-        except: return '??'
-    def log(*args):
-        if config.debug:
-            print(env.frame*'  ' + ', '.join(f'{arg}={value(arg)}' for arg in args))
-    return log
+def PRINT(tr, env):
+    if config.debug: exec('print(f"%s")' % tr[1], locals=env)

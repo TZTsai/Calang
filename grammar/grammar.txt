@@ -10,16 +10,18 @@ IMPORT  := import /\w+/ /-[tvp]/ *
 HIDE    := ;
 COMMENT := [#] - /.*/
 
-DEF     := PATTERN := EXP
-PATTERN := FIELDS ( %GRP < NAME > | FORM ) ?
+DEF     := REPR = EXP
+REPR    := FIELDS ( %GRP < FORM > | FORM ) ?
 ### FIELD FORM := EXP  <==>  FIELD := FORM -> EXP ###
 
-FIELDS  := %SEQ < FIELD @ >  
-FIELD   := %SEQ < NAME ( . / ) >                      ## '/' forces no space between
+FIELDS  := %SEQ < FIELD @ >
+FIELD   := NAME ATTR *
 NAME    := /[\u0374-\u03FFa-zA-Z][a-zA-Z\d_]*[?]?/    ## can begin with a Greek letter
-FORM    := %BKT < ( _PARS ? ( , _BINDS ) ? ( , EXT_PAR ) ? ) > | NAME
+ATTR    := . / NAME:ATTR                              ## '/' forces no space between
+FORM    := %BKT < ( _PARS ? ( , _OPTS ) ? ( , _EXT ) ? ) > | NAME:FORM
 _PARS   := %SEQ < ( BIND ! FORM ) , >                 ## '!' forbids the next match
-EXT_PAR := [*] - NAME
+_OPTS   := %SEQ < BIND:OPTPAR , >
+_EXT    := [*] - NAME:EXTPAR
 
 EXP     := MAP | LET | MATCH | VAL
 ### RULES for ARROW ###
@@ -28,18 +30,17 @@ EXP     := MAP | LET | MATCH | VAL
 ##  VAL  -> FORM         ==>  ENV
 ##  VAL  -> FORM -> EXP  ==>  ENV -> EXP  <==>  VAL -> MAP  ==>  VAL
 
-MAP     := FORM -> EXP
-LET     := ( ENV | MATCH ) -> EXP
+MAP     := FORM -> EXP:BODY
+LET     := ( ENV | MATCH ) -> EXP:BODY
 MATCH   := VAL -> FORM
-ENV     := %GRP < _BINDS >
-_BINDS  := %SEQ < BIND , >
+ENV     := %GRP < %SEQ < BIND , > >
 BIND    := FORM : EXP
 
 VAL     := IF_ELSE | SEQ
 IF_ELSE := SEQ if SEQ else EXP
-SEQ     := ( _TERM + ( -> ! BOP ) ? ) +
+SEQ     := PRINT ? ( _TERM + ( -> ! BOP ) ? ) + PRINT ?
 ## a little verbose but the arrow '->' must not be mistaken with the minus op '-'
-_TERM   := ( ITEM | LOP ITEM ) ROP ? ( PRINT - ) ? 
+_TERM   := ( ITEM | LOP ITEM ) ROP ? 
 
 PRINT   := " /.*?/ "
 ITEM    := ENV | GROUP | WHEN | ATOM | LST
@@ -47,8 +48,8 @@ GROUP   := %GRP < EXP >
 WHEN    := when %GRP < ( %SEQ < CASE , > , EXP ) >
 CASE    := EXP : EXP
 
-ATOM    := FIELD | SYM | ANS | NUM
-SYM     := ' NAME
+ATOM    := FIELD | ATTR | SYM | ANS | NUM
+SYM     := ' NAME:SYM
 ANS     := _ /(\d+|_*)/
 
 NUM     := COMPLEX | BIN | HEX | REAL
@@ -57,18 +58,21 @@ REAL    := /-?\d+(\.\d*)?/ ( [eE] - /-?\d+/ ) ?
 BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
-LST     := SYM_LST | GEN_LST | _LST | MAT_LST
-SYM_LST := ' %LST < ( UNQUOTE ? NAME | SYM_LST ) , >
-UNQUOTE := `
-GEN_LST := %BKT < ( EXP ( [|] - CONSTR ) + ) >
-CONSTR  := NAME in EXP ( and EXP ) ?
-_LST    := %LST < LS_ITEM , >
-MAT_LST := %LST < ROW_LST ; >
-ROW_LST := %SEQ < LS_ITEM , >
-LS_ITEM := SLICE | [*] ? EXP
+LST     := ' SYM_LST | GEN_LST | VAL_LST
+SYM_LST := %LST < _SYM_IT , >
+_SYM_IT := UNQUOTE ? ( SYM_LST | NAME:SYM )
+UNQUOTE := ` ## used in a SYM_LST or a MACRO to convert it back to a value
+GEN_LST := %BKT < ( EXP:BODY ( [|] - CONSTR ) + ) >
+CONSTR  := NAME:VAR in EXP:BODY ( if EXP:BODY ) ?
+VAL_LST := _DLST | %LST < _LST_IT , >
+_DLST   := %LST < SUB_LST:VAL_LST ; >
+SUB_LST := %SEQ < _LST_IT , > ?
+_LST_IT := SLICE | UNPACK ? EXP
+UNPACK  := [*] -
 SLICE   := _SLC : _SLC ( : _SLC ) ?
 _SLC    := ( SEQ | EMPTY )
 
+### MACROS ###
 %LST < $ITM $SEP >  := %BKT < ( %SEQ < $ITM $SEP > ? ) >
 %BKT < $EXP >       := "[" - $EXP "]" -
 %GRP < $EXP >       := "(" - $EXP ")" -
@@ -94,13 +98,13 @@ The most special rules of this grammar are:
    group, separated by ','. Each binding is in the form of '[formal] : [val]'.
    Groups in this grammar are wrapped with '(' and ')'.
    Note that a group of bindings can exist independently in the calc, thus
-   allowing a name or field to be bound to it. 
+   allowing a NAME or field to be bound to it. 
    For example, define 'a' as '(x: 1, y: f)'. Then 1 is substituted for 'a->x'
    and 'f' is substituted for 'a->y'. Moreover, 'a->y[3]' will be replaced as
    'f[3]', an application. The expression after the dot can be more complicated,
    e.g. 'a -> y[x+2] * (y: 2) -> y', which will be mapped into 'f[3] * 2'.
 3. Field: '[field] .[subfield]'
-   In this calc, any field can be bound to a value. A name is a field in the
+   In this calc, any field can be bound to a value. A NAME is a field in the
    uppermost level. If a field is initially only bound to a value and a subfield
    of it is defined, it will hold its original value as well as a group of bindings.
    In the computation, this field will still be evaluated as its initial value,

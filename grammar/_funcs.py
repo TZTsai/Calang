@@ -1,9 +1,10 @@
-from operator import add, sub, mul, pow as pow_
+from operator import add, sub, mul, pow as pow_, and_ as b_and, or_ as b_or
 from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from sympy import Matrix, Symbol
-from _obj import config, Range, function
+from _obj import config, Range, function, Map
+from mydecorators import decorator
 
 
 def is_number(value):
@@ -19,7 +20,7 @@ def is_iter(value):
 
 
 def is_list(value):
-    return isinstance(value, tuple)
+    return isinstance(value, tuple) or isinstance(value, list)
 
 
 def is_vector(value):
@@ -27,102 +28,211 @@ def is_vector(value):
 
 
 def is_matrix(value):
-    return isinstance(value, Matrix) or value.mat
+    '''
+    >>> is_matrix([[1,2],[3,4]])
+    True
+    >>> is_matrix([[1,2,3],[1,2]])
+    False
+    >>> is_matrix([[1,[2]],[3,4]])
+    False
+    >>> is_matrix([1])
+    False
+    '''
+    if isinstance(value, Matrix): 
+        return True
+    else: 
+        return depth(value) == depth(value, min) == 2 and same(*map(len, value))
 
 
 def is_function(value):
     return callable(value)
 
 
-def equal(x, y):
-    if is_number(x) and is_number(y):
-        return abs(x - y) <= config.tolerance
-    else: return x == y
-
-
-def db_fact(x):  # returns x!!
-    if not isinstance(x, int) or x < 0:
-        raise ValueError('invalid argument for factorial!')
-    if x in (0, 1): return 1
-    else: return x * db_fact(x-2)
-
-
-def all_(condition, *lst):
-    if condition: return all(map(condition, lst))
+def all_(*lst, test=None):
+    '''
+    >>> all_(2, 4, 6, test=lambda x: x%2==0)
+    True
+    >>> all_()
+    True
+    >>> all_(1, 0, 1)
+    False
+    >>> all_(1, 1)
+    True
+    '''
+    if test: return all(map(test, lst))
     else: return all(lst)
 
 
-def any_(condition, *lst):
-    if condition: return any(map(condition, lst))
+def any_(*lst, test=None):
+    if test: return any(map(test, lst))
     else: return any(lst)
 
 
-def same(lst):
-    if not lst: return True
-    x = lst[0]
-    return all(equal(x, y) for y in lst[1:])
+def same(*lst):
+    '''
+    >>> same(1, 1.0, 2/2)
+    True
+    >>> same()
+    True
+    >>> same(*map(len, [[1,2],[3,4]]))
+    True
+    >>> same(1, 2, 1)
+    False
+    '''
+    try: x = lst[0]
+    except TypeError:
+        return same(tuple(lst))
+    except IndexError:
+        return True
+    return all(eq_(x, y) for y in lst[1:])
 
 
-def div_(x, y):
+def and_(x, y): return x if not x else y
+def or_(x, y): return x if x else y
+def not_(x): return 0 if x else 1
+def eq_(x, y):
+    try: return abs(x - y) <= config.tolerance
+    except: return x == y
+def ne_(x, y): return not eq_(x, y)
+
+
+def div(x, y):
     if all(isinstance(w, Rational) for w in (x, y)):
         return Fraction(x, y)
-    return x / y
+    else:
+        return x / y
+
+    
+def dbfact(x):  # returns the double factorial of x
+    '''
+    >>> [dbfact(4), dbfact(5)]
+    [8, 15]
+    '''
+    if not isinstance(x, int) or x < 0:
+        raise ValueError('invalid argument for factorial!')
+    if x in (0, 1): return 1
+    else: return x * dbfact(x-2)
 
 
-def substitute(exp, *bindings):
-    if is_iter(exp):
-        return tuple(substitute(x, *bindings) for x in exp)
-    if hasattr(exp, 'subs'):
-        return exp.subs(bindings)
-    return exp
+def compose(*funcs):
+    def compose2(f, funcs):
+        return lambda *args, **kws: f(g(*args, **kws))
+    return reduce(compose2, funcs)
 
 
-add_ = function.operator('+', add)
-sub_ = function.operator('-', sub)
-mul_ = function.operator('*', mul)
+def depth(value, key=max):
+    '''
+    >>> depth([1])
+    1
+    >>> depth(abs)
+    0
+    >>> depth(-9)
+    0
+    >>> depth([1, [2]])
+    2
+    >>> depth([1, [2]], min)
+    1
+    >>> depth([1, [2, [3]]])
+    3
+    '''
+    if not is_list(value): return 0
+    if len(value) == 0: return 1
+    return 1 + key(map(depth, value))
+
+
+@decorator
+def itemwise(op):
+    '''
+    >>> iadd([1, 2], [2, 3])
+    (3, 5)
+    >>> iadd([[1, 2], [2, 3]], [[3, 4], [-2, 0]])
+    ((4, 6), (0, 3))
+    >>> iadd(3, [3, 4, 5])
+    (6, 7, 8)
+    '''
+    def f(x1, x2):
+        d1, d2 = depth(x1), depth(x2)
+        if d1 == d2:
+            if d1 == 0:
+                return op(x1, x2)
+            else:
+                return tuple(f(a1, a2) for a1, a2 in zip(x1, x2))
+        elif d1 > d2:
+            return tuple(f(a1, x2) for a1 in x1)
+        else:
+            return tuple(f(x1, a2) for a2 in x2)
+    return f
+
+
+def adjoin(x1, x2):
+    '''
+    >>> adjoin(abs, [-3])
+    3
+    >>> adjoin(3, 4)
+    12
+    '''
+    if isinstance(x1, Map):
+        return x1(x2)
+    elif is_function(x1):
+        try:
+            return x1(*x2)
+        except TypeError as err:
+            if is_function(x2):
+                return None  # TODO compose x1 and x2
+            else:
+                raise err
+    else:
+        return imul(x1, x2)
+
+def dot(x1, x2):
+    '''
+    >>> dot(3, [1,2,3])
+    (3, 6, 9)
+    >>> dot(abs, [-3])
+    3
+    >>> dot([1, 2], [2, 5])
+    12
+    '''
+    d1, d2 = depth(x1), depth(x2)
+    if d1 == 0 or d2 == 0:
+        return adjoin(x1, x2)
+    elif d1 == d2 == 1:
+        if len(x1) != len(x2):
+            raise ValueError('dim mismatch for dot product')
+        return sum(map(adjoin, x1, x2))
+    elif d1 == 1:
+        return tuple(dot([x1], x2))
+    elif d2 == 1:
+        return tuple(dot(x1, transpose(x2)))
+    else:
+        return tuple(tuple(dot(r, c) for c in transpose(x2)) for r in x1)
 
 
 def power(x, y):
-    if is_list(x):
-        return reduce(dot, [x] * y)
-    elif isinstance(x, function) and isinstance(y, int):
-        f = x
-        for _ in range(1, y): f = x.compose(f)
-        return f
-    else:
-        return pow_(x, y)
+    return reduce(dot, [x] * y)
 
 
-def depth(value):
-    if not is_iter(value): return 0
-    if len(value) == 0: return 1
-    return 1 + max(map(depth, value))
+iadd = itemwise(add)
+isub = itemwise(sub)
+idiv = itemwise(div)
+imul = itemwise(mul)
+ipow = itemwise(power)
+iand = itemwise(b_and)
+ior  = itemwise(b_or)
 
 
 def index(lst, id):
     if not hasattr(lst, '__getitem__'):
-        raise SyntaxError('{} is not subscriptable'.format(lst))
-    if isinstance(lst, range) or isinstance(lst, Range) or not is_iter(id):
-        return lst[id]
-    else:
-        return tuple(index(lst, i) for i in id)
-
-
-def tolist(lst):
-    def _tolist(obj):
-        if hasattr(obj, '__iter__'):
-            return tuple(_tolist(it) for it in obj)
-        return obj
-    if not hasattr(lst, '__iter__'):
-        raise ValueError('{} is not iterable!'.format(lst))
-    return _tolist(lst)
+        raise SyntaxError(f'{lst} is not subscriptable')
+    if not is_iter(id): return lst[id]
+    else: return tuple(index(lst, i) for i in id)
 
 
 def subscript(lst, subs):
     if not subs: return lst
-    index0 = subs[0]
-    items = index(lst, index0)
-    if is_iter(index0) or type(index0) == slice:
+    id0 = subs[0]
+    items = index(lst, id0)
+    if is_iter(id0) or type(id0) is slice:
         return tuple(subscript(item, subs[1:]) for item in items)
     else:
         return subscript(items, subs[1:])
@@ -165,51 +275,22 @@ def cols(mat):
     assert is_matrix(mat)
     return len(mat[0])
 
+
 def transpose(value):
-    if not is_iter(value):
+    d = depth(value, min)
+    if d == 0:
         return value
-    elif is_vector(value):
+    elif d == 1:
         return transpose([value])
-    elif is_matrix(value):
+    else:
         rn, cn = rows(value), cols(value)
         return [[value[r][c] for r in range(rn)] for c in range(cn)]
 
 
-def dot(x1, x2):
-    d1, d2 = depth(x1), depth(x2)
-    if d1 == d2 == 0:
-        if all_(is_function, x1, x2):
-            return x1.compose(x2)
-        else:
-            return mul_(x1, x2)
-    elif d2 == 0:
-        return tuple(dot(a1, x2) for a1 in x1)
-    elif d1 == 0:
-        return tuple(dot(x1, a2) for a2 in x2)
-    elif max(d1, d2) == 1:
-        if len(x1) == len(x2):
-            return sum(map(mul, x1, x2))
-        else:
-            raise ValueError(f'dimension mismatch for dot operation')
-    elif max(d1, d2) == 2:
-        if d1 == 1:
-            return tuple(dot([x1], x2))
-        elif d2 == 1:
-            return tuple(dot(x1, transpose(x2)))
-        else:
-            return tuple(tuple(dot(r, c) for c in transpose(x2)) for r in x1)
-    else:
-        raise TypeError('invalid dimension')
-
-
-def compose(*funcs):
-    def compose2(f, g):
-        return lambda *args: f(g(*args))
-    return reduce(compose2, funcs)
-
-
-def tomap(f):
-    def _f(lst): return tuple(f(x) for x in lst)
+@decorator
+def canmap(f):
+    def _f(*lst, depth=1):
+        return tuple(map(f, *lst))
     return _f
 
 
@@ -223,7 +304,7 @@ def findall(cond, lst):
     if is_function(cond):
         return [i for i, x in enumerate(lst) if cond(x)]
     else:
-        return [i for i, x in enumerate(lst) if equal(x, cond)]
+        return [i for i, x in enumerate(lst) if eq_(x, cond)]
 
 
 def range_(x, y):
@@ -232,3 +313,16 @@ def range_(x, y):
     else:
         return Range(x, y)
 
+
+def substitute(exp, *bindings):
+    if is_iter(exp):
+        return tuple(substitute(x, *bindings) for x in exp)
+    if hasattr(exp, 'subs'):
+        return exp.subs(bindings)
+    return exp
+
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

@@ -6,9 +6,9 @@ import re
 from _builtins import binary_ops, unary_l_ops, unary_r_ops
 
 
-log.out = open('grammar/log.yaml', 'w')
+# log.out = open('grammar/log.yaml', 'w', encoding='utf8')
 # log.maxdepth = 1
-# trace = disabled
+trace = disabled
 
 
 def split(text: str, sep=None, maxsplit=-1):
@@ -16,8 +16,9 @@ def split(text: str, sep=None, maxsplit=-1):
 
 
 MetaGrammar = split(r"""
-DEF     := OBJ := EXP | MACRO := EXP
-OBJ     := [A-Z_]+
+DEF     := PAR := EXP | OBJ := EXP | MACRO := EXP
+OBJ     := [A-Z][A-Z_:]*
+PAR     := _[A-Z_:]+
 MACRO   := %[A-Z_]+ < VARS > | %[A-Z_]+ < ITEMS >
 VARS    := VAR VARS | VAR
 VAR     := \$[A-Z_]+
@@ -28,7 +29,7 @@ OP      := [*?!/+-](?=\s|$)
 ITEM    := GROUP | MACRO | ATOM
 ITEMS   := ITEM ITEMS | ITEM
 GROUP   := [(] EXP [)]
-ATOM    := OBJ | STR | RE | CHARS | VAR | MARK
+ATOM    := PAR | OBJ | STR | RE | CHARS | VAR | MARK
 STR     := ".*?"
 RE      := /.*?/
 CHARS   := \[.*?\]
@@ -37,10 +38,12 @@ MARK    := [^>|)\s]\S*
 
 ###  COMMENTS ON METAGRAMMAR  ###
 # OBJ:      OBJ is a tag of the syntax tree to identify its type
-#           it consists of A-Z and _ 
-#           specifically, if an OBJ begins with _ , it is not considered as a real
-#           object; the tree it matches will not be tagged, but merged in the object
-#           at its upper level instead
+#           it consists of A-Z and _
+#           Optionally, it can have a suffix beginning with : , in which case the
+#           parser should change the tag of the matched tree into that after : ,
+#           very useful for the evaluator to determine its way of eval
+# PAR:      Similar to OBJ but begins with _ . The tree it matches will not be 
+#           tagged, but merged into the OBJ at its upper level instead
 # OP:       * for 0 or more matches, + for 1 or more, ? for 0 or 1, 
 #           - for 1 match but it will not be included in the result,
 #           ! for prechecking and forbidding 1 match
@@ -178,8 +181,12 @@ def post_process(grammar, macros):
             return tree
         elif tree[0] == 'MACRO':
             return apply_macro(tree)
-        elif tree[0] == 'OBJ' and tree[1] not in grammar:
-            return 'MARK', tree[1]
+        elif tree[0] in ('OBJ', 'PAR'):
+            tag = tree[1].split(':')[0]
+            if tag not in grammar:
+                return 'MARK', tree[1]
+            else:
+                return tree
         else:
             return tuple(proc_tree(t) for t in tree)
 
@@ -191,20 +198,20 @@ def post_process(grammar, macros):
 def check(f, args, expected):
     actual = f(*args)
     if actual != expected:
-        comp_list(expected, actual)
+        rec_comp(expected, actual)
         raise AssertionError(f'Wrong Answer of {f.__name__}{tuple(args)}\n' +
                              f'Expected: {expected}\n' +
                              f'Actual: {actual}\n')
 
-def comp_list(l1, l2):
+def rec_comp(l1, l2):
     if type(l1) not in (tuple, list, dict):
         if l1 != l2: print(l1, l2)
     elif len(l1) != len(l2):
         print(l1, l2)
     else:
         for i1, i2 in zip(l1, l2):
-            if type(l1) is dict: comp_list(l1[i1], l2[i2])
-            else: comp_list(i1, i2)
+            if type(l1) is dict: rec_comp(l1[i1], l2[i2])
+            else: rec_comp(i1, i2)
 
 def test_grammar():
 
@@ -244,7 +251,7 @@ def test_grammar():
 
 
 grammar = calc_grammar(Grammar)
-dump(grammar, open('grammar/grammar.json', 'w'), indent=2)
+dump(grammar, open('grammar/grammar.json', 'w', encoding='utf8'), indent=2)
 
 if __name__ == "__main__":
     test_grammar()

@@ -1,3 +1,5 @@
+from myutils import interact
+
 class stack(list):
     def push(self, obj):
         self.append(obj)
@@ -18,30 +20,92 @@ class Op:
 
 
 class Env(dict):
-    def __init__(self, val=None, binds=None, parent=None):
+    '''
+    >>> G = Env(name='global')
+    >>> G.e = Env(1)
+    >>> G.e
+    <env: global.e>
+    >>> G.e.a = 3
+    >>> G.e.a
+    3
+    >>> f = G.e([2], f=5)
+    >>> f
+    <env: global.e.(local)>
+    >>> f.a
+    3
+    >>> f.dir
+    {'_parent_': <env: global.e>, 'f': 5, 'value': [2], 'a': 3, 'e': <env: global.e>}
+    >>> str(f)
+    '(f: 5, value: [2])'
+    '''
+    def __init__(self, value=None, binds=None, parent=None, name='(local)'):
         if binds: self.update(binds)
-        self._this = self if val is None else val
-        self._super = parent
-        self._depth = 0 if parent is None else parent._depth + 1
-
+        self.value = self if value is None else value
+        self._parent = parent
+        self._name = name
+    
     def __getattr__(self, name):
-        if name in self: 
+        if name in self:
             return self[name]
-        if self._super: 
-            return getattr(self._super, name)
+        if self._parent:
+            return getattr(self._parent, name)
         raise KeyError
 
     def __setattr__(self, name, value):
-        if name[0] == '_':
+        if name[0] == '_':      # attrs beginning with '_' is hidden
             super().__setattr__(name, value)
         else:
             self[name] = value
+            if isinstance(value, Env) and value is not self:
+                value._parent = self
+                value._name = name
+
+    @property
+    def name(self):
+        if not self._parent: return self._name
+        return self._parent.name + '.' + self._name
 
     def delete(self, name):
         self.pop(name)
 
-    def __call__(self, val=None, binds=None):
+    def __call__(self, val=None, **binds):
         return Env(val, binds, self)
+
+    def __repr__(self):
+        return '<env: %s>' % self.name
+    
+    def __str__(self):
+        content = ', '.join(k+': '+repr(v) for k, v in self.items())
+        return '('+content+')'
+
+    @property
+    def dir(self):
+        d = {'_parent_': self._parent}
+        env = self
+        while env:
+            for k in env:
+                if k not in d: d[k] = env[k]
+            env = env._parent
+        return d
+
+
+class Attr:
+    def __init__(self, name):
+        self._s = name
+
+    def __repr(self):
+        return '.'+self._s
+        
+    def __rmul__(self, field):
+        return getattr(field, self._s)
+
+
+class Map:
+    def __init__(self):
+        super().__init__()
+    @classmethod
+    def compose(f, g):
+        pass
 
 
 class function:
@@ -150,3 +214,9 @@ class config:
     symbolic = True
     debug = __debug__
 
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
+    

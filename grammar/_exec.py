@@ -1,4 +1,12 @@
+from _parser import calc_parse
 from _obj import stack
+
+
+### TODO 
+#   0. DEF
+#   1. CMD: dir, conf, del, ...
+#   2. import and load
+#   3. auto indent
 
 
 # track the brackets
