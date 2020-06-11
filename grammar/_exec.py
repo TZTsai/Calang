@@ -1,5 +1,5 @@
-from _parser import calc_parse
 from _obj import stack
+from _eval import eval_tree
 
 
 ### TODO 
@@ -20,11 +20,11 @@ def pop_par(par):
         par_stk.pop()
     else:
         par_stk.clear()
-        raise SyntaxError('unexpected closing parenthesis')
+        raise SyntaxError('invalid parentheses')
 
-parentheses = '()', '[]', '{}'
-open_pars, close_pars = zip(*parentheses)
-par_map = dict(zip(close_pars, open_pars))
+parentheses = ')(', '][', '}{'
+close_pars, open_pars = zip(*parentheses)
+par_map = dict(parentheses)
 
 class BracketUnclosedError(SyntaxError):
     "The string has unclosed parentheses."
@@ -35,3 +35,9 @@ def track_par(line):
         elif c in close_pars: pop_par(par_map[c])
     if par_stk:
         raise BracketUnclosedError(par_stk.peek())
+
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()

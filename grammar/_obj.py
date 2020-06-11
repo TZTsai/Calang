@@ -13,10 +13,12 @@ class Op:
         self.type = type
         self.func = function
         self.prior = priority
+
     def __call__(self, *args):
         return self.func(*args)
+
     def __repr__(self):
-        return f"{self.type}_OP({self.func.__name__}, {self.prior})"
+        return f"{self.type}({self.func.__name__}, {self.prior})"
 
 
 class Env(dict):
@@ -49,12 +51,14 @@ class Env(dict):
             return self[name]
         if self._parent:
             return getattr(self._parent, name)
-        raise KeyError
+        # return super().__getattribute__(name)
 
-    def __setattr__(self, name, value):
+    def __setattr__(self, name, value, overwrite=True):
         if name[0] == '_':      # attrs beginning with '_' is hidden
             super().__setattr__(name, value)
         else:
+            if name in self and not overwrite:
+                raise AssertionError('name conflict in '+repr(self))
             self[name] = value
             if isinstance(value, Env) and value is not self:
                 value._parent = self
@@ -90,6 +94,19 @@ class Env(dict):
 
 
 class Attr:
+    '''
+    >>> attr = Attr('aa')
+    >>> f = lambda: 0
+    >>> f.aa = 'zero'
+    >>> f*attr
+    'zero'
+    >>> try: attr*f
+    ... except: 'fail'
+    'fail'
+    >>> e = Env(binds={'aa':'evil'})
+    >>> e*attr
+    'evil'
+    '''
     def __init__(self, name):
         self._s = name
 
@@ -101,11 +118,20 @@ class Attr:
 
 
 class Map:
-    def __init__(self):
-        super().__init__()
-    @classmethod
-    def compose(f, g):
-        pass
+    match = lambda val, form, env: NotImplemented
+    eval  = lambda tree, env=None: NotImplemented
+
+    def __init__(self, form, body):
+        self.form = form
+        self.body = Map.eval(body, env=None)  # simplify the body
+        
+    def __call__(self, env, val):
+        local = env()
+        Map.match(val, self.form, local)
+        return Map.eval(self.body, local)
+
+    def __repr__(self):
+        return str(self.form) + ' -> ' + str(self.body)
 
 
 class function:

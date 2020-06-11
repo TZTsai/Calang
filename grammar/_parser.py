@@ -6,37 +6,34 @@ import re
 from _builtins import op_list, keywords, all_, any_
 
 
-# log.out = open('grammar/log.yaml', 'w')
+log.out = open('grammar/log.yaml', 'w')
 interact = lambda: 0
-trace = disabled
+# trace = disabled
 
 
-try:
-    with open('grammar/grammar.json', 'r') as gf:
-        grammar = load(gf)
-except:
-    from _grammar import grammar
-
+# try:
+#     with open('grammar/grammar.json', 'r') as gf:
+#         grammar = load(gf)
+# except:
+#     from _grammar import grammar
+from _grammar import grammar
 op_starts = ''.join(set(op[0] for op in op_list))
+tag_pat = re.compile('[A-Z_:]+')
+def is_tag(s):
+    try: return tag_pat.match(s.split(':', 1)[0])
+    except: return False
+
 
 def calc_parse(text, tag='LINE', grammar=grammar):
 
     whitespace = grammar[' ']
     no_space = False
 
-    def is_tag(s):
-        try: return s.split(':', 1)[0] in grammar
-        except: return False
-
     def lstrip(text):
-        nonlocal no_space
-        if no_space:
-            no_space = False
-            return text
-        else:
-            sp = re.match(whitespace, text)
-            return text[sp.end():]
-
+        if no_space: return text
+        sp = re.match(whitespace, text)
+        return text[sp.end():]
+            
     # @memo
     def parse_tree(syntax, text):
         tag, body = syntax[0], syntax[1:]
@@ -73,20 +70,29 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             if item[0] == 'STR' and item[1][1:-1] not in text:
                 return None, None
 
+        nonlocal no_space
         for item in seq:
             tr, rem = parse_tree(item, rem)
-            if no_space and type(tr) is str:
-                try: tree[-1] += tr; continue
-                except: pass
             if rem is None: return None, None
-            if tr: add_to_seq(tree, tr)
+            if tr:
+                if tr[0] == '(nospace)':
+                    no_space = True
+                    tr.pop(0)
+                elif no_space:
+                    no_space = False
+                    if type(tr) is str:
+                        try: tree[-1] += tr; continue
+                        except: pass
+                add_to_seq(tree, tr)
 
         if len(tree) == 1: tree = tree[0]
         return tree, rem
 
     def add_to_seq(seq, tr):
+        if not tr: return
         if tr[0] == '(merge)':  # (merge) is a special tag to merge into seq
-            for t in tr[1:]: add_to_seq(seq, t)
+            tr.pop(0)
+            for t in tr: add_to_seq(seq, t)
         else: 
             seq.append(tr)
 
@@ -128,14 +134,13 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             else: return [], text 
         elif op == '-':
             seq = []
-        elif op == '/':
-            nonlocal no_space
-            no_space = True             # force no space in between
-        tree = ['(merge)'] + seq        # merge the seq
+        tree = ['(merge)'] + seq
+        if op == '/':
+            tree = ['(nospace)'] + tree
         return tree, rem
 
     must_have = {'DEF': '=', 'MAP': '->', 'LET': '->', 'GEN_LST': '|', 
-                 'MATCH': '->', 'ENV': ':', 'SLICE': ':', '_DLST': ';'}
+                 'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
     @trace
     @memo
     def parse_tag(tag, text):
@@ -161,8 +166,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    prefixes = {'NUM', 'CMD', 'BODY', 'UNPACK', 'UNQUOTE'}
-    list_obj = lambda tag:  tag[-3:] == 'LST' or tag in ['DIR']
+    prefixes = {'NUM', 'CMD', 'BODY', 'UNPACK'}
+    list_obj = lambda tag: tag[-3:] == 'LST' or tag in ['DIR', 'ENV']
     @trace
     def process_tag(tag, tree):
         if tag[0] == '_': tag = '(merge)'
@@ -172,7 +177,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         elif type(tree) is str:
             return [tag, tree]
         elif type(tree[0]) is str and is_tag(tree[0]):
-            if list_obj(tag) and tag not in tree[0]:
+            if list_obj(tag):
                 tree = [tag, tree]  # keep the list tag
             elif tag in prefixes:
                 tree = [tag + ':' + tree[0], *tree[1:]]
@@ -188,10 +193,14 @@ def calc_parse(text, tag='LINE', grammar=grammar):
 ## tests ##
 
 def repl():
+    prev_exp = None
     while True:
         exp = input('>>> ')
         if exp == 'q': return
-        pprint(calc_parse(exp))
+        elif exp == 'W': check_parse(prev_exp, None)
+        else:
+            pprint(calc_parse(exp))
+            prev_exp = exp
 
 
 testfile = 'grammar/tests/parser_tests.json'
@@ -228,12 +237,9 @@ def rec_comp(l1, l2):
     else:
         return all(rec_comp(i1, i2) for i1, i2 in zip(l1, l2))
 
-## new tests here
-
-####
 
 if __name__ == "__main__":
-    # repl()
+    repl()
     test()
     if rewrite:
         rewrite = input('rewrite? ') == 'y'
