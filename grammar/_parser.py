@@ -196,8 +196,10 @@ def repl():
     prev_exp = None
     while True:
         exp = input('>>> ')
-        if exp == 'q': return
-        elif exp == 'W': check_parse(prev_exp, None)
+        if exp == 'q':
+            return
+        elif exp == 'W': 
+            check_parse(prev_exp, None)
         else:
             pprint(calc_parse(exp))
             prev_exp = exp

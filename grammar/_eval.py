@@ -16,6 +16,7 @@ def calc_eval(exp):
     >>> calc_eval('x->2 x')
     ['PAR', 'x'] -> ['SEQ', 2, BOP(\u22c5, 16), ['NAME', 'x']]
     >>> calc_eval('[2,3]->[a,b]->a+b->x->2*x')
+    10
     '''
     tree, rem = calc_parse(exp)
     assert not rem
@@ -164,7 +165,10 @@ def MAP(tr):
     assert drop_tag(body) == 'BODY'
     return Map(form, body)
 
-def LET(tr): return eval_tree(tr[2], env=tr[1])
+def LET(tr): 
+    _, local, body = tr
+    assert drop_tag(body) == 'BODY'
+    return eval_tree(body, env=local)
 
 
 ## these requires environment
@@ -193,6 +197,8 @@ def IF_ELSE(tr, env):
 
 def ENV(tr, env):
     local = env()
+    if isinstance(tr[1], Env):
+        return tr[1]
     for t in tr[1:]:
         if t[0] == 'BIND':
             _, form, val = t
@@ -201,11 +207,13 @@ def ENV(tr, env):
         else:
             raise SyntaxError('unknown tag: '+t[0])
         match(val, form, local)
+    return local
     
 def MATCH(tr, env):
     _, val, form = tr
     local = env()
     match(val, form, local)
+    return local
 
 def match(val, form, local):
     '''
