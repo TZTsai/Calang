@@ -3,7 +3,7 @@ from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from sympy import Matrix, Symbol
-from _obj import config, Range, function, Map
+from _obj import config, Range, Map
 from mydecorators import decorator
 
 
@@ -91,8 +91,13 @@ def and_(x, y): return x if not x else y
 def or_(x, y): return x if x else y
 def not_(x): return 0 if x else 1
 def eq_(x, y):
-    try: return abs(x - y) <= config.tolerance
-    except: return x == y
+    if is_list(x):
+        if not is_list(y) or len(x) != len(y): return False
+        return all(map(eq_, x, y))
+    if is_number(x):
+        if not is_number(y): return False
+        return abs(x - y) <= config.tolerance
+    return x == y
 def ne_(x, y): return not eq_(x, y)
 
 
@@ -174,8 +179,7 @@ def adjoin(x1, x2):
     if isinstance(x1, Map):
         return x1(x2)
     elif is_function(x1):
-        try:
-            return x1(*x2)
+        try: return x1(*x2)
         except TypeError as err:
             if is_function(x2):
                 return None  # TODO compose x1 and x2

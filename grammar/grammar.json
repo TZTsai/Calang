@@ -3,44 +3,16 @@
   "LINE": [
     "EXP",
     [
-      "ALT",
-      [
-        "EXP",
-        [
-          "OBJ",
-          "CMD"
-        ],
-        [
-          "OBJ",
-          "DEF"
-        ],
-        [
-          "OBJ",
-          "EXP"
-        ]
-      ],
-      [
-        "ITEM_OP",
-        [
-          "OBJ",
-          "HIDE"
-        ],
-        [
-          "OP",
-          "?"
-        ]
-      ],
-      [
-        "ITEM_OP",
-        [
-          "OBJ",
-          "COMMENT"
-        ],
-        [
-          "OP",
-          "?"
-        ]
-      ]
+      "OBJ",
+      "CMD"
+    ],
+    [
+      "OBJ",
+      "DEF"
+    ],
+    [
+      "OBJ",
+      "EXP"
     ],
     [
       "OBJ",
@@ -99,15 +71,8 @@
   "DIR": [
     "ALT",
     [
-      "ITEM_OP",
-      [
-        "MARK",
-        "dir"
-      ],
-      [
-        "OP",
-        "-"
-      ]
+      "MARK",
+      "dir"
     ],
     [
       "ITEM_OP",
@@ -167,7 +132,7 @@
       "ITEM_OP",
       [
         "RE",
-        "/-[tvp]/"
+        "/-[tvw]/"
       ],
       [
         "OP",
@@ -189,34 +154,12 @@
       "ITEM_OP",
       [
         "RE",
-        "/-[tvp]/"
+        "/-[vw]/"
       ],
       [
         "OP",
         "*"
       ]
-    ]
-  ],
-  "HIDE": [
-    "MARK",
-    ";"
-  ],
-  "COMMENT": [
-    "ALT",
-    [
-      "ITEM_OP",
-      [
-        "CHARS",
-        "[#]"
-      ],
-      [
-        "OP",
-        "-"
-      ]
-    ],
-    [
-      "RE",
-      "/.*/"
     ]
   ],
   "DEF": [
@@ -238,7 +181,7 @@
     "ALT",
     [
       "OBJ",
-      "FIELDS"
+      "FIELDS:DELAY"
     ],
     [
       "ITEM_OP",
@@ -562,7 +505,7 @@
     ],
     [
       "OBJ",
-      "EXP:BODY"
+      "EXP:DELAY"
     ]
   ],
   "LET": [
@@ -577,7 +520,7 @@
     ],
     [
       "OBJ",
-      "EXP:BODY"
+      "EXP:DELAY"
     ]
   ],
   "ENV": [
@@ -655,8 +598,22 @@
   "BIND": [
     "ALT",
     [
-      "OBJ",
-      "FORM"
+      "EXP",
+      [
+        "OBJ",
+        "FORM"
+      ],
+      [
+        "ALT",
+        [
+          "OBJ",
+          "NAME:MAP_NAME"
+        ],
+        [
+          "OBJ",
+          "FORM"
+        ]
+      ]
     ],
     [
       "MARK",
@@ -664,7 +621,7 @@
     ],
     [
       "OBJ",
-      "EXP"
+      "EXP:DELAY"
     ]
   ],
   "VAL": [
@@ -682,7 +639,7 @@
     "ALT",
     [
       "OBJ",
-      "SEQ:BODY"
+      "SEQ:DELAY"
     ],
     [
       "MARK",
@@ -698,7 +655,7 @@
     ],
     [
       "OBJ",
-      "EXP:BODY"
+      "EXP:DELAY"
     ]
   ],
   "SEQ": [
@@ -794,8 +751,8 @@
     ]
   ],
   "PRINT": [
-    "STR",
-    "\" /.*?/ \""
+    "RE",
+    "/\".*?\"/"
   ],
   "ITEM": [
     "EXP",
@@ -963,15 +920,8 @@
     ]
   ],
   "ANS": [
-    "ALT",
-    [
-      "MARK",
-      "_"
-    ],
-    [
-      "RE",
-      "/(\\d+|_*)/"
-    ]
+    "RE",
+    "/_(\\d+|_*)/"
   ],
   "NUM": [
     "EXP",
@@ -1190,7 +1140,7 @@
       "ALT",
       [
         "OBJ",
-        "EXP:BODY"
+        "EXP:DELAY"
       ],
       [
         "ITEM_OP",
@@ -1242,7 +1192,7 @@
     ],
     [
       "OBJ",
-      "EXP:BODY"
+      "EXP:DELAY"
     ],
     [
       "ITEM_OP",
@@ -1254,7 +1204,7 @@
         ],
         [
           "OBJ",
-          "EXP:BODY"
+          "EXP:DELAY"
         ]
       ],
       [

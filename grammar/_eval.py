@@ -1,36 +1,62 @@
 from _parser import calc_parse
 from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins
-from _funcs import Symbol, is_list
+from _funcs import Symbol, is_list, same, reduce, mul
 from _obj import Env, config, stack, Op, Attr, Map
 
 
-Global = Env(name='_global_')
-Global._ans = []
-Global.update(builtins)
+def GlobalEnv():
+    Global = Env(name='_global_')
+    Global._ans = []
+    Global.update(builtins)
+    return Global
+
+Global = GlobalEnv()
 
 
-def calc_eval(exp):
+def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     '''
+    >>> eval = calc_eval
     >>> calc_eval('2+4')
     6
     >>> calc_eval('x->2 x')
     ['PAR', 'x'] -> ['SEQ', 2, BOP(\u22c5, 16), ['NAME', 'x']]
     >>> calc_eval('[2,3]->[a,b]->a+b->x->2*x')
     10
+    >>> eval('(a: 1, b: a+1) -> b')
+    2
+    >>> eval('(a: 2, b: 4) -> (b: a+4) -> [a, b] "{a=} {b=}"')
+    a=2 b=6
+    (2, 6)
+    >>> eval('[1, *[2, 3]]')
+    (1, 2, 3)
+    >>> eval('__')
+    (2, 6)
+    >>> eval('_0')
+    6
+    >>> Global['e'] = eval('(a: 1, b: a*3)')
+    >>> eval('e.b')
+    3
     '''
     tree, rem = calc_parse(exp)
     assert not rem
-    return eval_tree(tree)
+    result = eval_tree(tree)
+    Global._ans.append(result)
+    return result
 
 
-def tag(tr): return tr[0].split(':')[0]
+def tag(tr): 
+    return tr[0].split(':')[0]
 
-def drop_tag(tr):
+def drop_tag(tr, expected):
+    if not is_list(tr): return tr
     tag = tr[0]
     try: dropped, tag = tag.split(':', 1)
     except: raise AssertionError
+    assert dropped == expected
     tr[0] = tag
-    return dropped
+
+def remove_delay(tr):
+    drop_tag(tr, 'DELAY')
 
 def is_tree(tr): return type(tr) is list
 
@@ -45,26 +71,11 @@ def SYM(tr): return Symbol(tr[1])
 def EMPTY(tr): return None
 
 def ANS(tr):
-    '''
-    >>> Global._ans = [1, 0, 'dd', 2.3]
-    >>> ANS(['ANS'])
-    2.3
-    >>> ANS(['ANS', '0'])
-    1
-    >>> ANS(['ANS', '_'])
-    'dd'
-    >>> ANS(['ANS', '__'])
-    0
-    '''
-    if len(tr) == 1:
-        id = -1
+    s = tr[1]
+    if same(*s): id = -len(s)
     else:
-        s = tr[1]
-        if '_' in s: 
-            id = -1-len(s)
-        else:
-            try: id = int(s)
-            except: raise SyntaxError('invalid history index!')
+        try: id = int(s[1:])
+        except: raise SyntaxError('invalid history index!')
     return Global._ans[id]
 
 def NUM(tr):
@@ -139,16 +150,22 @@ def SEQtoTREE(tr):
             push(default_op)
         stk.push(x)
 
-    for x in tr[1:]: push(x)
+    for x in tr[1:]:
+        if x != 'PRINT': push(x)
     while ops: shrink()
     assert len(stk) == 1
     return pop_val()
+
+def FIELD(tr):
+    return reduce(mul, tr[1:])
 
 def LIST(tr):
     lst = []
     for it in tr[1:]:
         if is_tree(it) and tag(it) == 'UNPACK':
-            lst.extend(it)  # TODO unpack an env
+            lst.extend(it[1:])  # TODO unpack an env
+        elif is_tree(it):
+            return tr
         else:
             lst.append(it)
     return tuple(lst)
@@ -162,12 +179,12 @@ def ATTR(tr): return Attr(tr[1])
 
 def MAP(tr):
     _, form, body = tr
-    assert drop_tag(body) == 'BODY'
+    remove_delay(body)
     return Map(form, body)
 
-def LET(tr): 
+def LET(tr):
     _, local, body = tr
-    assert drop_tag(body) == 'BODY'
+    remove_delay(body)
     return eval_tree(body, env=local)
 
 
@@ -180,14 +197,9 @@ def NAME(tr, env):
         if config.symbolic: return Symbol(name)
         else: raise NameError(f'unbound symbol \'{tr}\'')
 
-def FIELD(tr, env):
-    subfields = [t[1] for t in tr]
-    while subfields:
-        env = getattr(env, subfields.pop(0))
-    return env
-
 def PRINT(tr, env):
-    if config.debug: exec('print(f"%s")' % tr[1], locals=env)
+    if config.debug: exec('print(f%s)' % tr[1], env.all)
+    return 'PRINT'
 
 def IF_ELSE(tr, env):
     _, t_case, cond, f_case = tr
@@ -201,9 +213,9 @@ def ENV(tr, env):
         return tr[1]
     for t in tr[1:]:
         if t[0] == 'BIND':
-            _, form, val = t
-        elif t[0] == 'MATCH':
-            _, val, form = t
+            _, form, body = t
+            remove_delay(body)
+            val = eval_tree(body, local)
         else:
             raise SyntaxError('unknown tag: '+t[0])
         match(val, form, local)
@@ -274,16 +286,15 @@ def eval_tree(tr, env=Global):
     (2,)
     >>> eval_tree(["VAL_LST", ["NUM:REAL", "3"], ["NUM:REAL", "4"], ["NUM:REAL", "6"]])
     (3, 4, 6)
-    >>> eval_tree(['MAP', ['PAR', 'a'], ['BODY:SEQ', ['NUM:REAL', '2'], ['BOP', '*'], ['NAME', 'a']]])
+    >>> eval_tree(['MAP', ['PAR', 'a'], ['DELAY:SEQ', ['NUM:REAL', '2'], ['BOP', '*'], ['NAME', 'a']]])
     ['PAR', 'a'] -> ['SEQ', 2, BOP(*, 8), ['NAME', 'a']]
-    >>> eval_tree(['MAP', ['PAR', 'x'], ['BODY:SEQ', ['SEQ', ['NUM:REAL', '2'], ['BOP', '+'], ['NUM:REAL', '3']], ['BOP', '*'], ['SEQ', ['NUM:REAL', '6'], ['BOP', '+'], ['NAME', 'x']]]])
+    >>> eval_tree(['MAP', ['PAR', 'x'], ['DELAY:SEQ', ['SEQ', ['NUM:REAL', '2'], ['BOP', '+'], ['NUM:REAL', '3']], ['BOP', '*'], ['SEQ', ['NUM:REAL', '6'], ['BOP', '+'], ['NAME', 'x']]]])
     ['PAR', 'x'] -> ['SEQ', 5, BOP(*, 8), ['SEQ', 6, BOP(+, 6), ['NAME', 'x']]]
     '''
     if not is_tree(tr): return tr
     type_ = tag(tr)
-    if type_ == 'BODY': env = None
     for i in range(1, len(tr)):
-        tr[i] = eval_tree(tr[i], env)
+        tr[i] = eval_tree(tr[i], None if type_ == 'DELAY' else env)
     if type_ in subs_rules:
         tr = subs_rules[type_](tr)
     elif type_ in eval_rules and env:
@@ -301,13 +312,13 @@ subs_rules = {
     'SEQ': SEQtoTREE,           'BOP': get_op(binary_ops),
     'LOP': get_op(unary_l_ops), 'ROP': get_op(unary_r_ops),
     'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
-    'GEN_LST': GENLIST,         
+    'GEN_LST': GENLIST,         'FIELD': FIELD,
     'ATTR': ATTR,               'MAP': MAP,
     'LET': LET,                 
 }
 
 eval_rules = {
-    'FIELD': FIELD,             'NAME': NAME,       
+    'NAME': NAME,       
     'PRINT': PRINT,             'EXP': eval_tree,
     'ENV': ENV,                 'MATCH': MATCH,
     'IF_ELSE': IF_ELSE,

@@ -34,7 +34,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         sp = re.match(whitespace, text)
         return text[sp.end():]
             
-    # @memo
+    @memo
     def parse_tree(syntax, text):
         tag, body = syntax[0], syntax[1:]
 
@@ -142,13 +142,14 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     must_have = {'DEF': '=', 'MAP': '->', 'LET': '->', 'GEN_LST': '|', 
                  'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
     @trace
-    @memo
     def parse_tag(tag, text):
         # allow OBJ:ALTNAME; changes the tag to ALTNAME
         alttag = None
         if ':' in tag: tag, alttag = tag.split(':')
 
         # prechecks to speed up parsing
+        if not text and tag not in ('LINE', 'EMPTY'):
+            return None, None
         if tag in must_have and must_have[tag] not in text:
             return None, None
         if tag[-2:] == 'OP':
@@ -166,8 +167,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    prefixes = {'NUM', 'CMD', 'BODY', 'UNPACK'}
-    list_obj = lambda tag: tag[-3:] == 'LST' or tag in ['DIR', 'ENV']
+    prefixes = {'NUM', 'CMD', 'DELAY', 'UNPACK'}
+    list_obj = lambda tag: tag[-3:] == 'LST' or tag in ['DIR', 'ENV', 'DEL']
     @trace
     def process_tag(tag, tree):
         if tag[0] == '_': tag = '(merge)'
@@ -176,7 +177,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             return [tag]
         elif type(tree) is str:
             return [tag, tree]
-        elif type(tree[0]) is str and is_tag(tree[0]):
+        elif is_tag(tree[0]):
             if list_obj(tag):
                 tree = [tag, tree]  # keep the list tag
             elif tag in prefixes:
@@ -187,6 +188,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         else:
             return [tag] + tree
 
+    text = lstrip(text)
+    if not text: return ['EMPTY'], ''
     return parse_tag(tag, text)
 
 

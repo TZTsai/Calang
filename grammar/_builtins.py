@@ -10,7 +10,7 @@ from sympy import (
     Integer, Float, Matrix, Expr
 )
 
-from _obj import Op, function, Env, config, Range
+from _obj import Op, Env, config, Range
 from _funcs import (
     is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, 
     add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_,
