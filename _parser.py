@@ -6,13 +6,13 @@ import re
 from _builtins import op_list, keywords, all_, any_
 
 
-log.out = open('grammar/log.yaml', 'w')
+log.out = open('log.yaml', 'w')
 interact = lambda: 0
 # trace = disabled
 
 
 # try:
-#     with open('grammar/grammar.json', 'r') as gf:
+#     with open('grammar.json', 'r') as gf:
 #         grammar = load(gf)
 # except:
 #     from _grammar import grammar
@@ -33,8 +33,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         if no_space: return text
         sp = re.match(whitespace, text)
         return text[sp.end():]
-            
-    @memo
+
+    # @memo
     def parse_tree(syntax, text):
         tag, body = syntax[0], syntax[1:]
 
@@ -142,6 +142,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     must_have = {'DEF': '=', 'MAP': '->', 'LET': '->', 'GEN_LST': '|', 
                  'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
     @trace
+    @memo
     def parse_tag(tag, text):
         # allow OBJ:ALTNAME; changes the tag to ALTNAME
         alttag = None
@@ -208,7 +209,7 @@ def repl():
             prev_exp = exp
 
 
-testfile = 'grammar/tests/parser_tests.json'
+testfile = 'tests/parser_tests.json'
 testcases = load(open(testfile, 'r'))
 rewrite = False
 

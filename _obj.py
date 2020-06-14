@@ -124,6 +124,7 @@ class Map:
     def __init__(self, form, body):
         self.form = form
         self.body = Map.eval(body, env=None)  # simplify the body
+        self.__name__ = '(map)'
     
     def __call__(self, val):
         local = Map.env() if Map.env else Env()

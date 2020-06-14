@@ -6,8 +6,7 @@ import re
 from _builtins import binary_ops, unary_l_ops, unary_r_ops
 
 
-# log.out = open('grammar/log.yaml', 'w', encoding='utf8')
-# log.maxdepth = 1
+# log.out = open('log.yaml', 'w', encoding='utf8')
 trace = disabled
 
 
@@ -54,7 +53,7 @@ MARK    := [^>|)\s]\S*
 # MACRO:    used for sub_macro; will not exist in the processed grammar
 
 
-GrammarStr = open('grammar/grammar.txt', 'r').read()
+GrammarStr = open('grammar.txt', 'r').read()
 GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
 Grammar = split(GrammarStr, '\n')
 # add syntax for operations
@@ -251,7 +250,7 @@ def test_grammar():
 
 
 grammar = calc_grammar(Grammar)
-dump(grammar, open('grammar/grammar.json', 'w', encoding='utf8'), indent=2)
+dump(grammar, open('grammar.json', 'w', encoding='utf8'), indent=2)
 
 if __name__ == "__main__":
     test_grammar()

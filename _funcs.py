@@ -1,5 +1,5 @@
 from operator import add, sub, mul, pow as pow_, and_ as b_and, or_ as b_or
-from functools import reduce
+from functools import reduce, com
 from numbers import Number, Rational
 from types import FunctionType
 from fractions import Fraction
@@ -120,12 +120,6 @@ def dbfact(x):  # returns the double factorial of x
     else: return x * dbfact(x-2)
 
 
-def compose(*funcs):
-    def compose2(f, funcs):
-        return lambda *args, **kws: f(g(*args, **kws))
-    return reduce(compose2, funcs)
-
-
 def depth(value, key=max):
     '''
     >>> depth([1])
@@ -178,13 +172,7 @@ def adjoin(x1, x2):
     12
     '''
     if is_function(x1):
-        if isinstance(x2, Map):
-            return x2.composed(x1)
-        elif is_function(x2):
-            f = compose(x1, x2)
-            f.__name__ = f'<composed: {x1.__name__} and {x2.__name__}>'
-            return f
-        elif isinstance(x1, Map):
+        if isinstance(x1, Map):
             return x1(x2)
         else:
             return x1(*x2)
@@ -205,7 +193,10 @@ def dot(x1, x2):
     '''
     d1, d2 = depth(x1), depth(x2)
     if d1 == 0 or d2 == 0:
-        return adjoin(x1, x2)
+        if is_function(x1) or is_function(x2):
+            return compose(x1, x2)
+        else:
+            return imul(x1, x2)
     elif d1 == d2 == 1:
         if len(x1) != len(x2):
             raise ValueError('dim mismatch for dot product')
@@ -216,6 +207,14 @@ def dot(x1, x2):
         return tuple(dot(x1, transpose(x2)))
     else:
         return tuple(tuple(dot(r, c) for c in transpose(x2)) for r in x1)
+
+
+def compose(*funcs):  
+    def compose2(f, g):
+        c = lambda *args, **kwds: f(g(*args, **kwds))
+        c.__name__ = f'<composed: {f.__name__} and {g.__name__}>'
+        return c
+    return reduce(compose2, funcs)
 
 
 def power(x, y):

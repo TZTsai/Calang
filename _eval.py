@@ -46,6 +46,7 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
 
 
 # some utils
+
 def tag(tr): 
     return tr[0].split(':')[0]
 
@@ -67,6 +68,8 @@ def get_op(ops):
     def get(tr): return ops[tr[1]]
     return get
 
+
+# substitution rules
 
 def SYM(tr): return Symbol(tr[1])
 
@@ -173,6 +176,8 @@ def LIST(tr):
 
 def SYMLIST(tr): return tr[1:]
 
+def SLICE(tr): return slice(*tr[1:])
+
 def GENLIST(tr):
     pass
  
@@ -202,7 +207,7 @@ def splitvar(tr, env=Global):
     return field, attr
 
 
-## these rules requires environment
+## eval rules which require environment
 
 def NAME(tr, env):
     name = tr[1]
@@ -417,7 +422,7 @@ subs_rules = {
     'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
     'GEN_LST': GENLIST,         'FIELD': FIELD,
     'ATTR': ATTR,               'MAP': MAP,
-    'LET': LET,                 
+    'LET': LET,                 'SLICE': SLICE
 }
 
 eval_rules = {
