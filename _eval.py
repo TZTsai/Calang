@@ -37,13 +37,15 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     >>> eval('e.b')
     3
     '''
-    tree, rem = calc_parse(exp)
-    assert not rem
+    tree, rest = calc_parse(exp)
+    if rest: raise SyntaxError('parsing failed, the unparsed part: ' + rest)
     result = eval_tree(tree)
-    Global._ans.append(result)
-    return result
+    if result is not None:
+        Global._ans.append(result)
+        return result
 
 
+# some utils
 def tag(tr): 
     return tr[0].split(':')[0]
 
@@ -55,8 +57,7 @@ def drop_tag(tr, expected):
     assert dropped == expected
     tr[0] = tag
 
-def remove_delay(tr):
-    drop_tag(tr, 'DELAY')
+def remove_delay(tr): drop_tag(tr, 'DELAY')
 
 def is_tree(tr): return type(tr) is list
 
@@ -65,6 +66,7 @@ def is_str(tr): return type(tr) is str
 def get_op(ops):
     def get(tr): return ops[tr[1]]
     return get
+
 
 def SYM(tr): return Symbol(tr[1])
 
@@ -99,7 +101,7 @@ def NUM(tr):
 def SEQtoTREE(tr):
     stk = stack()
     ops = stack()
-    default_op = binary_ops['⋅']
+    default_op = binary_ops['(adj)']
     
     def pop_val():
         v = stk.pop()
@@ -116,8 +118,8 @@ def SEQtoTREE(tr):
             raise AssertionError
         return op(*vals)
 
-    def shrink():
-        # try to evaluate or shrink several previous trees into a bigger tree
+    def reduce():
+        # try to evaluate or reduce several previous trees to a bigger tree
         op = ops.peek()
         tag = op.type
         if tag == 'BOP':
@@ -143,7 +145,7 @@ def SEQtoTREE(tr):
         if isinstance(x, Op):
             while ops:
                 op = ops.peek()
-                if x.prior <= op.prior: shrink()
+                if x.prior <= op.prior: reduce()
                 else: break
             ops.push(x)
         elif stk and not isinstance(stk.peek(), Op):
@@ -152,12 +154,11 @@ def SEQtoTREE(tr):
 
     for x in tr[1:]:
         if x != 'PRINT': push(x)
-    while ops: shrink()
+    while ops: reduce()
     assert len(stk) == 1
     return pop_val()
 
-def FIELD(tr):
-    return reduce(mul, tr[1:])
+def FIELD(tr): return reduce(mul, tr[1:])
 
 def LIST(tr):
     lst = []
@@ -185,10 +186,23 @@ def MAP(tr):
 def LET(tr):
     _, local, body = tr
     remove_delay(body)
-    return eval_tree(body, env=local)
+    result = eval_tree(body, env=local)
+    if isinstance(result, Env):
+        result._parent = local
+    return result
+
+def splitvar(tr, env=Global):
+    if tr[0] == 'VAR:NAME':
+        attr = tr[1]
+        field = env
+    else:
+        attr = field.pop()[1]
+        tr[0] = 'FIELD'
+        field = eval_tree(tr)
+    return field, attr
 
 
-## these requires environment
+## these rules requires environment
 
 def NAME(tr, env):
     name = tr[1]
@@ -198,7 +212,7 @@ def NAME(tr, env):
         else: raise NameError(f'unbound symbol \'{tr}\'')
 
 def PRINT(tr, env):
-    if config.debug: exec('print(f%s)' % tr[1], env.all)
+    if config.debug: exec('print(f%s)' % tr[1], env.all())
     return 'PRINT'
 
 def IF_ELSE(tr, env):
@@ -209,16 +223,10 @@ def IF_ELSE(tr, env):
 
 def ENV(tr, env):
     local = env()
-    if isinstance(tr[1], Env):
-        return tr[1]
+    if isinstance(tr[1], Env): return tr[1]
     for t in tr[1:]:
-        if t[0] == 'BIND':
-            _, form, body = t
-            remove_delay(body)
-            val = eval_tree(body, local)
-        else:
-            raise SyntaxError('unknown tag: '+t[0])
-        match(val, form, local)
+        _, rep, exp = t
+        define(rep, exp, local)
     return local
     
 def MATCH(tr, env):
@@ -232,10 +240,10 @@ def match(val, form, local):
     >>> L = Env()
     >>> match([1, 2, 3], ['PAR_LST', ['PAR', 'a'], ['EXTPAR', 'ex']], L)
     >>> print(L)
-    (value: <env: (local)>, a: 1, ex: (2, 3))
+    (VAL: <env: (local)>, a: 1, ex: (2, 3))
     >>> match([-1], ['PAR_LST', ['PAR', 'w'], ['OPTPAR', ['PAR', 'p'], 5]], L)
     >>> print(L)
-    (value: <env: (local)>, a: 1, ex: (2, 3), w: -1, p: 5)
+    (VAL: <env: (local)>, a: 1, ex: (2, 3), w: -1, p: 5)
     '''
     def split_pars(form):
         pars, opt_pars = [], []
@@ -275,6 +283,93 @@ def match(val, form, local):
         raise SyntaxError
 
 
+# these rules are commands in the calc
+
+def DIR(tr):
+    field = Global if len(tr) == 1 else tr[1]
+    for name, val in field.items(): print(f"{name}: {val}")
+
+def LOAD(tr):
+    modname = tr[1]
+    test = '-t' in tr
+    verbose = '-v' in tr
+    overwrite = '-w' in tr
+    current_global = Global
+    Global = GlobalEnv()  # a new global env
+    LOAD.run('scripts/' + modname + '.cal', test, start=0, verbose=verbose)
+    if overwrite:
+        current_global.update(Global)
+    else:
+        for name in Global:
+            if name not in current_global:
+                current_global[name] = Global[name]
+            else:
+                print(f'name {name} not loaded because it is bounded')
+    Global = current_global
+
+def IMPORT(tr):
+    modname = tr[1]
+    verbose = '-v' in tr
+    overwrite = '-w' in tr
+    env = definitions = {}
+    try:
+        exec('from modules.%s import export'%modname, env)
+        definitions = env['export']
+    except ModuleNotFoundError:
+        exec('from sympy import %s'%modname, definitions)
+    
+    for name, val in definitions.items():
+        if name not in Global or overwrite:
+            if verbose: print(f'imported: {name}')
+            Global[name] = val
+
+def CONF(tr):
+    conf = tr[1]
+    if conf == 'prec':
+        if len(tr) == 2:
+            print(config.precision)
+        else:
+            config.precision = min(1, int(tr[2]))
+    elif conf == 'tolerance':
+        if len(tr) == 2:
+            print(config.tolerance)
+        else:
+            config.tolerance = float(tr[2])
+    else:
+        if len(tr) == 2:
+            print(getattr(config, conf))
+        else:
+            setattr(config, conf, True if tr[2] in ('on', '1') else False)
+
+def DEL(tr):
+    for var in tr[1:]:
+        field, attr = var(var)
+        field.delete(attr)
+
+def DEF(tr):
+    _, rep, exp = tr
+    define(rep, exp)
+
+def define(rep, exp, env=Global):
+    if len(rep) <= 1:
+        raise SyntaxError('empty representation')
+    remove_delay(exp)
+    if tag(rep) == 'REP':  # a map
+        _, var, form = rep
+        val = Map(form, exp)
+    elif tag(rep) == 'VAR':
+        var = rep
+        val = eval_tree(exp)
+    else:
+        val = eval_tree(exp)
+        match(val, rep, env)
+        return
+    env, name = splitvar(var, env)
+    setattr(env, name, val)
+    if isinstance(val, Map):
+        val.__name__ = name
+    
+
 
 def eval_tree(tr, env=Global):
     '''
@@ -293,21 +388,29 @@ def eval_tree(tr, env=Global):
     '''
     if not is_tree(tr): return tr
     type_ = tag(tr)
-    for i in range(1, len(tr)):
-        tr[i] = eval_tree(tr[i], None if type_ == 'DELAY' else env)
+    Map.env = env
+    if type_ not in delay_types:
+        for i in range(1, len(tr)):
+            tr[i] = eval_tree(tr[i], env)
     if type_ in subs_rules:
         tr = subs_rules[type_](tr)
     elif type_ in eval_rules and env:
         tr = eval_rules[type_](tr, env)
+    elif type_ in exec_rules:
+        exec_rules[type_](tr)
+        return
     return tr
 
 
 Map.match = match
 Map.eval  = eval_tree
 
+LOAD.run  = NotImplemented
+
+delay_types = {'DELAY', 'VAR'}
 
 subs_rules = {
-    'ANS': ANS,                 'SYM': SYM,         
+    'ANS': ANS,                 'SYM': SYM,
     'EMPTY': EMPTY,             'NUM': NUM,
     'SEQ': SEQtoTREE,           'BOP': get_op(binary_ops),
     'LOP': get_op(unary_l_ops), 'ROP': get_op(unary_r_ops),
@@ -318,10 +421,16 @@ subs_rules = {
 }
 
 eval_rules = {
-    'NAME': NAME,       
+    'NAME': NAME,               
     'PRINT': PRINT,             'EXP': eval_tree,
     'ENV': ENV,                 'MATCH': MATCH,
     'IF_ELSE': IF_ELSE,
+}
+
+exec_rules = {
+    'DIR': DIR,                 'CONF': CONF,
+    'LOAD': LOAD,               'IMPORT': IMPORT,
+    'DEL': DEL,                 'DEF': DEF
 }
 
 

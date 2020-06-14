@@ -4,15 +4,14 @@ EMPTY   := //
 CMD     := CONF | DIR | DEL | LOAD | IMPORT
 CONF    := conf /\w+/ /\d+|on|off/ ?
 DIR     := dir FIELD ?
-DEL     := del %SEQ < FIELD , > 
+DEL     := del %SEQ < FIELD:VAR , > 
 LOAD    := load /\w+/ /-[tvw]/ *
 IMPORT  := import /\w+/ /-[vw]/ *
 
-DEF     := REPR = EXP
-REPR    := FIELDS:DELAY ( %GRP < FORM > | FORM ) ?
+DEF     := REP = EXP:DELAY  ## actually if not FORM is provided, the left will be tagged as VAR
+REP     := FIELD:VAR ? FORM ?
 ### FIELD FORM := EXP  <==>  FIELD := FORM -> EXP ###
 
-FIELDS  := %SEQ < FIELD @ >
 FIELD   := NAME ATTR *
 NAME    := /[\u0374-\u03FFa-zA-Z][a-zA-Z\d_]*[?]?/    ## can begin with a Greek letter
 ATTR    := . / NAME:ATTR                              ## '/' forces no space between
@@ -33,7 +32,7 @@ MAP     := FORM -> EXP:DELAY
 LET     := ENV -> EXP:DELAY
 ENV     := %GRP < %SEQ < BIND , > > | MATCH
 MATCH   := VAL -> FORM
-BIND    := ( FORM | NAME:MAP_NAME FORM ) : EXP:DELAY
+BIND    := REP : EXP:DELAY
 
 VAL     := IF_ELSE | SEQ
 IF_ELSE := SEQ:DELAY if SEQ else EXP:DELAY

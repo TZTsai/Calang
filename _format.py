@@ -1,9 +1,8 @@
-from _builtins import Rational, Fraction, Matrix, is_number, is_list, is_matrix, floor, inf, log
+from _builtins import Rational, Fraction, Matrix, is_number, is_list, is_matrix, is_function, floor, inf, log
 from _obj import Range, config
 from sympy import latex, pretty
-from types import FunctionType
 from re import sub as translate
-from greek import gr_to_tex
+from utils.greek import gr_to_tex
 
 
 def calc_format(val, indent=0, sci=False, tex=False):
@@ -50,7 +49,7 @@ def calc_format(val, indent=0, sci=False, tex=False):
                 return format_scinum(val)
             else: 
                 return str(format_float(val))
-        elif type(val) is FunctionType:  # builtin
+        elif is_function(val):
             return val.__name__
         elif isinstance(val, Range):
             return str(val)

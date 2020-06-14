@@ -1,6 +1,7 @@
 from operator import add, sub, mul, pow as pow_, and_ as b_and, or_ as b_or
 from functools import reduce
 from numbers import Number, Rational
+from types import FunctionType
 from fractions import Fraction
 from sympy import Matrix, Symbol
 from _obj import config, Range, Map
@@ -45,7 +46,7 @@ def is_matrix(value):
 
 
 def is_function(value):
-    return callable(value)
+    return isinstance(value, FunctionType) or isinstance(value, Map)
 
 
 def all_(*lst, test=None):
@@ -176,15 +177,20 @@ def adjoin(x1, x2):
     >>> adjoin(3, 4)
     12
     '''
-    if isinstance(x1, Map):
-        return x1(x2)
-    elif is_function(x1):
-        try: return x1(*x2)
-        except TypeError as err:
-            if is_function(x2):
-                return None  # TODO compose x1 and x2
-            else:
-                raise err
+    if is_function(x1):
+        if isinstance(x2, Map):
+            return x2.composed(x1)
+        elif is_function(x2):
+            f = compose(x1, x2)
+            f.__name__ = f'<composed: {x1.__name__} and {x2.__name__}>'
+            return f
+        elif isinstance(x1, Map):
+            return x1(x2)
+        else:
+            return x1(*x2)
+    elif is_list(x1) and is_list(x2):
+        try: return subscript(x1, x2)
+        except: return dot(x1, x2)
     else:
         return imul(x1, x2)
 
@@ -225,17 +231,11 @@ iand = itemwise(b_and)
 ior  = itemwise(b_or)
 
 
-def index(lst, id):
-    if not hasattr(lst, '__getitem__'):
-        raise SyntaxError(f'{lst} is not subscriptable')
-    if not is_iter(id): return lst[id]
-    else: return tuple(index(lst, i) for i in id)
-
-
 def subscript(lst, subs):
     if not subs: return lst
+    assert depth(subs) == 1
     id0 = subs[0]
-    items = index(lst, id0)
+    items = lst[id0]
     if is_iter(id0) or type(id0) is slice:
         return tuple(subscript(item, subs[1:]) for item in items)
     else:

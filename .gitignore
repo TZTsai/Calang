@@ -1,7 +1,6 @@
-__pychache__/*
 *.pyc
 .vscode/launch.json
 .vscode/settings.json
 *.mp4
-bash.exe.stackdump
-grammar/log.yaml
+*.stackdump
+log.yaml

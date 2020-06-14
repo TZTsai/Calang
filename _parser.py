@@ -167,7 +167,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    prefixes = {'NUM', 'CMD', 'DELAY', 'UNPACK'}
+    prefixes = {'NUM', 'DELAY', 'UNPACK', 'VAR'}
     list_obj = lambda tag: tag[-3:] == 'LST' or tag in ['DIR', 'ENV', 'DEL']
     @trace
     def process_tag(tag, tree):

@@ -96,7 +96,7 @@
       "ALT",
       [
         "OBJ",
-        "FIELD"
+        "FIELD:VAR"
       ],
       [
         "ITEM_OP",
@@ -108,7 +108,7 @@
           ],
           [
             "OBJ",
-            "FIELD"
+            "FIELD:VAR"
           ]
         ],
         [
@@ -166,7 +166,7 @@
     "ALT",
     [
       "OBJ",
-      "REPR"
+      "REP"
     ],
     [
       "MARK",
@@ -174,81 +174,31 @@
     ],
     [
       "OBJ",
-      "EXP"
+      "EXP:DELAY"
     ]
   ],
-  "REPR": [
+  "REP": [
     "ALT",
-    [
-      "OBJ",
-      "FIELDS:DELAY"
-    ],
     [
       "ITEM_OP",
       [
-        "EXP",
-        [
-          "ALT",
-          [
-            "ITEM_OP",
-            [
-              "STR",
-              "\"(\""
-            ],
-            [
-              "OP",
-              "-"
-            ]
-          ],
-          [
-            "OBJ",
-            "FORM"
-          ],
-          [
-            "ITEM_OP",
-            [
-              "STR",
-              "\")\""
-            ],
-            [
-              "OP",
-              "-"
-            ]
-          ]
-        ],
-        [
-          "OBJ",
-          "FORM"
-        ]
+        "OBJ",
+        "FIELD:VAR"
       ],
       [
         "OP",
         "?"
       ]
-    ]
-  ],
-  "FIELDS": [
-    "ALT",
-    [
-      "OBJ",
-      "FIELD"
     ],
     [
       "ITEM_OP",
       [
-        "ALT",
-        [
-          "MARK",
-          "@"
-        ],
-        [
-          "OBJ",
-          "FIELD"
-        ]
+        "OBJ",
+        "FORM"
       ],
       [
         "OP",
-        "*"
+        "?"
       ]
     ]
   ],
@@ -598,22 +548,8 @@
   "BIND": [
     "ALT",
     [
-      "EXP",
-      [
-        "OBJ",
-        "FORM"
-      ],
-      [
-        "ALT",
-        [
-          "OBJ",
-          "NAME:MAP_NAME"
-        ],
-        [
-          "OBJ",
-          "FORM"
-        ]
-      ]
+      "OBJ",
+      "REP"
     ],
     [
       "MARK",
@@ -1445,6 +1381,10 @@
   ],
   "BOP": [
     "EXP",
+    [
+      "STR",
+      "\"(adj)\""
+    ],
     [
       "STR",
       "\"outof\""

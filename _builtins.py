@@ -13,7 +13,7 @@ from sympy import (
 from _obj import Op, Env, config, Range
 from _funcs import (
     is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, 
-    add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_,
+    add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_, adjoin,
     iadd, isub, imul, idiv, ipow, iand, ior, 
     dot, dbfact, all_, any_, first, findall, range_, compose,
     transpose, depth, shape, substitute, flatten, row, col, row, cols, 
@@ -63,7 +63,7 @@ def construct_ops(op_dict, type_):
 
 binary_ops = {
     '+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (div, 8), '^': (power, 18),
-    '//': (floordiv, 8), '%': (mod, 8), '⋅': (dot, 16),
+    '//': (floordiv, 8), '%': (mod, 8), '⋅': (dot, 10), '(adj)': (adjoin, 20),
     '+.': (iadd, 5), '-.': (isub, 5), '*.': (imul, 7), '/.': (idiv, 7), '^.': (ipow, 13),
     '&.': (iand, 8), '|.': (ior, 7),
     '==': (eq_, 0), '/=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 

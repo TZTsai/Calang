@@ -35,14 +35,14 @@ class Env(dict):
     <env: global.e.(local)>
     >>> f.a
     3
-    >>> f.dir
-    {'_parent_': <env: global.e>, 'f': 5, 'value': [2], 'a': 3, 'e': <env: global.e>}
+    >>> f.all()
+    {'_parent_': <env: global.e>, 'f': 5, 'VAL': [2], 'a': 3, 'e': <env: global.e>}
     >>> str(f)
-    '(f: 5, value: [2])'
+    '(f: 5, VAL: [2])'
     '''
-    def __init__(self, value=None, binds=None, parent=None, name='(local)'):
+    def __init__(self, val=None, binds=None, parent=None, name='(local)'):
         if binds: self.update(binds)
-        self.value = self if value is None else value
+        self.VAL = self if val is None else val
         self._parent = parent
         self._name = name
     
@@ -82,11 +82,6 @@ class Env(dict):
         content = ', '.join(k+': '+repr(v) for k, v in self.items())
         return '('+content+')'
     
-    @property
-    def local(self):
-        return dict(self)
-
-    @property
     def all(self):
         d = {'_parent_': self._parent}
         env = self
@@ -112,30 +107,35 @@ class Attr:
     'evil'
     '''
     def __init__(self, name):
-        self._s = name
+        self.name = name
 
-    def __repr(self):
-        return '.'+self._s
+    def __repr__(self):
+        return '.'+self.name
         
     def __rmul__(self, field):
-        return getattr(field, self._s)
+        return getattr(field, self.name)
 
 
 class Map:
     match = lambda val, form, env: NotImplemented
     eval  = lambda tree, env=None: NotImplemented
+    env   = Env
 
     def __init__(self, form, body):
         self.form = form
         self.body = Map.eval(body, env=None)  # simplify the body
-        
+    
     def __call__(self, val):
-        local = Env()
+        local = Map.env() if Map.env else Env()
         Map.match(val, self.form, local)
         return Map.eval(self.body, local)
 
     def __repr__(self):
         return str(self.form) + ' -> ' + str(self.body)
+
+    def composed(self, func):
+        body = ['SEQ', func, self.body]
+        return Map(self.form, body)
 
 
 class Range:
@@ -155,10 +155,10 @@ class Range:
     def __iter__(self):
         return iter(self._range)
 
-    def __eq__(self, value):
-        if not isinstance(value, Range): return False
-        return (self.first == value.first and self.second == value.second
-                and self.last == value.last)
+    def __eq__(self, other):
+        if not isinstance(other, Range): return False
+        return (self.first == other.first and self.second == other.second
+                and self.last == other.last)
 
 
 class config:
@@ -166,8 +166,8 @@ class config:
     tolerance = 1e-12
     precision = 6
     latex = False
-    symbolic = True
-    debug = __debug__
+    symbolic = False
+    debug = 0
 
 
 
