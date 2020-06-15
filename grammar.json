@@ -96,7 +96,7 @@
       "ALT",
       [
         "OBJ",
-        "FIELD:VAR"
+        "FIELD:DELAY"
       ],
       [
         "ITEM_OP",
@@ -108,7 +108,7 @@
           ],
           [
             "OBJ",
-            "FIELD:VAR"
+            "FIELD:DELAY"
           ]
         ],
         [
@@ -166,7 +166,7 @@
     "ALT",
     [
       "OBJ",
-      "REP"
+      "TO_DEF"
     ],
     [
       "MARK",
@@ -174,31 +174,85 @@
     ],
     [
       "OBJ",
-      "EXP:DELAY"
+      "EXP"
     ]
   ],
-  "REP": [
-    "ALT",
+  "TO_DEF": [
+    "EXP",
     [
-      "ITEM_OP",
-      [
-        "OBJ",
-        "FIELD:VAR"
-      ],
-      [
-        "OP",
-        "?"
-      ]
+      "OBJ",
+      "FUNC"
     ],
     [
-      "ITEM_OP",
+      "OBJ",
+      "FIELDS"
+    ]
+  ],
+  "FUNC": [
+    "ALT",
+    [
+      "OBJ",
+      "FIELD"
+    ],
+    [
+      "OBJ",
+      "FORM"
+    ]
+  ],
+  "FIELDS": [
+    "EXP",
+    [
+      "OBJ",
+      "FIELD"
+    ],
+    [
+      "ALT",
       [
-        "OBJ",
-        "FORM"
+        "ITEM_OP",
+        [
+          "STR",
+          "\"[\""
+        ],
+        [
+          "OP",
+          "-"
+        ]
       ],
       [
-        "OP",
-        "?"
+        "ALT",
+        [
+          "OBJ",
+          "FIELDS"
+        ],
+        [
+          "ITEM_OP",
+          [
+            "ALT",
+            [
+              "MARK",
+              ","
+            ],
+            [
+              "OBJ",
+              "FIELDS"
+            ]
+          ],
+          [
+            "OP",
+            "*"
+          ]
+        ]
+      ],
+      [
+        "ITEM_OP",
+        [
+          "STR",
+          "\"]\""
+        ],
+        [
+          "OP",
+          "-"
+        ]
       ]
     ]
   ],
@@ -549,7 +603,7 @@
     "ALT",
     [
       "OBJ",
-      "REP"
+      "TO_DEF"
     ],
     [
       "MARK",
@@ -557,7 +611,7 @@
     ],
     [
       "OBJ",
-      "EXP:DELAY"
+      "EXP"
     ]
   ],
   "VAL": [
@@ -1455,10 +1509,6 @@
     ],
     [
       "STR",
-      "\"is\""
-    ],
-    [
-      "STR",
       "\"or\""
     ],
     [
@@ -1500,10 +1550,6 @@
     [
       "STR",
       "\"~\""
-    ],
-    [
-      "STR",
-      "\"@\""
     ]
   ],
   "LOP": [

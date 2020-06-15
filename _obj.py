@@ -30,20 +30,20 @@ class Env(dict):
     >>> G.e.a = 3
     >>> G.e.a
     3
-    >>> f = G.e([2], f=5)
+    >>> f = G.e.child([2], f=5)
     >>> f
     <env: global.e.(local)>
     >>> f.a
     3
     >>> f.all()
-    {'_parent_': <env: global.e>, 'f': 5, 'VAL': [2], 'a': 3, 'e': <env: global.e>}
+    {'_parent_': <env: global.e>, 'VAL': [2], 'f': 5, 'a': 3, 'e': <env: global.e>}
     >>> str(f)
-    '(f: 5, VAL: [2])'
+    '(VAL: [2], f: 5)'
     '''
-    def __init__(self, val=None, binds=None, parent=None, name='(local)'):
-        if binds: self.update(binds)
+    def __init__(self, val=None, parent=None, name:str='(local)'):
         self.VAL = self if val is None else val
         self._parent = parent
+        self._depth = 0 if parent is None else 1 + parent._depth
         self._name = name
     
     def __getattr__(self, name):
@@ -51,7 +51,7 @@ class Env(dict):
             return self[name]
         if self._parent:
             return getattr(self._parent, name)
-        # return super().__getattribute__(name)
+        return super().__getattribute__(name)
 
     def __setattr__(self, name, value, overwrite=True):
         if name[0] == '_':      # attrs beginning with '_' is hidden
@@ -73,7 +73,9 @@ class Env(dict):
         self.pop(name)
 
     def child(self, val=None, **binds):
-        return Env(val, binds, self)
+        env = Env(val, self)
+        env.update(binds)
+        return env
 
     def __repr__(self):
         return '<env: %s>' % self.name
@@ -97,13 +99,11 @@ class Attr:
     >>> attr = Attr('aa')
     >>> f = lambda: 0
     >>> f.aa = 'zero'
-    >>> f*attr
+    >>> attr.getFrom(f)
     'zero'
-    >>> try: attr*f
-    ... except: 'fail'
-    'fail'
-    >>> e = Env(binds={'aa':'evil'})
-    >>> e*attr
+    >>> e = Env()
+    >>> e.aa = 'evil'
+    >>> attr.getFrom(e)
     'evil'
     '''
     def __init__(self, name):
@@ -111,9 +111,14 @@ class Attr:
 
     def __repr__(self):
         return '.'+self.name
-        
-    def __rmul__(self, field):
-        return getattr(field, self.name)
+
+    def getFrom(self, obj):
+        return getattr(obj, self.name)
+
+    @classmethod
+    def adjoin(cls, obj, attr):
+        assert isinstance(attr, cls)
+        return getattr(obj, attr.name)
 
 
 class Map:

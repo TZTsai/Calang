@@ -1,6 +1,6 @@
 from _parser import calc_parse
 from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins
-from _funcs import Symbol, is_list, same, reduce, mul
+from _funcs import Symbol, is_list, same, reduce
 from _obj import Env, config, stack, Op, Attr, Map
 
 
@@ -36,6 +36,11 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     >>> Global['e'] = eval('(a: 1, b: a*3)')
     >>> eval('e.b')
     3
+    >>> print(eval('(a:8, a.b:9)')['a'])
+    (VAL: 8, b: 9)
+    >>> try: print(eval('(v.x:0)'))
+    ... except Exception as e: print(e)
+    field not in current env
     '''
     tree, rest = calc_parse(exp)
     if rest: raise SyntaxError('parsing failed, the unparsed part: ' + rest)
@@ -161,7 +166,7 @@ def SEQtoTREE(tr):
     assert len(stk) == 1
     return pop_val()
 
-def FIELD(tr): return reduce(mul, tr[1:])
+def FIELD(tr): return reduce(Attr.adjoin, tr[1:])
 
 def LIST(tr):
     lst = []
@@ -196,14 +201,18 @@ def LET(tr):
         result._parent = local
     return result
 
-def splitvar(tr, env=Global):
-    if tr[0] == 'VAR:NAME':
+def split_field(tr, env=Global):
+    if tr[0] == 'NAME':
         attr = tr[1]
         field = env
+    elif tr[0] == 'FIELD':
+        top = tr[1][1]
+        if top not in env:
+            raise AssertionError('field not in current env')
+        attr = tr.pop()[1]
+        field = eval_tree(tr, env) if len(tr) > 1 else env
     else:
-        attr = field.pop()[1]
-        tr[0] = 'FIELD'
-        field = eval_tree(tr)
+        raise TypeError('wrong type for split_field')
     return field, attr
 
 
@@ -217,7 +226,7 @@ def NAME(tr, env):
         else: raise NameError(f'unbound symbol \'{tr}\'')
 
 def PRINT(tr, env):
-    if config.debug: exec('print(f%s)' % tr[1], env.all())
+    exec('print(f%s)' % tr[1], env.all())
     return 'PRINT'
 
 def IF_ELSE(tr, env):
@@ -230,8 +239,8 @@ def ENV(tr, env):
     local = env.child()
     if isinstance(tr[1], Env): return tr[1]
     for t in tr[1:]:
-        _, rep, exp = t
-        define(rep, exp, local)
+        _, to_def, exp = t
+        define(to_def, exp, local)
     return local
     
 def MATCH(tr, env):
@@ -267,7 +276,7 @@ def match(val, form, local):
         form = form[1:]
         if val or form:
             if not val or not form:
-                raise AssertionError
+                raise AssertionError('match failed')
             pars, opt_pars, ext_par = split_pars(form)
             if len(pars) > len(val):
                 raise ValueError(f'not enough items in {val} to match')
@@ -299,8 +308,11 @@ def LOAD(tr):
     test = '-t' in tr
     verbose = '-v' in tr
     overwrite = '-w' in tr
+
+    global Global
     current_global = Global
     Global = GlobalEnv()  # a new global env
+    
     LOAD.run('scripts/' + modname + '.cal', test, start=0, verbose=verbose)
     if overwrite:
         current_global.update(Global)
@@ -347,32 +359,41 @@ def CONF(tr):
             setattr(config, conf, True if tr[2] in ('on', '1') else False)
 
 def DEL(tr):
-    for var in tr[1:]:
-        field, attr = var(var)
+    for t in tr[1:]:
+        field, attr = split_field(t)
         field.delete(attr)
 
 def DEF(tr):
-    _, rep, exp = tr
-    define(rep, exp)
+    _, to_def, exp = tr
+    define(to_def, exp)
 
-def define(rep, exp, env=Global):
-    if len(rep) <= 1:
-        raise SyntaxError('empty representation')
-    remove_delay(exp)
-    if tag(rep) == 'REP':  # a map
-        _, var, form = rep
+def define(to_def, exp, env=Global):
+    
+    def def_(field, val):
+        superfield = field[:-1]
+        parent, attr = split_field(field, env)
+        if not isinstance(parent, Env):
+            parent = env.child(parent)
+            def_(superfield, parent)  # if parent is not an env, redefine it as an env
+        setattr(parent, attr, val)
+        if isinstance(val, Map):
+            val.__name__ = attr
+
+    def def_all(fields, val):
+        if tag(fields) == 'FIELDS':
+            assert is_list(val) and len(fields) == len(val)
+            for field, item in zip(fields, val):
+                def_all(field, item)
+        else:
+            def_(fields, val)
+
+    if tag(to_def) == 'FUNC':
+        _, field, form = to_def
         val = Map(form, exp)
-    elif tag(rep) == 'VAR':
-        var = rep
-        val = eval_tree(exp, env)
+        def_(field, val)
     else:
         val = eval_tree(exp, env)
-        match(val, rep, env)
-        return
-    env, name = splitvar(var, env)
-    setattr(env, name, val)
-    if isinstance(val, Map):
-        val.__name__ = name
+        def_all(to_def, val)
     
 
 
@@ -409,10 +430,9 @@ def eval_tree(tr, env=Global):
 
 Map.match = match
 Map.eval  = eval_tree
+LOAD.run  = NotImplemented  # assign this in calc.py
 
-LOAD.run  = NotImplemented
-
-delay_types = {'DELAY', 'VAR'}
+delay_types = {'DELAY', 'DEF', 'FORM', 'BIND'}
 
 subs_rules = {
     'ANS': ANS,                 'SYM': SYM,

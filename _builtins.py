@@ -20,7 +20,7 @@ from _funcs import (
 )
 
 
-def process_func(val):
+def process_func(func):
 
     def pynumfy(val):
         # convert a number into a python number type
@@ -35,21 +35,18 @@ def process_func(val):
             if eq_(z.imag, 0): return z.real
             else: return z
 
-    def canonical(f):
-        def fun(*args, **kwds):
-            r = f(*args, **kwds)
-            if type(r) is bool:
-                return 1 if r else 0
-            elif is_iter(r) and not (isinstance(r, Range) or isinstance(r, set)):
-                return tuple(fun(a) for a in r)
-            else:
-                try: return pynumfy(r)
-                except (ValueError, TypeError):
-                    if isinstance(r, Expr): return factor(simplify(r))
-                    else: return r
-        return fun
+    def canonical(val):
+        if type(val) is bool:
+            return 1 if val else 0
+        elif is_iter(val) and not any(isinstance(val, t) for t in (Range, set, Env)):
+            return tuple(canonical(a) for a in val)
+        else:
+            try: return pynumfy(val)
+            except (ValueError, TypeError):
+                if isinstance(val, Expr): return factor(simplify(val))
+                else: return val
 
-    return canonical(val)
+    return compose(canonical, func)
 
 
 def construct_ops(op_dict, type_):
@@ -68,7 +65,7 @@ binary_ops = {
     '&.': (iand, 8), '|.': (ior, 7),
     '==': (eq_, 0), '/=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
     'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'outof': (lambda x, y: x not in y, -2), 
-    '~': (Range, 5), '..': (range_, 4), 'and': (and_, -5), 'is': (None, 0), 'or': (or_, -6),  '@': (None, 0)
+    '~': (Range, 5), '..': (range_, 4), 'and': (and_, -5), 'or': (or_, -6),
 }
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~.': (inv, 10), '@': (transpose, 10)}
 unary_r_ops = {'!': (factorial, 20), '!!': (dbfact, 20)}

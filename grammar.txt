@@ -4,17 +4,21 @@ EMPTY   := //
 CMD     := CONF | DIR | DEL | LOAD | IMPORT
 CONF    := conf /\w+/ /\d+|on|off/ ?
 DIR     := dir FIELD ?
-DEL     := del %SEQ < FIELD:VAR , > 
+DEL     := del %SEQ < FIELD:DELAY , > 
 LOAD    := load /\w+/ /-[tvw]/ *
 IMPORT  := import /\w+/ /-[vw]/ *
 
-DEF     := REP = EXP:DELAY  ## actually if not FORM is provided, the left will be tagged as VAR
-REP     := FIELD:VAR ? FORM ?
-### FIELD FORM := EXP  <==>  FIELD := FORM -> EXP ###
+DEF     := TO_DEF = EXP  ## DELAY
+TO_DEF  := FUNC | FIELDS
+FUNC    := FIELD FORM
+FIELDS  := FIELD | %BKT < %SEQ < FIELDS , > >
+
+## FIELD FORM = EXP  <==>  FIELD = FORM -> EXP
 
 FIELD   := NAME ATTR *
 NAME    := /[\u0374-\u03FFa-zA-Z][a-zA-Z\d_]*[?]?/    ## can begin with a Greek letter
 ATTR    := . / NAME:ATTR                              ## '/' forces no space between
+
 FORM    := PAR_LST | NAME:PAR
 PAR_LST := %BKT < ( _PARS ? ( , _OPTS ) ? ( , _EXT ) ? ) >
 _PARS   := %SEQ < ( BIND ! FORM ) , >                 ## '!' forbids the next match
@@ -32,7 +36,7 @@ MAP     := FORM -> EXP:DELAY
 LET     := ENV -> EXP:DELAY
 ENV     := %GRP < %SEQ < BIND , > > | MATCH
 MATCH   := VAL -> FORM
-BIND    := REP : EXP:DELAY
+BIND    := TO_DEF : EXP  ## DELAY
 
 VAL     := IF_ELSE | SEQ
 IF_ELSE := SEQ:DELAY if SEQ else EXP:DELAY

@@ -4,7 +4,7 @@ from numbers import Number, Rational
 from types import FunctionType
 from fractions import Fraction
 from sympy import Matrix, Symbol
-from _obj import config, Range, Map
+from _obj import config, Range, Map, Attr
 from mydecorators import decorator
 
 
@@ -176,8 +176,12 @@ def adjoin(x1, x2):
     3
     >>> adjoin(3, 4)
     12
+    >>> adjoin(abs, Attr('__class__'))
+    <class 'builtin_function_or_method'>
     '''
-    if is_function(x1):
+    if isinstance(x2, Attr):
+        return x2.getFrom(x1)
+    elif is_function(x1):
         if isinstance(x1, Map):
             return x1(x2)
         else:
@@ -239,7 +243,7 @@ def subscript(lst, subs):
     assert depth(subs) == 1
     id0 = subs[0]
     items = lst[id0]
-    if is_iter(id0) or type(id0) is slice:
+    if type(id0) is slice:
         return tuple(subscript(item, subs[1:]) for item in items)
     else:
         return subscript(items, subs[1:])
