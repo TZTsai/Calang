@@ -30,6 +30,7 @@ mappings = """
 alphabet = {}
 
 for line in mappings:
+    if not line: continue
     Gr, gr, english = line.split()
     if english == 'theta': 
         en, En = 'th', 'Th'

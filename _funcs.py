@@ -1,5 +1,5 @@
 from operator import add, sub, mul, pow as pow_, and_ as b_and, or_ as b_or
-from functools import reduce, com
+from functools import reduce
 from numbers import Number, Rational
 from types import FunctionType
 from fractions import Fraction
@@ -46,7 +46,13 @@ def is_matrix(value):
 
 
 def is_function(value):
-    return isinstance(value, FunctionType) or isinstance(value, Map)
+    '''
+    >>> is_function(abs)
+    True
+    >>> is_function(lambda: 1)
+    True
+    '''
+    return callable(value)
 
 
 def all_(*lst, test=None):
@@ -186,8 +192,6 @@ def dot(x1, x2):
     '''
     >>> dot(3, [1,2,3])
     (3, 6, 9)
-    >>> dot(abs, [-3])
-    3
     >>> dot([1, 2], [2, 5])
     12
     '''

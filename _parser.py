@@ -113,7 +113,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             return pattern if tag == 'STR' else [], rem
 
     # @trace
-    @memo
+    # Caution: must not add memo decorator!
     def parse_op(item, op, text):
         seq, rem = [], text
         rep, maxrep = 0, (-1 if op in '+*' else 1)

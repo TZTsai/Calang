@@ -72,7 +72,7 @@ class Env(dict):
     def delete(self, name):
         self.pop(name)
 
-    def __call__(self, val=None, **binds):
+    def child(self, val=None, **binds):
         return Env(val, binds, self)
 
     def __repr__(self):
@@ -119,7 +119,7 @@ class Attr:
 class Map:
     match = lambda val, form, env: NotImplemented
     eval  = lambda tree, env=None: NotImplemented
-    env   = Env
+    env   = None
 
     def __init__(self, form, body):
         self.form = form
@@ -127,7 +127,7 @@ class Map:
         self.__name__ = '(map)'
     
     def __call__(self, val):
-        local = Map.env() if Map.env else Env()
+        local = Map.env.child() if Map.env else Env()
         Map.match(val, self.form, local)
         return Map.eval(self.body, local)
 

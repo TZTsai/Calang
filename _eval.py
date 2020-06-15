@@ -19,7 +19,7 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     >>> calc_eval('2+4')
     6
     >>> calc_eval('x->2 x')
-    ['PAR', 'x'] -> ['SEQ', 2, BOP(\u22c5, 16), ['NAME', 'x']]
+    ['PAR', 'x'] -> ['SEQ', 2, BOP((adj), 20), ['NAME', 'x']]
     >>> calc_eval('[2,3]->[a,b]->a+b->x->2*x')
     10
     >>> eval('(a: 1, b: a+1) -> b')
@@ -227,7 +227,7 @@ def IF_ELSE(tr, env):
     else:       return eval_tree(f_case, env)
 
 def ENV(tr, env):
-    local = env()
+    local = env.child()
     if isinstance(tr[1], Env): return tr[1]
     for t in tr[1:]:
         _, rep, exp = t
@@ -236,7 +236,7 @@ def ENV(tr, env):
     
 def MATCH(tr, env):
     _, val, form = tr
-    local = env()
+    local = env.child()
     match(val, form, local)
     return local
 
@@ -364,9 +364,9 @@ def define(rep, exp, env=Global):
         val = Map(form, exp)
     elif tag(rep) == 'VAR':
         var = rep
-        val = eval_tree(exp)
+        val = eval_tree(exp, env)
     else:
-        val = eval_tree(exp)
+        val = eval_tree(exp, env)
         match(val, rep, env)
         return
     env, name = splitvar(var, env)
