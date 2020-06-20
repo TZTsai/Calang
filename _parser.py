@@ -6,17 +6,16 @@ import re
 from _builtins import op_list, keywords, all_, any_
 
 
-log.out = open('log.yaml', 'w')
+# log.out = open('log.yaml', 'w')
 interact = lambda: 0
-# trace = disabled
+trace = disabled
 
 
-# try:
-#     with open('grammar.json', 'r') as gf:
-#         grammar = load(gf)
-# except:
-#     from _grammar import grammar
-from _grammar import grammar
+try:
+    with open('grammar.json', 'r') as gf:
+        grammar = load(gf)
+except:
+    from _grammar import grammar
 op_starts = ''.join(set(op[0] for op in op_list))
 tag_pat = re.compile('[A-Z_:]+')
 def is_tag(s):

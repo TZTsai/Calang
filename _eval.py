@@ -5,9 +5,8 @@ from _obj import Env, config, stack, Op, Attr, Map
 
 
 def GlobalEnv():
-    Global = Env(name='_global_')
+    Global = Env(name='_global_', **builtins)
     Global._ans = []
-    Global.update(builtins)
     return Global
 
 Global = GlobalEnv()
@@ -182,21 +181,12 @@ def LIST(tr):
 def SYMLIST(tr): return tr[1:]
 
 def SLICE(tr): return slice(*tr[1:])
-
-def GENLIST(tr):
-    pass
  
 def ATTR(tr): return Attr(tr[1])
 
-def MAP(tr):
-    _, form, body = tr
-    remove_delay(body)
-    return Map(form, body)
-
 def LET(tr):
     _, local, body = tr
-    remove_delay(body)
-    result = eval_tree(body, env=local)
+    result = eval_tree(body, env=local, force=1)
     if isinstance(result, Env):
         result._parent = local
     return result
@@ -231,9 +221,27 @@ def PRINT(tr, env):
 
 def IF_ELSE(tr, env):
     _, t_case, cond, f_case = tr
-    if is_tree(cond): return tr
-    elif cond:  return eval_tree(t_case, env)
-    else:       return eval_tree(f_case, env)
+    if cond:
+        return eval_tree(t_case, env, force=1)
+    else:
+        return eval_tree(f_case, env, force=1)
+
+def GENLIST(tr, env):
+    def generate(exp, constraints):
+        if constraints:
+            constr = constraints.pop(0)
+            _, par, ran, *spec = constr
+            par = par[1]  # remove the tag
+            if spec: spec = spec[0]
+            for val in eval_tree(ran, local, force=1):
+                local.define(par, val)
+                if not spec or eval_tree(spec, local, force=1):
+                    yield from generate(exp, constraints)
+        else:
+            yield eval_tree(exp, local, force=1)
+    _, exp, *constraints = tr
+    local = env.child()
+    return tuple(generate(exp, constraints))
 
 def ENV(tr, env):
     local = env.child()
@@ -242,6 +250,11 @@ def ENV(tr, env):
         _, to_def, exp = t
         define(to_def, exp, local)
     return local
+
+def MAP(tr, env):
+    _, form, body = tr
+    remove_delay(body)
+    return Map(form, body, env)
     
 def MATCH(tr, env):
     _, val, form = tr
@@ -290,9 +303,9 @@ def match(val, form, local):
             for _, opt_par, default in opt_pars:
                 match(default, opt_par, local)
             if ext_par:
-                setattr(local, ext_par[1], tuple(val))
+                local.define(ext_par[1], tuple(val))
     elif form[0] == 'PAR':
-        setattr(local, form[1], val)
+        local.define(form[1], val)
     else:
         raise SyntaxError
 
@@ -356,7 +369,7 @@ def CONF(tr):
         if len(tr) == 2:
             print(getattr(config, conf))
         else:
-            setattr(config, conf, True if tr[2] in ('on', '1') else False)
+            config.define(conf, tr[2] in ('on', '1'))
 
 def DEL(tr):
     for t in tr[1:]:
@@ -367,6 +380,7 @@ def DEF(tr):
     _, to_def, exp = tr
     define(to_def, exp)
 
+
 def define(to_def, exp, env=Global):
     
     def def_(field, val):
@@ -375,7 +389,7 @@ def define(to_def, exp, env=Global):
         if not isinstance(parent, Env):
             parent = env.child(parent)
             def_(superfield, parent)  # if parent is not an env, redefine it as an env
-        setattr(parent, attr, val)
+        parent.define(attr, val)
         if isinstance(val, Map):
             val.__name__ = attr
 
@@ -394,10 +408,10 @@ def define(to_def, exp, env=Global):
     else:
         val = eval_tree(exp, env)
         def_all(to_def, val)
-    
 
 
-def eval_tree(tr, env=Global):
+
+def eval_tree(tr, env=Global, force=False):
     '''
     >>> eval_tree(['SEQ', ['NUM:REAL', '1'], ['BOP', '+'], ['NUM:REAL', '2'], ['BOP', '*'], ['NUM:REAL', '3']])
     7
@@ -414,13 +428,18 @@ def eval_tree(tr, env=Global):
     '''
     if not is_tree(tr): return tr
     type_ = tag(tr)
-    Map.env = env
+    if type_ == 'DELAY' and force:
+        remove_delay(tr)
+        type_ = tag(tr)
     if type_ not in delay_types:
         for i in range(1, len(tr)):
             tr[i] = eval_tree(tr[i], env)
+            if isinstance(tr[i], Map):
+                tr[i].env = env  # change the env to the current env
     if type_ in subs_rules:
+        Map.env = env  # applying a Map requires env, not a nice way to do this
         tr = subs_rules[type_](tr)
-    elif type_ in eval_rules and env:
+    elif type_ in eval_rules and env is not None:
         tr = eval_rules[type_](tr, env)
     elif type_ in exec_rules:
         exec_rules[type_](tr)
@@ -432,7 +451,7 @@ Map.match = match
 Map.eval  = eval_tree
 LOAD.run  = NotImplemented  # assign this in calc.py
 
-delay_types = {'DELAY', 'DEF', 'FORM', 'BIND'}
+delay_types = {'DELAY', 'DEF', 'FORM', 'BIND', 'NAME', 'SYM', 'NUM'}
 
 subs_rules = {
     'ANS': ANS,                 'SYM': SYM,
@@ -440,16 +459,15 @@ subs_rules = {
     'SEQ': SEQtoTREE,           'BOP': get_op(binary_ops),
     'LOP': get_op(unary_l_ops), 'ROP': get_op(unary_r_ops),
     'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
-    'GEN_LST': GENLIST,         'FIELD': FIELD,
-    'ATTR': ATTR,               'MAP': MAP,
+    'FIELD': FIELD,             'ATTR': ATTR,
     'LET': LET,                 'SLICE': SLICE
 }
 
 eval_rules = {
-    'NAME': NAME,               
+    'NAME': NAME,               'MAP': MAP,
     'PRINT': PRINT,             'EXP': eval_tree,
     'ENV': ENV,                 'MATCH': MATCH,
-    'IF_ELSE': IF_ELSE,
+    'IF_ELSE': IF_ELSE,         'GEN_LST': GENLIST
 }
 
 exec_rules = {

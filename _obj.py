@@ -40,11 +40,11 @@ class Env(dict):
     >>> str(f)
     '(VAL: [2], f: 5)'
     '''
-    def __init__(self, val=None, parent=None, name:str='(local)'):
-        self.VAL = self if val is None else val
+    def __init__(self, val=None, parent=None, name:str='(local)', **binds):
+        if val is not None: self.VAL = val
         self._parent = parent
-        self._depth = 0 if parent is None else 1 + parent._depth
         self._name = name
+        self.update(binds)
     
     def __getattr__(self, name):
         if name in self:
@@ -53,9 +53,9 @@ class Env(dict):
             return getattr(self._parent, name)
         return super().__getattribute__(name)
 
-    def __setattr__(self, name, value, overwrite=True):
+    def define(self, name, value, overwrite=True):
         if name[0] == '_':      # attrs beginning with '_' is hidden
-            super().__setattr__(name, value)
+            setattr(self, name, value)
         else:
             if name in self and not overwrite:
                 raise AssertionError('name conflict in '+repr(self))
@@ -81,7 +81,7 @@ class Env(dict):
         return '<env: %s>' % self.name
     
     def __str__(self):
-        content = ', '.join(k+': '+repr(v) for k, v in self.items())
+        content = ', '.join(repr(k)+': '+repr(v) for k, v in self.items())
         return '('+content+')'
     
     def all(self):
@@ -124,20 +124,20 @@ class Attr:
 class Map:
     match = lambda val, form, env: NotImplemented
     eval  = lambda tree, env=None: NotImplemented
-    env   = None
 
-    def __init__(self, form, body):
+    def __init__(self, form, body, env):
         self.form = form
         self.body = Map.eval(body, env=None)  # simplify the body
-        self.__name__ = '(map)'
+        self.env = env
+        self.__name__ = repr(self)
     
     def __call__(self, val):
-        local = Map.env.child() if Map.env else Env()
+        local = self.env.child()
         Map.match(val, self.form, local)
         return Map.eval(self.body, local)
 
     def __repr__(self):
-        return str(self.form) + ' -> ' + str(self.body)
+        return f"{self.form} -> {self.body}"
 
     def composed(self, func):
         body = ['SEQ', func, self.body]

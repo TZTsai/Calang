@@ -1,5 +1,5 @@
 from _builtins import Rational, Fraction, Matrix, is_number, is_list, is_matrix, is_function, floor, inf, log
-from _obj import Range, config, Env
+from _obj import Range, config, Env, Map
 from sympy import latex, pretty
 from re import sub as translate
 from utils.greek import gr_to_tex
@@ -50,11 +50,15 @@ def calc_format(val, indent=0, sci=False, tex=False):
             else: 
                 return str(format_float(val))
         elif is_function(val):
-            return val.__name__
+            return str(val) if isinstance(val, Map) else val.__name__
         elif isinstance(val, Range):
             return str(val)
         elif isinstance(val, Env):
             return str(val)
+        elif isinstance(val, dict):
+            env = Env()
+            env.update(val)
+            return str(env)
         else:
             return pretty(val, use_unicode=True)
 
