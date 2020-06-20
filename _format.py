@@ -65,15 +65,12 @@ def calc_format(val, indent=0, sci=False, tex=False):
     s = ' ' * indent
     indented_format = lambda v: format(v, indent+2)
     if is_list(val):
-        contains_mat = False
-        for a in val:
-            if is_matrix(a):  contains_mat = True
-        if contains_mat:
+        if any(map(is_matrix, val)):
             s += '[\n' + ',\n'.join(map(indented_format, val)) + '\n' + s + ']'
         elif is_matrix(val):
             s = format_matrix(val, indent)
         else:
-            s += '['+', '.join(map(lambda v: format(v), val))+']'
+            s += '['+', '.join(map(lambda v: calc_format(v), val))+']'
     else:
         s += format_atom(val)
     return s

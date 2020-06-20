@@ -13,7 +13,7 @@ TO_DEF  := FUNC | FIELDS
 FUNC    := FIELD FORM
 FIELDS  := FIELD | %BKT < %SEQ < FIELDS , > >
 
-## FIELD FORM = EXP  <==>  FIELD = FORM -> EXP
+## FIELD FORM = EXP  <==>  FIELD = FORM => EXP
 
 FIELD   := NAME ATTR *
 NAME    := /[\u0374-\u03FFa-zA-Z][a-zA-Z\d_]*[?]?/    ## can begin with a Greek letter
@@ -27,22 +27,21 @@ _EXT    := [*] - NAME:EXTPAR
 
 EXP     := MAP | LET | ENV | VAL
 ### RULES for ARROW ###
-##  FORM -> EXP          ==>  MAP
-##  ENV  -> EXP          ==>  VAL
-##  VAL  -> FORM         ==>  ENV
-##  VAL  -> FORM -> EXP  ==>  ENV -> EXP  <==>  VAL -> MAP  ==>  VAL
+##  FORM => EXP          ==>  MAP
+##  ENV  => EXP          ==>  VAL
+##  VAL  => FORM         ==>  ENV
+##  VAL  => FORM => EXP  ==>  ENV => EXP  <==>  VAL => MAP  ==>  VAL
 
-MAP     := FORM -> EXP:DELAY
-LET     := ENV -> EXP:DELAY
+MAP     := FORM => EXP:DELAY
+LET     := ENV => EXP:DELAY
 ENV     := %GRP < %SEQ < BIND , > > | MATCH
-MATCH   := VAL -> FORM
+MATCH   := VAL => FORM
 BIND    := TO_DEF : EXP  ## DELAY
 
 VAL     := IF_ELSE | SEQ
-IF_ELSE := SEQ:DELAY if SEQ else EXP:DELAY
-SEQ     := ( _TERM + ( -> ! BOP ) ? ) + PRINT ?
-## a little verbose but the arrow '->' must not be mistaken with the minus op '-'
-_TERM   := ( ITEM | LOP ITEM ) ROP ? 
+IF_ELSE := SEQ if SEQ else EXP
+SEQ     := _TERM ( BOP ? _TERM ) * PRINT ?
+_TERM   := LOP ? ITEM ROP ? 
 
 PRINT   := /".*?"/
 ITEM    := GROUP | WHEN | ATOM | LIST
@@ -56,7 +55,7 @@ ANS     := /_(\d+|_*)/
 
 NUM     := COMPLEX | BIN | HEX | REAL
 COMPLEX := REAL [+-] REAL I
-REAL    := /-?\d+(\.\d*)?/ ( [eE] - /-?\d+/ ) ?
+REAL    := /-?\d+(\.\d+)?/ ( [eE] - /-?\d+/ ) ?
 BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
@@ -84,7 +83,7 @@ _SLC    := ( SEQ | EMPTY )
 ###############################################
 COMMENTS ON CALC-GRAMMAR 
 The most special rules of this grammar are:
-1. Mapping: '[formal] -> [exp]'
+1. Mapping: '[formal] => [exp]'
    A mapping accepts a formal parameter or a (nested) list of parameters
    and transforms it into the corresponding expression. To apply a mapping,
    precedes it with a value. The value should be automatically matched to the
@@ -94,17 +93,17 @@ The most special rules of this grammar are:
    subscription at index [i] subscribes the list at depth [i]. A subscription 
    can be an integer, a list, or a slice. As a list, each of its leaf is mapped 
    to the corresponding item of the applied list.
-2. Substitution: '[bindings] -> [exp]'
+2. Substitution: '[bindings] => [exp]'
    A substitution is the application of a mapping. It offers a more
    convenient syntax for this application. The bindings are contained in a
    group, separated by ','. Each binding is in the form of '[formal] : [val]'.
    Groups in this grammar are wrapped with '(' and ')'.
    Note that a group of bindings can exist independently in the calc, thus
    allowing a NAME or field to be bound to it. 
-   For example, define 'a' as '(x: 1, y: f)'. Then 1 is substituted for 'a->x'
-   and 'f' is substituted for 'a->y'. Moreover, 'a->y[3]' will be replaced as
+   For example, define 'a' as '(x: 1, y: f)'. Then 1 is substituted for 'a=>x'
+   and 'f' is substituted for 'a=>y'. Moreover, 'a=>y[3]' will be replaced as
    'f[3]', an application. The expression after the dot can be more complicated,
-   e.g. 'a -> y[x+2] * (y: 2) -> y', which will be mapped into 'f[3] * 2'.
+   e.g. 'a => y[x+2] * (y: 2) => y', which will be mapped into 'f[3] * 2'.
 3. Field: '[field] .[subfield]'
    In this calc, any field can be bound to a value. A NAME is a field in the
    uppermost level. If a field is initially only bound to a value and a subfield

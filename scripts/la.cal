@@ -1,6 +1,6 @@
-addv(v1, v2) := map((x1,x2) -> x1+x2, v1, v2);
+addv(v1, v2) := map((x1,x2) => x1+x2, v1, v2);
 sumv(vects) := reduce(addv, vects);
-subv(v1, v2) := map((x1,x2) -> x1-x2, v1, v2);
+subv(v1, v2) := map((x1,x2) => x1-x2, v1, v2);
 
 rnum(m) := len(m);
 cnum(m) := len(m[0]);

@@ -107,8 +107,8 @@ def get_token(exp):
         token, rest = exp[:m], exp[m:]
         type_ = 'ans' if token == '_' or not token[1].isalpha() else 'symbol'
         return type_, token, rest
-    if exp[:2] == '->':
-        return 'arrow', '->', exp[2:]
+    if exp[:2] == '=>':
+        return 'arrow', '=>', exp[2:]
     if exp[:2] in op_list:
         return 'op', exp[:2], exp[2:]
     if exp[0] in op_list:

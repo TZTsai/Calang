@@ -66,15 +66,15 @@ Check the file "__builtins.py" to see the available built-in operations and func
   **Examples**:
   
   * fact := lambda n: 1 if n=0 else n*fact(n-1)
-  * compose := lambda f, g: x -> f(g(x))  
+  * compose := lambda f, g: x => f(g(x))  
   * map := lambda f, 'lists: [] if any([l = [] | l in lists]) else with args = [l\[0\] | l in lists], rests = \[l\[1:] | l in lists]: \[f('args)] + map(f, 'rests)
   
-  **Syntax 2**: (`par1`, `par2`) -> `exp`  (the parentheses can be omitted if there is exactly one parameter)  
+  **Syntax 2**: (`par1`, `par2`) => `exp`  (the parentheses can be omitted if there is exactly one parameter)  
   
   **Examples**:  
   
-  * double := f -> (x -> f(f(x)))
-  * inc := x -> x+1
+  * double := f => (x => f(f(x)))
+  * inc := x => x+1
   * double(inc)(3) (return: 5)
   
 * Conditional expression  

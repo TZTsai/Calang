@@ -223,8 +223,8 @@ def test_grammar():
         ('DEF', 'EXP := LOCAL | LAMBDA | IF_ELSE | OP_SEQ'), 
         (['DEF', ['OBJ', 'EXP'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LOCAL']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LAMBDA']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'IF_ELSE']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'OP_SEQ']]]]]]]]]], ''))
         check(parse_grammar,
-        ('DEF', 'LC := ( BLIST | BIND * ) ? "->" EXP'),
-        (['DEF', ['OBJ', 'LC'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BLIST']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"->"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]], ''))
+        ('DEF', 'LC := ( BLIST | BIND * ) ? "=>" EXP'),
+        (['DEF', ['OBJ', 'LC'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BLIST']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"=>"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]], ''))
         check(parse_grammar,
         ('DEF', '%M < $A > := $A $A +'),
         (['DEF', ['MACRO', '%M', '<', ['VARS', ['VAR', '$A']], '>'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['VAR', '$A']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['VAR', '$A']]], ['OP', '+']]]]]], ''))
@@ -234,8 +234,8 @@ def test_grammar():
         [['DEF', ['OBJ', 'EXP'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LOCAL']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LAMBDA']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'IF_ELSE']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'OP_SEQ']]]]]]]]]]], 
         ('DEF', ('OBJ', 'EXP'), ':=', ('EXP', ('OBJ', 'LOCAL'), ('OBJ', 'LAMBDA'), ('OBJ', 'IF_ELSE'), ('OBJ', 'OP_SEQ'))))
         check(refactor_tree, 
-        [['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BLIST']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"->"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]],
-        ('ALT', ('ITEM_OP', ('EXP', ('OBJ', 'BLIST'), ('ITEM_OP', ('OBJ', 'BIND'), ('OP', '*'))), ('OP', '?')), ('STR', '"->"'), ('OBJ', 'EXP')))
+        [['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BLIST']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"=>"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]],
+        ('ALT', ('ITEM_OP', ('EXP', ('OBJ', 'BLIST'), ('ITEM_OP', ('OBJ', 'BIND'), ('OP', '*'))), ('OP', '?')), ('STR', '"=>"'), ('OBJ', 'EXP')))
 
     def test_macro():    
         rules = ['LIST    := %LST < "[" "]" ; %SEQ < , /.*/ > >',

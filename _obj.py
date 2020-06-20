@@ -1,4 +1,5 @@
 from myutils import interact
+from copy import deepcopy as clone
 
 class stack(list):
     def push(self, obj):
@@ -126,6 +127,9 @@ class Map:
     eval  = lambda tree, env=None: NotImplemented
 
     def __init__(self, form, body, env):
+        for par in form[1:]:
+            if par[0] == 'OPTPAR':
+                par[2] = Map.eval(par[2], env)
         self.form = form
         self.body = Map.eval(body, env=None)  # simplify the body
         self.env = env
@@ -134,10 +138,10 @@ class Map:
     def __call__(self, val):
         local = self.env.child()
         Map.match(val, self.form, local)
-        return Map.eval(self.body, local)
+        return Map.eval(clone(self.body), local)
 
     def __repr__(self):
-        return f"{self.form} -> {self.body}"
+        return f"{self.form} => {self.body}"
 
     def composed(self, func):
         body = ['SEQ', func, self.body]

@@ -120,7 +120,7 @@ def eval_closure(bindings, exp, env, delim='='):
 
 def eval_singlevar_closure(token, exp, env):
     try:
-        valexp, exp = split(exp, '->', 2)
+        valexp, exp = split(exp, '=>', 2)
     except ValueError:
         raise SyntaxError('invalid use of colon')
     binding = token + valexp
@@ -226,7 +226,7 @@ def calc_eval(exp, env):
             if next_token == ':':  # single variable closure
                 CM.push_val(eval_singlevar_closure(token, exp, env))
                 break
-            if next_token == '->':
+            if next_token == '=>':
                 CM.push_val(function([token], next_exp, env))
                 break
             value = eval_name(token, env)

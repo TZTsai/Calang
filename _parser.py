@@ -6,9 +6,9 @@ import re
 from _builtins import op_list, keywords, all_, any_
 
 
-# log.out = open('log.yaml', 'w')
+log.out = open('log.yaml', 'w')
 interact = lambda: 0
-trace = disabled
+# trace = disabled
 
 
 try:
@@ -138,7 +138,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             tree = ['(nospace)'] + tree
         return tree, rem
 
-    must_have = {'DEF': '=', 'MAP': '->', 'LET': '->', 'GEN_LST': '|', 
+    must_have = {'DEF': '=', 'MAP': '=>', 'LET': '=>', 'GEN_LST': '|', 
                  'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
     @trace
     @memo

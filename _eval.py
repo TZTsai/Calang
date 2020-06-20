@@ -17,13 +17,13 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     >>> eval = calc_eval
     >>> calc_eval('2+4')
     6
-    >>> calc_eval('x->2 x')
-    ['PAR', 'x'] -> ['SEQ', 2, BOP((adj), 20), ['NAME', 'x']]
-    >>> calc_eval('[2,3]->[a,b]->a+b->x->2*x')
+    >>> calc_eval('x=>2 x')
+    ['PAR', 'x'] => ['SEQ', 2, BOP((adj), 20), ['NAME', 'x']]
+    >>> calc_eval('[2,3]=>[a,b]=>a+b=>x=>2*x')
     10
-    >>> eval('(a: 1, b: a+1) -> b')
+    >>> eval('(a: 1, b: a+1) => b')
     2
-    >>> eval('(a: 2, b: 4) -> (b: a+4) -> [a, b] "{a=} {b=}"')
+    >>> eval('(a: 2, b: 4) => (b: a+4) => [a, b] "{a=} {b=}"')
     a=2 b=6
     (2, 6)
     >>> eval('[1, *[2, 3]]')
@@ -221,10 +221,8 @@ def PRINT(tr, env):
 
 def IF_ELSE(tr, env):
     _, t_case, cond, f_case = tr
-    if cond:
-        return eval_tree(t_case, env, force=1)
-    else:
-        return eval_tree(f_case, env, force=1)
+    cond = eval_tree(cond, env)
+    return eval_tree(t_case if cond else f_case, env)
 
 def GENLIST(tr, env):
     def generate(exp, constraints):
@@ -285,7 +283,7 @@ def match(val, form, local):
         return pars, opt_pars, ext_par
 
     if form[0] == 'PAR_LST':
-        assert is_list(val)
+        val = list(val)
         form = form[1:]
         if val or form:
             if not val or not form:
@@ -293,21 +291,17 @@ def match(val, form, local):
             pars, opt_pars, ext_par = split_pars(form)
             if len(pars) > len(val):
                 raise ValueError(f'not enough items in {val} to match')
-            for i, par in enumerate(pars):
-                match(val[i], par, local)
-            val = val[i+1:]
+            for par in pars:
+                match(val.pop(0), par, local)
             while val and opt_pars:
-                item = val.pop(0)
                 opt_par = opt_pars.pop(0)[1]
-                match(item, opt_par, local)
+                match(val.pop(0), opt_par, local)
             for _, opt_par, default in opt_pars:
                 match(default, opt_par, local)
             if ext_par:
                 local.define(ext_par[1], tuple(val))
-    elif form[0] == 'PAR':
-        local.define(form[1], val)
     else:
-        raise SyntaxError
+        local.define(form[1], val)
 
 
 # these rules are commands in the calc
@@ -403,7 +397,7 @@ def define(to_def, exp, env=Global):
 
     if tag(to_def) == 'FUNC':
         _, field, form = to_def
-        val = Map(form, exp)
+        val = Map(form, exp, env)
         def_(field, val)
     else:
         val = eval_tree(exp, env)
@@ -422,9 +416,9 @@ def eval_tree(tr, env=Global, force=False):
     >>> eval_tree(["VAL_LST", ["NUM:REAL", "3"], ["NUM:REAL", "4"], ["NUM:REAL", "6"]])
     (3, 4, 6)
     >>> eval_tree(['MAP', ['PAR', 'a'], ['DELAY:SEQ', ['NUM:REAL', '2'], ['BOP', '*'], ['NAME', 'a']]])
-    ['PAR', 'a'] -> ['SEQ', 2, BOP(*, 8), ['NAME', 'a']]
+    ['PAR', 'a'] => ['SEQ', 2, BOP(*, 8), ['NAME', 'a']]
     >>> eval_tree(['MAP', ['PAR', 'x'], ['DELAY:SEQ', ['SEQ', ['NUM:REAL', '2'], ['BOP', '+'], ['NUM:REAL', '3']], ['BOP', '*'], ['SEQ', ['NUM:REAL', '6'], ['BOP', '+'], ['NAME', 'x']]]])
-    ['PAR', 'x'] -> ['SEQ', 5, BOP(*, 8), ['SEQ', 6, BOP(+, 6), ['NAME', 'x']]]
+    ['PAR', 'x'] => ['SEQ', 5, BOP(*, 8), ['SEQ', 6, BOP(+, 6), ['NAME', 'x']]]
     '''
     if not is_tree(tr): return tr
     type_ = tag(tr)
@@ -451,7 +445,7 @@ Map.match = match
 Map.eval  = eval_tree
 LOAD.run  = NotImplemented  # assign this in calc.py
 
-delay_types = {'DELAY', 'DEF', 'FORM', 'BIND', 'NAME', 'SYM', 'NUM'}
+delay_types = {'DELAY', 'DEF', 'FORM', 'BIND', 'NAME', 'SYM', 'IF_ELSE'}
 
 subs_rules = {
     'ANS': ANS,                 'SYM': SYM,

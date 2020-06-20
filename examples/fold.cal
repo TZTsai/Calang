@@ -1,5 +1,5 @@
-compose(f, g) := x -> f(g(x))
-identity := x -> x
+compose(f, g) := x => f(g(x))
+identity := x => x
 fold(f, times) := identity if times=0 else compose(f, fold(f, times-1)) ...
 if times%2 else fold(compose(f, f), times/2);
 
