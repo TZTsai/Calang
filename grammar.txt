@@ -2,9 +2,9 @@ LINE    := CMD | DEF | EXP | EMPTY
 EMPTY   := //
 
 CMD     := CONF | DIR | DEL | LOAD | IMPORT
-CONF    := conf /\w+/ /\d+|on|off/ ?
+CONF    := conf /\w+/ ( NUM | /on|off/ ) ?
 DIR     := dir FIELD ?
-DEL     := del %SEQ < FIELD:DELAY , > 
+DEL     := del %SEQ < FIELD , >  ## DELAY
 LOAD    := load /\w+/ /-[tvw]/ *
 IMPORT  := import /\w+/ /-[vw]/ *
 
@@ -39,14 +39,14 @@ MATCH   := VAL => FORM
 BIND    := TO_DEF : EXP  ## DELAY
 
 VAL     := IF_ELSE | SEQ
-IF_ELSE := SEQ if SEQ else EXP
+IF_ELSE := SEQ if SEQ else EXP  ## DELAY
 SEQ     := _TERM ( BOP ? _TERM ) * PRINT ?
 _TERM   := LOP ? ITEM ROP ? 
 
 PRINT   := /".*?"/
 ITEM    := GROUP | WHEN | ATOM | LIST
 GROUP   := %GRP < EXP >
-WHEN    := when %GRP < ( %SEQ < CASE , > , EXP ) >
+WHEN    := when %GRP < ( ( CASE , ) + EXP ) >  ## DELAY
 CASE    := EXP : EXP
 
 ATOM    := FIELD | ATTR | SYM | ANS | NUM
@@ -63,8 +63,8 @@ LIST    := ' SYM_LST | GEN_LST | VAL_LST
 SYM_LST := %LST < ( UNQUOTE | _SYM_IT ) , >
 UNQUOTE := ` ( LIST | NAME )  ## convert the item back to a value
 _SYM_IT := SYM_LST | NAME:SYM
-GEN_LST := %BKT < ( EXP:DELAY ( [|] - CONSTR ) + ) >
-CONSTR  := NAME:PAR in EXP:DELAY ( if EXP:DELAY ) ?
+GEN_LST := %BKT < ( EXP ( [|] - CONSTR ) + ) >  ## DELAY
+CONSTR  := NAME:PAR in EXP ( if EXP ) ?
 VAL_LST := _DLST | %LST < _LST_IT , >
 _DLST   := %LST < SUB_LST:VAL_LST ; >
 SUB_LST := %SEQ < _LST_IT , > ?

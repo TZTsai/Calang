@@ -59,8 +59,15 @@
     [
       "ITEM_OP",
       [
-        "RE",
-        "/\\d+|on|off/"
+        "EXP",
+        [
+          "OBJ",
+          "NUM"
+        ],
+        [
+          "RE",
+          "/on|off/"
+        ]
       ],
       [
         "OP",
@@ -96,7 +103,7 @@
       "ALT",
       [
         "OBJ",
-        "FIELD:DELAY"
+        "FIELD"
       ],
       [
         "ITEM_OP",
@@ -108,7 +115,7 @@
           ],
           [
             "OBJ",
-            "FIELD:DELAY"
+            "FIELD"
           ]
         ],
         [
@@ -794,33 +801,22 @@
       [
         "ALT",
         [
-          "ALT",
+          "ITEM_OP",
           [
-            "OBJ",
-            "CASE"
-          ],
-          [
-            "ITEM_OP",
+            "ALT",
             [
-              "ALT",
-              [
-                "MARK",
-                ","
-              ],
-              [
-                "OBJ",
-                "CASE"
-              ]
+              "OBJ",
+              "CASE"
             ],
             [
-              "OP",
-              "*"
+              "MARK",
+              ","
             ]
+          ],
+          [
+            "OP",
+            "+"
           ]
-        ],
-        [
-          "MARK",
-          ","
         ],
         [
           "OBJ",
@@ -1110,7 +1106,7 @@
       "ALT",
       [
         "OBJ",
-        "EXP:DELAY"
+        "EXP"
       ],
       [
         "ITEM_OP",
@@ -1162,7 +1158,7 @@
     ],
     [
       "OBJ",
-      "EXP:DELAY"
+      "EXP"
     ],
     [
       "ITEM_OP",
@@ -1174,7 +1170,7 @@
         ],
         [
           "OBJ",
-          "EXP:DELAY"
+          "EXP"
         ]
       ],
       [

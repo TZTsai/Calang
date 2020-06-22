@@ -38,7 +38,7 @@ sum[i^2 | i in l] #14
 3 in 2..3 #1
 l[1:] #(2,3)
 l[:-1] #(1,2)
-[2,3,4][:-1:2] #(3,)
+[2,3,4][::2] #(2,4)
 [1,2]+[3,4] #[1,2,3,4]
 
 m = [[1,2,3],[3,4,5],[5,6,7]]
@@ -48,7 +48,7 @@ max3[x, y, z] = when(x>y and x>z: x, y>z: y, z)
 max3[2, 4, 1] #4
 
 (x:1)=>x+3 #4
-sin_series[n] := x => sum([(-1)^(i // 2)*x^i/i! | i in 1..n if i%2])
+sin_series[n] = x => sum[(-1)^(i // 2)*x^i/i! | i in 1..n if i%2]
 sin_ = sin_series[10]
-conf prec 0.0002
-sin[PI/3] == sin_[PI/3]  #1
+conf tolerance 0.001
+sin(PI/3) == sin_(PI/3)  #1

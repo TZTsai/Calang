@@ -127,9 +127,6 @@ class Map:
     eval  = lambda tree, env=None: NotImplemented
 
     def __init__(self, form, body, env):
-        for par in form[1:]:
-            if par[0] == 'OPTPAR':
-                par[2] = Map.eval(par[2], env)
         self.form = form
         self.body = Map.eval(body, env=None)  # simplify the body
         self.env = env
