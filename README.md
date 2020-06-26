@@ -114,7 +114,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
 * Symbol  
 
-    In the `ALL-SYMBOL` mode, all undefined names will be regarded as symbols.  
+    In the `symbolic` mode, all undefined names will be regarded as symbols.  
 
     If this mode is off, then symbol is represented by an underscore `_` followed by a legitimate variable name.  
 
@@ -165,8 +165,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
     A range is a different type from list. It is useful to represent a wide range of numbers, i.e. range(1, 100000). For such a range, the calculation of each item is delayed, thus saving time and memory.  
     There are three ways to generate a "Range" type value: by using the symbol `~` or `..`, or by the built-in function `range`.  
-    The expression `a~b` evaluates to a range including all integers from a to b.  
-    The expression `a..b` is identical to `a~b`. However, `a..b..c` enables you to create an arithmetic sequence that begins with `a` following by `b` and ends with `c` (if `c` is not included by this sequence, then it ends before `c`).  
+    The expression `a..b` evaluates to a range including all integers from a to b. In addition, `a..b..c` creates an arithmetic sequence that begins with `a` following by `b` and ends with `c` (if `c` is not included by this sequence, then it ends before `c`).  
     The "range" function, however, is identical to its corresponding python function, which excludes the second argument from the range.  
 
   **Examples**:  

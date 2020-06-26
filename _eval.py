@@ -36,7 +36,7 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     >>> eval('e.b')
     3
     >>> print(eval('(a:8, a.b:9)')['a'])
-    (VAL: 8, b: 9)
+    (b: 9)
     >>> try: print(eval('(v.x:0)'))
     ... except Exception as e: print(e)
     field not in current env
@@ -259,7 +259,7 @@ def ENV(tr, env):
 def MAP(tr, env):
     _, form, body = tr
     drop_tag(body, 'DELAY')
-    return Map(form, body, env)
+    return Map(split_pars(form, env), body, env)
     
 def MATCH(tr, env):
     _, val, form = tr
@@ -272,43 +272,49 @@ def match(val, form, local):
     >>> L = Env()
     >>> match([1, 2, 3], ['PAR_LST', ['PAR', 'a'], ['EXTPAR', 'ex']], L)
     >>> print(L)
-    (VAL: <env: (local)>, a: 1, ex: (2, 3))
+    (a: 1, ex: (2, 3))
     >>> match([-1], ['PAR_LST', ['PAR', 'w'], ['OPTPAR', ['PAR', 'p'], 5]], L)
     >>> print(L)
-    (VAL: <env: (local)>, a: 1, ex: (2, 3), w: -1, p: 5)
+    (a: 1, ex: (2, 3), w: -1, p: 5)
     '''
-    def split_pars(form):
-        pars, opt_pars = [], []
-        ext_par = None
-        for t in form:
-            if t[0] in ['PAR', 'PAR_LST']:
-                pars.append(t)
-            elif t[0] == 'OPTPAR':
-                opt_pars.append(t)
-            else:
-                ext_par = t
-        return pars, opt_pars, ext_par
-
-    if form[0] == 'PAR_LST':
-        val = list(val)
-        form = form[1:]
-        if val or form:
-            if not val or not form:
-                raise AssertionError('match failed')
-            pars, opt_pars, ext_par = split_pars(form)
-            if len(pars) > len(val):
-                raise ValueError(f'not enough items in {val} to match')
-            for par in pars:
-                match(val.pop(0), par, local)
-            while val and opt_pars:
-                opt_par = opt_pars.pop(0)[1]
-                match(val.pop(0), opt_par, local)
-            for _, opt_par, default in opt_pars:
-                match(default, opt_par, local)
-            if ext_par:
-                local.define(ext_par[1], tuple(val))
-    else:
+    if type(form[1]) is str:
         local.define(form[1], val)
+
+    else:
+        val = list(val)
+
+        no_par = len(form) == 1
+        if not val and no_par:
+            return
+        if not val or no_par:
+            raise AssertionError('match failed')
+
+        _, pars, opt_pars, ext_par = form if form[0] == 'SPLITTED' else split_pars(form, local)
+        if len(pars) > len(val):
+            raise ValueError(f'not enough items in {val} to match')
+
+        for par in pars:
+            match(val.pop(0), par, local)
+        while val and opt_pars:
+            opt_par = opt_pars.pop(0)[1]
+            match(val.pop(0), opt_par, local)
+        for _, opt_par, default in opt_pars:
+            match(default, opt_par, local)
+        if ext_par:
+            local.define(ext_par[1], tuple(val))
+
+def split_pars(form, env):
+    pars, opt_pars = [], []
+    ext_par = None
+    for t in form[1:]:
+        if t[0] in ['PAR', 'PAR_LST']:
+            pars.append(t)
+        elif t[0] == 'OPTPAR':
+            t[2] = eval_tree(t[2])
+            opt_pars.append(t)
+        else:
+            ext_par = t
+    return ['SPLITTED', pars, opt_pars, ext_par]
 
 
 # these rules are commands in the calc
@@ -404,8 +410,7 @@ def define(to_def, exp, env=Global):
 
     if tag(to_def) == 'FUNC':
         _, field, form = to_def
-        form = eval_tree(form)  # eval the opt pars
-        val = Map(form, exp, env)
+        val = Map(split_pars(form, env), exp, env)
         def_(field, val)
     else:
         val = eval_tree(exp, env)
@@ -445,11 +450,13 @@ def eval_tree(tr, env=Global):
 
 Map.match = match
 Map.eval  = eval_tree
+
+
 LOAD.run  = NotImplemented  # assign this in calc.py
 
 delay_types = {
     'DELAY',    'DEF',      'BIND',     'IF_ELSE',
-    'DEL',      'WHEN',     'GEN_LST'
+    'DEL',      'WHEN',     'GEN_LST',  'PAR_LST'
 }
 
 subs_rules = {

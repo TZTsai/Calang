@@ -34,7 +34,7 @@ class BracketTracker:
         return cls.stk.peek()[1] if cls.stk else -1
 
 
-def run(filename=None, test=False, start=50, verbose=True):
+def run(filename=None, test=False, start=0, verbose=True):
     def get_lines(filename):
         if filename:
             file = open(filename, 'r')

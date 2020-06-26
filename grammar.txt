@@ -20,7 +20,7 @@ NAME    := /[\u0374-\u03FFa-zA-Z][a-zA-Z\d_]*[?]?/    ## can begin with a Greek 
 ATTR    := . / NAME:ATTR                              ## '/' forces no space between
 
 FORM    := PAR_LST | NAME:PAR
-PAR_LST := %BKT < ( _PARS ? ( , _OPTS ) ? ( , _EXT ) ? ) >
+PAR_LST := %BKT < ( _PARS ( , _OPTS ) ? ( , _EXT ) ? | _OPTS ( , _EXT ) ? | _EXT ? ) >
 _PARS   := %SEQ < ( BIND ! FORM ) , >                 ## '!' forbids the next match
 _OPTS   := %SEQ < BIND:OPTPAR , >
 _EXT    := [*] - NAME:EXTPAR

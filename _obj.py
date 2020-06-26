@@ -14,12 +14,13 @@ class Op:
         self.type = type
         self.func = function
         self.prior = priority
+        self.__name__ = self.func.__name__
 
     def __call__(self, *args):
         return self.func(*args)
 
     def __repr__(self):
-        return f"{self.type}({self.func.__name__}, {self.prior})"
+        return f"{self.type}({self.__name__}, {self.prior})"
 
 
 class Env(dict):
@@ -82,7 +83,7 @@ class Env(dict):
         return '<env: %s>' % self.name
     
     def __str__(self):
-        content = ', '.join(repr(k)+': '+repr(v) for k, v in self.items())
+        content = ', '.join(str(k)+': '+repr(v) for k, v in self.items())
         return '('+content+')'
     
     def all(self):
@@ -154,10 +155,9 @@ class Range:
         self._range = range(first, last+1, step)
 
     def __repr__(self):
-        if self.second is None:
-            return f'{self.first}~{self.last}'
-        else:
-            return '..'.join(map(str, [self.first, self.second, self.last]))
+        items = [self.first, self.second, self.last]
+        if self.second is None: items.pop(1)
+        return '..'.join(map(str, items))
         
     def __iter__(self):
         return iter(self._range)

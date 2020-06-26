@@ -5,7 +5,7 @@ from types import FunctionType
 from fractions import Fraction
 from sympy import Matrix, Symbol
 from _obj import config, Range, Map, Attr
-from mydecorators import decorator
+from mydecos import decorator
 
 
 def is_number(value):
@@ -323,6 +323,14 @@ def range_(x, y):
         return Range(x.first, y, x.last)
     else:
         return Range(x, y)
+
+def range_inc(x: Range, y):
+    first, step = x.first, x.last
+    return Range(first, y, first+step)
+
+def range_dec(x: Range, y):
+    first, step = x.first, x.last
+    return Range(first, y, first-step)
 
 
 def substitute(exp, *bindings):

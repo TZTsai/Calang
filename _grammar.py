@@ -1,4 +1,4 @@
-from mydecorators import memo, disabled
+from mydecos import memo, disabled
 from myutils import trace, log
 from pprint import pprint
 from json import dump
