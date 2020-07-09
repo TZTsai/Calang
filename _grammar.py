@@ -6,7 +6,7 @@ import re
 from _builtins import binary_ops, unary_l_ops, unary_r_ops
 
 
-# log.out = open('log.yaml', 'w', encoding='utf8')
+# log.out = open('utils/log.yaml', 'w', encoding='utf8')
 trace = disabled
 
 
@@ -250,7 +250,7 @@ def test_grammar():
 
 
 grammar = calc_grammar(Grammar)
-dump(grammar, open('grammar.json', 'w', encoding='utf8'), indent=2)
+dump(grammar, open('utils/grammar.json', 'w', encoding='utf8'), indent=2)
 
 if __name__ == "__main__":
     test_grammar()

@@ -1,8 +1,9 @@
 import sys
-from _obj import stack, config
+from _obj import stack
 from _eval import calc_eval, LOAD
 from _funcs import eq_ as equal
 from _format import calc_format
+import config
 
 
 # track the brackets
@@ -108,6 +109,7 @@ def run(filename=None, test=False, start=0, verbose=True):
         except KeyboardInterrupt: return
         except (Warning if test or config.debug else Exception) as err:
             print('Error:', err)
+            if config.debug: raise err
             
 
     if test:
@@ -127,8 +129,8 @@ if __name__ == "__main__":
                 testfile = 'tests.cal'
             else:
                 testfile = sys.argv[2]
-            run("tests/"+testfile, test=True)
+            run("scripts/tests/" + testfile, test=True)
         else:
-            run(sys.argv[1])
+            run("scripts/" + sys.argv[1])
     else:
         run()

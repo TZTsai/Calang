@@ -5,8 +5,8 @@ CMD     := CONF | DIR | DEL | LOAD | IMPORT
 CONF    := conf /\w+/ ( NUM | /on|off/ ) ?
 DIR     := dir FIELD ?
 DEL     := del %SEQ < FIELD , >  ## DELAY
-LOAD    := load /\w+/ /-[tvw]/ *
-IMPORT  := import /\w+/ /-[vw]/ *
+LOAD    := load /[\w\.]+/ /-[tvw]/ *
+IMPORT  := import /[\w\.]+/ /-[vw]/ *
 
 DEF     := TO_DEF = EXP  ## DELAY
 TO_DEF  := FUNC | FIELDS

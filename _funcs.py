@@ -4,8 +4,9 @@ from numbers import Number, Rational
 from types import FunctionType
 from fractions import Fraction
 from sympy import Matrix, Symbol
-from _obj import config, Range, Map, Attr
+from _obj import Range, Map, Attr
 from mydecos import decorator
+import config
 
 
 def is_number(value):
@@ -185,7 +186,10 @@ def adjoin(x1, x2):
         if isinstance(x1, Map):
             return x1(x2)
         else:
+            if not is_iter(x2):
+                raise TypeError('function not applied to a list')
             return x1(*x2)
+            
     elif is_list(x1) and is_list(x2):
         try: return subscript(x1, x2)
         except: return dot(x1, x2)
@@ -219,14 +223,15 @@ def dot(x1, x2):
 
 def compose(*funcs):  
     def compose2(f, g):
-        c = lambda *args, **kwds: f(g(*args, **kwds))
+        def c(*args, **kwds):
+            return f(g(*args, **kwds))
         c.__name__ = f'<composed: {f.__name__} and {g.__name__}>'
         return c
     return reduce(compose2, funcs)
 
 
 def power(x, y):
-    return reduce(dot, [x] * y)
+    return reduce(dot, [x] * y, 1)
 
 
 iadd = itemwise(add)
@@ -334,10 +339,10 @@ def range_dec(x: Range, y):
 
 
 def substitute(exp, *bindings):
-    if is_iter(exp):
-        return tuple(substitute(x, *bindings) for x in exp)
     if hasattr(exp, 'subs'):
         return exp.subs(bindings)
+    if is_iter(exp):
+        return tuple(substitute(x, *bindings) for x in exp)
     return exp
 
 

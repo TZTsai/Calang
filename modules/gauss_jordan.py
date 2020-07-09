@@ -1,4 +1,4 @@
-from pymodules.matrix import *
+from modules.matrix import *
 from functools import reduce
 
 
@@ -91,4 +91,5 @@ def det(m):
     return reduce(lambda x, y: x*y, [rref[i][i] for i in range(len(rref))])
 
 
-export = {'eliminate': eliminate, 'inverse': inverse, 'LU': LU, 'det': det}
+export = {'eliminate': eliminate, 'inverse': inverse, 'LU': LU, 'det': det,
+          'idmat': idmat, 'scalem': scalem, 'addm': addm}

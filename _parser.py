@@ -6,13 +6,13 @@ import re
 from _builtins import op_list, keywords, all_, any_
 
 
-log.out = open('log.yaml', 'w')
+log.out = open('utils/log.yaml', 'w')
 interact = lambda: 0
 # trace = disabled
 
 
 # try:
-#     with open('grammar.json', 'r') as gf:
+#     with open('utils/grammar.json', 'r') as gf:
 #         grammar = load(gf)
 # except:
 #     from _grammar import grammar
@@ -209,7 +209,7 @@ def repl():
             prev_exp = exp
 
 
-testfile = 'tests/parser_tests.json'
+testfile = 'utils/parser_tests.json'
 testcases = load(open(testfile, 'r'))
 rewrite = False
 

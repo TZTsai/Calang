@@ -1,11 +1,14 @@
 from _parser import calc_parse
 from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins
 from _funcs import Symbol, is_list, same, reduce
-from _obj import Env, config, stack, Op, Attr, Map
+from _obj import Env, stack, Op, Attr, Map
+import config
 
+
+Builtins = Env(name='', **builtins)
 
 def GlobalEnv():
-    Global = Env(name='_global_', **builtins)
+    Global = Env(name='_global_', parent=Builtins)
     Global._ans = []
     return Global
 
@@ -18,7 +21,7 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     >>> calc_eval('2+4')
     6
     >>> calc_eval('x=>2 x')
-    ['PAR', 'x'] => ['SEQ', 2, BOP((adj), 20), ['NAME', 'x']]
+    [x] => ['SEQ', 2, BOP((adj), 20), ['NAME', 'x']]
     >>> calc_eval('[2,3]=>[a,b]=>a+b=>x=>2*x')
     10
     >>> eval('(a: 1, b: a+1) => b')
@@ -62,7 +65,7 @@ def drop_tag(tr, expected):
     assert dropped == expected
     tr[0] = tag
 
-def is_tree(tr): return type(tr) is list
+def is_tree(tr): return type(tr) is list and is_str(tr[0])
 
 def is_str(tr): return type(tr) is str
 
@@ -106,7 +109,7 @@ def NUM(tr):
 def SEQtoTREE(tr):
     stk = stack()
     ops = stack()
-    default_op = binary_ops['(adj)']
+    adjoin = binary_ops['(adj)']
     
     def pop_val():
         v = stk.pop()
@@ -154,7 +157,7 @@ def SEQtoTREE(tr):
                 else: break
             ops.push(x)
         elif stk and not isinstance(stk.peek(), Op):
-            push(default_op)
+            push(adjoin)
         stk.push(x)
 
     for x in tr[1:]:
@@ -267,53 +270,51 @@ def MATCH(tr, env):
     match(val, form, local)
     return local
 
-def match(val, form, local):
+def match(val, form, local: Env):
     '''
     >>> L = Env()
     >>> match([1, 2, 3], ['PAR_LST', ['PAR', 'a'], ['EXTPAR', 'ex']], L)
     >>> print(L)
     (a: 1, ex: (2, 3))
-    >>> match([-1], ['PAR_LST', ['PAR', 'w'], ['OPTPAR', ['PAR', 'p'], 5]], L)
+    >>> match([-1], ['PAR_LST', ['PAR', 'w'], ['OPTPAR', ['NAME', 'p'], 5]], L)
     >>> print(L)
     (a: 1, ex: (2, 3), w: -1, p: 5)
     '''
-    if type(form[1]) is str:
-        local.define(form[1], val)
+    vals = list(val) if is_list(val) else [val]
 
-    else:
-        val = list(val)
+    _, pars, opt_pars, ext_par = (form if form[0] == 'SPLITTED'
+                                  else split_pars(form, local))
 
-        no_par = len(form) == 1
-        if not val and no_par:
-            return
-        if not val or no_par:
-            raise AssertionError('match failed')
+    if len(pars) > len(vals):
+        raise ValueError(f'not enough items in {vals} to match')
 
-        _, pars, opt_pars, ext_par = form if form[0] == 'SPLITTED' else split_pars(form, local)
-        if len(pars) > len(val):
-            raise ValueError(f'not enough items in {val} to match')
-
-        for par in pars:
-            match(val.pop(0), par, local)
-        while val and opt_pars:
-            opt_par = opt_pars.pop(0)[1]
-            match(val.pop(0), opt_par, local)
-        for _, opt_par, default in opt_pars:
-            match(default, opt_par, local)
-        if ext_par:
-            local.define(ext_par[1], tuple(val))
+    for par in pars:
+        val = vals.pop(0)
+        if is_str(par): local.define(par, val)
+        else: match(val, par, local)
+    while vals and opt_pars:
+        opt_par = opt_pars.pop(0)[0]
+        define(opt_par, vals.pop(0), local)
+    for opt_par, default in opt_pars:
+        define(opt_par, default, local)
+    if ext_par:
+        local.define(ext_par, tuple(vals))
 
 def split_pars(form, env):
     pars, opt_pars = [], []
     ext_par = None
-    for t in form[1:]:
-        if t[0] in ['PAR', 'PAR_LST']:
-            pars.append(t)
+
+    lst = [form] if len(form) == 2 and is_str(form[1]) else form[1:]
+    for t in lst:
+        if t[0] == 'PAR':
+            pars.append(t[1])
+        elif t[0] == 'PAR_LST':
+            pars.append(split_pars(t, env))
         elif t[0] == 'OPTPAR':
-            t[2] = eval_tree(t[2])
-            opt_pars.append(t)
+            opt_pars.append([t[1], eval_tree(t[2])])
         else:
-            ext_par = t
+            ext_par = t[1]
+        
     return ['SPLITTED', pars, opt_pars, ext_par]
 
 
@@ -324,7 +325,7 @@ def DIR(tr):
     for name, val in field.items(): print(f"{name}: {val}")
 
 def LOAD(tr):
-    modname = tr[1]
+    script_path = 'scripts/' + '/'.join(tr[1].split('.')) + '.cal'
     test = '-t' in tr
     verbose = '-v' in tr
     overwrite = '-w' in tr
@@ -332,8 +333,8 @@ def LOAD(tr):
     global Global
     current_global = Global
     Global = GlobalEnv()  # a new global env
+    LOAD.run(script_path, test, start=0, verbose=verbose)
     
-    LOAD.run('scripts/' + modname + '.cal', test, start=0, verbose=verbose)
     if overwrite:
         current_global.update(Global)
     else:
@@ -418,7 +419,7 @@ def define(to_def, exp, env=Global):
 
 
 
-def eval_tree(tr, env=Global):
+def eval_tree(tree, env=Global):
     '''
     >>> eval_tree(['SEQ', ['NUM:REAL', '1'], ['BOP', '+'], ['NUM:REAL', '2'], ['BOP', '*'], ['NUM:REAL', '3']])
     7
@@ -429,12 +430,13 @@ def eval_tree(tr, env=Global):
     >>> eval_tree(["VAL_LST", ["NUM:REAL", "3"], ["NUM:REAL", "4"], ["NUM:REAL", "6"]])
     (3, 4, 6)
     >>> eval_tree(['MAP', ['PAR', 'a'], ['DELAY:SEQ', ['NUM:REAL', '2'], ['BOP', '*'], ['NAME', 'a']]])
-    ['PAR', 'a'] => ['SEQ', 2, BOP(*, 8), ['NAME', 'a']]
+    [a] => ['SEQ', 2, BOP(*, 8), ['NAME', 'a']]
     >>> eval_tree(['MAP', ['PAR', 'x'], ['DELAY:SEQ', ['SEQ', ['NUM:REAL', '2'], ['BOP', '+'], ['NUM:REAL', '3']], ['BOP', '*'], ['SEQ', ['NUM:REAL', '6'], ['BOP', '+'], ['NAME', 'x']]]])
-    ['PAR', 'x'] => ['SEQ', 5, BOP(*, 8), ['SEQ', 6, BOP(+, 6), ['NAME', 'x']]]
+    [x] => ['SEQ', 5, BOP(*, 8), ['SEQ', 6, BOP(+, 6), ['NAME', 'x']]]
     '''
-    if not is_tree(tr): return tr
-    type_ = tag(tr)
+    if not is_tree(tree): return tree
+    type_ = tag(tree)
+    tr = tree[:]  # make a copy so that `tree` is not modified
     if type_ not in delay_types:
         for i in range(1, len(tr)):
             tr[i] = eval_tree(tr[i], env)
@@ -452,7 +454,7 @@ Map.match = match
 Map.eval  = eval_tree
 
 
-LOAD.run  = NotImplemented  # assign this in calc.py
+LOAD.run  = None  # set this in calc.py
 
 delay_types = {
     'DELAY',    'DEF',      'BIND',     'IF_ELSE',

@@ -10,7 +10,8 @@ from sympy import (
     Integer, Float, Matrix, Expr
 )
 
-from _obj import Op, Env, config, Range
+import config
+from _obj import Op, Env, Range
 from _funcs import (
     is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, 
     add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_, adjoin,
@@ -25,15 +26,17 @@ def process_func(func):
     def pynumfy(val):
         # convert a number into a python number type
         if any(isinstance(val, c) for c in (int, float, complex, Fraction)):
-            return val
+            if isinstance(val, complex):
+                return val.real if eq_(val.imag, 0) else val
+            else:
+                return val
         elif isinstance(val, Integer):
             return int(val)
         elif isinstance(val, Float):
             return float(val)
         else:
-            z = complex(val)
-            if eq_(z.imag, 0): return z.real
-            else: return z
+            val = complex(val)
+            return val.real if eq_(val.imag, 0) else val
 
     def canonical(val):
         if type(val) is bool:
