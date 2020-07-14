@@ -14,7 +14,7 @@ import config
 from _obj import Op, Env, Range
 from _funcs import (
     is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, 
-    add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_, adjoin,
+    add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_, adjoin, apply,
     iadd, isub, imul, idiv, ipow, iand, ior, 
     dot, dbfact, all_, any_, first, findall, range_, range_inc, range_dec, compose,
     transpose, depth, shape, substitute, flatten, row, col, row, cols, 
@@ -63,13 +63,13 @@ def construct_ops(op_dict, type_):
 
 binary_ops = {
     '+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (div, 8), '^': (power, 18),
-    '//': (floordiv, 8), '%': (mod, 8), '.': (dot, 10), '(adj)': (adjoin, 20),
+    '//': (floordiv, 8), '%': (mod, 8), '.': (dot, 10),
     '.+': (iadd, 5), '.-': (isub, 5), '.*': (imul, 7), './': (idiv, 7), '.^': (ipow, 13),
     '.&': (iand, 8), '.|': (ior, 7),
     '==': (eq_, 0), '/=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
     'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'outof': (lambda x, y: x not in y, -2), 
     '..': (range_, 4), '+..': (range_inc, 4), '-..': (range_dec, 4),
-    'and': (and_, -5), 'or': (or_, -6),
+    'and': (and_, -5), 'or': (or_, -6), '(adj)': (adjoin, 16), '(app)': (apply, 20)
 }
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10), '@': (transpose, 10)}
 unary_r_ops = {'!': (factorial, 20), '!!': (dbfact, 20)}

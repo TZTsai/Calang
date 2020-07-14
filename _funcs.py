@@ -22,7 +22,7 @@ def is_iter(value):
 
 
 def is_list(value):
-    return isinstance(value, tuple) or isinstance(value, list)
+    return isinstance(value, tuple)
 
 
 def is_vector(value):
@@ -171,6 +171,15 @@ def itemwise(op):
     return f
 
 
+def apply(f, args):
+    if isinstance(f, Map):
+        return f(args)
+    else:
+        if not is_iter(args):
+            raise TypeError('function not applied to a list')
+        return f(*args)
+
+
 def adjoin(x1, x2):
     '''
     >>> adjoin(abs, [-3])
@@ -182,14 +191,6 @@ def adjoin(x1, x2):
     '''
     if isinstance(x2, Attr):
         return x2.getFrom(x1)
-    elif is_function(x1):
-        if isinstance(x1, Map):
-            return x1(x2)
-        else:
-            if not is_iter(x2):
-                raise TypeError('function not applied to a list')
-            return x1(*x2)
-            
     elif is_list(x1) and is_list(x2):
         try: return subscript(x1, x2)
         except: return dot(x1, x2)
@@ -231,7 +232,10 @@ def compose(*funcs):
 
 
 def power(x, y):
-    return reduce(dot, [x] * y, 1)
+    if isinstance(y, int):
+        return reduce(dot, [x] * y, 1)
+    else:
+        return x ** y
 
 
 iadd = itemwise(add)

@@ -1,6 +1,6 @@
 from _parser import calc_parse
 from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins
-from _funcs import Symbol, is_list, same, reduce
+from _funcs import Symbol, same, reduce
 from _obj import Env, stack, Op, Attr, Map
 import config
 
@@ -65,8 +65,8 @@ def drop_tag(tr, expected):
     assert dropped == expected
     tr[0] = tag
 
+def is_list(tr): return type(tr) in (tuple, list)
 def is_tree(tr): return type(tr) is list and is_str(tr[0])
-
 def is_str(tr): return type(tr) is str
 
 def get_op(ops):
@@ -109,7 +109,6 @@ def NUM(tr):
 def SEQtoTREE(tr):
     stk = stack()
     ops = stack()
-    adjoin = binary_ops['(adj)']
     
     def pop_val():
         v = stk.pop()
@@ -157,7 +156,10 @@ def SEQtoTREE(tr):
                 else: break
             ops.push(x)
         elif stk and not isinstance(stk.peek(), Op):
-            push(adjoin)
+            if callable(stk.peek()) and type(x) is tuple:  # apply a function
+                push(binary_ops['(app)'])
+            else:
+                push(binary_ops['(adj)'])
         stk.push(x)
 
     for x in tr[1:]:
@@ -377,7 +379,7 @@ def CONF(tr):
         if len(tr) == 2:
             print(getattr(config, conf))
         else:
-            config.define(conf, tr[2] in ('on', '1'))
+            setattr(config, conf, tr[2] in ('on', '1'))
 
 def DEL(tr):
     for t in tr[1:]:
