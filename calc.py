@@ -130,6 +130,8 @@ if __name__ == "__main__":
             else:
                 testfile = sys.argv[2]
             run("scripts/tests/" + testfile, test=True)
+        elif sys.argv[1] == '-d':
+            config.debug = True
         else:
             run("scripts/" + sys.argv[1])
     else:

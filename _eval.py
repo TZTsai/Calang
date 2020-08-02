@@ -190,6 +190,8 @@ def ATTR(tr): return Attr(tr[1])
 
 def LET(tr):
     _, local, body = tr
+    if not isinstance(local, Env):
+        return tr
     drop_tag(body, 'DELAY')
     result = eval_tree(body, env=local)
     if isinstance(result, Env):
@@ -405,6 +407,7 @@ def define(to_def, exp, env=Global):
 
     def def_all(fields, val):
         if tag(fields) == 'FIELDS':
+            fields.pop(0)
             assert is_list(val) and len(fields) == len(val)
             for field, item in zip(fields, val):
                 def_all(field, item)
