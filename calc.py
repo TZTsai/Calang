@@ -132,6 +132,7 @@ if __name__ == "__main__":
             run("scripts/tests/" + testfile, test=True)
         elif sys.argv[1] == '-d':
             config.debug = True
+            run()
         else:
             run("scripts/" + sys.argv[1])
     else:
