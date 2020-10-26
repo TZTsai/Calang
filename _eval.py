@@ -45,7 +45,7 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     field not in current env
     '''
     tree, rest = calc_parse(exp)
-    if rest: raise SyntaxError('parsing failed, the unparsed part: ' + rest)
+    if rest: raise SyntaxError(f'syntax error in "{rest}"')
     result = eval_tree(tree)
     if result is not None:
         Global._ans.append(result)

@@ -1,5 +1,4 @@
 # from debug.utils import trace, log, interact
-# from debug.dec import disabled
 from utils.dec import memo
 from json import load, dump
 from pprint import pprint, pformat
@@ -8,7 +7,7 @@ from _builtins import op_list, keywords, all_, any_
 
 
 # log.out = open('utils/log.yaml', 'w')
-# trace = disabled
+trace = lambda f: f
 
 
 try:
@@ -140,9 +139,9 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             tree = ['(nospace)'] + tree
         return tree, rem
 
-    must_have = {'DEF': '=', 'MAP': '=>', 'LET': '=>', 'GEN_LST': '|', 
+    must_have = {'DEF': '=', 'MAP': '=>', 'LET': '=>', 'GEN_LST': '@', 
                  'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
-    # @trace
+    @trace
     @memo
     def parse_tag(tag, text):
         # allow OBJ:ALTNAME; changes the tag to ALTNAME

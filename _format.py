@@ -6,8 +6,8 @@ from re import sub as translate
 from utils.greek import gr_to_tex
 
 
-def calc_format(val, indent=0, sci=False, tex=False):
-    if config.latex or tex:
+def calc_format(val, indent=0, **opts):
+    if config.latex or opts['tex']:
         s = latex(Matrix(val) if is_matrix(val) else val)
         # substitute the Greek letters to tex representations
         return translate(r'[^\x00-\x7F]', lambda m: gr_to_tex(m[0]), s)
@@ -42,10 +42,15 @@ def calc_format(val, indent=0, sci=False, tex=False):
                 return f"{re} {'-' if im<0 else '+'} {abs(im)}ⅈ"
             elif mag == inf:
                 return '∞'
-            elif isinstance(val, Rational) and not sci:
+            elif isinstance(val, Rational) and not opts['sci']:
                 if type(val) == Fraction:
                     val.limit_denominator(10**config.precision)
-                return str(val)
+                if opts['bin']:
+                    return bin(val)
+                elif opts['hex']:
+                    return hex(val)
+                else:
+                    return str(val)
             elif mag <= 0.001 or mag >= 10000:
                 return format_scinum(val)
             else: 
@@ -71,7 +76,7 @@ def calc_format(val, indent=0, sci=False, tex=False):
         elif is_matrix(val):
             s = format_matrix(val, indent)
         else:
-            s += '['+', '.join(map(lambda v: calc_format(v), val))+']'
+            s += '['+', '.join(map(lambda v: calc_format(v, **opts), val))+']'
     else:
         s += format_atom(val)
     return s

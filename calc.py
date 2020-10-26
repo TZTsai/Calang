@@ -96,9 +96,8 @@ def run(filename=None, test=False, start=0, verbose=True):
             if result is None: continue
 
             if show and verbose:  # print output
-                sci = comment == 'SCI'
-                tex = comment == 'TEX'
-                print(calc_format(result, sci=sci, tex=tex), flush=True)
+                opts = {opt: comment == opt.upper() for opt in ['sci', 'tex', 'bin', 'hex']}
+                print(calc_format(result, **opts), flush=True)
 
             # test
             if test and comment:

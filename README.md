@@ -1,4 +1,4 @@
-# A small but powerful calculator
+# My calculator
 
 Dependencies: python 3.8+, sympy package
 
@@ -7,13 +7,17 @@ Run `python calc.py` to start the program.
 In this calculator, there are five types of values: Number, Symbol, List, Range and Function.
 Every evaluation will return a value of one of these five types.
 
-Check the file "__builtins.py" to see the available built-in operations and functions.
+Check the file "_builtins.py" to see the available built-in operations and functions.
 
 ## Features
 
 * Evaluation of simple arithmetic expressions  
 
-    **Examples**: 1+3, 0.5*2, -8^(4-2), 147 % 43 (modular arithmetic), 52 // 17 (integer division), 1e10 \* 3e-5 (supports scientific notation)
+  **Examples**:  `1+3`; `0.5*2`; `-8^(4-2)`; `147%43` (modular arithmetic); `52//17` (integer division); `1e10*3e-5` (scientific notation); `0b0101 & 0b1110` (bit-wise AND; return: 4); `0b0101 | 0b1110` (bit-wise OR; return: 15)
+
+* $\pi$ and $e$
+  
+  To input the values of $\pi$ and $e$, use `PI` and `E` respectively.
 
 * Complex numbers
 
@@ -21,128 +25,101 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
   **Examples**:  
 
-  * (3+4I)*(2-6I)
-  * z:=3+4I  
-    [real(z), imag(z), angle(z), abs(z), conj(z)]  
+  * `(3+4I)(2-6I)`
+  * `z=3+4I`  
+    [real[z], imag[z], angle[z], abs[z], conj[z]]  
+    (return: [3.0, 4.0, 0.927295, 5.0, 3.0 - 4.0ⅈ])
+  * `E^(PI*I)`  (return: ... you must know)
 
 * Evaluation of boolean expressions  
 
     Return 1 if the result is true, otherwise return 0.  
 
-    **Examples**: 3 > 2, 2 = 2, x = y xor x = z, x > 0 and x < 2, not (a or b) = (not a and not b), 1 /\ 0, !(a\\/b) = !a/\\!b
-    (note: /\ and \\/ resemble the symbols for "logical and" and "logical or" in mathematics. They are the same as `and` and `or` operations except higher priorities), !a\\/b (the calculator will try to interpret `!` as the factorial operation before treat it as negation)
+    **Examples**: `3 > 2`; `x==y xor x==z`; `x > 0 and x < 2`; `not (a or b) == (not a and not b)`
+
+
+* Conditional expression  
+
+  **Syntax 1**:  
+  *exp1* if *cond* else *exp2*  
+
+  **Note**:  
+  Short circuit evaluation is used - if `cond` is true, `exp1` will be evaluated but `exp2` will not, and vice versa.
+
+  **Examples**:  
+
+  * `1/0 if 0 else 1`  (return: 1)
+  * `ramp[x] = 0 if x<0 else x`
+
+  **Syntax 2**:  
+  when(*cond1*: *exp1*, *cond2*: *exp2*, ... , *default*)  
+
+  **Note**:  
+  The *default* part does not have a condition preceding it and it is *mandatory*. This is completely equivalent to "*exp1* if *cond1* else *exp2* if *cond2* else ... else *default*".
+
+  **Examples**:  
+
+  * `max[x, y, z] = when(x > y and x > z: x, y > z: y, z)`
 
 * Definition and evaluation of variables  
 
-    A legitimate variable name begins with a letter and only contains digits, letters, underscores and '?' (conventionally at the end of the name of a function that does a test).  
+  A legitimate variable name **begins with a letter** and only contains digits, letters, underscores and '?' (usually added at the end of the name of a test function).  
 
-    **Note**: You can add a backslash before an English letter to convert it into its corresponding Greek letter! For instance, '\p' will be interpreted and printed as 'π'.  
+  **Note**:  
+  Thanks sympy, variable names that are greek letters will be displayed by the corresponding unicode characters. For instance, `pi` will be printed as π, `Sigma` as Σ, `alpha1` as α₁ and `gamma_i` as γᵢ. Note that `pi` is regarded as a symbol - for the constant value of $\pi$, use `PI`.  
 
-    **Syntax**: `var` := `exp`  
+  **Syntax**:  *var* = *exp*  
+  (italic parts should be replaced by appropriate contents) 
 
-    **Examples**: x := 1, \a := 0.05, g := x > 2, c := x if x > 2 else 0, sqr?(x) := (sqrt(x)//1)^2 = x
-
-* Definition and evaluation of functions  
-
-  **Examples**:  
-
-  * f(x, y) := 2x + y
-  * f(3, 2) = 8
-  * cot(x) := 1/tan(x)  
-  * fact(n) := 1 if n=0 else n*fact(n-1)
-  * d(f) := lambda x: (f(x+0.0001)-f(x))/0.0001;  
-    newton(f, x) := with update = lambda x: x - f(x)/d(f)(x): ...  
-    x if abs(f(x)) \< 0.0001 else newton(f, update(x));  
-    newton(sin, 3)  (return: 3.1416)
-
-* Lambda expression  
-
-  A lambda expression directly evaluates to a function.  
-  
-  **Syntax 1**: lambda `par1`, `par2`, ... : `exp`  
-  
-  (note: The character `'` can be added at the beginning of the last to denote that it has a variable length, like the `*` form in python.)  
-  
-  **Examples**:
-  
-  * fact := lambda n: 1 if n=0 else n*fact(n-1)
-  * compose := lambda f, g: x => f(g(x))  
-  * map := lambda f, 'lists: [] if any([l = [] | l in lists]) else with args = [l\[0\] | l in lists], rests = \[l\[1:] | l in lists]: \[f('args)] + map(f, 'rests)
-  
-  **Syntax 2**: (`par1`, `par2`) => `exp`  (the parentheses can be omitted if there is exactly one parameter)  
-  
-  **Examples**:  
-  
-  * double := f => (x => f(f(x)))
-  * inc := x => x+1
-  * double(inc)(3) (return: 5)
-  
-* Conditional expression  
-
-  **Syntax 1**: `exp1` if `cond` else `exp2`  
-  (note: if `cond` holds then the expression is evaluated as `exp1`, otherwise as `exp2`. `exp1` will be evaluated first even if `cond` is false. `exp2`, however, will not be evaluated if `cond` is true.)
-
-  **Examples**:  
-
-  * step(x) := 0 if x<0 else 1  
-  * ramp(x) := 0 if x<0 else x  
-  * rect(x) := 0 if x<-1 else 1 if x<=1 else 0  
-
-  **Syntax 2**: when(`cond1`, `exp1`; `cond2`, `exp2`; ... ; `default`)  
-
-  (note: The `default` expression does not have a condition preceding it.
-  In comparison to the 'if-else' syntax, the 'when' syntax is fully short-circuited
-  \- if one condition is found to be true, all following conditions and their corresponding expressions will not be evaluated.)  
-
-  **Examples**:  
-
-  * max(x, y, z) := when(x > y and x > z: x, y > z: y, z)
-  * when(a/\\b: 1, !a/\\!b: 2, 4)
-
-* Local environment  
-
-  **Syntax**: with *par1*=*val1*, *par2*=*val2*, ... : *exp*  
-  In fact, it is identical to (lambda `par1`, `par2`, ... : `exp`)(`val1`, `val2`, ... ), so the "with" expression will not change the current environment.  
-
-  **Examples**:  
-
-  * with exp = a_very_long_expression: sqrt(exp) + exp + exp^2  
-  * binomial(n, m) := 1 if (n=0 or m=0 or m=n) else with b1=binomial(n-1, m-1), b2:binomial(n-1, m): b1 + b2  
-  * x := 2  
-      with x=4: x * 2 (return: 8)  
-      x (return: 2)
+  **Examples**: `x = 1`; `alpha = 0.05`; `g = x > 2`
 
 * Symbol  
 
-    In the `symbolic` mode, all undefined names will be regarded as symbols.  
+  In the `symbolic` mode, all undefined names will be regarded as symbols.  
 
-    If this mode is off, then symbol is represented by an underscore `_` followed by a legitimate variable name.  
+  If this mode is off, then a symbol can be created by a single quotation mark `'` followed by a variable name.  
 
-    **Examples**: \_x, \_y, \_angle, diff(\_x^2 +ln(\_x), \_x) (for functions like `diff`, `int`(integral), variable names had better begin with `_` in case of previous binding)  
+  **Examples**: `'James`, `diff['x^2 +ln('x), 'x]` (for functions like `diff`(differentiation), `int`(integral), variable names had better begin with `'` in case of existing bindings)  
+
+* Definition and evaluation of functions
+
+  **Examples**:  
+
+  * `f[x, y] = 2x + y`
+  * `f[3, 2]`
+  * `cot[x] = 1/tan[x]`
+  * `fact[n] = 1 if n==0 else n*fact[n-1]`
+  * `g[x, y:1, z:2] = [x,y,z]` (default arguments)
+  * `[g[3], g[3,-1]]` (return: [[3,1,2], [3,-1,2]])
+  * `h[[x, y], *z] = [x, y, z]` (nested args and var-len args)  
+    `h[[1, 2], 3]` (return: [1, 2, [3]])  
+    `h[[1, [2]], 3, 4]` (return: [1, [2], [3, 4]])
+  
+  **Note**:  
+  In Calc, a function is always a mapping from a argument list to an expression. The application of a function is done by preceding a list with this function. This is why I choose to use square brackets instead of the more commonly-used round parentheses. The argument list can be nested like usual lists. However, it also allows default arguments (by using `:`) and var-len arguments (by using `*`). 
 
 * List  
 
-  **Syntax**: [`exp1`, `exp2`, ...]  
-  The keyword `in` can examine whether an element is contained in a list.  
-  The operation `+` can concatenate two lists together.  
+  **Syntax**: 
+  [*exp1*, *exp2*, ...]  
+
+  **Note**: The operators `in`, `+`, `*` have the same functions as those in Python.
 
   **Examples**:  
-  * l := [1, 2, 3]  
-    3 in l
-  * [1, 2]+[3, 4]  
-  * sum([1, 2, 3, 4]) (the "sum" function returns the sum of all elements of a list)  
-  * sum([[1, 2], [3, 4]]) (since we can concatenate two lists by "+", the "sum" function will concatenate all lists in the list) (return: [1, 2, 3, 4])  
+  * `3 in [1, 2, 3]`
+  * `[1, 2] + [3, 4]`
+  * `sum[1, 2, 3, 4]` (the `sum` function sums all arguments up)  
+  * `sum[[1, 2], [3, 4]]` (since we can concatenate two lists by `+`, the `sum` function will concatenate all the lists; return: [1, 2, 3, 4])  
+
 
 * List subscription  
 
-  **Syntax**: `list`[`i1`, `i2`, ..., `in`]  
-  The list is sequentially subscripted by `i1`, `i2`, ... Each of the subscripts is either a natural number or an iterable value (List or Range). For an iterable subscript, it just maps each integer atom within it to the corresponding item in `list`.  
+  **Syntax**: *list*[$i_1$, ..., $i_n$]  
+  The list is sequentially subscripted by $i_1$, $i_2$, ... Each of the indices is either an integer or an iterable value (List or Range). For an iterable subscript, it just maps each integer atom within it to the corresponding item in *list*.
 
-  **Examples**:  
-  * [1, 2, 3][1]
-  * \[1, 2][-1] (a negative index means counting from the end of the list) (return: 2)
-  * [1, 2, 3][1~2] (return: [2, 3])
-  * [1, 2, 3][2:] (return: [3])
+  **Examples**:
+  * `[1, 2, 3][1]`
+  * `[1, 2][-1]` (return: 2)
   * s := [0, 2]  
     \[1, 2, 3][s] (return: [1, 3])  
   * \[1, 2, 3][[2, [1, 2], [0]]] (return: [3, [2, 3], [1]])
@@ -161,15 +138,65 @@ Check the file "__builtins.py" to see the available built-in operations and func
   * l := [1, 2, 3, 4, 5]  
   * [l[1:], l[:3], l[:], l[:2:-1], l[::2]] (return: [[2, 3, 4, 5], [1, 2, 3], [1, 2, 3, 4, 5], [5, 4], [1, 3, 5]])
 
+
+* Anonymous functions
+
+  An anonymous function allows you to directly create a function without assigning a name to it. 
+  
+  **Syntax**: *par* => *exp*
+
+  **Note**: *par* can be a single argument or a list of arguments. For a single argument `x`, it has no difference between `x => ...` and `[x] => ...`.
+  
+  **Examples**:
+  
+  * `fact = n => 1 if n=0 else n*fact(n-1)`
+  * `compose[f, g] = [*x] => f[g[*x]]`
+  
+* Local environment  
+
+  **Syntax**:  
+  * To create a local environment: (*par1*:*val1*, *par2*:*val2*, ...)
+  * To evaluate an expression in a local environment: *env* => *exp*
+  * To retrieve the bound value of a name in the environment:
+  *env*.*name*  
+    (There must be no space following the dot)
+
+  **Note**:
+
+
+  **Examples**:  
+
+  * `person = (age: 21, gender: 'male, major: 'CS)`  
+    `person.age < 30 and person.major in ['CS, 'CE]`
+  * `(r: sqrt[x^2+y^2]) => 4/3 * PI * r^3`
+  * `binomial[n, m] = 1 if (n==0 or m==0 or m==n) else (b1: binomial[n-1, m-1], b2: binomial[n-1, m]) => b1 + b2`  
+  * `d[f, d:1e-5] = x => (f[x+d]-f(x))/d`  
+    `root_newton[f, x:0, thr:1e-5] = (df: d[f], update[x]: f[x]/df[x]) => x if abs[f[x]] < thr else root_newton[f, update[x]]`  
+    `root_newton[sin, 3]`  (note that in this example, `update` is bound with a function by writing `update[x]: ...` and it is the same as `update: x=>...`; return: 3.1416)
+
+* Environment matching
+
+  Instead of explicitly write a local environment, you can also create an environment by "matching"; that is, to match a variable with any expression (which creates a single-binding environment) or an argument list with a list-value expression.  
+  Actually, when you apply a function, it will automatically do a matching to bind the arguments with values and create a local environment.
+
+  **Syntax**: *exp* => *par(s)*  
+  (Actually I wanted to use "<=" but it is already used for "less or equal to"...)
+
+  **Examples**:
+  * `2 => x` (return: (x: 2))
+  * `m = [2, [[1, 0], 3]] => [a, [b, c]]`  
+    `[m.a, m.b, m.c]` (return: [2, [1, 0], 3])
+  * `3 => y => 4y` (return: 12; it first does a matching and evaluate `4y` in this local environment, equivalent to `(y: 3) => 4y`)
+
 * Range  
 
     A range is a different type from list. It is useful to represent a wide range of numbers, i.e. range(1, 100000). For such a range, the calculation of each item is delayed, thus saving time and memory.  
-    There are three ways to generate a "Range" type value: by using the symbol `~` or `..`, or by the built-in function `range`.  
+    There are three ways to generate a "Range" type value: by using the symbol `..`, or by the built-in function `range`.  
     The expression `a..b` evaluates to a range including all integers from a to b. In addition, `a..b..c` creates an arithmetic sequence that begins with `a` following by `b` and ends with `c` (if `c` is not included by this sequence, then it ends before `c`).  
     The "range" function, however, is identical to its corresponding python function, which excludes the second argument from the range.  
 
   **Examples**:  
-  * r := 1~4  
+  * r := 1..4  
     list(r) (converts a range to a list, return: [1, 2, 3, 4])
   * l := 1..3..9 (return: 1..3..9)  
     list(l) (return: [1, 3, 5, 7, 9])
@@ -180,8 +207,9 @@ Check the file "__builtins.py" to see the available built-in operations and func
 
 * List comprehension  
 
-    [`exp` | `arg1` in `range1` (and `cond1`) | `arg2` in `range2` (and `cond2`) ...]  
-    `|` is used to separate the expression and the constraints of the variables. For the constraint of a variable, a range must be provided, with an option of further constraints by adding `and <condition>`.  
+  **Syntax**:  
+    [`exp` @ `arg1` in `range1` (and `cond1`) @ `arg2` in `range2` (and `cond2`) ...]  
+    `@` is used to separate the expression and the constraints of the variables. For the constraint of a variable, a range must be provided, with an option of further constraints by adding `and <condition>`.  
 
   **Examples**:
   * [i | i in range(5) and i%2] (return: [1, 3])
@@ -192,7 +220,7 @@ Check the file "__builtins.py" to see the available built-in operations and func
 * History  
 
   Use the symbol \_ to represent the result of the last calculation, \_\_ the second last, \_\_\_ the third last, and so on (but you may not want to use longer ones XD).  
-  Use keyword `_``n` to represent the result of the calculation no.`n`.  
+  Use keyword `_n` to represent the result of the calculation no.`n`.  
   Use keyword `ENV` to let the calculator print all variable bindings in the global environment.  
 
 * Config
@@ -200,16 +228,15 @@ Check the file "__builtins.py" to see the available built-in operations and func
   Use keyword `conf` to config the calculator.  
   Available parameters:  
 
-  * PREC (significant digits of decimals)
-  * LATEX (all outputs will be in the LaTeX format)
-  * ALL-SYMBOL (all undefined names will be regarded as symbols)
-  * TOLERANCE (if the difference of two numbers is within TOLERANCE, they are considered equal)  
+  * `prec`/`precision` (number of significant digits of decimals)
+  * `latex` (all outputs will be in the LaTeX format)
+  * `symbolic` (all undefined names will be regarded as symbols)
+  * `tolerance` (if the difference of two numbers is within `tolerance`, they are considered equal)  
 
   **EXAMPLES**:
-  * conf PREC 4
-  * conf LATEX on
-  * conf LATEX off
-  * conf TOLERANCE 1e-20
+  * `conf prec 4`
+  * `conf latex on`
+  * `conf tolerance 1e-20`
 
 * Multiline expression  
 
@@ -222,6 +249,11 @@ Check the file "__builtins.py" to see the available built-in operations and func
 * Comment  
 
   Use `#` to comment.  
+  Special comments:
+  * `#SCI`: use scientific notation (eg. a big integer)
+  * `#TEX`: display in LaTeX format
+  * `#BIN`: binary representation
+  * `#HEX`: hexadecimal representation
 
 * Load files  
 
