@@ -1,5 +1,5 @@
-from mydecos import memo, disabled
-from myutils import trace, log
+from debug.deco import memo, disabled
+from debug.utils import trace, log
 from pprint import pprint
 from json import dump
 import re
@@ -151,7 +151,6 @@ def refactor_tree(tree: list):
     return simplify_tag(tree)
 
 
-# @trace
 def post_process(grammar, macros):
 
     def apply_macro(tree):

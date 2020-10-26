@@ -1,6 +1,3 @@
-from myutils import interact
-
-
 class stack(list):
     def push(self, obj):
         self.append(obj)

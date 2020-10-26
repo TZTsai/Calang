@@ -1,4 +1,4 @@
-from myutils import trace, log, interact
+from debug.utils import trace, log, interact
 from mydecos import memo, disabled
 from json import load, dump
 from pprint import pprint, pformat

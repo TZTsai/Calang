@@ -1,6 +1,5 @@
 from __builtins import op_list, special_words, inf, first
 from utils.greek import escape_to_greek
-from myutils import trace, log
 import re
 
 def match(exp, pattern, start=0):

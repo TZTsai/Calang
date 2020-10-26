@@ -9,7 +9,7 @@
         "sympy",
         "tolist"
     ],
-    "python.pythonPath": "C:\\Users\\JamesCai\\AppData\\Local\\Programs\\Python\\Python38\\python.exe",
+    "python.pythonPath": "D:\\DevTools\\Miniconda3\\python.exe",
     "python.linting.enabled": true,
     "python.linting.pylintEnabled": true,
     "cSpell.ignoreWords": [
