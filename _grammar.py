@@ -1,13 +1,14 @@
-from debug.deco import memo, disabled
-from debug.utils import trace, log
+# from debug.deco import memo, disabled
+# from debug.utils import trace, log
 from pprint import pprint
 from json import dump
 import re
 from _builtins import binary_ops, unary_l_ops, unary_r_ops
+from utils.dec import memo
 
 
 # log.out = open('utils/log.yaml', 'w', encoding='utf8')
-trace = disabled
+# trace = disabled
 
 
 def split(text: str, sep=None, maxsplit=-1):
@@ -87,7 +88,7 @@ def parse_grammar(type_, text, grammar=metagrammar):
             if tree is not None: result.append(tree)
         return result, text
 
-    @trace
+    # @trace
     @memo  # avoid parsing the same atom again
     def parse_atom(atom, text):
         if atom in grammar:
@@ -137,7 +138,7 @@ def flatten_nested(tree):
             tree.extend(last[1:])
         for t in tree: flatten_nested(t)            
 
-@trace
+# @trace
 def simplify_tag(tree):  # also convert the tree into a pure tuple
     if type(tree) is list:
         while len(tree) == 2 and type(tree[1]) is list and tree[0] != 'ITEMS':

@@ -1,11 +1,10 @@
 from operator import add, sub, mul, pow as pow_, and_ as b_and, or_ as b_or
-from functools import reduce
+from functools import reduce, wraps
 from numbers import Number, Rational
 from types import FunctionType
 from fractions import Fraction
 from sympy import Matrix, Symbol
 from _obj import Range, Map, Attr
-from mydecos import decorator
 import config
 
 
@@ -147,7 +146,6 @@ def depth(value, key=max):
     return 1 + key(map(depth, value))
 
 
-@decorator
 def itemwise(op):
     '''
     >>> iadd([1, 2], [2, 3])
@@ -157,6 +155,7 @@ def itemwise(op):
     >>> iadd(3, [3, 4, 5])
     (6, 7, 8)
     '''
+    @wraps(op)
     def f(x1, x2):
         d1, d2 = depth(x1), depth(x2)
         if d1 == d2:
@@ -307,8 +306,8 @@ def transpose(value):
         return [[value[r][c] for r in range(rn)] for c in range(cn)]
 
 
-@decorator
 def canmap(f):
+    @wraps(f)
     def _f(*lst, depth=1):
         return tuple(map(f, *lst))
     return _f

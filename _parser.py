@@ -1,23 +1,24 @@
-from debug.utils import trace, log, interact
-from mydecos import memo, disabled
+# from debug.utils import trace, log, interact
+# from debug.dec import disabled
+from utils.dec import memo
 from json import load, dump
 from pprint import pprint, pformat
 import re
 from _builtins import op_list, keywords, all_, any_
 
 
-log.out = open('utils/log.yaml', 'w')
-interact = lambda: 0
+# log.out = open('utils/log.yaml', 'w')
 # trace = disabled
 
 
-# try:
-#     with open('utils/grammar.json', 'r') as gf:
-#         grammar = load(gf)
-# except:
-#     from _grammar import grammar
-from _grammar import grammar
+try:
+    with open('utils/grammar.json', 'r') as gf:
+        grammar = load(gf)
+except:
+    from _grammar import grammar
+
 op_starts = ''.join(set(op[0] for op in op_list))
+
 tag_pat = re.compile('[A-Z_:]+')
 def is_tag(s):
     try: return tag_pat.match(s.split(':', 1)[0])
@@ -141,7 +142,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
 
     must_have = {'DEF': '=', 'MAP': '=>', 'LET': '=>', 'GEN_LST': '|', 
                  'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
-    @trace
+    # @trace
     @memo
     def parse_tag(tag, text):
         # allow OBJ:ALTNAME; changes the tag to ALTNAME
@@ -170,7 +171,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
 
     prefixes = {'NUM', 'DELAY', 'UNPACK', 'VAR'}
     list_obj = lambda tag: tag[-3:] == 'LST' or tag in ['DIR', 'ENV', 'DEL']
-    @trace
+    # @trace
     def process_tag(tag, tree):
         if tag[0] == '_': tag = '(merge)'
 
