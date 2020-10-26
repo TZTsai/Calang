@@ -367,7 +367,7 @@ def IMPORT(tr):
 
 def CONF(tr):
     conf = tr[1]
-    if conf == 'prec':
+    if conf in ('prec', 'precision'):
         if len(tr) == 2:
             print(config.precision)
         else:
@@ -377,11 +377,13 @@ def CONF(tr):
             print(config.tolerance)
         else:
             config.tolerance = float(tr[2])
-    else:
+    elif hasattr(config, conf):
         if len(tr) == 2:
             print(getattr(config, conf))
         else:
             setattr(config, conf, tr[2] in ('on', '1'))
+    else:
+        raise ValueError('no such field in the config')
 
 def DEL(tr):
     for t in tr[1:]:
