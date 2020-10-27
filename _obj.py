@@ -21,20 +21,13 @@ class Op:
 
 
 class Env(dict):
-    def __init__(self, val=None, parent=None, name='(local)', **binds):
+    def __init__(self, val=None, parent=None, name='', **binds):
         if val is not None:
             self.val = val
         self.parent = parent
         self.name = name
         for name in binds:
-            self.define(name, binds[name])
-    
-    # def __getattr__(self, name):
-    #     if name in self:
-    #         return self[name]
-    #     if self._parent:
-    #         return getattr(self._parent, name)
-    #     return super().__getattribute__(name)
+            self[name] = binds[name]
     
     def __getitem__(self, name):
         if name in self:
@@ -43,19 +36,13 @@ class Env(dict):
             return self.parent[name]
         raise KeyError('unbound name: ' + name)
 
-    # def __setattr__(self, name, value):
-    #     if name[0] == '_':
-    #         super().__setattr__(name, value)
-    #     else:
-    #         self.define(name, value)
-
-    def define(self, name, value, overwrite=True):
-        if name in self and not overwrite:
-            raise AssertionError('name conflict in ' + repr(self))
-        self[name] = value
-        if isinstance(value, Env) and value is not self:
-            value.parent = self
-            value.name = name
+    # def define(self, name, value, overwrite=True):
+    #     if name in self and not overwrite:
+    #         raise AssertionError('name conflict in ' + repr(self))
+    #     self[name] = value
+    #     if isinstance(value, Env) and value is not self:
+    #         value.parent = self
+    #         value.name = name
             
     def dir(self):
         if not self.parent or not self.parent.name:
@@ -63,26 +50,19 @@ class Env(dict):
         else:
             return self.parent.dir() + '.' + self.name
 
-    # @property
-    # def name(self):
-    #     if not self._parent or not self._parent.name:
-    #         return self._name
-    #     else:
-    #         return self._parent.name + '.' + self._name
-
     def delete(self, name):
         try: self.pop(name)
         except: raise NameError('unbound name:', name)
 
-    def child(self, val=None, **binds):
-        env = Env(val, self, **binds)
+    def child(self, val=None, name='(local)', **binds):
+        env = Env(val, self, name, **binds)
         return env
 
     def __repr__(self):
         return '<env: %s>' % self.dir()
     
     def __str__(self):
-        content = ', '.join(str(k)+': '+repr(v) for k, v in self.items())
+        content = ', '.join(f'{k}: {v}' for k, v in self.items())
         return f'({content})'
     
     def all(self):

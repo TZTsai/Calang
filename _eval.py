@@ -256,7 +256,7 @@ def GEN_LST(tr, env):
             par = par[1]  # remove the tag
             if spec: spec = spec[0]
             for val in eval_tree(ran, local):
-                local.define(par, val)
+                local[par] = val
                 if not spec or eval_tree(spec, local):
                     yield from generate(exp, constraints)
         else:
@@ -304,7 +304,7 @@ def match(form, val, local: Env):
 
     for par in pars:
         val = vals.pop(0)
-        if is_str(par): local.define(par, val)
+        if is_str(par): local[par] = val
         else: match(par, val, local)
     while vals and opt_pars:
         opt_par = opt_pars.pop(0)[0]
@@ -312,7 +312,7 @@ def match(form, val, local: Env):
     for opt_par, default in opt_pars:
         define(opt_par, default, local)
     if ext_par:
-        local.define(ext_par, tuple(vals))
+        local[ext_par] = tuple(vals)
 
 def split_pars(form, env):
     pars, opt_pars = [], []
@@ -335,8 +335,13 @@ def split_pars(form, env):
 # these rules are commands in the calc
 
 def DIR(tr):
-    field = Global if len(tr) == 1 else tr[1]
-    for name, val in field.items(): print(f"{name}: {val}")
+    if len(tr) == 1:
+        field = Global
+    else:
+        field = tr[1]
+        print(f"(dir): {field.dir()}")
+    for name, val in field.items():
+        print(f"{name}: {val}")
 
 def LOAD(tr):
     script_path = 'scripts/' + '/'.join(tr[1].split('.')) + '.cal'
@@ -411,11 +416,15 @@ def define(to_def, exp, env=Global):
         superfield = field[:-1]
         parent, attr = split_field(field, env)
         if not isinstance(parent, Env):
-            parent = env.child(parent)
+            parent = env.child(parent, field[-1][-1])
             def_(superfield, parent)  # if parent is not an env, redefine it as an env
-        parent.define(attr, val)
+        parent[attr] = val
         if isinstance(val, Map):
             val.__name__ = attr
+        elif isinstance(val, Env):
+            if parent is not Global:
+                val.parent = parent
+                val.name = attr
 
     def def_all(fields, val):
         if tag(fields) == 'FIELDS':
