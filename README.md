@@ -170,7 +170,7 @@ Check the file "_builtins.py" to see the available built-in operations and funct
     `person.age < 30 and person.major in ['CS, 'CE]`
   * `(r: sqrt[x^2+y^2], t: atan[y/x]) [r*cos[t], r*sin[t]]`
   * `binomial[n, m] = 1 if (n==0 or m==0 or m==n) else (b1: binomial[n-1, m-1], b2: binomial[n-1, m]) b1 + b2`  
-  * `d[f, d:1e-5] = x => (f[x+d]-f(x))/d`  
+  * `d[f, d:1e-5] = x => (f[x+d]-f[x])/d`  
     `root_newton[f, x:0, thr:1e-5] = (df: d[f], update[x]: f[x]/df[x]) x if abs[f[x]] < thr else root_newton[f, update[x]]`  
     `root_newton[sin, 3]`  (note that in this example, `update` is bound with a function by writing `update[x]: ...` and it is the same as `update: x=>...`; return: 3.1416)
 

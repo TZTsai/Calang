@@ -5,10 +5,10 @@ from _obj import Env, stack, Op, Attr, Map
 import config
 
 
-Builtins = Env(name='', **builtins)
+Builtins = Env(name=None, **builtins)
 
 def GlobalEnv():
-    Global = Env(name=None, parent=Builtins)
+    Global = Env(name='', parent=Builtins)
     Global._ans = []
     return Global
 
@@ -164,8 +164,8 @@ def SEQtoTREE(tr):
         elif stk and not isinstance(stk.peek(), Op):
             push(binary_ops['(adj)'])
         if isinstance(x, Env):
-            if hasattr(x, '_val'):
-                x = x._val
+            if hasattr(x, 'val'):
+                x = x.val
             else:
                 raise ValueError('invalid operation on an environment')
         stk.push(x)
@@ -225,10 +225,12 @@ def split_field(tr, env=Global):
 
 def NAME(tr, env):
     name = tr[1]
-    try: return getattr(env, name)
-    except AttributeError:
-        if config.symbolic: return Symbol(name)
-        else: raise NameError(f'unbound symbol \'{tr}\'')
+    try: return env[name]
+    except KeyError:
+        if config.symbolic:
+            return Symbol(name)
+        else:
+            raise NameError(f'unbound symbol \'{tr}\'')
 
 def PRINT(tr, env):
     exec('print(f%s)' % tr[1], env.all())

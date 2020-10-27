@@ -44,7 +44,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             return iter(lambda: '', 1)  # an infinite loop
 
     def split_comment(line):
-        try: exp, comment = line.split('#', 1)
+        try: exp, comment = line.rsplit('#', 1)
         except: exp, comment = line, ''
         return exp.rstrip(), comment.strip()
 

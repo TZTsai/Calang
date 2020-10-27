@@ -21,110 +21,97 @@ class Op:
 
 
 class Env(dict):
-    '''
-    >>> G = Env(name='global')
-    >>> G.e = Env(1)
-    >>> G.e
-    <env: global.e>
-    >>> G.e.a = 3
-    >>> G.e.a
-    3
-    >>> f = G.e.child([2], f=5)
-    >>> f
-    <env: global.e.(local)>
-    >>> f.a
-    3
-    >>> f.all()
-    {'_parent_': <env: global.e>, 'f': 5, 'a': 3, 'e': <env: global.e>}
-    >>> str(f)
-    '(f: 5)'
-    '''
-    def __init__(self, val=None, parent=None, name:str='(local)', **binds):
+    def __init__(self, val=None, parent=None, name='(local)', **binds):
         if val is not None:
-            self._val = val
-        self._parent = parent
-        self._name = name
+            self.val = val
+        self.parent = parent
+        self.name = name
         for name in binds:
             self.define(name, binds[name])
     
-    def __getattr__(self, name):
+    # def __getattr__(self, name):
+    #     if name in self:
+    #         return self[name]
+    #     if self._parent:
+    #         return getattr(self._parent, name)
+    #     return super().__getattribute__(name)
+    
+    def __getitem__(self, name):
         if name in self:
-            return self[name]
-        if self._parent:
-            return getattr(self._parent, name)
-        return super().__getattribute__(name)
+            return super().__getitem__(name)
+        if self.parent:
+            return self.parent[name]
+        raise KeyError('unbound name: ' + name)
 
-    def __setattr__(self, name, value):
-        if name[0] == '_':
-            super().__setattr__(name, value)
-        else:
-            self.define(name, value)
+    # def __setattr__(self, name, value):
+    #     if name[0] == '_':
+    #         super().__setattr__(name, value)
+    #     else:
+    #         self.define(name, value)
 
     def define(self, name, value, overwrite=True):
         if name in self and not overwrite:
-            raise AssertionError('name conflict in '+repr(self))
+            raise AssertionError('name conflict in ' + repr(self))
         self[name] = value
         if isinstance(value, Env) and value is not self:
-            value._parent = self
-            value._name = name
-
-    @property
-    def name(self):
-        if not self._parent or not self._parent.name:
-            return self._name
+            value.parent = self
+            value.name = name
+            
+    def dir(self):
+        if not self.parent or not self.parent.name:
+            return self.name
         else:
-            return self._parent.name + '.' + self._name
+            return self.parent.dir() + '.' + self.name
+
+    # @property
+    # def name(self):
+    #     if not self._parent or not self._parent.name:
+    #         return self._name
+    #     else:
+    #         return self._parent.name + '.' + self._name
 
     def delete(self, name):
         try: self.pop(name)
-        except: pass
+        except: raise NameError('unbound name:', name)
 
     def child(self, val=None, **binds):
         env = Env(val, self, **binds)
         return env
 
     def __repr__(self):
-        return '<env: %s>' % self.name
+        return '<env: %s>' % self.dir()
     
     def __str__(self):
         content = ', '.join(str(k)+': '+repr(v) for k, v in self.items())
-        return (f'{self._val} with ' if hasattr(self, '_val') else '') + f'({content})'
+        return f'({content})'
     
     def all(self):
-        d = {'_parent_': self._parent}
+        d = {'(parent)': self.parent}
         env = self
         while env:
             for k in env:
-                if k not in d: d[k] = env[k]
-            env = env._parent
+                if k not in d:
+                    d[k] = env[k]
+            env = env.parent
         return d
 
 
 class Attr:
-    '''
-    >>> attr = Attr('aa')
-    >>> f = lambda: 0
-    >>> f.aa = 'zero'
-    >>> attr.getFrom(f)
-    'zero'
-    >>> e = Env()
-    >>> e.aa = 'evil'
-    >>> attr.getFrom(e)
-    'evil'
-    '''
     def __init__(self, name):
         self.name = name
 
     def __repr__(self):
         return '.'+self.name
 
-    def getFrom(self, obj):
-        return getattr(obj, self.name)
+    def getFrom(self, env):
+        assert isinstance(env, Env), 'not an Env'
+        return env[self.name]
 
     @classmethod
-    def adjoin(cls, obj, attr):
-        assert isinstance(attr, cls)
-        return getattr(obj, attr.name)
+    def adjoin(cls, env, attr):
+        assert isinstance(env, Env)
+        assert isinstance(attr, Attr)
+        return env[attr.name]
 
 
 class Map:

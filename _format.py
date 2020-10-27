@@ -60,11 +60,14 @@ def calc_format(val, indent=0, **opts):
         elif isinstance(val, Range):
             return str(val)
         elif isinstance(val, Env):
-            return str(val)
-        elif isinstance(val, dict):
-            env = Env()
-            env.update(val)
-            return str(env)
+            if hasattr(val, 'val'):
+                return calc_format(val.val, indent, **opts)
+            else:
+                return str(val)
+        # elif isinstance(val, dict):
+        #     env = Env()
+        #     env.update(val)
+        #     return str(env)
         else:
             return pretty(val, use_unicode=True)
 

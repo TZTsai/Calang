@@ -140,7 +140,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             tree = ['(nospace)'] + tree
         return tree, rem
 
-    must_have = {'DEF': '=', 'MAP': '=>', 'MATCH': '::', 'GEN_LST': '@', 
+    must_have = {'DEF': '=', 'MAP': '=>', 'MATCH': '::', 'GEN_LST': 'for', 
                  'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
     @trace
     @memo

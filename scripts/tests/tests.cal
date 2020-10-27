@@ -1,49 +1,87 @@
+# basic tests
 1 #1
 1+(2+3)! #121
 x = 3
 _ #121
 3x #9
+__ #121
+x >= 3 and x < 5 #1
 _1 #121
 1e3 #1000
 1+3e-2 #1.03
-not 3+3 == 3 #1
+15 // 7 #2
+14%3 #2
+not 3+1 == 3 #1
 1 xor 0 #1
-0 xor 0 #0
+3 xor 7 #4
 (1+I)(1-I) #2
 z = 3 + 4I
 real[z]  #3
 imag[z]  #4
 abs[z]   #5
+E^(PI*I) #-1
+0b101011 & 0x1D #0b1001
+0.5*2^2 + lg[100+10*90] #5
+[x, [y]] = [3, [2]]
+[x, y] #(3, 2)
+[x, y, *z] = [1,2,3,4]
+[x, y, z] #(1, 2, (3, 4))
 
+# function tests
 a = 9
-a-1 #8
 f[x] = a
 f[2] #9
 a = 10
 f[2] #10
+f[x, y] = x - y
+(x:1, y:2) f[y, x] #1
 f[a, b, *c] = [a, b, c]
 f[1,2,3,4] #(1,2,(3,4))
 f[a, b:1] = a+b
 f[2] #3
 f[2,4] #6
-fact[x] = x*fact[x-1] if x > 1 else 1
+max[x, y, z] = when(x>=y and x>=z: x, y>=z: y, z)
+max[4, 2, 5] #5
+max[5, 2, 3] #5
+max[3, 2, 5] #5
+fact[x] = x*fact[x-1] if x > 0 else 1
 fact[4] #24
+binomial[n, m] = 1 if (n==0 or m in [0, n]) else (b1: binomial[n-1, m-1], b2: binomial[n-1, m]) b1 + b2
+binomial[10, 3] == 10!/(3!(10-3)!) #1
 
-0.5*2^2 + lg[100+10*90] #5
-5!/3! #20
-[1,2,3][2] #3
-f = [x, y] => x*(1+y)
-s = 1
-f[s, 2*(1+s)] #5
+# mapping tests
+double = x => 2x
+double[3] #6
+twice = f => x => f[f[x]]
+twice[double][3] #12
+g = []=>x
+x = 12321
+g[] #12321
+(x:(x=>x+1)[2]) x  #3
 
+# env and matching tests
+x = 12
+e = (x: x)
+e.x == x #1
+(s: 2, t: 2s) [s, t] #(2, 4)
+person(age, sex) = (age:age, sex:sex)
+p = person(17, 'male)
+p.age == 17 and p.sex == 'male  #1
+x::4 3x #12
+[x,[y],*z]::[1,[2],4,5] x+y.+z  #(7,8)
+[x,y]::_ [y,x]  #(8,7)
+[x,y:2,z:3]::[1,3] x+y+z  #7
+(x: 3) (y: 2x, z: ([x,y]=>x+y)[2,3+x], w: y*z, v: (y:1)y+z) [x, y, z, w, v] #(3, 6, 8, 48, 9)
+
+# list and range tests
 list[1..5] #(1,2,3,4,5)
 list[1..1-..-2] #(1,0,-1,-2)
 list[1..2+..8] #(1,3,5,7)
 
 l = [1, max[1, 2], 3]
-sum[i^2 | i in l] #14
-[i | i in 1..5 if i%2] #(1,3,5)
-3 in 2..3 #1
+sum[i^2 for i in l] #14
+[i for i in 5..1-..-1 if i%2] #(-1,1,3,5)
+3 in 2..7 #1
 l[1:] #(2,3)
 l[:-1] #(1,2)
 [2,3,4][::2] #(2,4)
@@ -52,22 +90,26 @@ l[:-1] #(1,2)
 m = [[1,2,3],[3,4,5],[5,6,7]]
 m[2,1] #6
 m[:2, 1:] #((2,3),(4,5))
-max3[x, y, z] = when(x>y and x>z: x, y>z: y, z)
-max3[2, 4, 1] #4
 
-(x:1)=>x+3 #4
-sin_series[n] = [x] => sum[(-1)^(i // 2)*x^i/i! | i in 1..n if i%2]
+# misc tests
+conf tolerance 1e-4
+1.00003 == 1  #1
+
+d[f, d:1e-5] = x => (f[x+d]-f[x])/d
+root_newton[f, x:0, thr:1e-5] = (df: d[f], update[x]: f[x]/df[x]) x if abs[f[x]] < thr else root_newton[f, update[x]]
+root_newton[sin, 3] == 3.1416  #1
+
+sin_series[n] = [x] => sum[(-1)^(i//2)*x^i/i! for i in 1..n if i%2]
 sin_ = sin_series[10]
-conf tolerance 0.001
 sin[PI/3] == sin_[PI/3]  #1
 
+1234
 load scinums
-_ #1
+_ #1234
 T0 #273.15
 import gauss_jordan
 det[scalem[idmat[3], -3]]  #-27
 
-e
 subs[[e, e, e], [e, 3]]  #(3, 3, 3)
 subs['e^2+3, ['e, 4]]  #19
 del x, y
@@ -75,7 +117,6 @@ diff[2 x^2 * y, x]
 subs[_, [x, 12], [y, -9]]  #-12*8*9
 lim[exp[-x], x, INF]  #0
 
-load tests.arrowTest -t -v
 # load tests.compreTest -t -v
 # load tests.funcOpTest -t -v 
 # load tests.unpackTest -t -v
