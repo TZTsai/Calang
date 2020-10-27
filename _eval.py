@@ -8,7 +8,7 @@ import config
 Builtins = Env(name='', **builtins)
 
 def GlobalEnv():
-    Global = Env(name='_global_', parent=Builtins)
+    Global = Env(name=None, parent=Builtins)
     Global._ans = []
     return Global
 
@@ -122,7 +122,7 @@ def SEQtoTREE(tr):
     
     def apply(op, *vals):
         if any(type(v) is c for v in vals for c in (list, str)):
-            raise AssertionError
+            raise RuntimeError
         return op(*vals)
 
     def reduce():
@@ -133,19 +133,25 @@ def SEQtoTREE(tr):
             n2 = pop_val()
             op = pop_op()
             n1 = pop_val()
-            try: n = apply(op, n1, n2)
-            except: n = ['SEQ', n1, op, n2]
+            try:
+                n = apply(op, n1, n2)
+            except RuntimeError:
+                n = ['SEQ', n1, op, n2]
         else:
             if tag == 'LOP':
                 n1 = pop_val()
                 op = pop_op()
-                try: n = apply(op, n1)
-                except: n = ['SEQ', op, n1]
+                try: 
+                    n = apply(op, n1)
+                except RuntimeError:
+                    n = ['SEQ', op, n1]
             else:
                 op = pop_op()
                 n1 = pop_val()
-                try: n = apply(op, n1)
-                except: n = ['SEQ', n1, op]
+                try:
+                    n = apply(op, n1)
+                except RuntimeError:
+                    n = ['SEQ', n1, op]
         stk.push(n)
 
     def push(x):
@@ -156,10 +162,12 @@ def SEQtoTREE(tr):
                 else: break
             ops.push(x)
         elif stk and not isinstance(stk.peek(), Op):
-            if callable(stk.peek()) and type(x) is tuple:  # apply a function
-                push(binary_ops['(app)'])
+            push(binary_ops['(adj)'])
+        if isinstance(x, Env):
+            if hasattr(x, '_val'):
+                x = x._val
             else:
-                push(binary_ops['(adj)'])
+                raise ValueError('invalid operation on an environment')
         stk.push(x)
 
     for x in tr[1:]:
@@ -269,12 +277,12 @@ def MAP(tr, env):
     return Map(split_pars(form, env), body, env)
     
 def MATCH(tr, env):
-    _, val, form = tr
+    _, form, val = tr
     local = env.child()
-    match(val, form, local)
+    match(form, val, local)
     return local
 
-def match(val, form, local: Env):
+def match(form, val, local: Env):
     '''
     >>> L = Env()
     >>> match([1, 2, 3], ['PAR_LST', ['PAR', 'a'], ['EXTPAR', 'ex']], L)
@@ -295,7 +303,7 @@ def match(val, form, local: Env):
     for par in pars:
         val = vals.pop(0)
         if is_str(par): local.define(par, val)
-        else: match(val, par, local)
+        else: match(par, val, local)
     while vals and opt_pars:
         opt_par = opt_pars.pop(0)[0]
         define(opt_par, vals.pop(0), local)

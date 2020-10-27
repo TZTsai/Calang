@@ -10,6 +10,7 @@ from _builtins import op_list, keywords, all_, any_
 trace = lambda f: f
 
 
+# from _grammar import grammar
 try:
     with open('utils/grammar.json', 'r') as gf:
         grammar = load(gf)
@@ -139,7 +140,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             tree = ['(nospace)'] + tree
         return tree, rem
 
-    must_have = {'DEF': '=', 'MAP': '=>', 'LET': '=>', 'GEN_LST': '@', 
+    must_have = {'DEF': '=', 'MAP': '=>', 'MATCH': '::', 'GEN_LST': '@', 
                  'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
     @trace
     @memo

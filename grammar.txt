@@ -26,16 +26,11 @@ _OPTS   := %SEQ < BIND:OPTPAR , >
 _EXT    := [*] - NAME:EXTPAR
 
 EXP     := MAP | LET | ENV | VAL
-### RULES for ARROW ###
-##  FORM => EXP          ==>  MAP
-##  ENV  => EXP          ==>  VAL
-##  VAL  => FORM         ==>  ENV
-##  VAL  => FORM => EXP  ==>  ENV => EXP  <==>  VAL => MAP  ==>  VAL
 
 MAP     := FORM => EXP:DELAY
-LET     := ENV => EXP:DELAY
+LET     := ENV EXP:DELAY
 ENV     := %GRP < %SEQ < BIND , > > | MATCH
-MATCH   := VAL => FORM
+MATCH   := FORM :: ITEM
 BIND    := TO_DEF : EXP  ## DELAY
 
 VAL     := IF_ELSE | SEQ
@@ -118,5 +113,5 @@ The most special rules of this grammar are:
    begins with underscores. If the original value is already bindings, then its
    '__val__' is itself.
    The global env of the calc may be considered as a meta-field, where all built-ins
-   and names are defined. The 'DIR [field]' command can show the subfields of the
+   and names are defined. The 'ENV [field]' command can show the subfields of the
    field. Without the parameter, this command shows the global env.

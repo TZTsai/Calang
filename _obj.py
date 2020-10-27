@@ -40,12 +40,10 @@ class Env(dict):
     '(f: 5)'
     '''
     def __init__(self, val=None, parent=None, name:str='(local)', **binds):
-        if val is not None: self._val = val
+        if val is not None:
+            self._val = val
         self._parent = parent
         self._name = name
-
-        for key in binds:
-            assert key not in ('val', 'parent', 'name'), 'invalid kwarg'
         for name in binds:
             self.define(name, binds[name])
     
@@ -90,7 +88,7 @@ class Env(dict):
     
     def __str__(self):
         content = ', '.join(str(k)+': '+repr(v) for k, v in self.items())
-        return '('+content+')'
+        return (f'{self._val} with ' if hasattr(self, '_val') else '') + f'({content})'
     
     def all(self):
         d = {'_parent_': self._parent}
@@ -142,7 +140,7 @@ class Map:
     
     def __call__(self, val):
         local = self.env.child()
-        Map.match(val, self.form, local)
+        Map.match(self.form, val, local)
         return Map.eval(self.body, local)
 
     def __repr__(self):
@@ -157,9 +155,9 @@ class Map:
         extpar = ['*'+extpar] if extpar else []
         return f"[{', '.join(pars + optpars + extpar)}]"
 
-    def composed(self, func):
-        body = ['SEQ', func, self.body]
-        return Map(self.form, body)
+    # def composed(self, func):
+    #     body = ['SEQ', func, self.body]
+    #     return Map(self.form, body)
 
 
 class Range:

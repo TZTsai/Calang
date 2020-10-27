@@ -173,9 +173,7 @@ def itemwise(op):
 def apply(f, args):
     if isinstance(f, Map):
         return f(args)
-    else:
-        if not is_iter(args):
-            raise TypeError('function not applied to a list')
+    else:  # a builtin function
         return f(*args)
 
 
@@ -190,6 +188,8 @@ def adjoin(x1, x2):
     '''
     if isinstance(x2, Attr):
         return x2.getFrom(x1)
+    elif is_function(x1) and is_list(x2):
+        return apply(x1, x2)
     elif is_list(x1) and is_list(x2):
         try: return subscript(x1, x2)
         except: return dot(x1, x2)

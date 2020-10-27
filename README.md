@@ -96,7 +96,7 @@ Check the file "_builtins.py" to see the available built-in operations and funct
     `h[[1, [2]], 3, 4]` (return: [1, [2], [3, 4]])
   
   **Note**:  
-  In Calc, a function is always a mapping from a argument list to an expression. The application of a function is done by preceding a list with this function. This is why I choose to use square brackets instead of the more commonly-used round parentheses. The argument list can be nested like usual lists. However, it also allows default arguments (by using `:`) and var-len arguments (by using `*`). 
+  In Calc, a function is always a mapping from a argument list to an expression. The application of a function is done by preceding a list with this function. This is why I choose to use square brackets instead of the more commonly-used round parentheses. The argument list can be nested like usual lists. However, it additionally has default arguments (by using `:`) and var-len arguments (by using `*`). 
 
 * List  
 
@@ -156,22 +156,22 @@ Check the file "_builtins.py" to see the available built-in operations and funct
 
   **Syntax**:  
   * To create a local environment: (*par1*:*val1*, *par2*:*val2*, ...)
-  * To evaluate an expression in a local environment: *env* => *exp*
+  * To evaluate an expression in a local environment: (*par1*:*val1*, ...) *exp*
   * To retrieve the bound value of a name in the environment:
   *env*.*name*  
-    (There must be no space following the dot)
+    (*env* here should not be "(par:val, ...)" but a variable whose value is an environment; there must be no space following the dot)
 
   **Note**:
-
+  Use `dir env` to display the bindings in `env`. You can also use `dir` to display global bindings.
 
   **Examples**:  
 
   * `person = (age: 21, gender: 'male, major: 'CS)`  
     `person.age < 30 and person.major in ['CS, 'CE]`
-  * `(r: sqrt[x^2+y^2]) => 4/3 * PI * r^3`
-  * `binomial[n, m] = 1 if (n==0 or m==0 or m==n) else (b1: binomial[n-1, m-1], b2: binomial[n-1, m]) => b1 + b2`  
+  * `(r: sqrt[x^2+y^2], t: atan[y/x]) [r*cos[t], r*sin[t]]`
+  * `binomial[n, m] = 1 if (n==0 or m==0 or m==n) else (b1: binomial[n-1, m-1], b2: binomial[n-1, m]) b1 + b2`  
   * `d[f, d:1e-5] = x => (f[x+d]-f(x))/d`  
-    `root_newton[f, x:0, thr:1e-5] = (df: d[f], update[x]: f[x]/df[x]) => x if abs[f[x]] < thr else root_newton[f, update[x]]`  
+    `root_newton[f, x:0, thr:1e-5] = (df: d[f], update[x]: f[x]/df[x]) x if abs[f[x]] < thr else root_newton[f, update[x]]`  
     `root_newton[sin, 3]`  (note that in this example, `update` is bound with a function by writing `update[x]: ...` and it is the same as `update: x=>...`; return: 3.1416)
 
 * Environment matching
@@ -179,14 +179,13 @@ Check the file "_builtins.py" to see the available built-in operations and funct
   Instead of explicitly write a local environment, you can also create an environment by "matching"; that is, to match a variable with any expression (which creates a single-binding environment) or an argument list with a list-value expression.  
   Actually, when you apply a function, it will automatically do a matching to bind the arguments with values and create a local environment.
 
-  **Syntax**: *exp* => *par(s)*  
-  (Actually I wanted to use "<=" but it is already used for "less or equal to"...)
+  **Syntax**: *par(s)* :: *exp*
 
   **Examples**:
-  * `2 => x` (return: (x: 2))
-  * `m = [2, [[1, 0], 3]] => [a, [b, c]]`  
+  * `x::2` (return: (x: 2))
+  * `y::9 3y` (return: 27)
+  * `m = [a, [b, c]] :: [2, [[1, 0], 3]]`  
     `[m.a, m.b, m.c]` (return: [2, [1, 0], 3])
-  * `3 => y => 4y` (return: 12; it first does a matching and evaluate `4y` in this local environment, equivalent to `(y: 3) => 4y`)
 
 * Range  
 
@@ -221,7 +220,7 @@ Check the file "_builtins.py" to see the available built-in operations and funct
 
   Use the symbol \_ to represent the result of the last calculation, \_\_ the second last, \_\_\_ the third last, and so on (but you may not want to use longer ones XD).  
   Use keyword `_n` to represent the result of the calculation no.`n`.  
-  Use keyword `ENV` to let the calculator print all variable bindings in the global environment.  
+  Use keyword `env` to let the calculator print all variable bindings in the global environment.  
 
 * Config
 
@@ -242,9 +241,9 @@ Check the file "_builtins.py" to see the available built-in operations and funct
 
   Use `...` at the end of the line to indicate that the expression continues in the next line.  
 
-* Omit displaying result
+* Omit output
 
-  Use `;` at the end of the line.  
+  Use `;` at the end of the line to suppress the output.
 
 * Comment  
 
@@ -254,6 +253,10 @@ Check the file "_builtins.py" to see the available built-in operations and funct
   * `#TEX`: display in LaTeX format
   * `#BIN`: binary representation
   * `#HEX`: hexadecimal representation
+
+  **Examples**:
+  * `0b0101 | 0b1110 #BIN` (return: 0b1111)
+  * `x/sqrt[x^2+1] #TEX` (return: \frac{x}{\sqrt{x^{2} + 1}})
 
 * Load files  
 
