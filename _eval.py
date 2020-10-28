@@ -330,7 +330,7 @@ def CONF(tr):
         if len(tr) == 2:
             print(config.precision)
         else:
-            config.precision = min(1, int(tr[2]))
+            config.precision = max(1, int(tr[2]))
     elif conf == 'tolerance':
         if len(tr) == 2:
             print(config.tolerance)

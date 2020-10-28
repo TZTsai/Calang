@@ -2,7 +2,7 @@ LINE    := %SEQ < ( CMD | DEF | EXP | EMPTY ) ; >
 EMPTY   := /\s*/
 
 CMD     := CONF | DIR | DEL | LOAD | IMPORT
-CONF    := conf /\w+/ ( NUM | /on|off/ ) ?
+CONF    := config /\w+/ ( NUM | /on|off/ ) ?
 DIR     := dir FIELD ?
 DEL     := del %SEQ < FIELD , >  ## DELAY
 LOAD    := load /[\w\.]+/ /-[tvw]/ *

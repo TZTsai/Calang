@@ -222,7 +222,7 @@ Check the file "_builtins.py" to see the available built-in operations and funct
 
 * Config
 
-  Use keyword `conf` to config the calculator.  
+  Use keyword `config` to config the calculator.  
   Available parameters:  
 
   * `prec`/`precision` (number of significant digits of decimals)
@@ -231,9 +231,9 @@ Check the file "_builtins.py" to see the available built-in operations and funct
   * `tolerance` (if the difference of two numbers is within `tolerance`, they are considered equal)  
 
   **EXAMPLES**:
-  * `conf prec 4`
-  * `conf latex on`
-  * `conf tolerance 1e-20`
+  * `config prec 4`
+  * `config latex on`
+  * `config tolerance 1e-20`
 
 * Multiline expression  
 
