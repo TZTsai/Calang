@@ -92,4 +92,3 @@ for name in builtins:
         val = process_func(val)
         builtins[name] = val
         val.__name__ = f'<builtin: {name}>'
-

@@ -673,8 +673,29 @@
       "@"
     ],
     [
-      "OBJ",
-      "TO_DEF"
+      "ALT",
+      [
+        "OBJ",
+        "FIELD"
+      ],
+      [
+        "ITEM_OP",
+        [
+          "EXP",
+          [
+            "OBJ",
+            "GEN_LST"
+          ],
+          [
+            "OBJ",
+            "VAL_LST"
+          ]
+        ],
+        [
+          "OP",
+          "?"
+        ]
+      ]
     ]
   ],
   "MATCH": [

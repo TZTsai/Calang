@@ -221,11 +221,19 @@ def split_field(tr, env=Global):
         raise TypeError('wrong type for split_field')
     return field, attr
 
+def AT(tr):
+    if len(tr) == 2:  # single variable
+        return FIELD(tr)
+    else:  # function
+        return SEQtoTREE(tr)
+
 
 ## eval rules which require environment
 
 def NAME(tr, env):
     name = tr[1]
+    if name == 'this':
+        return env
     try: return env[name]
     except KeyError:
         if config.symbolic:
@@ -499,7 +507,8 @@ subs_rules = {
     'LOP': get_op(unary_l_ops), 'ROP': get_op(unary_r_ops),
     'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
     'FIELD': FIELD,             'ATTR': ATTR,
-    'LET': LET,                 'SLICE': SLICE
+    'LET': LET,                 'SLICE': SLICE,
+    'AT': AT
 }
 
 eval_rules = {

@@ -172,7 +172,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     prefixes = {'NUM', 'DELAY', 'VAR'}
-    list_obj = lambda tag: tag[-3:] == 'LST' or tag in ['DIR', 'ENV', 'DEL']
+    list_obj = lambda tag: tag[-3:] == 'LST' or \
+        tag in ['DIR', 'ENV', 'DEL', 'AT']
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_': tag = '(merge)'

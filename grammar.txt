@@ -30,7 +30,7 @@ EXP     := MAP | LET | ENV | VAL
 MAP     := FORM => EXP:DELAY
 LET     := ENV EXP:DELAY
 ENV     := AT | %GRP < %SEQ < BIND , > > | MATCH
-AT      := @ TO_DEF
+AT      := @ ( FIELD ( GEN_LST | VAL_LST ) ? )
 MATCH   := FORM :: ITEM
 BIND    := TO_DEF : EXP  ## DELAY
 
