@@ -250,7 +250,7 @@
     ],
     [
       "OBJ",
-      "FIELDS"
+      "VAR"
     ]
   ],
   "FUNC": [
@@ -264,60 +264,64 @@
       "FORM"
     ]
   ],
-  "FIELDS": [
+  "VAR": [
     "EXP",
     [
       "OBJ",
+      "FIELDS"
+    ],
+    [
+      "OBJ",
       "FIELD"
+    ]
+  ],
+  "FIELDS": [
+    "ALT",
+    [
+      "ITEM_OP",
+      [
+        "STR",
+        "\"[\""
+      ],
+      [
+        "OP",
+        "-"
+      ]
     ],
     [
       "ALT",
       [
-        "ITEM_OP",
-        [
-          "STR",
-          "\"[\""
-        ],
-        [
-          "OP",
-          "-"
-        ]
+        "OBJ",
+        "VAR"
       ],
       [
-        "ALT",
+        "ITEM_OP",
         [
-          "OBJ",
-          "FIELDS"
-        ],
-        [
-          "ITEM_OP",
+          "ALT",
           [
-            "ALT",
-            [
-              "MARK",
-              ","
-            ],
-            [
-              "OBJ",
-              "FIELDS"
-            ]
+            "MARK",
+            ","
           ],
           [
-            "OP",
-            "*"
+            "OBJ",
+            "VAR"
           ]
-        ]
-      ],
-      [
-        "ITEM_OP",
-        [
-          "STR",
-          "\"]\""
         ],
         [
           "OP",
-          "-"
+          "*"
         ]
+      ]
+    ],
+    [
+      "ITEM_OP",
+      [
+        "STR",
+        "\"]\""
+      ],
+      [
+        "OP",
+        "-"
       ]
     ]
   ],

@@ -104,7 +104,7 @@ def run(filename=None, test=False, start=0, verbose=True):
         except KeyboardInterrupt: return
         except (Warning if test or config.debug else Exception) as err:
             print('Error:', err)
-            if config.debug: raise err
+            # if config.debug: raise err
             
 
     if test:

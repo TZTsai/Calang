@@ -16,34 +16,6 @@ Global = GlobalEnv()
 
 
 def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
-    '''
-    >>> eval = calc_eval
-    >>> calc_eval('2+4')
-    6
-    >>> calc_eval('x=>2 x')
-    [x] => ['SEQ', 2, BOP('', 20), ['NAME', 'x']]
-    >>> calc_eval('[2,3]=>[a,b]=>a+b=>x=>2*x')
-    10
-    >>> eval('(a: 1, b: a+1) => b')
-    2
-    >>> eval('(a: 2, b: 4) => (b: a+4) => [a, b] "{a=} {b=}"')
-    a=2 b=6
-    (2, 6)
-    >>> eval('[1, *[2, 3]]')
-    (1, 2, 3)
-    >>> eval('__')
-    (2, 6)
-    >>> eval('_0')
-    6
-    >>> Global['e'] = eval('(a: 1, b: a*3)')
-    >>> eval('e.b')
-    3
-    >>> print(eval('(a:8, a.b:9)')['a'])
-    (b: 9)
-    >>> try: print(eval('(v.x:0)'))
-    ... except Exception as e: print(e)
-    field not in current env
-    '''
     suppress = exp[-1] == ';'
     if suppress: exp = exp[:-1]
     tree, rest = calc_parse(exp)
@@ -91,12 +63,6 @@ def ANS(tr):
     return Global._ans[id]
 
 def NUM(tr):
-    '''
-    >>> NUM(['NUM:REAL', '2.4', '-18'])
-    2.4e-18
-    >>> NUM(['NUM:COMPLEX', ['REAL', '2.4'], '-', ['REAL', '1', '-10']])
-    (2.4-1e-10j)
-    '''
     type_ = tr[0].split(':')[-1]
     if type_ == 'COMPLEX':
         re, pm, im = tr[1:]
@@ -230,8 +196,8 @@ def PRINT(tr, env):
 
 def IF_ELSE(tr, env):
     _, t_case, cond, f_case = tr
-    cond = eval_tree(cond, env)
-    return eval_tree(t_case if cond else f_case, env)
+    return eval_tree(t_case if eval_tree(cond, env)
+                     else f_case, env)
 
 def WHEN(tr, env):
     *cases, default = tr[1:]
@@ -289,15 +255,6 @@ def MATCH(tr, env):
     return local
 
 def match(form, val, local: Env):
-    '''
-    >>> L = Env()
-    >>> match([1, 2, 3], ['PAR_LST', ['PAR', 'a'], ['EXTPAR', 'ex']], L)
-    >>> print(L)
-    (a: 1, ex: (2, 3))
-    >>> match([-1], ['PAR_LST', ['PAR', 'w'], ['OPTPAR', ['NAME', 'p'], 5]], L)
-    >>> print(L)
-    (a: 1, ex: (2, 3), w: -1, p: 5)
-    '''
     vals = list(val) if is_list(val) else [val]
 
     if form[0] != 'FORM': split_pars(form)
@@ -310,9 +267,9 @@ def match(form, val, local: Env):
         val = vals.pop(0)
         if is_str(par): local[par] = val
         else: match(par, val, local)
-    while vals and opt_pars:
-        opt_par = opt_pars.pop(0)[0]
-        define(opt_par, vals.pop(0), local)
+    opt_pars = opt_pars[:]  # the original opt_pars must not be mutated
+    while opt_pars and vals:
+        define(opt_pars.pop(0)[0], vals.pop(0), local)
     for opt_par, default in opt_pars:
         define(opt_par, default, local)
     if ext_par:
@@ -476,20 +433,6 @@ def split_field(tr, env=Global):
 
 
 def eval_tree(tree, env=Global):
-    '''
-    >>> eval_tree(['SEQ', ['NUM:REAL', '1'], ['BOP', '+'], ['NUM:REAL', '2'], ['BOP', '*'], ['NUM:REAL', '3']])
-    7
-    >>> eval_tree(["SEQ", ["NUM:REAL", "3"], ["ROP", "!"], ["BOP", "+"], ["NUM:REAL", "4"]])
-    10
-    >>> eval_tree(["VAL_LST", ["NUM:REAL", "2"]])
-    (2,)
-    >>> eval_tree(["VAL_LST", ["NUM:REAL", "3"], ["NUM:REAL", "4"], ["NUM:REAL", "6"]])
-    (3, 4, 6)
-    >>> eval_tree(['MAP', ['PAR', 'a'], ['DELAY:SEQ', ['NUM:REAL', '2'], ['BOP', '*'], ['NAME', 'a']]])
-    [a] => ['SEQ', 2, BOP(*, 8), ['NAME', 'a']]
-    >>> eval_tree(['MAP', ['PAR', 'x'], ['DELAY:SEQ', ['SEQ', ['NUM:REAL', '2'], ['BOP', '+'], ['NUM:REAL', '3']], ['BOP', '*'], ['SEQ', ['NUM:REAL', '6'], ['BOP', '+'], ['NAME', 'x']]]])
-    [x] => ['SEQ', 5, BOP(*, 8), ['SEQ', 6, BOP(+, 6), ['NAME', 'x']]]
-    '''
     if not is_tree(tree): return tree
     type_ = tag(tree)
     tr = tree[:]  # make a copy so that `tree` is not modified
@@ -515,7 +458,6 @@ LOAD.run  = None  # set this in calc.py
 delay_types = {
     'DELAY',    'DEF',      'BIND',     'IF_ELSE',
     'DEL',      'WHEN',     'GEN_LST',  'PAR_LST',
-    'MATCH'
 }
 
 subs_rules = {
@@ -524,9 +466,9 @@ subs_rules = {
     'SEQ': SEQtoTREE,           'BOP': get_op(binary_ops),
     'LOP': get_op(unary_l_ops), 'ROP': get_op(unary_r_ops),
     'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
+    'IDC_LST': LIST,            'LINE': LINE,
     'FIELD': FIELD,             'ATTR': ATTR,
     'SLICE': SLICE,             'AT': AT,
-    'LINE': LINE
 }
 
 eval_rules = {

@@ -171,9 +171,9 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    prefixes = {'NUM', 'DELAY', 'VAR'}
+    prefixes = {'NUM', 'DELAY'}
     list_obj = lambda tag: tag[-3:] == 'LST' or \
-        tag in ['DIR', 'ENV', 'DEL', 'AT']
+        tag in ['DIR', 'ENV', 'DEL', 'AT', 'FIELDS']
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_': tag = '(merge)'

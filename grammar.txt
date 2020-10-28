@@ -9,9 +9,10 @@ LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
 
 DEF     := TO_DEF AT ? = EXP DOC ?  ## DELAY
-TO_DEF  := FUNC | FIELDS
+TO_DEF  := FUNC | VAR
 FUNC    := FIELD FORM
-FIELDS  := FIELD | %BKT < %SEQ < FIELDS , > >
+VAR     := FIELDS | FIELD
+FIELDS  := %BKT < %SEQ < VAR , > >
 DOC     := /".*"/
 
 ## FIELD FORM = EXP  <==>  FIELD = FORM => EXP

@@ -24,6 +24,9 @@
       "request": "launch",
       "args": [
         "-t",
+        "&&",
+        "exit",
+        "0"
         // "../modules/math.cal"
       ],
       "program": "calc.py",

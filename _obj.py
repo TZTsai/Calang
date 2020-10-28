@@ -181,6 +181,8 @@ def remake_str(tree):
             optpars = [f'{rec(optpar)}: {default}' for optpar, default in optpars]
             extpar = [extpar+'~'] if extpar else []
             return "[%s]" % ', '.join(pars + optpars + extpar)
+        elif tag == 'IF_ELSE':
+            return "%s if %s else %s" % tuple(map(rec, tr[1:]))
         elif tag == 'PAR_LST':
             split_pars(tr)
             return rec(tr)
@@ -222,7 +224,8 @@ def split_pars(form):
         if t[0] == 'PAR':
             pars.append(t[1])
         elif t[0] == 'PAR_LST':
-            pars.append(split_pars(t))
+            split_pars(t)
+            pars.append(t)
         elif t[0] == 'OPTPAR':
             opt_pars.append([t[1], Map.eval(t[2])])
         else:
