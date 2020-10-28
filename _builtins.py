@@ -14,7 +14,7 @@ import config
 from _obj import Op, Env, Range
 from _funcs import (
     is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, 
-    add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_, adjoin, 
+    add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_, adjoin, unpack,
     iadd, isub, imul, idiv, ipow, iand, ior, 
     dot, dbfact, all_, any_, first, findall, range_, range_inc, range_dec, compose,
     transpose, depth, shape, substitute, flatten, row, col, row, cols, 
@@ -72,7 +72,7 @@ binary_ops = {
     'and': (and_, -5), 'or': (or_, -6), '(adj)': (adjoin, 20)
 }
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10)}
-unary_r_ops = {'!': (factorial, 20), '!!': (dbfact, 20)}
+unary_r_ops = {'!': (factorial, 20), '!!': (dbfact, 20), '~': (unpack, 20)}
 
 construct_ops(binary_ops,   'BOP')
 construct_ops(unary_l_ops,  'LOP')

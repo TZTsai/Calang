@@ -4,18 +4,20 @@ from json import load, dump
 from pprint import pprint, pformat
 import re
 from _builtins import op_list, keywords, all_, any_
+from config import debug
 
 
-# log.out = open('utils/log.yaml', 'w')
 trace = lambda f: f
 
-
-# from _grammar import grammar
-try:
-    with open('utils/grammar.json', 'r') as gf:
-        grammar = load(gf)
-except:
+if debug:
+    from debug.utils import log, trace
+    log.out = open('utils/log.yaml', 'w')
     from _grammar import grammar
+else:
+    try:
+        grammar = load(open('utils/grammar.json', 'r'))
+    except:
+        from _grammar import grammar
 
 op_starts = ''.join(set(op[0] for op in op_list))
 
@@ -141,7 +143,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     must_have = {'DEF': '=', 'MAP': '=>', 'MATCH': '::', 'GEN_LST': 'for', 
-                 'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
+                 '_EXT': '~', 'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '"'}
     @trace
     @memo
     def parse_tag(tag, text):
@@ -169,7 +171,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    prefixes = {'NUM', 'DELAY', 'UNPACK', 'VAR'}
+    prefixes = {'NUM', 'DELAY', 'VAR'}
     list_obj = lambda tag: tag[-3:] == 'LST' or tag in ['DIR', 'ENV', 'DEL']
     # @trace
     def process_tag(tag, tree):
@@ -249,6 +251,6 @@ if __name__ == "__main__":
     repl()
     test()
     if rewrite:
-        rewrite = input('rewrite? ') == 'y'
+        rewrite = input('rewrite? (y/N) ') == 'y'
     if rewrite:
         dump(testcases, open(testfile, 'w'))

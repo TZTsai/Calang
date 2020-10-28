@@ -1,5 +1,5 @@
 LINE    := CMD | DEF | EXP | EMPTY
-EMPTY   := //
+EMPTY   := /\s*/
 
 CMD     := CONF | DIR | DEL | LOAD | IMPORT
 CONF    := conf /\w+/ ( NUM | /on|off/ ) ?
@@ -20,16 +20,17 @@ NAME    := /[\u0374-\u03FFa-zA-Z][a-zA-Z\d_]*[?]?/    ## can begin with a Greek 
 ATTR    := . / NAME:ATTR                              ## '/' forces no space between
 
 FORM    := PAR_LST | NAME:PAR
-PAR_LST := %BKT < ( _PARS ( , _OPTS ) ? ( , _EXT ) ? | _OPTS ( , _EXT ) ? | _EXT ? ) >
-_PARS   := %SEQ < ( BIND ! FORM ) , >                 ## '!' forbids the next match
-_OPTS   := %SEQ < BIND:OPTPAR , >
-_EXT    := [*] - NAME:EXTPAR
+PAR_LST := %BKT < ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? ) >
+_PARS   := %SEQ < ( BIND ! FORM ~ ! ) , >             ## '!' forbids the match
+_OPTS   := %SEQ < ( BIND:OPTPAR ~ ! ) , >
+_EXT    := NAME:EXTPAR ~
 
 EXP     := MAP | LET | ENV | VAL
 
 MAP     := FORM => EXP:DELAY
 LET     := ENV EXP:DELAY
-ENV     := %GRP < %SEQ < BIND , > > | MATCH
+ENV     := AT | %GRP < %SEQ < BIND , > > | MATCH
+AT      := @ TO_DEF
 MATCH   := FORM :: ITEM
 BIND    := TO_DEF : EXP  ## DELAY
 
@@ -54,19 +55,18 @@ REAL    := /-?\d+(\.\d+)?/ ( [eE] - /-?\d+/ ) ?
 BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
-LIST    := ' SYM_LST | GEN_LST | VAL_LST
+LIST    := ' SYM_LST | GEN_LST | IDC_LST | VAL_LST
 SYM_LST := %LST < ( UNQUOTE | _SYM_IT ) , >
 UNQUOTE := ` ( LIST | NAME )  ## convert the item back to a value
 _SYM_IT := SYM_LST | NAME:SYM
 GEN_LST := %BKT < ( EXP ( for CONSTR ) + ) >  ## DELAY
 CONSTR  := NAME:PAR in EXP ( if EXP ) ?
-VAL_LST := _DLST | %LST < _LST_IT , >
-_DLST   := %LST < SUB_LST:VAL_LST ; >
-SUB_LST := %SEQ < _LST_IT , > ?
-_LST_IT := SLICE | UNPACK | EXP
-UNPACK  := [*] - EXP
+IDC_LST := %BKT < %SEQ < SLICE , > >
 SLICE   := _SLC : _SLC ( : _SLC ) ?
 _SLC    := ( SEQ | EMPTY )
+VAL_LST := _DLST | %LST < EXP , >
+_DLST   := %LST < SUB_LST:VAL_LST ; >
+SUB_LST := %SEQ < EXP , > ?
 
 ### MACROS ###
 %LST < $ITM $SEP >  := %BKT < ( %SEQ < $ITM $SEP > ? ) >

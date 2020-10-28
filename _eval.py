@@ -182,10 +182,11 @@ def FIELD(tr):
 def LIST(tr):
     lst = []
     for it in tr[1:]:
-        if is_tree(it) and tag(it) == 'UNPACK':
-            lst.extend(it[1:])  # TODO unpack an env
-        elif is_tree(it):
-            return tr
+        if is_tree(it):
+            if tag(it) == 'UNPACK':
+                lst.extend(it[1])
+            else:
+                return tr
         else:
             lst.append(it)
     return tuple(lst)
@@ -267,10 +268,14 @@ def GEN_LST(tr, env):
 
 def ENV(tr, env):
     local = env.child()
-    if isinstance(tr[1], Env): return tr[1]
+    if isinstance(tr[1], Env):
+        return tr[1]
     for t in tr[1:]:
-        _, to_def, exp = t
-        define(to_def, exp, local)
+        if tag(tr) == 'UNPACK':
+            local.update(tr[1])
+        else:
+            _, to_def, exp = t
+            define(to_def, exp, local)
     return local
 
 def MAP(tr, env):

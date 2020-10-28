@@ -246,6 +246,10 @@ iand = itemwise(b_and)
 ior  = itemwise(b_or)
 
 
+def unpack(lst):
+    return ['UNPACK', lst]
+    
+
 def subscript(lst, subs):
     if not subs: return lst
     assert depth(subs) == 1

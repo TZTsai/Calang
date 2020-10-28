@@ -91,7 +91,7 @@ Check the file "_builtins.py" to see the available built-in operations and funct
   * `fact[n] = 1 if n==0 else n*fact[n-1]`
   * `g[x, y:1, z:2] = [x,y,z]` (default arguments)
   * `[g[3], g[3,-1]]` (return: [[3,1,2], [3,-1,2]])
-  * `h[[x, y], *z] = [x, y, z]` (nested args and var-len args)  
+  * `h[[x, y], z..] = [x, y, z]` (nested args and var-len args)  
     `h[[1, 2], 3]` (return: [1, 2, [3]])  
     `h[[1, [2]], 3, 4]` (return: [1, [2], [3, 4]])
   
@@ -100,7 +100,7 @@ Check the file "_builtins.py" to see the available built-in operations and funct
 
 * List  
 
-  **Syntax**: 
+  **Syntax**:
   [*exp1*, *exp2*, ...]  
 
   **Note**: The operators `in`, `+`, `*` have the same functions as those in Python.
@@ -110,7 +110,6 @@ Check the file "_builtins.py" to see the available built-in operations and funct
   * `[1, 2] + [3, 4]`
   * `sum[1, 2, 3, 4]` (the `sum` function sums all arguments up)  
   * `sum[[1, 2], [3, 4]]` (since we can concatenate two lists by `+`, the `sum` function will concatenate all the lists; return: [1, 2, 3, 4])  
-
 
 * List subscription  
 
@@ -138,7 +137,6 @@ Check the file "_builtins.py" to see the available built-in operations and funct
   * l := [1, 2, 3, 4, 5]  
   * [l[1:], l[:3], l[:], l[:2:-1], l[::2]] (return: [[2, 3, 4, 5], [1, 2, 3], [1, 2, 3, 4, 5], [5, 4], [1, 3, 5]])
 
-
 * Anonymous functions
 
   An anonymous function allows you to directly create a function without assigning a name to it. 
@@ -150,7 +148,7 @@ Check the file "_builtins.py" to see the available built-in operations and funct
   **Examples**:
   
   * `fact = n => 1 if n=0 else n*fact(n-1)`
-  * `compose[f, g] = [*x] => f[g[*x]]`
+  * `compose[f, g] = [x..] => f[g[x..]]`
   
 * Local environment  
 
