@@ -396,13 +396,13 @@ def DEF(tr):
     i = 1
     to_def = tr[i]; i+=1
     if tag(tr[i]) == 'AT':
-        at = tr[i]; i+=1
+        at = eval_tree(tr[i]); i+=1
     else:
         at = None
     exp = tr[i]; i+=1
     try:
         assert tag(tr[i]) == 'DOC'
-        doc = tr[i][1]
+        doc = tr[i][1][1:-1]
     except:
         doc = None
     define(to_def, exp, Global, at, doc)
@@ -437,7 +437,8 @@ def define(to_def, exp, env, at=None, doc=None):
         if doc:
             if not isinstance(val, Env):
                 val = Env(val, name=attr)
-            val.__doc__ = doc
+            try: val.__doc__ += '\n' + doc
+            except: val.__doc__ = doc
             
         parent[attr] = val
 

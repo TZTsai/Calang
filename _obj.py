@@ -212,6 +212,8 @@ def remake_str(tree):
 
 def split_pars(form):
     "Split a FORM syntax tree into 3 parts: pars, opt-pars, ext-par."
+    if form[0] == 'FORM':
+        return
     pars, opt_pars = [], []
     ext_par = None
     lst = [form] if len(form) == 2 and \

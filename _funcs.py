@@ -251,7 +251,7 @@ def unpack(lst):
 
 
 def help_(obj):
-    return help(obj)
+    return obj.__doc__
     
 
 def subscript(lst, subs):
