@@ -1,7 +1,7 @@
 from _parser import calc_parse
 from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins
 from _funcs import Symbol, same, reduce
-from _obj import Env, stack, Op, Attr, Map
+from _obj import Env, stack, Op, Attr, Map, split_pars
 import config
 
 
@@ -21,7 +21,7 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     >>> calc_eval('2+4')
     6
     >>> calc_eval('x=>2 x')
-    [x] => ['SEQ', 2, BOP((adj), 20), ['NAME', 'x']]
+    [x] => ['SEQ', 2, BOP('', 20), ['NAME', 'x']]
     >>> calc_eval('[2,3]=>[a,b]=>a+b=>x=>2*x')
     10
     >>> eval('(a: 1, b: a+1) => b')
@@ -158,11 +158,11 @@ def SEQtoTREE(tr):
         if isinstance(x, Op):
             while ops:
                 op = ops.peek()
-                if x.prior <= op.prior: reduce()
+                if x.priority <= op.priority: reduce()
                 else: break
             ops.push(x)
         elif stk and not isinstance(stk.peek(), Op):
-            push(binary_ops['(adj)'])
+            push(binary_ops[''])
         if isinstance(x, Env):
             if hasattr(x, 'val'):
                 x = x.val
@@ -287,9 +287,8 @@ def ENV(tr, env):
     return local
 
 def MAP(tr, env):
-    _, form, body = tr
-    drop_tag(body, 'DELAY')
-    return Map(split_pars(form, env), body, env)
+    drop_tag(tr[2], 'DELAY')
+    return Map(tr, env)
     
 def MATCH(tr, env):
     _, form, val = tr
@@ -309,8 +308,8 @@ def match(form, val, local: Env):
     '''
     vals = list(val) if is_list(val) else [val]
 
-    _, pars, opt_pars, ext_par = (form if form[0] == 'SPLITTED'
-                                  else split_pars(form, local))
+    if form[0] != 'FORM': split_pars(form)
+    _, pars, opt_pars, ext_par = form
 
     if len(pars) > len(vals):
         raise ValueError(f'not enough items in {vals} to match')
@@ -326,23 +325,6 @@ def match(form, val, local: Env):
         define(opt_par, default, local)
     if ext_par:
         local[ext_par] = tuple(vals)
-
-def split_pars(form, env):
-    pars, opt_pars = [], []
-    ext_par = None
-
-    lst = [form] if len(form) == 2 and is_str(form[1]) else form[1:]
-    for t in lst:
-        if t[0] == 'PAR':
-            pars.append(t[1])
-        elif t[0] == 'PAR_LST':
-            pars.append(split_pars(t, env))
-        elif t[0] == 'OPTPAR':
-            opt_pars.append([t[1], eval_tree(t[2])])
-        else:
-            ext_par = t[1]
-        
-    return ['SPLITTED', pars, opt_pars, ext_par]
 
 
 # these rules are commands in the calc

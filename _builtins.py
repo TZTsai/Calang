@@ -55,7 +55,6 @@ def process_func(func):
 def construct_ops(op_dict, type_):
     for op in op_dict:
         fun, pri = op_dict[op]
-        # assert is_function(fun)
         fun = process_func(fun)
         fun.__name__ = op
         op_dict[op] = Op(type_, fun, pri)
@@ -69,7 +68,7 @@ binary_ops = {
     '==': (eq_, 0), '/=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
     'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'out': (lambda x, y: x not in y, -2), 
     '..': (range_, 4), '+..': (range_inc, 4), '-..': (range_dec, 4),
-    'and': (and_, -5), 'or': (or_, -6), '(adj)': (adjoin, 20)
+    'and': (and_, -5), 'or': (or_, -6), '': (adjoin, 20)
 }
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10)}
 unary_r_ops = {'!': (factorial, 20), '!!': (dbfact, 20), '~': (unpack, 20)}

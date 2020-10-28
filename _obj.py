@@ -10,14 +10,17 @@ class Op:
     def __init__(self, type, function, priority):
         self.type = type
         self.func = function
-        self.prior = priority
-        self.__name__ = self.func.__name__
+        self.priority = priority
+        self.sym = self.func.__name__
 
     def __call__(self, *args):
         return self.func(*args)
 
     def __repr__(self):
-        return f"{self.type}({self.__name__}, {self.prior})"
+        return f"{self.type}({self.sym}, {self.priority})"
+    
+    def __str__(self):
+        return self.sym
 
 
 class Env(dict):
@@ -98,12 +101,13 @@ class Map:
     match = lambda val, form, env: NotImplemented
     eval  = lambda tree, env=None: NotImplemented
 
-    def __init__(self, form, body, env):
+    def __init__(self, tree, env):
+        _, form, body = tree
+        split_pars(form)
         self.form = form
-        self._form_str = Map.form_str(form)
         self.body = Map.eval(body, env=None)  # simplify the body
+        self._str = remake_str(tree)
         self.env = env
-        self.__name__ = repr(self)
     
     def __call__(self, val):
         local = self.env.child()
@@ -111,16 +115,7 @@ class Map:
         return Map.eval(self.body, local)
 
     def __repr__(self):
-        return f"{self._form_str} => {self.body}"
-
-    @staticmethod
-    def form_str(form):
-        _, pars, optpars, extpar = form
-        pars = [Map.form_str(par) if type(par) is list else par
-                for par in pars]
-        optpars = [f'{optpar}: {default}' for optpar, default in optpars]
-        extpar = ['*'+extpar] if extpar else []
-        return f"[{', '.join(pars + optpars + extpar)}]"
+        return self._str
 
     # def composed(self, func):
     #     body = ['SEQ', func, self.body]
@@ -162,6 +157,65 @@ class Range:
         if not isinstance(other, Range): return False
         return (self.first == other.first and self.second == other.second
                 and self.last == other.last)
+        
+        
+def remake_str(tree):
+    def rec(tr):
+        tag = tr[0]
+        if 'DELAY' in tag:
+            _, tag = tag.split(':', 1)
+        if tag in ('NAME', 'SYM', 'PAR'):
+            return tr[1]
+        elif tag == 'SEQ':
+            return ''.join(map(rec, tr[1:]))
+        elif tag[-2:] == 'OP':
+            return str(tr[1])
+        elif tag[:3] == 'NUM':
+            return str(tr[1])
+        elif tag == 'FORM':
+            _, pars, optpars, extpar = tr
+            pars = [rec(par) for par in pars]
+            optpars = [f'{rec(optpar)}: {default}' for optpar, default in optpars]
+            extpar = [extpar+'~'] if extpar else []
+            return "[%s]" % ', '.join(pars + optpars + extpar)
+        elif tag == 'PAR_LST':
+            split_pars(tr)
+            return rec(tr)
+        elif tag[-3:] == 'LST':
+            return '[%s]' % ', '.join(map(rec, tr[1:]))
+        elif tag == 'MAP':
+            _, form, exp = tr
+            return '%s => %s' % (rec(form), rec(exp))
+        elif tag == 'ENV':
+            if tr[1][0] == 'MATCH':
+                _, form, exp = tr
+                return '%s :: %s' % (rec(form), rec(exp))
+            else:
+                binds = ['%s: %s' % (rec(k), rec(v)) for _, k, v in tr[1:]]
+                return '(%s)' % ', '.join(binds)
+        elif tag == 'FUNC':
+            _, name, form = tr
+            return '%s%s' % (rec(name), rec(form))
+        else:
+            return str(tr)
+    return rec(tree)
+
+
+def split_pars(form):
+    pars, opt_pars = [], []
+    ext_par = None
+    lst = [form] if len(form) == 2 and \
+        type(form[1]) is str else form[1:]
+    for t in lst:
+        if t[0] == 'PAR':
+            pars.append(t[1])
+        elif t[0] == 'PAR_LST':
+            pars.append(split_pars(t))
+        elif t[0] == 'OPTPAR':
+            opt_pars.append([t[1], Map.eval(t[2])])
+        else:
+            ext_par = t[1]
+    form[:] = ['FORM', pars, opt_pars, ext_par]
 
 
 
