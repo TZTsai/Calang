@@ -1,4 +1,4 @@
-LINE    := CMD | DEF | EXP | EMPTY
+LINE    := %SEQ < ( CMD | DEF | EXP | EMPTY ) ; >
 EMPTY   := /\s*/
 
 CMD     := CONF | DIR | DEL | LOAD | IMPORT
@@ -8,10 +8,11 @@ DEL     := del %SEQ < FIELD , >  ## DELAY
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
 
-DEF     := TO_DEF = EXP  ## DELAY
+DEF     := TO_DEF AT ? = EXP DOC ?  ## DELAY
 TO_DEF  := FUNC | FIELDS
 FUNC    := FIELD FORM
 FIELDS  := FIELD | %BKT < %SEQ < FIELDS , > >
+DOC     := /".*"/
 
 ## FIELD FORM = EXP  <==>  FIELD = FORM => EXP
 
@@ -39,7 +40,7 @@ IF_ELSE := SEQ if SEQ else EXP  ## DELAY
 SEQ     := _TERM ( BOP ? _TERM ) * PRINT ?
 _TERM   := LOP ? ITEM ROP ? 
 
-PRINT   := /".*?"/
+PRINT   := /`.*?`/
 ITEM    := GROUP | WHEN | ATOM | LIST
 GROUP   := %GRP < EXP >
 WHEN    := when %GRP < ( ( CASE , ) + EXP ) >  ## DELAY

@@ -44,10 +44,12 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     ... except Exception as e: print(e)
     field not in current env
     '''
+    suppress = exp[-1] == ';'
+    if suppress: exp = exp[:-1]
     tree, rest = calc_parse(exp)
     if rest: raise SyntaxError(f'syntax error in "{rest}"')
     result = eval_tree(tree)
-    if result is not None:
+    if result is not None and not suppress:
         Global._ans.append(result)
         return result
 
@@ -197,52 +199,33 @@ def SLICE(tr): return slice(*tr[1:])
  
 def ATTR(tr): return Attr(tr[1])
 
-def LET(tr):
-    _, local, body = tr
-    if not isinstance(local, Env):
-        return tr
-    drop_tag(body, 'DELAY')
-    result = eval_tree(body, env=local)
-    if isinstance(result, Env):
-        result._parent = local
-    return result
-
-def split_field(tr, env=Global):
-    if tr[0] == 'NAME':
-        attr = tr[1]
-        field = env
-    elif tr[0] == 'FIELD':
-        top = tr[1][1]
-        if top not in env:
-            raise AssertionError('field not in current env')
-        attr = tr.pop()[1]
-        field = eval_tree(tr, env) if len(tr) > 1 else env
-    else:
-        raise TypeError('wrong type for split_field')
-    return field, attr
-
 def AT(tr):
     if len(tr) == 2:  # single variable
         return FIELD(tr)
     else:  # function
         return SEQtoTREE(tr)
+    
+def LINE(tr):
+    return tr[-1]
 
 
 ## eval rules which require environment
 
 def NAME(tr, env):
     name = tr[1]
-    if name == 'this':
-        return env
+    if name == 'this': return env
     try: return env[name]
     except KeyError:
-        if config.symbolic:
-            return Symbol(name)
+        if env is Global:
+            if config.symbolic:
+                return Symbol(name)
+            else:
+                raise NameError(f'unbound symbol \'{tr}\'')
         else:
-            raise NameError(f'unbound symbol \'{tr}\'')
+            return tr
 
 def PRINT(tr, env):
-    exec('print(f%s)' % tr[1], env.all())
+    exec('print(f"%s")' % tr[1][1:-1], env.all())
     return 'PRINT'
 
 def IF_ELSE(tr, env):
@@ -276,19 +259,28 @@ def GEN_LST(tr, env):
 
 def ENV(tr, env):
     local = env.child()
-    if isinstance(tr[1], Env):
+    if len(tr) == 2 and isinstance(tr[1], Env):
         return tr[1]
     for t in tr[1:]:
-        if tag(tr) == 'UNPACK':
-            local.update(tr[1])
-        else:
-            _, to_def, exp = t
-            define(to_def, exp, local)
+        _, to_def, exp = t
+        define(to_def, exp, local)
     return local
 
 def MAP(tr, env):
     drop_tag(tr[2], 'DELAY')
     return Map(tr, env)
+
+def LET(tr, env):
+    _, local, body = tr
+    if not isinstance(local, Env):
+        return tr
+    drop_tag(body, 'DELAY')
+    result = eval_tree(body, env=local)
+    if isinstance(result, Env):
+        result._parent = local
+    elif is_tree(result):
+        result = eval_tree(result, env=env)
+    return result
     
 def MATCH(tr, env):
     _, form, val = tr
@@ -401,25 +393,53 @@ def DEL(tr):
         field.delete(attr)
 
 def DEF(tr):
-    _, to_def, exp = tr
-    define(to_def, exp)
+    i = 1
+    to_def = tr[i]; i+=1
+    if tag(tr[i]) == 'AT':
+        at = tr[i]; i+=1
+    else:
+        at = None
+    exp = tr[i]; i+=1
+    try:
+        assert tag(tr[i]) == 'DOC'
+        doc = tr[i][1]
+    except:
+        doc = None
+    define(to_def, exp, Global, at, doc)
 
 
-def define(to_def, exp, env=Global):
+def define(to_def, exp, env, at=None, doc=None):
     
     def def_(field, val):
         superfield = field[:-1]
         parent, attr = split_field(field, env)
+        
         if not isinstance(parent, Env):
             parent = env.child(parent, field[-1][-1])
             def_(superfield, parent)  # if parent is not an env, redefine it as an env
-        parent[attr] = val
+            
+        if at is not None:  # set the parent of $val to $at
+            if parent is Global:
+                if not isinstance(val, Env):
+                    val = at.child(val, attr)
+                else:
+                    val.parent = at
+            else:
+                raise ValueError('cannot define the field in local env')
+            
         if isinstance(val, Map):
             val.__name__ = attr
         elif isinstance(val, Env):
+            val.name = attr
             if parent is not Global:
                 val.parent = parent
-                val.name = attr
+                
+        if doc:
+            if not isinstance(val, Env):
+                val = Env(val, name=attr)
+            val.__doc__ = doc
+            
+        parent[attr] = val
 
     def def_all(fields, val):
         if tag(fields) == 'FIELDS':
@@ -432,11 +452,25 @@ def define(to_def, exp, env=Global):
 
     if tag(to_def) == 'FUNC':
         _, field, form = to_def
-        val = Map(split_pars(form, env), exp, env)
+        val = Map(['MAP', form, exp], env)
         def_(field, val)
     else:
         val = eval_tree(exp, env)
         def_all(to_def, val)
+        
+def split_field(tr, env=Global):
+    if tr[0] == 'NAME':
+        attr = tr[1]
+        field = env
+    elif tr[0] == 'FIELD':
+        top = tr[1][1]
+        if top not in env:
+            raise AssertionError('field not in current env')
+        attr = tr.pop()[1]
+        field = eval_tree(tr, env) if len(tr) > 1 else env
+    else:
+        raise TypeError('wrong type for split_field')
+    return field, attr
 
 
 
@@ -479,7 +513,8 @@ LOAD.run  = None  # set this in calc.py
 
 delay_types = {
     'DELAY',    'DEF',      'BIND',     'IF_ELSE',
-    'DEL',      'WHEN',     'GEN_LST',  'PAR_LST'
+    'DEL',      'WHEN',     'GEN_LST',  'PAR_LST',
+    'MATCH'
 }
 
 subs_rules = {
@@ -489,8 +524,8 @@ subs_rules = {
     'LOP': get_op(unary_l_ops), 'ROP': get_op(unary_r_ops),
     'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
     'FIELD': FIELD,             'ATTR': ATTR,
-    'LET': LET,                 'SLICE': SLICE,
-    'AT': AT
+    'SLICE': SLICE,             'AT': AT,
+    'LINE': LINE
 }
 
 eval_rules = {
@@ -498,7 +533,7 @@ eval_rules = {
     'PRINT': PRINT,             'EXP': eval_tree,
     'ENV': ENV,                 'MATCH': MATCH,
     'IF_ELSE': IF_ELSE,         'GEN_LST': GEN_LST,
-    'WHEN': WHEN
+    'WHEN': WHEN,               'LET': LET,
 }
 
 exec_rules = {

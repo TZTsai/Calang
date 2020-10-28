@@ -11,7 +11,10 @@
       "program": "calc.py",
       "console": "integratedTerminal",
       "args": [
-        "-d"
+        "-d",
+        "&&",
+        "exit",
+        "0"
       ]
       // "justMyCode": false
     },

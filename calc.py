@@ -87,16 +87,12 @@ def run(filename=None, test=False, start=0, verbose=True):
             line = ''.join(buffer)
             buffer, indent = [], 0
 
-            show = True
-            if line and line[-1] == ';':
-                line = line[:-1]
-                show = False
-
             result = calc_eval(line)
             if result is None: continue
 
-            if show and verbose:  # print output
-                opts = {opt: comment == opt.upper() for opt in ['sci', 'tex', 'bin', 'hex']}
+            if verbose:  # print output
+                opts = {opt: comment == opt.upper() 
+                        for opt in ['sci', 'tex', 'bin', 'hex']}
                 print(calc_format(result, **opts), flush=True)
 
             # test

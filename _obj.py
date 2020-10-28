@@ -113,10 +113,10 @@ class Map:
         local = self.env.child()
         Map.match(self.form, val, local)
         return Map.eval(self.body, local)
-
-    def __repr__(self):
+    
+    def __str__(self):
         return self._str
-
+    
     # def composed(self, func):
     #     body = ['SEQ', func, self.body]
     #     return Map(self.form, body)
@@ -160,7 +160,10 @@ class Range:
         
         
 def remake_str(tree):
+    "Reconstruct a readable representation from the syntax tree."
     def rec(tr):
+        if type(tr) is not list:
+            return str(tr)
         tag = tr[0]
         if 'DELAY' in tag:
             _, tag = tag.split(':', 1)
@@ -188,11 +191,17 @@ def remake_str(tree):
             return '%s => %s' % (rec(form), rec(exp))
         elif tag == 'ENV':
             if tr[1][0] == 'MATCH':
-                _, form, exp = tr
-                return '%s :: %s' % (rec(form), rec(exp))
+                _, form, exp = tr[1]
+                return '%s::%s' % (rec(form), rec(exp))
+            elif tr[1][0] == 'AT':
+                env = tr[1:]
+                return '@%s' % ''.join(map(rec, env))
             else:
                 binds = ['%s: %s' % (rec(k), rec(v)) for _, k, v in tr[1:]]
                 return '(%s)' % ', '.join(binds)
+        elif tag == 'LET':
+            _, env, exp = tr
+            return '%s %s' % (rec(env), rec(exp))
         elif tag == 'FUNC':
             _, name, form = tr
             return '%s%s' % (rec(name), rec(form))
@@ -202,6 +211,7 @@ def remake_str(tree):
 
 
 def split_pars(form):
+    "Split a FORM syntax tree into 3 parts: pars, opt-pars, ext-par."
     pars, opt_pars = [], []
     ext_par = None
     lst = [form] if len(form) == 2 and \

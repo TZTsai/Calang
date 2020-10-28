@@ -248,6 +248,10 @@ ior  = itemwise(b_or)
 
 def unpack(lst):
     return ['UNPACK', lst]
+
+
+def help_(obj):
+    return help(obj)
     
 
 def subscript(lst, subs):

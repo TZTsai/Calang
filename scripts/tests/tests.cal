@@ -63,6 +63,12 @@ g[] #12321
 x = 12
 e = (x: x)
 e.x == x #1
+@e x #12
+f[y] = @e x+y
+x = 32
+f[4]
+f = @e y=>x+y
+f[4]
 (s: 2, t: 2s) [s, t] #(2, 4)
 person(age, sex) = (age:age, sex:sex)
 p = person(17, 'male)
