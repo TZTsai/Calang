@@ -24,7 +24,7 @@ class Op:
 
 
 class Env(dict):
-    def __init__(self, val=None, parent=None, name='<local>', binds=None):
+    def __init__(self, val=None, parent=None, name='(env)', binds=None):
         if val is not None:
             self.val = val
         self.parent = parent
@@ -39,14 +39,6 @@ class Env(dict):
             return self.parent[name]
         raise KeyError('unbound name: ' + name)
 
-    # def define(self, name, value, overwrite=True):
-    #     if name in self and not overwrite:
-    #         raise AssertionError('name conflict in ' + repr(self))
-    #     self[name] = value
-    #     if isinstance(value, Env) and value is not self:
-    #         value.parent = self
-    #         value.name = name
-            
     def dir(self):
         if not self.parent or not self.parent.name:
             return self.name
@@ -57,7 +49,7 @@ class Env(dict):
         try: self.pop(name)
         except: raise NameError('unbound name:', name)
 
-    def child(self, val=None, name='<local>', binds=None):
+    def child(self, val=None, name='(env)', binds=None):
         env = Env(val, self, name, binds)
         return env
 
@@ -71,7 +63,7 @@ class Env(dict):
     def all(self):
         d = {'(parent)': self.parent}
         env = self
-        while env:
+        while env is not None:
             for k in env:
                 if k not in d:
                     d[k] = env[k]
@@ -98,10 +90,12 @@ class Map:
     def __init__(self, tree, env):
         _, form, body = tree
         split_pars(form, env)
+        tree[2] = Map.eval(body, env=None)
         self.form = form
-        self.body = Map.eval(body, env=None)  # simplify the body
+        self.body = body
         self._str = remake_str(tree, env)
         self.parent = env
+        self.__name__ = '(map)'
     
     def __call__(self, val):
         local = self.parent.child()
@@ -112,7 +106,7 @@ class Map:
         return self._str
     
     def __repr__(self):
-        return self.parent.dir() + '.' + self.__name__
+        return '<map: %s.%s>' % (self.parent.dir(), self.__name__)
     
     # def composed(self, func):
     #     body = ['SEQ', func, self.body]

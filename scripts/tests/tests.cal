@@ -96,7 +96,7 @@ m[2,1] #6
 m[:2, 1:] #((2,3),(4,5))
 
 # misc tests
-conf tolerance 1e-4
+config tolerance 1e-4
 1.00003 == 1  #1
 
 d[f, d:1e-5] = x => (f[x+d]-f[x])/d

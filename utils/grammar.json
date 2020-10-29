@@ -263,15 +263,19 @@
       ]
     ],
     [
-      "EXP",
-      [
-        "OBJ",
-        "FUNC"
-      ],
-      [
-        "OBJ",
-        "VARS"
-      ]
+      "PAR",
+      "_DF"
+    ]
+  ],
+  "_DF": [
+    "EXP",
+    [
+      "OBJ",
+      "FUNC"
+    ],
+    [
+      "PAR",
+      "_VAR"
     ]
   ],
   "FUNC": [
@@ -285,60 +289,64 @@
       "FORM"
     ]
   ],
-  "VARS": [
+  "_VAR": [
     "EXP",
     [
       "OBJ",
+      "VARS"
+    ],
+    [
+      "OBJ",
       "NAME"
+    ]
+  ],
+  "VARS": [
+    "ALT",
+    [
+      "ITEM_OP",
+      [
+        "STR",
+        "\"[\""
+      ],
+      [
+        "OP",
+        "-"
+      ]
     ],
     [
       "ALT",
       [
-        "ITEM_OP",
-        [
-          "STR",
-          "\"[\""
-        ],
-        [
-          "OP",
-          "-"
-        ]
+        "PAR",
+        "_VAR"
       ],
       [
-        "ALT",
+        "ITEM_OP",
         [
-          "OBJ",
-          "VARS"
-        ],
-        [
-          "ITEM_OP",
+          "ALT",
           [
-            "ALT",
-            [
-              "MARK",
-              ","
-            ],
-            [
-              "OBJ",
-              "VARS"
-            ]
+            "MARK",
+            ","
           ],
           [
-            "OP",
-            "*"
+            "PAR",
+            "_VAR"
           ]
-        ]
-      ],
-      [
-        "ITEM_OP",
-        [
-          "STR",
-          "\"]\""
         ],
         [
           "OP",
-          "-"
+          "*"
         ]
+      ]
+    ],
+    [
+      "ITEM_OP",
+      [
+        "STR",
+        "\"]\""
+      ],
+      [
+        "OP",
+        "-"
       ]
     ]
   ],
@@ -799,8 +807,8 @@
   "BIND": [
     "ALT",
     [
-      "OBJ",
-      "FUNC"
+      "PAR",
+      "_DF"
     ],
     [
       "MARK",

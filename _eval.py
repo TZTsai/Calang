@@ -5,7 +5,7 @@ from _obj import Env, stack, Op, Attr, Map, split_pars
 import config
 
 
-Builtins = Env(name=None, **builtins)
+Builtins = Env(name=None, binds=builtins)
 
 def GlobalEnv():
     Global = Env(name='', parent=Builtins)
@@ -144,7 +144,7 @@ def SEQtoTREE(tr):
     return pop_val()
 
 def FIELD(tr):
-    if is_tree[tr[1]]:
+    if is_tree(tr[1]):
         return tr
     field = tr[1]
     for attr in tr[2:]:
@@ -388,7 +388,7 @@ def define(to_def, exp, env, at=None, doc=None):
         env[name] = val
 
     def def_all(vars, val, env):
-        t, vars = tag(vars[0]), vars[1:]
+        t, vars = vars[0], vars[1:]
         if t == 'VARS':
             assert is_list(val), 'vars assigned to non-list'
             assert len(vars) == len(val), 'list lengths mismatch'
@@ -410,17 +410,17 @@ def define(to_def, exp, env, at=None, doc=None):
     # evaluate the exp
     if tag_ == 'FUNC':
         form = to_def[2]
-        val = Map(['Map', form, exp], env)
+        val = Map(['MAP', form, exp], env)
     else:
         val = eval_tree(exp, env)
 
     if tag_ == 'VARS':
-        assert at is None
+        assert at is None, '@ not supported for a variable list'
         def_all(to_def, val, env)
     else:
-        name = to_def[1]
+        name = to_def[1] if tag_ == 'NAME' else to_def[1][1]
         if at is not None:  # set the parent of $val to $at
-            assert env is Global and tag_ is not 'VARS'
+            assert env is Global and tag_ != 'VARS'
             if isinstance(val, Env) or isinstance(val, Map):
                 val.parent = at
             else:

@@ -10,9 +10,10 @@ IMPORT  := import /[\w\.]+/ /-[vw]/ *
 
 DEF     := TO_DEF AT ? = EXP DOC ?  ## DELAY
 TO_DEF  := ( NAME . ) * _DF
-_DF     := FUNC | VARS
+_DF     := FUNC | _VAR
 FUNC    := NAME FORM
-VARS    := NAME | %BKT < %SEQ < VARS , > >
+_VAR    := VARS | NAME
+VARS    := %BKT < %SEQ < _VAR , > >
 DOC     := /".*"/
 
 FIELD   := NAME ATTR *
