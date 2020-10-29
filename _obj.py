@@ -116,7 +116,7 @@ class Map:
         if self.at:  # "@" operator
             at = Map.eval(self.at, local)
             assert isinstance(at, Env), "@ not applied to an Env"
-            at.update(local); local = at
+            local = at.child(binds=local)
         if config.debug:
             signature = f'{self.dir}.{self.__name__}{list(val)}'
             log(signature, level=Map._depth)

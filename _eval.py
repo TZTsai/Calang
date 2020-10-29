@@ -264,7 +264,8 @@ def MATCH(tr, env):
     return local
 
 def match(form, val, local: Env):
-    vals = list(val) if is_list(val) else [val]
+    vals = list(val) if is_list(val) \
+        and not is_tree(val) else [val]
 
     if form[0] != 'FORM': split_pars(form, local)
     _, pars, opt_pars, ext_par = form
@@ -431,7 +432,7 @@ def split_field(tr):
     if tr[0] == 'NAME':
         attr = tr[1]
         parent = Global
-    elif tr[0] == 'FIELD':
+    elif tr[0] == 'TO_DEF':
         attr = tr.pop()[1]
         parent = eval_tree(tr, Global) if len(tr) > 1 else Global
     else:
