@@ -1,0 +1,33 @@
+Group = [g, m] => (generator: g,
+                   multiplier: m,
+                   stream[x]: [x, []=>stream[multiplier[g, x]]],
+                   next[s]: s[1][], 
+                   pow[x, k]: (rec[a, b, i]: rec[m[a,b], b, i-1] if i%2 else
+                                             rec[a, m[b,b], i/2]) rec[1, x, k],
+                   elements[]: (rec[s, l]: l if s[0] in l else
+                                           rec[next[s], l+[s[0]]])
+                               rec[stream[g], []])
+
+gcd[a, b] = a if b == 0 else gcd[b, a%b]
+prime?[n] = (find_divisor[t]:
+             when(t^2>n: n, n%t==0: t, 
+                  find_divisor[3 if t==2 else t+2])) ...
+            n > 1 and find_divisor[2] == n
+
+Z[p] @Group[2, [x,y]=>x*y%p] = this if not prime?[p] ...
+    else (elements[]: list[1..(p-1)] `(elements of Z_{p})`)
+
+# modular polynomial
+# F[p, n] @Group
+
+#TEST
+g = Group[2, [x,y] => x*y%18]
+g.elements[]
+prime?[2]  #1
+prime?[19] #1
+prime?[16] #0
+g = Z[24]
+g.elements[]
+h = Z[17]
+h.elements[]
+h.pow[4, 87]

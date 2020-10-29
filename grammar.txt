@@ -9,17 +9,15 @@ LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
 
 DEF     := TO_DEF AT ? = EXP DOC ?  ## DELAY
-TO_DEF  := FUNC | VAR
-FUNC    := FIELD FORM
-VAR     := FIELDS | FIELD
-FIELDS  := %BKT < %SEQ < VAR , > >
+TO_DEF  := ( NAME . ) * _DF
+_DF     := FUNC | VARS
+FUNC    := NAME FORM
+VARS    := NAME | %BKT < %SEQ < VARS , > >
 DOC     := /".*"/
-
-## FIELD FORM = EXP  <==>  FIELD = FORM => EXP
 
 FIELD   := NAME ATTR *
 NAME    := /[\u0374-\u03FFa-zA-Z][a-zA-Z\d_]*[?]?/    ## can begin with a Greek letter
-ATTR    := . / NAME:ATTR                              ## '/' forces no space between
+ATTR    := . / NAME:ATTR                              ## '/' forces no space in between
 
 FORM    := PAR_LST | NAME:PAR
 PAR_LST := %BKT < ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? ) >
@@ -34,7 +32,7 @@ LET     := ENV EXP:DELAY
 ENV     := AT | %GRP < %SEQ < BIND , > > | MATCH
 AT      := @ ( FIELD ( GEN_LST | VAL_LST ) ? )
 MATCH   := FORM :: ITEM
-BIND    := TO_DEF : EXP  ## DELAY
+BIND    := _DF : EXP  ## DELAY
 
 VAL     := IF_ELSE | SEQ
 IF_ELSE := SEQ if SEQ else EXP  ## DELAY

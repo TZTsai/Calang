@@ -24,13 +24,13 @@ class Op:
 
 
 class Env(dict):
-    def __init__(self, val=None, parent=None, name='', **binds):
+    def __init__(self, val=None, parent=None, name='<local>', binds=None):
         if val is not None:
             self.val = val
         self.parent = parent
         self.name = name
-        for name in binds:
-            self[name] = binds[name]
+        if binds:
+            self.update(binds)
     
     def __getitem__(self, name):
         if name in self:
@@ -57,12 +57,12 @@ class Env(dict):
         try: self.pop(name)
         except: raise NameError('unbound name:', name)
 
-    def child(self, val=None, name='(local)', **binds):
-        env = Env(val, self, name, **binds)
+    def child(self, val=None, name='<local>', binds=None):
+        env = Env(val, self, name, binds)
         return env
 
     def __repr__(self):
-        return '<env: %s>' % self.dir()
+        return  '<env: %s>' % self.dir()
     
     def __str__(self):
         content = ', '.join(f'{k}: {v}' for k, v in self.items())
@@ -90,32 +90,29 @@ class Attr:
         assert isinstance(env, Env), 'not an Env'
         return env[self.name]
 
-    @classmethod
-    def adjoin(cls, env, attr):
-        assert isinstance(env, Env)
-        assert isinstance(attr, Attr)
-        return env[attr.name]
-
 
 class Map:
-    match = lambda val, form, env: NotImplemented
-    eval  = lambda tree, env=None: NotImplemented
+    match = lambda val, form, parent: NotImplemented
+    eval  = lambda tree, parent: NotImplemented
 
     def __init__(self, tree, env):
         _, form, body = tree
-        split_pars(form)
+        split_pars(form, env)
         self.form = form
         self.body = Map.eval(body, env=None)  # simplify the body
-        self._str = remake_str(tree)
-        self.env = env
+        self._str = remake_str(tree, env)
+        self.parent = env
     
     def __call__(self, val):
-        local = self.env.child()
+        local = self.parent.child()
         Map.match(self.form, val, local)
         return Map.eval(self.body, local)
     
     def __str__(self):
         return self._str
+    
+    def __repr__(self):
+        return self.parent.dir() + '.' + self.__name__
     
     # def composed(self, func):
     #     body = ['SEQ', func, self.body]
@@ -159,7 +156,7 @@ class Range:
                 and self.last == other.last)
         
         
-def remake_str(tree):
+def remake_str(tree, env):
     "Reconstruct a readable representation from the syntax tree."
     def rec(tr):
         if type(tr) is not list:
@@ -172,7 +169,9 @@ def remake_str(tree):
         elif tag == 'SEQ':
             return ''.join(map(rec, tr[1:]))
         elif tag[-2:] == 'OP':
-            return str(tr[1])
+            op = tr[1]
+            if type(op) is str: op = Map.eval(tr, None)
+            return (' %s ' if op.priority < 4 else '%s') % str(tr[1])
         elif tag[:3] == 'NUM':
             return str(tr[1])
         elif tag == 'FORM':
@@ -184,7 +183,7 @@ def remake_str(tree):
         elif tag == 'IF_ELSE':
             return "%s if %s else %s" % tuple(map(rec, tr[1:]))
         elif tag == 'PAR_LST':
-            split_pars(tr)
+            split_pars(tr, env)
             return rec(tr)
         elif tag[-3:] == 'LST':
             return '[%s]' % ', '.join(map(rec, tr[1:]))
@@ -196,14 +195,14 @@ def remake_str(tree):
                 _, form, exp = tr[1]
                 return '%s::%s' % (rec(form), rec(exp))
             elif tr[1][0] == 'AT':
-                env = tr[1:]
-                return '@%s' % ''.join(map(rec, env))
+                at = tr[1:]
+                return '@%s' % ''.join(map(rec, at))
             else:
                 binds = ['%s: %s' % (rec(k), rec(v)) for _, k, v in tr[1:]]
                 return '(%s)' % ', '.join(binds)
         elif tag == 'LET':
-            _, env, exp = tr
-            return '%s %s' % (rec(env), rec(exp))
+            _, local, exp = tr
+            return '%s %s' % (rec(local), rec(exp))
         elif tag == 'FUNC':
             _, name, form = tr
             return '%s%s' % (rec(name), rec(form))
@@ -212,7 +211,7 @@ def remake_str(tree):
     return rec(tree)
 
 
-def split_pars(form):
+def split_pars(form, env):
     "Split a FORM syntax tree into 3 parts: pars, opt-pars, ext-par."
     if form[0] == 'FORM':
         return
@@ -224,10 +223,10 @@ def split_pars(form):
         if t[0] == 'PAR':
             pars.append(t[1])
         elif t[0] == 'PAR_LST':
-            split_pars(t)
+            split_pars(t, env)
             pars.append(t)
         elif t[0] == 'OPTPAR':
-            opt_pars.append([t[1], Map.eval(t[2])])
+            opt_pars.append([t[1], Map.eval(t[2], env)])
         else:
             ext_par = t[1]
     form[:] = ['FORM', pars, opt_pars, ext_par]

@@ -243,85 +243,102 @@
     ]
   ],
   "TO_DEF": [
-    "EXP",
+    "ALT",
     [
-      "OBJ",
-      "FUNC"
+      "ITEM_OP",
+      [
+        "ALT",
+        [
+          "OBJ",
+          "NAME"
+        ],
+        [
+          "MARK",
+          "."
+        ]
+      ],
+      [
+        "OP",
+        "*"
+      ]
     ],
     [
-      "OBJ",
-      "VAR"
+      "EXP",
+      [
+        "OBJ",
+        "FUNC"
+      ],
+      [
+        "OBJ",
+        "VARS"
+      ]
     ]
   ],
   "FUNC": [
     "ALT",
     [
       "OBJ",
-      "FIELD"
+      "NAME"
     ],
     [
       "OBJ",
       "FORM"
     ]
   ],
-  "VAR": [
+  "VARS": [
     "EXP",
     [
       "OBJ",
-      "FIELDS"
-    ],
-    [
-      "OBJ",
-      "FIELD"
-    ]
-  ],
-  "FIELDS": [
-    "ALT",
-    [
-      "ITEM_OP",
-      [
-        "STR",
-        "\"[\""
-      ],
-      [
-        "OP",
-        "-"
-      ]
+      "NAME"
     ],
     [
       "ALT",
       [
-        "OBJ",
-        "VAR"
+        "ITEM_OP",
+        [
+          "STR",
+          "\"[\""
+        ],
+        [
+          "OP",
+          "-"
+        ]
+      ],
+      [
+        "ALT",
+        [
+          "OBJ",
+          "VARS"
+        ],
+        [
+          "ITEM_OP",
+          [
+            "ALT",
+            [
+              "MARK",
+              ","
+            ],
+            [
+              "OBJ",
+              "VARS"
+            ]
+          ],
+          [
+            "OP",
+            "*"
+          ]
+        ]
       ],
       [
         "ITEM_OP",
         [
-          "ALT",
-          [
-            "MARK",
-            ","
-          ],
-          [
-            "OBJ",
-            "VAR"
-          ]
+          "STR",
+          "\"]\""
         ],
         [
           "OP",
-          "*"
+          "-"
         ]
-      ]
-    ],
-    [
-      "ITEM_OP",
-      [
-        "STR",
-        "\"]\""
-      ],
-      [
-        "OP",
-        "-"
       ]
     ]
   ],
@@ -783,7 +800,7 @@
     "ALT",
     [
       "OBJ",
-      "TO_DEF"
+      "FUNC"
     ],
     [
       "MARK",

@@ -1,6 +1,6 @@
 from _parser import calc_parse
 from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins
-from _funcs import Symbol, same, reduce
+from _funcs import Symbol
 from _obj import Env, stack, Op, Attr, Map, split_pars
 import config
 
@@ -20,7 +20,7 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     if suppress: exp = exp[:-1]
     tree, rest = calc_parse(exp)
     if rest: raise SyntaxError(f'syntax error in "{rest}"')
-    result = eval_tree(tree)
+    result = eval_tree(tree, Global)
     if result is not None and not suppress:
         Global._ans.append(result)
         return result
@@ -40,7 +40,7 @@ def drop_tag(tr, expected):
     tr[0] = tag
 
 def is_list(tr): return type(tr) in (tuple, list)
-def is_tree(tr): return type(tr) is list and is_str(tr[0])
+def is_tree(tr): return type(tr) is list and tr and is_str(tr[0])
 def is_str(tr): return type(tr) is str
 
 def get_op(ops):
@@ -56,7 +56,8 @@ def EMPTY(tr): return None
 
 def ANS(tr):
     s = tr[1]
-    if same(*s): id = -len(s)
+    if all(c == '_' for c in s):
+        id = -len(s)
     else:
         try: id = int(s[1:])
         except: raise SyntaxError('invalid history index!')
@@ -134,8 +135,6 @@ def SEQtoTREE(tr):
         if isinstance(x, Env):
             if hasattr(x, 'val'):
                 x = x.val
-            else:
-                raise ValueError('invalid operation on an environment')
         stk.push(x)
 
     for x in tr[1:]:
@@ -145,7 +144,12 @@ def SEQtoTREE(tr):
     return pop_val()
 
 def FIELD(tr):
-    return tr if is_tree(tr[1]) else reduce(Attr.adjoin, tr[1:])
+    if is_tree[tr[1]]:
+        return tr
+    field = tr[1]
+    for attr in tr[2:]:
+        field = attr.getFrom(field)
+    return field
 
 def LIST(tr):
     lst = []
@@ -228,8 +232,8 @@ def ENV(tr, env):
     if len(tr) == 2 and isinstance(tr[1], Env):
         return tr[1]
     for t in tr[1:]:
-        _, to_def, exp = t
-        define(to_def, exp, local)
+        _, var, exp = t
+        define(var, exp, local)
     return local
 
 def MAP(tr, env):
@@ -257,7 +261,7 @@ def MATCH(tr, env):
 def match(form, val, local: Env):
     vals = list(val) if is_list(val) else [val]
 
-    if form[0] != 'FORM': split_pars(form)
+    if form[0] != 'FORM': split_pars(form, local)
     _, pars, opt_pars, ext_par = form
 
     if len(pars) > len(vals):
@@ -353,7 +357,7 @@ def DEF(tr):
     i = 1
     to_def = tr[i]; i+=1
     if tag(tr[i]) == 'AT':
-        at = eval_tree(tr[i]); i+=1
+        at = eval_tree(tr[i], Global); i+=1
     else:
         at = None
     exp = tr[i]; i+=1
@@ -367,72 +371,84 @@ def DEF(tr):
 
 def define(to_def, exp, env, at=None, doc=None):
     
-    def def_(field, val):
-        superfield = field[:-1]
-        parent, attr = split_field(field, env)
-        
-        if not isinstance(parent, Env):
-            parent = env.child(parent, field[-1][-1])
-            def_(superfield, parent)  # if parent is not an env, redefine it as an env
-            
-        if at is not None:  # set the parent of $val to $at
-            if parent is Global:
-                if not isinstance(val, Env):
-                    val = at.child(val, attr)
-                else:
-                    val.parent = at
-            else:
-                raise ValueError('cannot define the field in local env')
-            
+    def def_(name, val, env):
         if isinstance(val, Map):
-            val.__name__ = attr
+            val.__name__ = name
         elif isinstance(val, Env):
-            val.name = attr
-            if parent is not Global:
-                val.parent = parent
+            val.name = name
+            if env is not Global:
+                val.env = env
                 
         if doc:
             if not isinstance(val, Env):
-                val = Env(val, name=attr)
+                val = Env(val, name=name)
             try: val.__doc__ += '\n' + doc
             except: val.__doc__ = doc
             
-        parent[attr] = val
+        env[name] = val
 
-    def def_all(fields, val):
-        if tag(fields) == 'FIELDS':
-            fields.pop(0)
-            assert is_list(val) and len(fields) == len(val)
-            for field, item in zip(fields, val):
-                def_all(field, item)
+    def def_all(vars, val, env):
+        t, vars = tag(vars[0]), vars[1:]
+        if t == 'VARS':
+            assert is_list(val), 'vars assigned to non-list'
+            assert len(vars) == len(val), 'list lengths mismatch'
+            for var, item in zip(vars, val):
+                def_all(var, item, env)
         else:
-            def_(fields, val)
+            def_(vars[0], val, env)
+    
+    # evaluate the env
+    if tag(to_def) == 'TO_DEF':
+        assert env is Global    # attributes can only be defined in Global
+        grandparent, parent_name = split_field(to_def[:-1])
+        env = to_env_if_not(grandparent, parent_name)
+        # if parent is not Env, convert it to Env
+        to_def = to_def[-1]
+    
+    tag_ = tag(to_def)
 
-    if tag(to_def) == 'FUNC':
-        _, field, form = to_def
-        val = Map(['MAP', form, exp], env)
-        def_(field, val)
+    # evaluate the exp
+    if tag_ == 'FUNC':
+        form = to_def[2]
+        val = Map(['Map', form, exp], env)
     else:
         val = eval_tree(exp, env)
-        def_all(to_def, val)
+
+    if tag_ == 'VARS':
+        assert at is None
+        def_all(to_def, val, env)
+    else:
+        name = to_def[1]
+        if at is not None:  # set the parent of $val to $at
+            assert env is Global and tag_ is not 'VARS'
+            if isinstance(val, Env) or isinstance(val, Map):
+                val.parent = at
+            else:
+                val = at.child(val, name)
+        def_(name, val, env)
         
-def split_field(tr, env=Global):
+def split_field(tr):
     if tr[0] == 'NAME':
         attr = tr[1]
-        field = env
+        parent = Global
     elif tr[0] == 'FIELD':
-        top = tr[1][1]
-        if top not in env:
-            raise AssertionError('field not in current env')
         attr = tr.pop()[1]
-        field = eval_tree(tr, env) if len(tr) > 1 else env
+        parent = eval_tree(tr, Global) if len(tr) > 1 else Global
     else:
         raise TypeError('wrong type for split_field')
-    return field, attr
+    return parent, attr
+
+def to_env_if_not(parent, attr):
+    val = parent[attr]
+    if isinstance(val, Env):
+        return val  # already Env
+    val = parent.child(val, attr)
+    parent[attr] = val
+    return val
 
 
 
-def eval_tree(tree, env=Global):
+def eval_tree(tree, env):
     if not is_tree(tree): return tree
     type_ = tag(tree)
     tr = tree[:]  # make a copy so that `tree` is not modified
@@ -458,6 +474,7 @@ LOAD.run  = None  # set this in calc.py
 delay_types = {
     'DELAY',    'DEF',      'BIND',     'IF_ELSE',
     'DEL',      'WHEN',     'GEN_LST',  'PAR_LST',
+    'FORM'
 }
 
 subs_rules = {

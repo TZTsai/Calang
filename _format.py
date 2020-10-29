@@ -1,6 +1,6 @@
 import config
-from _builtins import Rational, Fraction, Matrix, is_number, is_list, is_matrix, is_function, floor, inf, log
-from _obj import Range, Env, Map
+from _builtins import Rational, Fraction, Matrix, is_number, is_matrix, is_function, floor, inf, log
+from _obj import Range, Env, Map, remake_str
 from sympy import latex, pretty
 from re import sub as translate
 from utils.greek import gr_to_tex
@@ -64,22 +64,20 @@ def calc_format(val, indent=0, **opts):
                 return calc_format(val.val, indent, **opts)
             else:
                 return str(val)
-        # elif isinstance(val, dict):
-        #     env = Env()
-        #     env.update(val)
-        #     return str(env)
         else:
             return pretty(val, use_unicode=True)
 
     s = ' ' * indent
     indented_format = lambda v: format(v, indent+2)
-    if is_list(val):
+    if type(val) is tuple:
         if any(map(is_matrix, val)):
             s += '[\n' + ',\n'.join(map(indented_format, val)) + '\n' + s + ']'
         elif is_matrix(val):
             s = format_matrix(val, indent)
         else:
             s += '['+', '.join(map(lambda v: calc_format(v, **opts), val))+']'
+    elif type(val) is list:
+        s += '<incomplete eval: %s>' % remake_str(val, None)
     else:
         s += format_atom(val)
     return s

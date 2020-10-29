@@ -4,7 +4,7 @@ from numbers import Number, Rational
 from types import FunctionType
 from fractions import Fraction
 from sympy import Matrix, Symbol
-from _obj import Range, Map, Attr
+from _obj import Range, Map, Attr, Env
 import config
 
 
