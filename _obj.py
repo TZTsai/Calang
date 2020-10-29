@@ -1,3 +1,7 @@
+import config
+from utils.dec import log
+
+
 class stack(list):
     def push(self, obj):
         self.append(obj)
@@ -24,10 +28,12 @@ class Op:
 
 
 class Env(dict):
-    def __init__(self, val=None, parent=None, name='(env)', binds=None):
+    def __init__(self, val=None, parent=None, name=None, binds=None):
         if val is not None:
             self.val = val
         self.parent = parent
+        if not name:
+            name = '(%s)' % hex(id(self))[-3:]
         self.name = name
         if binds:
             self.update(binds)
@@ -35,12 +41,12 @@ class Env(dict):
     def __getitem__(self, name):
         if name in self:
             return super().__getitem__(name)
-        if self.parent:
+        if self.parent is not None:
             return self.parent[name]
         raise KeyError('unbound name: ' + name)
 
     def dir(self):
-        if not self.parent or not self.parent.name:
+        if self.parent is None or self.parent.name[0] == '_':
             return self.name
         else:
             return self.parent.dir() + '.' + self.name
@@ -49,7 +55,7 @@ class Env(dict):
         try: self.pop(name)
         except: raise NameError('unbound name:', name)
 
-    def child(self, val=None, name='(env)', binds=None):
+    def child(self, val=None, name=None, binds=None):
         env = Env(val, self, name, binds)
         return env
 
@@ -59,6 +65,9 @@ class Env(dict):
     def __str__(self):
         content = ', '.join(f'{k}: {v}' for k, v in self.items())
         return f'({content})'
+    
+    def __bool__(self):
+        return True
     
     def all(self):
         d = {'(parent)': self.parent}
@@ -86,29 +95,47 @@ class Attr:
 class Map:
     match = lambda val, form, parent: NotImplemented
     eval  = lambda tree, parent: NotImplemented
+    _depth = 0  # used for debugging
 
-    def __init__(self, tree, env):
+    def __init__(self, tree, env, at=None):
+        tree[2] = Map.eval(tree[2], env=None)
+        # simplify the body
         _, form, body = tree
         split_pars(form, env)
-        tree[2] = Map.eval(body, env=None)
         self.form = form
         self.body = body
-        self._str = remake_str(tree, env)
         self.parent = env
+        self.at = at
+        self.dir = self.parent.dir()
         self.__name__ = '(map)'
+        self._str = remake_str(tree, env)
     
     def __call__(self, val):
         local = self.parent.child()
         Map.match(self.form, val, local)
-        return Map.eval(self.body, local)
-    
-    def __str__(self):
-        return self._str
+        if self.at:  # "@" operator
+            at = Map.eval(self.at, local)
+            assert isinstance(at, Env), "@ not applied to an Env"
+            at.update(local); local = at
+        if config.debug:
+            signature = f'{self.dir}.{self.__name__}{list(val)}'
+            log(signature, level=Map._depth)
+            Map._depth += 1
+            result = Map.eval(self.body, local)
+            Map._depth -= 1
+            log(signature, ' ==> ', result, level=Map._depth)
+            return result
+        else:
+            return Map.eval(self.body, local)
     
     def __repr__(self):
-        return '<map: %s.%s>' % (self.parent.dir(), self.__name__)
+        return '<map: %s.%s>' % (self.dir, self.__name__)
+    
+    def __str__(self):
+        return '<map: %s>' % self._str
     
     # def composed(self, func):
+    #     "Enable arithmetic ops on Map."
     #     body = ['SEQ', func, self.body]
     #     return Map(self.form, body)
 
@@ -200,6 +227,12 @@ def remake_str(tree, env):
         elif tag == 'FUNC':
             _, name, form = tr
             return '%s%s' % (rec(name), rec(form))
+        elif tag == 'WHEN':
+            cases = tr[1:]
+            return 'when(%s)' % ', '.join(': '.join(map(rec, case[1:]))
+                                          for case in cases)
+        elif tag == 'PRINT':
+            return ''
         else:
             return str(tr)
     return rec(tree)

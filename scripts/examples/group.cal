@@ -2,11 +2,13 @@ Group = [g, m] => (generator: g,
                    multiplier: m,
                    stream[x]: [x, []=>stream[multiplier[g, x]]],
                    next[s]: s[1][], 
-                   pow[x, k]: (rec[a, b, i]: rec[m[a,b], b, i-1] if i%2 else
-                                             rec[a, m[b,b], i/2]) rec[1, x, k],
+                   pow[x, k]: (rec[a, b, i]: a if i==0 else
+                                             rec[m[a,b], b, i-1] if i%2 else
+                                             rec[a, m[b,b], i/2])
+                              rec[1, x, k],
                    elements[]: (rec[s, l]: l if s[0] in l else
                                            rec[next[s], l+[s[0]]])
-                               rec[stream[g], []])
+                               rec[stream[g], []] `{g}`)
 
 gcd[a, b] = a if b == 0 else gcd[b, a%b]
 prime?[n] = (find_divisor[t]:

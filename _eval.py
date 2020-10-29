@@ -5,10 +5,10 @@ from _obj import Env, stack, Op, Attr, Map, split_pars
 import config
 
 
-Builtins = Env(name=None, binds=builtins)
+Builtins = Env(name='_builtins_', binds=builtins)
 
 def GlobalEnv():
-    Global = Env(name='', parent=Builtins)
+    Global = Env(name='_global_', parent=Builtins)
     Global._ans = []
     return Global
 
@@ -81,12 +81,14 @@ def SEQtoTREE(tr):
     
     def pop_val():
         v = stk.pop()
-        if isinstance(v, Op): raise SyntaxError('op sequence in disorder')
+        if isinstance(v, Op):
+            raise SyntaxError('op sequence in disorder')
         return v
 
     def pop_op():
         op = stk.pop()
-        if op != ops.pop(): raise SyntaxError('op sequence in disorder')
+        if op != ops.pop():
+            raise SyntaxError('op sequence in disorder')
         return op
     
     def apply(op, *vals):
@@ -137,8 +139,7 @@ def SEQtoTREE(tr):
                 x = x.val
         stk.push(x)
 
-    for x in tr[1:]:
-        if x != 'PRINT': push(x)
+    for x in tr[1:]: push(x)
     while ops: reduce()
     assert len(stk) == 1
     return pop_val()
@@ -178,6 +179,10 @@ def AT(tr):
 def LINE(tr):
     return tr[-1]
 
+def VAL(tr):
+    # a VAL tree will only occur when it has a PRINT in the end
+    return tr[1]
+
 
 ## eval rules which require environment
 
@@ -196,7 +201,7 @@ def NAME(tr, env):
 
 def PRINT(tr, env):
     exec('print(f"%s")' % tr[1][1:-1], env.all())
-    return 'PRINT'
+    return 'PRINTED'
 
 def IF_ELSE(tr, env):
     _, t_case, cond, f_case = tr
@@ -357,7 +362,7 @@ def DEF(tr):
     i = 1
     to_def = tr[i]; i+=1
     if tag(tr[i]) == 'AT':
-        at = eval_tree(tr[i], Global); i+=1
+        at = tr[i]; i+=1
     else:
         at = None
     exp = tr[i]; i+=1
@@ -410,21 +415,16 @@ def define(to_def, exp, env, at=None, doc=None):
     # evaluate the exp
     if tag_ == 'FUNC':
         form = to_def[2]
-        val = Map(['MAP', form, exp], env)
+        val = Map(['MAP', form, exp], env, at)
     else:
+        assert at is None, 'invalid use of @'
         val = eval_tree(exp, env)
 
+    # bind the variable(s)
     if tag_ == 'VARS':
-        assert at is None, '@ not supported for a variable list'
         def_all(to_def, val, env)
     else:
         name = to_def[1] if tag_ == 'NAME' else to_def[1][1]
-        if at is not None:  # set the parent of $val to $at
-            assert env is Global and tag_ != 'VARS'
-            if isinstance(val, Env) or isinstance(val, Map):
-                val.parent = at
-            else:
-                val = at.child(val, name)
         def_(name, val, env)
         
 def split_field(tr):
@@ -486,6 +486,7 @@ subs_rules = {
     'IDC_LST': LIST,            'LINE': LINE,
     'FIELD': FIELD,             'ATTR': ATTR,
     'SLICE': SLICE,             'AT': AT,
+    'VAL': VAL
 }
 
 eval_rules = {

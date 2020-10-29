@@ -6,12 +6,14 @@ from re import sub as translate
 from utils.greek import gr_to_tex
 
 
-def calc_format(val, indent=0, **opts):
+indent = 0
+
+def calc_format(val, **opts):
     if config.latex or opts['tex']:
         s = latex(Matrix(val) if is_matrix(val) else val)
         # substitute the Greek letters to tex representations
         return translate(r'[^\x00-\x7F]', lambda m: gr_to_tex(m[0]), s)
-
+    
     def format_float(x):
         prec = config.precision
         return float(f'%.{prec}g' % x)
@@ -25,7 +27,7 @@ def calc_format(val, indent=0, **opts):
             return f"{b}×10{supscript(e)}"
         if x == 0: return '0'
         return positive_case(x) if x > 0 else '-' + positive_case(-x)
-    def format_matrix(mat, indent):
+    def format_matrix(mat):
         def row_str(row, start, end, sep='  '):
             return ' '*indent + f"{start}{sep.join([s.ljust(space) for s in row])}{end}"
         mat = [[format(x) for x in row] for row in mat]
@@ -61,21 +63,25 @@ def calc_format(val, indent=0, **opts):
             return str(val)
         elif isinstance(val, Env):
             if hasattr(val, 'val'):
-                return calc_format(val.val, indent, **opts)
+                return calc_format(val.val, **opts)
             else:
                 return str(val)
         else:
             return pretty(val, use_unicode=True)
 
+    global indent
     s = ' ' * indent
-    indented_format = lambda v: format(v, indent+2)
     if type(val) is tuple:
         if any(map(is_matrix, val)):
-            s += '[\n' + ',\n'.join(map(indented_format, val)) + '\n' + s + ']'
+            indent += 2
+            s += '[\n%s\n%s]' % (',\n'.join(
+                map(lambda v: calc_format(v, **opts), val)), s)
+            indent -= 2
         elif is_matrix(val):
-            s = format_matrix(val, indent)
+            s = format_matrix(val)
         else:
-            s += '['+', '.join(map(lambda v: calc_format(v, **opts), val))+']'
+            s += '[%s]' % ', '.join(
+                map(lambda v: calc_format(v, **opts), val))
     elif type(val) is list:
         s += '<incomplete eval: %s>' % remake_str(val, None)
     else:

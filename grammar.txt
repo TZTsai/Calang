@@ -35,9 +35,9 @@ AT      := @ ( FIELD ( GEN_LST | VAL_LST ) ? )
 MATCH   := FORM :: ITEM
 BIND    := _DF : EXP  ## DELAY
 
-VAL     := IF_ELSE | SEQ
+VAL     := ( IF_ELSE | SEQ ) PRINT ?
 IF_ELSE := SEQ if SEQ else EXP  ## DELAY
-SEQ     := _TERM ( BOP ? _TERM ) * PRINT ?
+SEQ     := _TERM ( BOP ? _TERM ) *
 _TERM   := LOP ? ITEM ROP ? 
 
 PRINT   := /`.*?`/

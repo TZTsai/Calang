@@ -820,14 +820,28 @@
     ]
   ],
   "VAL": [
-    "EXP",
+    "ALT",
     [
-      "OBJ",
-      "IF_ELSE"
+      "EXP",
+      [
+        "OBJ",
+        "IF_ELSE"
+      ],
+      [
+        "OBJ",
+        "SEQ"
+      ]
     ],
     [
-      "OBJ",
-      "SEQ"
+      "ITEM_OP",
+      [
+        "OBJ",
+        "PRINT"
+      ],
+      [
+        "OP",
+        "?"
+      ]
     ]
   ],
   "IF_ELSE": [
@@ -882,17 +896,6 @@
       [
         "OP",
         "*"
-      ]
-    ],
-    [
-      "ITEM_OP",
-      [
-        "OBJ",
-        "PRINT"
-      ],
-      [
-        "OP",
-        "?"
       ]
     ]
   ],
