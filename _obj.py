@@ -104,7 +104,7 @@ class Map:
     eval  = lambda tree, parent: NotImplemented
     _depth = 0  # used for debugging
 
-    def __init__(self, tree, env, at=None):
+    def __init__(self, tree, env, deco=None):
         tree[2] = Map.eval(tree[2], env=None)
         # simplify the body
         _, form, body = tree
@@ -112,7 +112,7 @@ class Map:
         self.form = form
         self.body = body
         self.parent = env
-        self.at = at
+        self.deco = deco  # decorator created by "@"
         self.dir = self.parent.dir()
         self.__name__ = '(map)'
         self._str = remake_str(tree, env)
@@ -120,8 +120,8 @@ class Map:
     def __call__(self, val):
         local = self.parent.child()
         Map.match(self.form, val, local)
-        if self.at:  # "@" operator
-            at = Map.eval(self.at, local)
+        if self.deco:
+            at = Map.eval(self.deco, local)
             assert isinstance(at, Env), "@ not applied to an Env"
             local = at.child(binds=local)
         if config.debug:
@@ -231,12 +231,12 @@ def remake_str(tree, env):
             if tr[1][0] == 'MATCH':
                 _, form, exp = tr[1]
                 return group('%s::%s' % (rec(form), rec(exp)))
-            elif tr[1][0] == 'AT':
-                at = tr[1:]
-                return '@%s' % ''.join(map(rec, at))
-            else:
+            elif tr[1][0] == 'BIND':
                 binds = ['%s = %s' % (rec(k), rec(v)) for _, k, v in tr[1:]]
                 return '(%s)' % ', '.join(binds)
+            else:
+                at = tr[1:]
+                return '@%s' % ''.join(map(rec, at))
         elif tag == 'LET':
             _, local, exp = tr
             return '%s %s' % (rec(local), rec(exp))

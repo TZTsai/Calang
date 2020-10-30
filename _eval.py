@@ -169,17 +169,11 @@ def SYMLIST(tr): return tr[1:]
 def SLICE(tr): return slice(*tr[1:])
  
 def ATTR(tr): return Attr(tr[1])
-
-def AT(tr):
-    if len(tr) == 2:  # single variable
-        return FIELD(tr)
-    else:  # function
-        return SEQtoTREE(tr)
     
 def LINE(tr):
     return tr[-1]
 
-def VAL(tr):
+def PRT(tr):
     if tr[1] == 'PRINTED':
         return tr[2]
     elif tag(tr[1]) == 'H_PRINT':
@@ -364,20 +358,21 @@ def DEL(tr):
 def DEF(tr):
     i = 1
     to_def = tr[i]; i+=1
-    if tag(tr[i]) == 'AT':
-        at = tr[i]; i+=1
-    else:
-        at = None
+    try:
+        drop_tag(tr[i], 'DECO')
+        deco = tr[i]; i+=1
+    except:
+        deco = None
     exp = tr[i]; i+=1
     try:
         assert tag(tr[i]) == 'DOC'
         doc = tr[i][1][1:-1]
     except:
         doc = None
-    define(to_def, exp, Global, at, doc)
+    define(to_def, exp, Global, deco, doc)
 
 
-def define(to_def, exp, env, at=None, doc=None):
+def define(to_def, exp, env, deco=None, doc=None):
     
     def def_(name, val, env):
         if name in special_names:
@@ -421,9 +416,9 @@ def define(to_def, exp, env, at=None, doc=None):
     # evaluate the exp
     if tag_ == 'FUNC':
         form = to_def[2]
-        val = Map(['MAP', form, exp], env, at)
+        val = Map(['MAP', form, exp], env, deco)
     else:
-        assert at is None, 'invalid use of @'
+        assert deco is None, 'invalid use of @'
         val = eval_tree(exp, env)
 
     # bind the variable(s)
@@ -491,8 +486,7 @@ subs_rules = {
     'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
     'IDC_LST': LIST,            'LINE': LINE,
     'FIELD': FIELD,             'ATTR': ATTR,
-    'SLICE': SLICE,             'AT': AT,
-    'VAL': VAL
+    'SLICE': SLICE,             'PRT': PRT
 }
 
 eval_rules = {

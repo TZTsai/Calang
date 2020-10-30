@@ -215,7 +215,7 @@
       "ITEM_OP",
       [
         "OBJ",
-        "AT"
+        "AT:DECO"
       ],
       [
         "OP",
@@ -667,7 +667,7 @@
     ],
     [
       "OBJ",
-      "VAL"
+      "PRT"
     ]
   ],
   "MAP": [
@@ -764,44 +764,8 @@
       "@"
     ],
     [
-      "ALT",
-      [
-        "OBJ",
-        "FIELD"
-      ],
-      [
-        "ITEM_OP",
-        [
-          "EXP",
-          [
-            "OBJ",
-            "GEN_LST"
-          ],
-          [
-            "OBJ",
-            "VAL_LST"
-          ]
-        ],
-        [
-          "OP",
-          "?"
-        ]
-      ]
-    ]
-  ],
-  "MATCH": [
-    "ALT",
-    [
-      "OBJ",
-      "FORM"
-    ],
-    [
-      "MARK",
-      "::"
-    ],
-    [
-      "OBJ",
-      "ITEM"
+      "PAR",
+      "_VAL"
     ]
   ],
   "BIND": [
@@ -819,7 +783,51 @@
       "EXP"
     ]
   ],
-  "VAL": [
+  "MATCH": [
+    "ALT",
+    [
+      "OBJ",
+      "FORM"
+    ],
+    [
+      "MARK",
+      "::"
+    ],
+    [
+      "PAR",
+      "_VAL"
+    ]
+  ],
+  "_VAL": [
+    "EXP",
+    [
+      "OBJ",
+      "APPLY:SEQ"
+    ],
+    [
+      "OBJ",
+      "ITEM"
+    ]
+  ],
+  "APPLY": [
+    "ALT",
+    [
+      "OBJ",
+      "FIELD"
+    ],
+    [
+      "EXP",
+      [
+        "OBJ",
+        "GEN_LST"
+      ],
+      [
+        "OBJ",
+        "VAL_LST"
+      ]
+    ]
+  ],
+  "PRT": [
     "ALT",
     [
       "ITEM_OP",

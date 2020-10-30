@@ -143,7 +143,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     must_have = {'DEF': '=', 'MAP': '=>', 'MATCH': '::', 'GEN_LST': 'for', '_EXT': '~',
-                 'SLICE': ':', '_DLST': ';', 'BIND': '=', 'PRINT': '`', 'DOC': '"'}
+                 'SLICE': ':', '_DLST': ';', 'BIND': '='}
     @trace
     @memo
     def parse_tag(tag, text):
@@ -171,9 +171,9 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    prefixes = {'NUM', 'DELAY'}
+    prefixes = {'NUM', 'DELAY', 'DECO'}
     list_obj = lambda tag: tag[-3:] == 'LST' or \
-        tag in ['DIR', 'ENV', 'DEL', 'AT', 'VARS']
+        tag in ['DIR', 'ENV', 'DEL', 'VARS']
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_': tag = '(merge)'

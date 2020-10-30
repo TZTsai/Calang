@@ -8,7 +8,7 @@ DEL     := del %SEQ < FIELD , >  ## DELAY
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
 
-DEF     := TO_DEF AT ? = EXP DOC ?  ## DELAY
+DEF     := TO_DEF AT:DECO ? = EXP DOC ?  ## DELAY
 TO_DEF  := ( NAME . ) * _DF
 _DF     := FUNC | _VAR
 FUNC    := NAME FORM
@@ -26,19 +26,21 @@ _PARS   := %SEQ < ( BIND ! FORM ~ ! ) , >             ## '!' forbids the match
 _OPTS   := %SEQ < ( BIND:OPTPAR ~ ! ) , >
 _EXT    := NAME:EXTPAR ~
 
-EXP     := MAP | LET | ENV | VAL
+EXP     := MAP | LET | ENV | PRT
 
 MAP     := FORM => EXP:DELAY
 LET     := ENV EXP:DELAY
 ENV     := AT | %GRP < %SEQ < BIND , > > | MATCH
-AT      := @ ( FIELD ( GEN_LST | VAL_LST ) ? )
-MATCH   := FORM :: ITEM
+AT      := @ _VAL
 BIND    := _DF = EXP  ## DELAY
+MATCH   := FORM :: _VAL
+_VAL    := APPLY:SEQ | ITEM
+APPLY   := FIELD ( GEN_LST | VAL_LST )
 
-VAL     := PRINT:H_PRINT ? ( IF_ELSE | SEQ ) PRINT:T_PRINT ?
+PRT     := PRINT:H_PRINT ? ( IF_ELSE | SEQ ) PRINT:T_PRINT ?
 IF_ELSE := SEQ if SEQ else EXP  ## DELAY
 SEQ     := _TERM ( ( ATTR ! BOP ) ? _TERM ) *
-_TERM   := LOP ? ITEM ROP ? 
+_TERM   := LOP ? ITEM ROP ?
 
 PRINT   := /`.*?`/
 ITEM    := GROUP | WHEN | ATOM | LIST
