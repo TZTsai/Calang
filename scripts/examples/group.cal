@@ -22,12 +22,12 @@ CyclicGroup[g, m, o] @Group[m, o] = ...
                 rec[x, 1])
 
 # integer cyclic group
-UZ[p] @CyclicGroup[UZ.find_gen[p], UZ.mul[p]] = ...
+Zstar[p] @CyclicGroup[Zstar.find_gen[p], Zstar.mul[p], 1] = ...
     (elements: list[1..(p-1)],
      inverse[x]: first[elements, el => mul[x, el]==1])
-UZ.order[g, p] = (G: CyclicGroup[g, UZ.mul[p], 1]) G.order[g]
-UZ.mul[p] = [x, y] => x*y%p
-UZ.find_gen[p] = first[2..p-1, x => UZ.order[x, p]==p-1]
+Zstar.order[g, p] = (G: CyclicGroup[g, Zstar.mul[p], 1]) G.order[g]
+Zstar.mul[p] = [x, y] => x*y%p
+Zstar.find_gen[p] = first[list[2..p-1], x => Zstar.order[x, p]==p-1]
 
 # polynomial field
 # F[p, n] @Group
