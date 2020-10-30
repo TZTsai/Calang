@@ -6,40 +6,69 @@ prime?[n] = (find_divisor[t]:
             n > 1 and find_divisor[2] == n
 first[l, pred] = (rec[i]: l[i] if pred[l[i]] else rec[i+1]) rec[0]
 
-Group[m, o] = ...
-(mul: m, zero: o,
- pow[x, k]: (rec[a, b, i]: a if i==0 else
-                           rec[m[a,b], b, i-1] if i%2 else
-                           rec[a, m[b,b], i/2])
-            rec[1, x, k])
+# Groups
+Group[m, o] = (
+     mul: m, zero: o,
+     pow[x, k]: (rec[a, b, i]: a if i==0 else
+                               rec[m[a,b], b, i-1] if i%2 else
+                               rec[a, m[b,b], i/2])
+                rec[1, x, k]
+)
 
-CyclicGroup[g, m, o] @Group[m, o] = ...
-(gen: g,
- elements[]: (rec[x, l]: l if x in l else rec[m[g,x], l+[x]])
-             rec[g, []],
- order[x:'nan]: len[elements[]] if x=='nan else
-                (rec[x, k]: k if x==zero else rec[mul[x,g], k+1])
-                rec[x, 1])
+CyclicGroup[g, m, o] @Group[m, o] = (
+     gen: g,
+     elements[]: (rec[x, l]: l if x in l else rec[m[g,x], l+[x]])
+                 rec[g, []],
+     order[x:'nan]: len[elements[]] if x=='nan else
+                    (rec[r, k]: k if r==zero else rec[mul[x,r], k+1])
+                    rec[x, 1]
+)
 
-# integer cyclic group
-Zstar[p] @CyclicGroup[Zstar.find_gen[p], Zstar.mul[p], 1] = ...
-    (elements: list[1..(p-1)],
-     inverse[x]: first[elements, el => mul[x, el]==1])
-Zstar.order[g, p] = (G: CyclicGroup[g, Zstar.mul[p], 1]) G.order[g]
-Zstar.mul[p] = [x, y] => x*y%p
-Zstar.find_gen[p] = first[list[2..p-1], x => Zstar.order[x, p]==p-1]
+# Integer Modular Multiplicative Group
+Zx[p] @CyclicGroup[Zx.find_gen[p], Zx.mul[p], 1] = (
+     elements: [x for x in 1..p-1 if gcd[x, p] == 1],
+     inverse[x]: first[elements, el => mul[x, el]==1],
+     order[x:'nan]: len[elements] if x=='nan else Zx.order[x, p]
+)
+Zx.order[g, p] = (G: CyclicGroup[g, Zx.mul[p], 1]) G.order[g]
+Zx.mul[p] = [x, y] => x*y%p
+Zx.find_gen[p] = first[list[2..p-1], x => Zx.order[x, p]==p-1]
 
-# polynomial field
-# F[p, n] @Group
+# Finite Field
+MakeGF[g, m, n] = (
+     reduce[p] = when(p == []: [0],
+                      p[0] == 0: reduce[p[1:]],
+                      len[p] > n: ((q: poly.pad_zero[g, len[p], 0])
+                                   reduce[poly.sub[p, poly.scale[q, p[-1]]]]),
+                      [c%m for c in p]),
+     raise[p, k] = reduce[[0]*k + p],
+     add[p, q] = reduce[poly.add[p, q]],
+     sum[p~] = [0] if p == [] else add[p[0], sum[p[1:]~]],
+     mul[p, q] = reduce[sum[raise[poly.scale[p, c], i] for [i, c] in enum[q]]],
+     get[]: @CyclicGroup[g, mul, [1]] (mod: m, deg: n)
+)
+poly = (
+     scale[p, a] = p .* a,
+     pad_zero[p, n, right:1] = (k: n-len[l])
+          when(k<=0: l, right: l+[0]*k, [0]*k+l),
+     add[p, q] = (n: max[len[p], len[q]])
+          pad_zero[p, n] .+ pad_zero[q, n],
+     sub[p, q] = add[p, scale[q, -1]]
+)
+GF[g, m, n] = MakeGF[g, m, n].get[]
+
 
 #TEST
-g = Group[2, [x,y] => x*y%18]
-g.elements[]
 prime?[2]  #1
 prime?[19] #1
 prime?[16] #0
-g = Z[24]
-g.elements[]
-h = Z[17]
-h.elements[]
+h = Zx[7]
+h.elements #(1, 2, 3, 4, 5, 6)
+h.order[] #6
+[[x, h.order[x]] for x in h.elements] ...
+#((1,1),(2,5),(3,6),(4,3),(5,2),(6,4))
+[[x, h.inverse[x]] for x in h.elements] ...
+#((1,1),(2,4),(3,5),(4,2),(5,3),(6,6))
 h.pow[4, 87]
+g = Zx[24]
+g.elements #(1, 5, 7, 11, 13, 17, 19, 23)

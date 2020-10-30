@@ -39,14 +39,21 @@ class Env(dict):
             self.update(binds)
     
     def __getitem__(self, name):
+        if name == 'this':
+            return self
+        if name == 'super':
+            if self.parent and self.parent.name[0] != '_':
+                return self.parent
+            else:
+                raise NameError('no parent Env')
         if name in self:
             return super().__getitem__(name)
-        if self.parent is not None:
+        if self.parent:
             return self.parent[name]
         raise KeyError('unbound name: ' + name)
 
     def dir(self):
-        if self.parent is None or self.parent.name[0] == '_':
+        if self.parent or self.parent.name[0] in '_(':
             return self.name
         else:
             return self.parent.dir() + '.' + self.name
@@ -72,7 +79,7 @@ class Env(dict):
     def all(self):
         d = {'(parent)': self.parent}
         env = self
-        while env is not None:
+        while env:
             for k in env:
                 if k not in d:
                     d[k] = env[k]
@@ -116,7 +123,7 @@ class Map:
         if self.at:  # "@" operator
             at = Map.eval(self.at, local)
             assert isinstance(at, Env), "@ not applied to an Env"
-            local = at.child(binds=local)
+            at.update(local); local = at
         if config.debug:
             signature = f'{self.dir}.{self.__name__}{list(val)}'
             log(signature, level=Map._depth)
@@ -132,7 +139,7 @@ class Map:
         return '<map: %s.%s>' % (self.dir, self.__name__)
     
     def __str__(self):
-        return '<map: %s>' % self._str
+        return self._str
     
     # def composed(self, func):
     #     "Enable arithmetic ops on Map."
@@ -178,17 +185,26 @@ class Range:
         
         
 def remake_str(tree, env):
-    "Reconstruct a readable representation from the syntax tree."
-    def rec(tr):
+    "Reconstruct a readable string from the syntax tree."
+    
+    def rec(tr, in_seq=False):  # $sub: whether it is a sub-recursion
         if type(tr) is not list:
             return str(tr)
+        
+        def group(s): return '(%s)' if in_seq else s
+        # if in an operation sequence, add a pair of parentheses
+        
         tag = tr[0]
         if 'DELAY' in tag:
             _, tag = tag.split(':', 1)
         if tag in ('NAME', 'SYM', 'PAR'):
             return tr[1]
-        elif tag == 'SEQ':
+        elif tag == 'FIELD':
             return ''.join(map(rec, tr[1:]))
+        elif tag == 'ATTR':
+            return '.' + tr[1]
+        elif tag == 'SEQ':
+            return ''.join(rec(t, True) for t in tr[1:])
         elif tag[-2:] == 'OP':
             op = tr[1]
             if type(op) is str: op = Map.eval(tr, None)
@@ -202,7 +218,7 @@ def remake_str(tree, env):
             extpar = [extpar+'~'] if extpar else []
             return "[%s]" % ', '.join(pars + optpars + extpar)
         elif tag == 'IF_ELSE':
-            return "%s if %s else %s" % tuple(map(rec, tr[1:]))
+            return group("%s if %s else %s" % tuple(map(rec, tr[1:])))
         elif tag == 'PAR_LST':
             split_pars(tr, env)
             return rec(tr)
@@ -210,11 +226,11 @@ def remake_str(tree, env):
             return '[%s]' % ', '.join(map(rec, tr[1:]))
         elif tag == 'MAP':
             _, form, exp = tr
-            return '%s => %s' % (rec(form), rec(exp))
+            return group('%s => %s' % (rec(form), rec(exp)))
         elif tag == 'ENV':
             if tr[1][0] == 'MATCH':
                 _, form, exp = tr[1]
-                return '%s::%s' % (rec(form), rec(exp))
+                return group('%s::%s' % (rec(form), rec(exp)))
             elif tr[1][0] == 'AT':
                 at = tr[1:]
                 return '@%s' % ''.join(map(rec, at))

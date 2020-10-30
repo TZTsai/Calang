@@ -1,5 +1,5 @@
 from _parser import calc_parse
-from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins
+from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins, special_names
 from _funcs import Symbol
 from _obj import Env, stack, Op, Attr, Map, split_pars
 import config
@@ -8,7 +8,7 @@ import config
 Builtins = Env(name='_builtins_', binds=builtins)
 
 def GlobalEnv():
-    Global = Env(name='_global_', parent=Builtins)
+    Global = Env(name='(global)', parent=Builtins)
     Global._ans = []
     return Global
 
@@ -192,7 +192,6 @@ def VAL(tr):
 
 def NAME(tr, env):
     name = tr[1]
-    if name == 'this': return env
     try: return env[name]
     except KeyError:
         if env is Global:
@@ -223,11 +222,10 @@ def GEN_LST(tr, env):
     def generate(exp, constraints):
         if constraints:
             constr = constraints.pop(0)
-            _, par, ran, *spec = constr
-            par = par[1]  # remove the tag
+            _, form, ran, *spec = constr
             if spec: spec = spec[0]
             for val in eval_tree(ran, local):
-                local[par] = val
+                match(form, val, local)
                 if not spec or eval_tree(spec, local):
                     yield from generate(exp, constraints)
         else:
@@ -382,6 +380,9 @@ def DEF(tr):
 def define(to_def, exp, env, at=None, doc=None):
     
     def def_(name, val, env):
+        if name in special_names:
+            raise NameError('"%s" cannot be bound - reserved for special use' % name)
+
         if isinstance(val, Map):
             val.__name__ = name
         elif isinstance(val, Env):

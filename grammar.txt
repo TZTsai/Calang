@@ -37,7 +37,7 @@ BIND    := _DF : EXP  ## DELAY
 
 VAL     := PRINT:H_PRINT ? ( IF_ELSE | SEQ ) PRINT:T_PRINT ?
 IF_ELSE := SEQ if SEQ else EXP  ## DELAY
-SEQ     := _TERM ( BOP ? _TERM ) *
+SEQ     := _TERM ( ( ATTR ! BOP ) ? _TERM ) *
 _TERM   := LOP ? ITEM ROP ? 
 
 PRINT   := /`.*?`/
@@ -61,7 +61,7 @@ SYM_LST := %LST < ( UNQUOTE | _SYM_IT ) , >
 UNQUOTE := ` ( LIST | NAME )  ## convert the item back to a value
 _SYM_IT := SYM_LST | NAME:SYM
 GEN_LST := %BKT < ( EXP ( for CONSTR ) + ) >  ## DELAY
-CONSTR  := NAME:PAR in EXP ( if EXP ) ?
+CONSTR  := FORM in EXP ( if EXP ) ?
 IDC_LST := %BKT < %SEQ < SLICE , > >
 SLICE   := _SLC : _SLC ( : _SLC ) ?
 _SLC    := ( SEQ | EMPTY )

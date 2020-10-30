@@ -891,8 +891,22 @@
         [
           "ITEM_OP",
           [
-            "OBJ",
-            "BOP"
+            "ALT",
+            [
+              "ITEM_OP",
+              [
+                "OBJ",
+                "ATTR"
+              ],
+              [
+                "OP",
+                "!"
+              ]
+            ],
+            [
+              "OBJ",
+              "BOP"
+            ]
           ],
           [
             "OP",
@@ -1359,7 +1373,7 @@
     "ALT",
     [
       "OBJ",
-      "NAME:PAR"
+      "FORM"
     ],
     [
       "MARK",
