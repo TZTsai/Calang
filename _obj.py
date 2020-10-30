@@ -41,11 +41,6 @@ class Env(dict):
     def __getitem__(self, name):
         if name == 'this':
             return self
-        if name == 'super':
-            if self.parent and self.parent.name[0] != '_':
-                return self.parent
-            else:
-                raise NameError('no parent Env')
         if name in self:
             return super().__getitem__(name)
         if self.parent:
@@ -104,7 +99,7 @@ class Map:
     eval  = lambda tree, parent: NotImplemented
     _depth = 0  # used for debugging
 
-    def __init__(self, tree, env, deco=None):
+    def __init__(self, tree, env, at=None):
         tree[2] = Map.eval(tree[2], env=None)
         # simplify the body
         _, form, body = tree
@@ -112,7 +107,7 @@ class Map:
         self.form = form
         self.body = body
         self.parent = env
-        self.deco = deco  # decorator created by "@"
+        self.at = at  # decorator created by "@"
         self.dir = self.parent.dir()
         self.__name__ = '(map)'
         self._str = remake_str(tree, env)
@@ -120,10 +115,11 @@ class Map:
     def __call__(self, val):
         local = self.parent.child()
         Map.match(self.form, val, local)
-        if self.deco:
-            at = Map.eval(self.deco, local)
+        if self.at:
+            at = Map.eval(self.at, local)
             assert isinstance(at, Env), "@ not applied to an Env"
             local = at.child(binds=local)
+            local['super'] = at.parent
         if config.debug:
             signature = f'{self.dir}.{self.__name__}{list(val)}'
             log(signature, level=Map._depth)
@@ -195,8 +191,8 @@ def remake_str(tree, env):
         # if in an operation sequence, add a pair of parentheses
         
         tag = tr[0]
-        if 'DELAY' in tag:
-            _, tag = tag.split(':', 1)
+        if ':' in tag: tag = tag.split(':', 1)[0]
+        
         if tag in ('NAME', 'SYM', 'PAR'):
             return tr[1]
         elif tag == 'FIELD':
@@ -209,7 +205,7 @@ def remake_str(tree, env):
             op = tr[1]
             if type(op) is str: op = Map.eval(tr, None)
             return (' %s ' if op.priority < 4 else '%s') % str(tr[1])
-        elif tag[:3] == 'NUM':
+        elif tag == 'NUM':
             return str(tr[1])
         elif tag == 'FORM':
             _, pars, optpars, extpar = tr
@@ -237,7 +233,7 @@ def remake_str(tree, env):
             else:
                 at = tr[1:]
                 return '@%s' % ''.join(map(rec, at))
-        elif tag == 'LET':
+        elif tag == 'CLOSURE':
             _, local, exp = tr
             return '%s %s' % (rec(local), rec(exp))
         elif tag == 'FUNC':
@@ -247,6 +243,8 @@ def remake_str(tree, env):
             cases = tr[1:]
             return 'when(%s)' % ', '.join(': '.join(map(rec, case[1:]))
                                           for case in cases)
+        elif tag == 'AT':
+            return '@' + tr[1]
         elif 'PRINT' in tag:
             return ''
         else:

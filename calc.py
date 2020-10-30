@@ -104,7 +104,7 @@ def run(filename=None, test=False, start=0, verbose=True):
         except KeyboardInterrupt:
             return
         except Warning as w:
-            print('Wrong Answer:', w)
+            print(w)
             if test and config.debug: raise
         except Exception as e:
             print('Error:', e)

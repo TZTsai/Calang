@@ -173,7 +173,7 @@ def ATTR(tr): return Attr(tr[1])
 def LINE(tr):
     return tr[-1]
 
-def PRT(tr):
+def BODY(tr):
     if tr[1] == 'PRINTED':
         return tr[2]
     elif tag(tr[1]) == 'H_PRINT':
@@ -228,30 +228,46 @@ def GEN_LST(tr, env):
     local = env.child()
     return tuple(generate(exp, constraints))
 
-def ENV(tr, env):
+def DICT(tr, env):
     local = env.child()
-    if len(tr) == 2 and isinstance(tr[1], Env):
-        return tr[1]
     for t in tr[1:]:
         _, var, exp = t
         define(var, exp, local)
     return local
 
 def MAP(tr, env):
-    drop_tag(tr[2], 'DELAY')
     return Map(tr, env)
 
-def LET(tr, env):
+def CLOSURE(tr, env):
     _, local, body = tr
     if not isinstance(local, Env):
         return tr
-    drop_tag(body, 'DELAY')
     result = eval_tree(body, env=local)
     if isinstance(result, Env):
-        result._parent = local
+        result.parent = local
     elif is_tree(result):
         result = eval_tree(result, env=env)
     return result
+
+def AT(tr, env):
+    drop_tag(tr, 'AT')
+    return eval_tree(tr, env)
+
+def BIND(tr, env):
+    i = 1
+    var = tr[i]; i+=1
+    try:
+        drop_tag(tr[i], 'AT')
+        at = tr[i]; i+=1
+    except:
+        at = None
+    exp = tr[i]; i+=1
+    try:
+        assert tag(tr[i]) == 'DOC'
+        doc = tr[i][1][1:-1]
+    except:
+        doc = None
+    define(var, exp, Global, at, doc)
     
 def MATCH(tr, env):
     _, form, val = tr
@@ -280,9 +296,85 @@ def match(form, val, local: Env):
         define(opt_par, default, local)
     if ext_par:
         local[ext_par] = tuple(vals)
+        
+
+def define(var, exp, env, at=None, doc=None):
+
+    def def_(name, val, env):
+        if name in special_names:
+            raise NameError('"%s" cannot be bound - '
+                            'reserved for special use' % name)
+
+        if isinstance(val, Map):
+            val.__name__ = name
+        elif isinstance(val, Env):
+            val.name = name
+            if env is not Global:
+                val.env = env
+                
+        if doc:
+            if not isinstance(val, Env):
+                val = Env(val, name=name)
+            try: val.__doc__ += '\n' + doc
+            except: val.__doc__ = doc
+            
+        env[name] = val
+
+    def def_all(vars, val, env):
+        t, vars = vars[0], vars[1:]
+        if t == 'VARS':
+            assert is_list(val), 'vars assigned to non-list'
+            assert len(vars) == len(val), 'list lengths mismatch'
+            for var, item in zip(vars, val):
+                def_all(var, item, env)
+        else:
+            def_(vars[0], val, env)
+    
+    tag_ = tag(var)
+
+    # evaluate the exp
+    if tag_ == 'FUNC':
+        form = var[2]
+        val = Map(['MAP', form, exp], env, at)
+    else:
+        assert at is None, 'invalid use of @'
+        val = eval_tree(exp, env)
+
+    # bind the variable(s)
+    if tag_ == 'VARS':
+        def_all(var, val, env)
+    else:
+        name = var[1] if tag_ == 'NAME' else var[1][1]
+        def_(name, val, env)
+        
+def split_field(tr):
+    if tr[0] == 'NAME':
+        attr = tr[1]
+        parent = Global
+    elif tr[0] == 'FIELD':
+        attr = tr.pop()[1]
+        parent = eval_tree(tr, Global) if len(tr) > 1 else Global
+    else:
+        raise TypeError('wrong type for split_field')
+    return parent, attr
 
 
 # these rules are commands in the calc
+
+def DEF(tr):
+    _, env, bind = tr
+    upper, env_name = split_field(env[:-1])
+    env = upper[env_name]
+    if not isinstance(env, Env):
+        # if env is not Env instance, convert it
+        env = upper.child(env, env_name)
+        upper[env_name] = env
+    BIND(bind, env)
+    
+def DEL(tr):
+    for t in tr[1:]:
+        field, attr = split_field(t)
+        field.delete(attr)
 
 def DIR(tr):
     if len(tr) == 1:
@@ -349,116 +441,21 @@ def CONF(tr):
             setattr(config, conf, tr[2] in ('on', '1'))
     else:
         raise ValueError('no such field in the config')
-
-def DEL(tr):
-    for t in tr[1:]:
-        field, attr = split_field(t)
-        field.delete(attr)
-
-def DEF(tr):
-    i = 1
-    to_def = tr[i]; i+=1
-    try:
-        drop_tag(tr[i], 'DECO')
-        deco = tr[i]; i+=1
-    except:
-        deco = None
-    exp = tr[i]; i+=1
-    try:
-        assert tag(tr[i]) == 'DOC'
-        doc = tr[i][1][1:-1]
-    except:
-        doc = None
-    define(to_def, exp, Global, deco, doc)
-
-
-def define(to_def, exp, env, deco=None, doc=None):
     
-    def def_(name, val, env):
-        if name in special_names:
-            raise NameError('"%s" cannot be bound - reserved for special use' % name)
-
-        if isinstance(val, Map):
-            val.__name__ = name
-        elif isinstance(val, Env):
-            val.name = name
-            if env is not Global:
-                val.env = env
-                
-        if doc:
-            if not isinstance(val, Env):
-                val = Env(val, name=name)
-            try: val.__doc__ += '\n' + doc
-            except: val.__doc__ = doc
-            
-        env[name] = val
-
-    def def_all(vars, val, env):
-        t, vars = vars[0], vars[1:]
-        if t == 'VARS':
-            assert is_list(val), 'vars assigned to non-list'
-            assert len(vars) == len(val), 'list lengths mismatch'
-            for var, item in zip(vars, val):
-                def_all(var, item, env)
-        else:
-            def_(vars[0], val, env)
-    
-    # evaluate the env
-    if tag(to_def) == 'TO_DEF':
-        assert env is Global    # attributes can only be defined in Global
-        grandparent, parent_name = split_field(to_def[:-1])
-        env = to_env_if_not(grandparent, parent_name)
-        # if parent is not Env, convert it to Env
-        to_def = to_def[-1]
-    
-    tag_ = tag(to_def)
-
-    # evaluate the exp
-    if tag_ == 'FUNC':
-        form = to_def[2]
-        val = Map(['MAP', form, exp], env, deco)
-    else:
-        assert deco is None, 'invalid use of @'
-        val = eval_tree(exp, env)
-
-    # bind the variable(s)
-    if tag_ == 'VARS':
-        def_all(to_def, val, env)
-    else:
-        name = to_def[1] if tag_ == 'NAME' else to_def[1][1]
-        def_(name, val, env)
-        
-def split_field(tr):
-    if tr[0] == 'NAME':
-        attr = tr[1]
-        parent = Global
-    elif tr[0] == 'TO_DEF':
-        attr = tr.pop()[1]
-        parent = eval_tree(tr, Global) if len(tr) > 1 else Global
-    else:
-        raise TypeError('wrong type for split_field')
-    return parent, attr
-
-def to_env_if_not(parent, attr):
-    val = parent[attr]
-    if isinstance(val, Env):
-        return val  # already Env
-    val = parent.child(val, attr)
-    parent[attr] = val
-    return val
-
 
 
 def eval_tree(tree, env):
     if not is_tree(tree): return tree
     type_ = tag(tree)
-    tr = tree[:]  # make a copy so that `tree` is not modified
+    tr = tree[:]  # make a copy so that the input is not modified
     if type_ not in delay_types:
         for i in range(1, len(tr)):
             tr[i] = eval_tree(tr[i], env)
+    elif type_ == 'DELAY' and env:
+        drop_tag(tr, 'DELAY')
     if type_ in subs_rules:
         tr = subs_rules[type_](tr)
-    elif type_ in eval_rules and env is not None:
+    elif type_ in eval_rules and env:
         tr = eval_rules[type_](tr, env)
     elif type_ in exec_rules:
         exec_rules[type_](tr)
@@ -475,7 +472,7 @@ LOAD.run  = None  # set this in calc.py
 delay_types = {
     'DELAY',    'DEF',      'BIND',     'IF_ELSE',
     'DEL',      'WHEN',     'GEN_LST',  'PAR_LST',
-    'FORM',     'T_PRINT',
+    'FORM',     'T_PRINT',  'DICT'
 }
 
 subs_rules = {
@@ -486,16 +483,17 @@ subs_rules = {
     'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
     'IDC_LST': LIST,            'LINE': LINE,
     'FIELD': FIELD,             'ATTR': ATTR,
-    'SLICE': SLICE,             'PRT': PRT
+    'SLICE': SLICE,             'BODY': BODY
 }
 
 eval_rules = {
     'NAME': NAME,               'MAP': MAP,
     'H_PRINT': PRINT,           'T_PRINT': PRINT,  
-    'ENV': ENV,                 'MATCH': MATCH,
+    'DICT': DICT,               'MATCH': MATCH,
     'IF_ELSE': IF_ELSE,         'GEN_LST': GEN_LST,
-    'WHEN': WHEN,               'LET': LET,
-    'EXP': eval_tree,
+    'WHEN': WHEN,               'CLOSURE': CLOSURE,
+    'EXP': eval_tree,           'BIND': BIND,
+    'AT': AT
 }
 
 exec_rules = {

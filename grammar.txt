@@ -8,9 +8,9 @@ DEL     := del %SEQ < FIELD , >  ## DELAY
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
 
-DEF     := TO_DEF AT:DECO ? = EXP DOC ?  ## DELAY
-TO_DEF  := ( NAME . ) * _DF
-_DF     := FUNC | _VAR
+DEF     := SUPER:FIELD ? BIND
+SUPER   := ( NAME . ) +
+BIND    := ( FUNC | _VAR ) AT ? = EXP DOC ?  ## DELAY
 FUNC    := NAME FORM
 _VAR    := VARS | NAME
 VARS    := %BKT < %SEQ < _VAR , > >
@@ -26,18 +26,18 @@ _PARS   := %SEQ < ( BIND ! FORM ~ ! ) , >             ## '!' forbids the match
 _OPTS   := %SEQ < ( BIND:OPTPAR ~ ! ) , >
 _EXT    := NAME:EXTPAR ~
 
-EXP     := MAP | LET | ENV | PRT
+EXP     := MAP | CLOSURE | ENV | BODY
 
 MAP     := FORM => EXP:DELAY
-LET     := ENV EXP:DELAY
-ENV     := AT | %GRP < %SEQ < BIND , > > | MATCH
+CLOSURE := ENV EXP:DELAY
+ENV     := AT | DICT | MATCH
 AT      := @ _VAL
-BIND    := _DF = EXP  ## DELAY
+DICT    := %GRP < %SEQ < BIND , > >
 MATCH   := FORM :: _VAL
 _VAL    := APPLY:SEQ | ITEM
 APPLY   := FIELD ( GEN_LST | VAL_LST )
 
-PRT     := PRINT:H_PRINT ? ( IF_ELSE | SEQ ) PRINT:T_PRINT ?
+BODY    := PRINT:H_PRINT ? ( IF_ELSE | SEQ ) PRINT:T_PRINT ?
 IF_ELSE := SEQ if SEQ else EXP  ## DELAY
 SEQ     := _TERM ( BOP ? _TERM ) *
 _TERM   := LOP ? ITEM ATTR ? ROP ?

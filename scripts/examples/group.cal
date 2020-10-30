@@ -40,11 +40,8 @@ MakeGF[g, m, n] = (
                       len[p] > n: ((q = poly.pad_zero[g, len[p], 0]) ...
                                    reduce[poly.sub[p, poly.scale[q, p[-1]]]]),
                       [c%m for c in p]),
-     raise[p, k] = reduce[[0]*k + p],
-     add[p, q] = reduce[poly.add[p, q]],
-     sum[ps~] = reduce[poly.sum[ps~]],
-     mul[p, q] = sum[raise[poly.scale[p, c], i] for [i, c] in enum[q]],
-     get[] = @CyclicGroup[g, mul, [1]] (mod = m, deg = n)
+     mul[p, q] = reduce[poly.mul[p, q]],
+     get[] @CyclicGroup[g, mul, [1]] = (mod = m, deg = n)
 )
 poly = (
      scale[p, a] = p .* a,
@@ -53,6 +50,8 @@ poly = (
      add[p, q] = ((n = max[len[p], len[q]]) ...
           pad_zero[p, n] .+ pad_zero[q, n]),
      sum[ps~] = [0] if ps == [] else add[ps[0], sum[ps[1:]~]],
+     raise[p, k] = [0]*k + p,
+     mul[p, q] = sum[raise[scale[p, c], i] for [i, c] in enum[q]],
      sub[p, q] = add[p, scale[q, -1]]
 )
 GF[g, m, n] = MakeGF[g, m, n].get[]

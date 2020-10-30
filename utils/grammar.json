@@ -208,14 +208,57 @@
   "DEF": [
     "ALT",
     [
+      "ITEM_OP",
+      [
+        "OBJ",
+        "SUPER:FIELD"
+      ],
+      [
+        "OP",
+        "?"
+      ]
+    ],
+    [
       "OBJ",
-      "TO_DEF"
+      "BIND"
+    ]
+  ],
+  "SUPER": [
+    "ITEM_OP",
+    [
+      "ALT",
+      [
+        "OBJ",
+        "NAME"
+      ],
+      [
+        "MARK",
+        "."
+      ]
+    ],
+    [
+      "OP",
+      "+"
+    ]
+  ],
+  "BIND": [
+    "ALT",
+    [
+      "EXP",
+      [
+        "OBJ",
+        "FUNC"
+      ],
+      [
+        "PAR",
+        "_VAR"
+      ]
     ],
     [
       "ITEM_OP",
       [
         "OBJ",
-        "AT:DECO"
+        "AT"
       ],
       [
         "OP",
@@ -240,42 +283,6 @@
         "OP",
         "?"
       ]
-    ]
-  ],
-  "TO_DEF": [
-    "ALT",
-    [
-      "ITEM_OP",
-      [
-        "ALT",
-        [
-          "OBJ",
-          "NAME"
-        ],
-        [
-          "MARK",
-          "."
-        ]
-      ],
-      [
-        "OP",
-        "*"
-      ]
-    ],
-    [
-      "PAR",
-      "_DF"
-    ]
-  ],
-  "_DF": [
-    "EXP",
-    [
-      "OBJ",
-      "FUNC"
-    ],
-    [
-      "PAR",
-      "_VAR"
     ]
   ],
   "FUNC": [
@@ -659,7 +666,7 @@
     ],
     [
       "OBJ",
-      "LET"
+      "CLOSURE"
     ],
     [
       "OBJ",
@@ -667,7 +674,7 @@
     ],
     [
       "OBJ",
-      "PRT"
+      "BODY"
     ]
   ],
   "MAP": [
@@ -685,7 +692,7 @@
       "EXP:DELAY"
     ]
   ],
-  "LET": [
+  "CLOSURE": [
     "ALT",
     [
       "OBJ",
@@ -703,54 +710,8 @@
       "AT"
     ],
     [
-      "ALT",
-      [
-        "ITEM_OP",
-        [
-          "STR",
-          "\"(\""
-        ],
-        [
-          "OP",
-          "-"
-        ]
-      ],
-      [
-        "ALT",
-        [
-          "OBJ",
-          "BIND"
-        ],
-        [
-          "ITEM_OP",
-          [
-            "ALT",
-            [
-              "MARK",
-              ","
-            ],
-            [
-              "OBJ",
-              "BIND"
-            ]
-          ],
-          [
-            "OP",
-            "*"
-          ]
-        ]
-      ],
-      [
-        "ITEM_OP",
-        [
-          "STR",
-          "\")\""
-        ],
-        [
-          "OP",
-          "-"
-        ]
-      ]
+      "OBJ",
+      "DICT"
     ],
     [
       "OBJ",
@@ -768,19 +729,54 @@
       "_VAL"
     ]
   ],
-  "BIND": [
+  "DICT": [
     "ALT",
     [
-      "PAR",
-      "_DF"
+      "ITEM_OP",
+      [
+        "STR",
+        "\"(\""
+      ],
+      [
+        "OP",
+        "-"
+      ]
     ],
     [
-      "MARK",
-      "="
+      "ALT",
+      [
+        "OBJ",
+        "BIND"
+      ],
+      [
+        "ITEM_OP",
+        [
+          "ALT",
+          [
+            "MARK",
+            ","
+          ],
+          [
+            "OBJ",
+            "BIND"
+          ]
+        ],
+        [
+          "OP",
+          "*"
+        ]
+      ]
     ],
     [
-      "OBJ",
-      "EXP"
+      "ITEM_OP",
+      [
+        "STR",
+        "\")\""
+      ],
+      [
+        "OP",
+        "-"
+      ]
     ]
   ],
   "MATCH": [
@@ -827,7 +823,7 @@
       ]
     ]
   ],
-  "PRT": [
+  "BODY": [
     "ALT",
     [
       "ITEM_OP",
