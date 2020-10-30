@@ -899,22 +899,8 @@
         [
           "ITEM_OP",
           [
-            "ALT",
-            [
-              "ITEM_OP",
-              [
-                "OBJ",
-                "ATTR"
-              ],
-              [
-                "OP",
-                "!"
-              ]
-            ],
-            [
-              "OBJ",
-              "BOP"
-            ]
+            "OBJ",
+            "BOP"
           ],
           [
             "OP",
@@ -948,6 +934,17 @@
     [
       "OBJ",
       "ITEM"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "OBJ",
+        "ATTR"
+      ],
+      [
+        "OP",
+        "?"
+      ]
     ],
     [
       "ITEM_OP",
@@ -1090,10 +1087,6 @@
     [
       "OBJ",
       "FIELD"
-    ],
-    [
-      "OBJ",
-      "ATTR"
     ],
     [
       "OBJ",

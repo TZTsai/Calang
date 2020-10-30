@@ -37,21 +37,21 @@ Zx.find_gen[p] = first[list[2..p-1], x => Zx.order[x, p]==p-1]
 MakeGF[g, m, n] = (
      reduce[p] = when(p == []: [0],
                       p[0] == 0: reduce[p[1:]],
-                      len[p] > n: ((q = poly.pad_zero[g, len[p], 0])
+                      len[p] > n: ((q = poly.pad_zero[g, len[p], 0]) ...
                                    reduce[poly.sub[p, poly.scale[q, p[-1]]]]),
                       [c%m for c in p]),
      raise[p, k] = reduce[[0]*k + p],
      add[p, q] = reduce[poly.add[p, q]],
-     sum[ps~] reduce[poly.sum[ps~]],
+     sum[ps~] = reduce[poly.sum[ps~]],
      mul[p, q] = sum[raise[poly.scale[p, c], i] for [i, c] in enum[q]],
      get[] = @CyclicGroup[g, mul, [1]] (mod = m, deg = n)
 )
 poly = (
      scale[p, a] = p .* a,
-     pad_zero[p, n, right=1] = (k = n-len[l])
-          when(k<=0: l, right: l+[0]*k, [0]*k+l),
-     add[p, q] = (n = max[len[p], len[q]])
-          pad_zero[p, n] .+ pad_zero[q, n],
+     pad_zero[p, n, right=1] = ((k = n-len[l]) ...
+          when(k<=0: l, right: l+[0]*k, [0]*k+l)),
+     add[p, q] = ((n = max[len[p], len[q]]) ...
+          pad_zero[p, n] .+ pad_zero[q, n]),
      sum[ps~] = [0] if ps == [] else add[ps[0], sum[ps[1:]~]],
      sub[p, q] = add[p, scale[q, -1]]
 )
@@ -62,10 +62,8 @@ GF[g, m, n] = MakeGF[g, m, n].get[]
 h = Zx[7]
 h.elements #(1, 2, 3, 4, 5, 6)
 h.order[] #6
-[[x, h.order[x]] for x in h.elements] ...
-#((1,1),(2,5),(3,6),(4,3),(5,2),(6,4))
-[[x, h.inverse[x]] for x in h.elements] ...
-#((1,1),(2,4),(3,5),(4,2),(5,3),(6,6))
+[[x, h.order[x]] for x in h.elements] #((1,1),(2,3),(3,6),(4,3),(5,6),(6,2))
+[[x, h.inverse[x]] for x in h.elements] #((1,1),(2,4),(3,5),(4,2),(5,3),(6,6))
 h.pow[4, 87]
 g = Zx[24]
 g.elements #(1, 5, 7, 11, 13, 17, 19, 23)

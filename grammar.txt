@@ -39,8 +39,8 @@ APPLY   := FIELD ( GEN_LST | VAL_LST )
 
 PRT     := PRINT:H_PRINT ? ( IF_ELSE | SEQ ) PRINT:T_PRINT ?
 IF_ELSE := SEQ if SEQ else EXP  ## DELAY
-SEQ     := _TERM ( ( ATTR ! BOP ) ? _TERM ) *
-_TERM   := LOP ? ITEM ROP ?
+SEQ     := _TERM ( BOP ? _TERM ) *
+_TERM   := LOP ? ITEM ATTR ? ROP ?
 
 PRINT   := /`.*?`/
 ITEM    := GROUP | WHEN | ATOM | LIST
@@ -48,7 +48,7 @@ GROUP   := %GRP < EXP >
 WHEN    := when %GRP < ( ( CASE , ) + EXP ) >  ## DELAY
 CASE    := EXP : EXP
 
-ATOM    := FIELD | ATTR | SYM | ANS | NUM
+ATOM    := FIELD | SYM | ANS | NUM
 SYM     := ' NAME:SYM
 ANS     := /_(\d+|_*)/
 
