@@ -822,6 +822,17 @@
   "VAL": [
     "ALT",
     [
+      "ITEM_OP",
+      [
+        "OBJ",
+        "PRINT:H_PRINT"
+      ],
+      [
+        "OP",
+        "?"
+      ]
+    ],
+    [
       "EXP",
       [
         "OBJ",
@@ -836,7 +847,7 @@
       "ITEM_OP",
       [
         "OBJ",
-        "PRINT"
+        "PRINT:T_PRINT"
       ],
       [
         "OP",

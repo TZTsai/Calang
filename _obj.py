@@ -231,7 +231,7 @@ def remake_str(tree, env):
             cases = tr[1:]
             return 'when(%s)' % ', '.join(': '.join(map(rec, case[1:]))
                                           for case in cases)
-        elif tag == 'PRINT':
+        elif 'PRINT' in tag:
             return ''
         else:
             return str(tr)

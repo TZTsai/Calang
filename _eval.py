@@ -29,7 +29,7 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
 # some utils
 
 def tag(tr): 
-    return tr[0].split(':')[0]
+    return tr[0].split(':')[0] if is_tree(tr) else None
 
 def drop_tag(tr, expected):
     if not is_list(tr): return tr
@@ -180,8 +180,12 @@ def LINE(tr):
     return tr[-1]
 
 def VAL(tr):
-    # a VAL tree will only occur when it has a PRINT in the end
-    return tr[1]
+    if tr[1] == 'PRINTED':
+        return tr[2]
+    elif tag(tr[1]) == 'H_PRINT':
+        return tr
+    else:
+        return tr[1]
 
 
 ## eval rules which require environment
@@ -475,7 +479,7 @@ LOAD.run  = None  # set this in calc.py
 delay_types = {
     'DELAY',    'DEF',      'BIND',     'IF_ELSE',
     'DEL',      'WHEN',     'GEN_LST',  'PAR_LST',
-    'FORM'
+    'FORM',     'T_PRINT',
 }
 
 subs_rules = {
@@ -492,10 +496,11 @@ subs_rules = {
 
 eval_rules = {
     'NAME': NAME,               'MAP': MAP,
-    'PRINT': PRINT,             'EXP': eval_tree,
+    'H_PRINT': PRINT,           'T_PRINT': PRINT,  
     'ENV': ENV,                 'MATCH': MATCH,
     'IF_ELSE': IF_ELSE,         'GEN_LST': GEN_LST,
     'WHEN': WHEN,               'LET': LET,
+    'EXP': eval_tree,
 }
 
 exec_rules = {

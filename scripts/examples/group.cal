@@ -1,14 +1,15 @@
-Group = [g, m] => (generator: g,
-                   multiplier: m,
-                   stream[x]: [x, []=>stream[multiplier[g, x]]],
-                   next[s]: s[1][], 
-                   pow[x, k]: (rec[a, b, i]: a if i==0 else
-                                             rec[m[a,b], b, i-1] if i%2 else
-                                             rec[a, m[b,b], i/2])
-                              rec[1, x, k],
-                   elements[]: (rec[s, l]: l if s[0] in l else
-                                           rec[next[s], l+[s[0]]])
-                               rec[stream[g], []] `{g}`)
+Group[g, m] = (gen: g,
+               mul: m,
+               iter[x]: [x, []=>iter[m[g, x]]],
+               next[it]: it[1][], 
+               pow[x, k]: (rec[a, b, i]: a if i==0 else
+                                           rec[m[a,b], b, i-1] if i%2 else
+                                           rec[a, m[b,b], i/2])
+                           rec[1, x, k],
+               elements[]: (rec[it, l]: l if it[0] in l else
+                                       rec[next[it], l+[it[0]]])
+                           rec[iter[g], []],
+               order[]: len[elements[]])
 
 gcd[a, b] = a if b == 0 else gcd[b, a%b]
 prime?[n] = (find_divisor[t]:
@@ -16,10 +17,16 @@ prime?[n] = (find_divisor[t]:
                   find_divisor[3 if t==2 else t+2])) ...
             n > 1 and find_divisor[2] == n
 
-Z[p] @Group[2, [x,y]=>x*y%p] = this if not prime?[p] ...
-    else (elements[]: list[1..(p-1)] `(elements of Z_{p})`)
+mul_order[g, p] = (G: Group[g, [x,y]=>x*y%p]) G.order[]
+find_generator[p] = (order:p-1, rec[i]: when(mul_order[i, p] == order: i,
+                                             i < p-1: rec[i+1],
+                                             'fail)) rec[2]
 
-# modular polynomial
+UZ[p] @Group[find_generator[p], [x,y]=>x*y%p] = ...
+    (elements: list[1..(p-1)],
+     inverse[x]: [y for y in elements if mul[x, y] == 1][0])
+
+# polynomial field
 # F[p, n] @Group
 
 #TEST
