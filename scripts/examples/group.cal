@@ -1,30 +1,33 @@
-Group[g, m] = (gen: g,
-               mul: m,
-               iter[x]: [x, []=>iter[m[g, x]]],
-               next[it]: it[1][], 
-               pow[x, k]: (rec[a, b, i]: a if i==0 else
-                                           rec[m[a,b], b, i-1] if i%2 else
-                                           rec[a, m[b,b], i/2])
-                           rec[1, x, k],
-               elements[]: (rec[it, l]: l if it[0] in l else
-                                       rec[next[it], l+[it[0]]])
-                           rec[iter[g], []],
-               order[]: len[elements[]])
-
+# utils
 gcd[a, b] = a if b == 0 else gcd[b, a%b]
 prime?[n] = (find_divisor[t]:
-             when(t^2>n: n, n%t==0: t, 
-                  find_divisor[3 if t==2 else t+2])) ...
+             when(t^2>n: n, n%t==0: t,
+                  find_divisor[t+1+t%2])) ...
             n > 1 and find_divisor[2] == n
+first[l, pred] = (rec[i]: l[i] if pred[l[i]] else rec[i+1]) rec[0]
 
-mul_order[g, p] = (G: Group[g, [x,y]=>x*y%p]) G.order[]
-find_generator[p] = (order:p-1, rec[i]: when(mul_order[i, p] == order: i,
-                                             i < p-1: rec[i+1],
-                                             'fail)) rec[2]
+Group[m, o] = ...
+(mul: m, zero: o,
+ pow[x, k]: (rec[a, b, i]: a if i==0 else
+                           rec[m[a,b], b, i-1] if i%2 else
+                           rec[a, m[b,b], i/2])
+            rec[1, x, k])
 
-UZ[p] @Group[find_generator[p], [x,y]=>x*y%p] = ...
+CyclicGroup[g, m, o] @Group[m, o] = ...
+(gen: g,
+ elements[]: (rec[x, l]: l if x in l else rec[m[g,x], l+[x]])
+             rec[g, []],
+ order[x:'nan]: len[elements[]] if x=='nan else
+                (rec[x, k]: k if x==zero else rec[mul[x,g], k+1])
+                rec[x, 1])
+
+# integer cyclic group
+UZ[p] @CyclicGroup[UZ.find_gen[p], UZ.mul[p]] = ...
     (elements: list[1..(p-1)],
-     inverse[x]: [y for y in elements if mul[x, y] == 1][0])
+     inverse[x]: first[elements, el => mul[x, el]==1])
+UZ.order[g, p] = (G: CyclicGroup[g, UZ.mul[p], 1]) G.order[g]
+UZ.mul[p] = [x, y] => x*y%p
+UZ.find_gen[p] = first[2..p-1, x => UZ.order[x, p]==p-1]
 
 # polynomial field
 # F[p, n] @Group
