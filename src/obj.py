@@ -1,5 +1,5 @@
 import config
-from utils.dec import log
+from utils.deco import log
 
 
 class stack(list):
@@ -100,14 +100,13 @@ class Map:
     eval  = lambda tree, parent: NotImplemented
 
     def __init__(self, tree, env, at=None):
-        tree[2] = Map.eval(tree[2], env=None)
-        # simplify the body
         _, form, body = tree
+        body = Map.eval(body, None)  # simplify the body
         split_pars(form, env)
         self.form = form
         self.body = body
         self.parent = env
-        self.at = at  # decorator created by "@"
+        self.at = at
         self.dir = self.parent.dir()
         self.__name__ = '(map)'
         self._str = remake_str(tree, env)
@@ -196,7 +195,7 @@ def remake_str(tree, env):
         if tag in ('NAME', 'SYM', 'PAR'):
             return tr[1]
         elif tag == 'DELAY':
-            tr[0] = subtag
+            tr = [subtag] + tr[1:]
             return rec(tr, in_seq)
         elif tag == 'FIELD':
             return ''.join(map(rec, tr[1:]))
@@ -229,8 +228,7 @@ def remake_str(tree, env):
         elif tag == 'DICT':
             return '(%s)' % ', '.join(map(rec, tr[1:]))
         elif tag == 'BIND':
-            if tr[-1][0] == 'DOC':
-                tr.pop()
+            if tr[-1][0] == 'DOC': tr = tr[1:]
             tup = tuple(rec(t) for t in tr[1:])
             if tr[2][0][:2] == 'AT':
                 return '%s %s = %s' % tup

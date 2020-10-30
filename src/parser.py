@@ -1,14 +1,13 @@
-from utils.dec import memo, trace
-from json import load, dump
-from pprint import pprint, pformat
-import re
+import re, json
 from .builtins import op_list, keywords, all_, any_
+from utils.deco import memo, trace
+from utils.debug import interact, check_record
 
 
 try:
     grammar = load(open('utils/grammar.json', 'r'))
 except:
-    from grammar import grammar
+    from .grammar import grammar
 
 op_starts = ''.join(set(op[0] for op in op_list if op))
 
@@ -189,60 +188,13 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     return parse_tag(tag, text)
 
 
-## tests ##
-
-def repl():
-    prev_exp = None
-    while True:
-        exp = input('>>> ')
-        if exp == 'q':
-            return
-        elif exp == 'W': 
-            check_parse(prev_exp, None)
-        else:
-            pprint(calc_parse(exp))
-            prev_exp = exp
-
-
-testfile = 'utils/parser_tests.json'
-testcases = load(open(testfile, 'r'))
-rewrite = False
-
-def test():
-    for case in testcases.items(): check_parse(*case)
-
-def check_parse(exp, expected):
-    # print('testing: '+exp)
-    # print('expecting: '+str(expected))
-    if exp not in testcases:
-        testcases[exp] = expected
-    actual = calc_parse(exp)
-    if not rec_comp(expected, actual):
-        print('Wrong Answer of calc_parse(%s)\n'%exp +
-                             'Expected: %s\n'%pformat(expected) +
-                             'Actual: %s\n'%pformat(actual))
-        testcases[exp] = actual
-        global rewrite
-        rewrite = True
-
-def rec_comp(l1, l2):
-    if type(l1) not in (tuple, list):
-        if l1 != l2:
-            print(l1, 'VS', l2)
-            return False
-        else:
-            return True
-    elif len(l1) != len(l2):
-        print(l1, 'VS', l2)
-        return False
-    else:
-        return all(rec_comp(i1, i2) for i1, i2 in zip(l1, l2))
-
 
 if __name__ == "__main__":
-    repl()
-    test()
-    if rewrite:
+    testfile = 'utils/parser_tests.json'
+    testcases, passed = check_record(testfile, calc_parse)
+    interact_record = interact(calc_parse)
+    if not passed or interact_record:
         rewrite = input('rewrite? (y/N) ') == 'y'
     if rewrite:
-        dump(testcases, open(testfile, 'w'))
+        testcases.update(interact_record)
+        json.dump(testcases, open(testfile, 'w'))

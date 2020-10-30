@@ -105,9 +105,10 @@ def run(filename=None, test=False, start=0, verbose=True):
             return
         except Warning as w:
             print(w)
-            if test and config.debug: raise
+            if test and config.debug: raise Exception
         except Exception as e:
-            print('Error:', e)
+            if str(e): print('Error:', e)
+            else: print('Exiting due to an exception...')
             if config.debug: raise
             
     if test:
@@ -117,7 +118,7 @@ LOAD.run = run  # enable LOAD in _eval to run a new script
 
 
 if __name__ == "__main__":
-    from utils.dec import log
+    from utils.deco import log
     from src.grammar import grammar
     import src.parser as parser
     

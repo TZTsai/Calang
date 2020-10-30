@@ -1,10 +1,10 @@
 # from debug.deco import memo, disabled
 # from debug.utils import trace, log
 from pprint import pprint
-from json import dump
 import re
+import json
 from .builtins import binary_ops, unary_l_ops, unary_r_ops
-from utils.dec import memo
+from utils.deco import memo
 
 
 # log.out = open('utils/log.yaml', 'w', encoding='utf8')
@@ -194,23 +194,6 @@ def post_process(grammar, macros):
 
 
 ## tests
-def check(f, args, expected):
-    actual = f(*args)
-    if actual != expected:
-        rec_comp(expected, actual)
-        raise AssertionError(f'Wrong Answer of {f.__name__}{tuple(args)}\n' +
-                             f'Expected: {expected}\n' +
-                             f'Actual: {actual}\n')
-
-def rec_comp(l1, l2):
-    if type(l1) not in (tuple, list, dict):
-        if l1 != l2: print(l1, l2)
-    elif len(l1) != len(l2):
-        print(l1, l2)
-    else:
-        for i1, i2 in zip(l1, l2):
-            if type(l1) is dict: rec_comp(l1[i1], l2[i2])
-            else: rec_comp(i1, i2)
 
 def test_grammar():
 
@@ -250,7 +233,8 @@ def test_grammar():
 
 
 grammar = calc_grammar(Grammar)
-dump(grammar, open('utils/grammar.json', 'w', encoding='utf8'), indent=2)
+json.dump(grammar, open('utils/grammar.json', 'w', 
+                        encoding='utf8'), indent=2)
 
 if __name__ == "__main__":
     test_grammar()

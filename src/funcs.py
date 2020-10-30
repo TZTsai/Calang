@@ -99,11 +99,15 @@ def or_(x, y): return x if x else y
 def not_(x): return 0 if x else 1
 def eq_(x, y):
     if is_list(x):
-        if not is_list(y) or len(x) != len(y): return False
-        return all(map(eq_, x, y))
+        if not is_list(y) or len(x) != len(y):
+            return False
+        else:
+            return all(map(eq_, x, y))
     if is_number(x):
-        if not is_number(y): return False
-        return abs(x - y) <= config.tolerance
+        if not is_number(y):
+            return False
+        else:
+            return abs(x - y) <= config.tolerance
     return x == y
 def ne_(x, y): return not eq_(x, y)
 

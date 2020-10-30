@@ -92,7 +92,7 @@ def SEQtoTREE(tr):
         return op
     
     def apply(op, *vals):
-        if any(type(v) is c for v in vals for c in (list, str)):
+        if any(map(is_tree, vals)):
             raise RuntimeError
         return op(*vals)
 
@@ -277,18 +277,18 @@ def MATCH(tr, env):
 def match(form, val, local: Env):
     vals = list(val) if is_list(val) \
         and not is_tree(val) else [val]
-
+        
     if form[0] != 'FORM': split_pars(form, local)
     _, pars, opt_pars, ext_par = form
-
+    
     if len(pars) > len(vals):
         raise ValueError(f'not enough items in {vals} to match')
-
+    
     for par in pars:
         val = vals.pop(0)
         if is_str(par): local[par] = val
         else: match(par, val, local)
-    opt_pars = opt_pars[:]  # the original opt_pars must not be mutated
+    opt_pars = opt_pars.copy()
     while opt_pars and vals:
         define(opt_pars.pop(0)[0], vals.pop(0), local)
     for opt_par, default in opt_pars:
@@ -351,7 +351,7 @@ def split_field(tr):
         attr = tr[1]
         parent = Global
     elif tr[0] == 'FIELD':
-        attr = tr.pop()[1]
+        tr, attr = tr[:-1], tr[-1][1]
         parent = eval_tree(tr, Global) if len(tr) > 1 else Global
     else:
         raise TypeError('wrong type for split_field')
@@ -445,21 +445,23 @@ def CONF(tr):
 
 def eval_tree(tree, env):
     if not is_tree(tree): return tree
+    if env: tree = tree.copy()
+    # if evaluating in an Env, prevent the original tree from being mutated
     type_ = tag(tree)
-    tr = tree[:]  # make a copy so that the input is not modified
     if type_ not in delay_types:
-        for i in range(1, len(tr)):
-            tr[i] = eval_tree(tr[i], env)
+        for i in range(1, len(tree)):
+            tree[i] = eval_tree(tree[i], env)
     elif type_ == 'DELAY' and env:
-        drop_tag(tr, 'DELAY')
+        drop_tag(tree, 'DELAY')
+        return tree
     if type_ in subs_rules:
-        tr = subs_rules[type_](tr)
+        tree = subs_rules[type_](tree)
     elif type_ in eval_rules and env:
-        tr = eval_rules[type_](tr, env)
+        tree = eval_rules[type_](tree, env)
     elif type_ in exec_rules:
-        exec_rules[type_](tr)
+        exec_rules[type_](tree)
         return
-    return tr
+    return tree
 
 
 Map.match = match

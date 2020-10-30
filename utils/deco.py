@@ -1,4 +1,5 @@
 from functools import wraps
+from .debug import log
 import sys
 
 
@@ -31,13 +32,3 @@ def trace(f):  # a decorator for debugging
         log(f' <--- {signature} === {result}')
         return result
     return _f
-
-
-indent = '  '
-def log(*messages, end='\n', sep=''):
-    if log.out is None: return
-    msg = log.depth*indent + sep.join(map(str, messages)) + end
-    log.out.write(msg)
-
-log.depth = 0
-log.out = sys.stdout
