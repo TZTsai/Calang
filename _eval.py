@@ -1,7 +1,7 @@
 from _parser import calc_parse
 from _builtins import binary_ops, unary_l_ops, unary_r_ops, builtins, special_names
 from _funcs import Symbol
-from _obj import Env, stack, Op, Attr, Map, split_pars
+from _obj import Env, stack, Op, Attr, Map, split_pars, remake_str
 import config
 
 
@@ -231,8 +231,7 @@ def GEN_LST(tr, env):
 def DICT(tr, env):
     local = env.child()
     for t in tr[1:]:
-        _, var, exp = t
-        define(var, exp, local)
+        BIND(t, local)
     return local
 
 def MAP(tr, env):
@@ -267,7 +266,7 @@ def BIND(tr, env):
         doc = tr[i][1][1:-1]
     except:
         doc = None
-    define(var, exp, Global, at, doc)
+    define(var, exp, env, at, doc)
     
 def MATCH(tr, env):
     _, form, val = tr
@@ -310,7 +309,7 @@ def define(var, exp, env, at=None, doc=None):
         elif isinstance(val, Env):
             val.name = name
             if env is not Global:
-                val.env = env
+                val.parent = env
                 
         if doc:
             if not isinstance(val, Env):
@@ -363,7 +362,7 @@ def split_field(tr):
 
 def DEF(tr):
     _, env, bind = tr
-    upper, env_name = split_field(env[:-1])
+    upper, env_name = split_field(env)
     env = upper[env_name]
     if not isinstance(env, Env):
         # if env is not Env instance, convert it

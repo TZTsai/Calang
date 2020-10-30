@@ -97,7 +97,6 @@ class Attr:
 class Map:
     match = lambda val, form, parent: NotImplemented
     eval  = lambda tree, parent: NotImplemented
-    _depth = 0  # used for debugging
 
     def __init__(self, tree, env, at=None):
         tree[2] = Map.eval(tree[2], env=None)
@@ -122,11 +121,11 @@ class Map:
             local['super'] = at.parent
         if config.debug:
             signature = f'{self.dir}.{self.__name__}{list(val)}'
-            log(signature, level=Map._depth)
-            Map._depth += 1
+            log(signature)
+            log.depth += 1
             result = Map.eval(self.body, local)
-            Map._depth -= 1
-            log(signature, ' ==> ', result, level=Map._depth)
+            log.depth -= 1
+            log(signature, ' ==> ', result)
             return result
         else:
             return Map.eval(self.body, local)
@@ -191,10 +190,13 @@ def remake_str(tree, env):
         # if in an operation sequence, add a pair of parentheses
         
         tag = tr[0]
-        if ':' in tag: tag = tag.split(':', 1)[0]
+        if ':' in tag: tag, subtag = tag.split(':', 1)
         
         if tag in ('NAME', 'SYM', 'PAR'):
             return tr[1]
+        elif tag == 'DELAY':
+            tr[0] = subtag
+            return rec(tr, in_seq)
         elif tag == 'FIELD':
             return ''.join(map(rec, tr[1:]))
         elif tag == 'ATTR':
@@ -223,16 +225,19 @@ def remake_str(tree, env):
         elif tag == 'MAP':
             _, form, exp = tr
             return group('%s => %s' % (rec(form), rec(exp)))
-        elif tag == 'ENV':
-            if tr[1][0] == 'MATCH':
-                _, form, exp = tr[1]
-                return group('%s::%s' % (rec(form), rec(exp)))
-            elif tr[1][0] == 'BIND':
-                binds = ['%s = %s' % (rec(k), rec(v)) for _, k, v in tr[1:]]
-                return '(%s)' % ', '.join(binds)
+        elif tag == 'DICT':
+            return '(%s)' % ', '.join(map(rec, tr[1:]))
+        elif tag == 'BIND':
+            if tr[-1][0] == 'DOC':
+                tr.pop()
+            tup = tuple(rec(t) for t in tr[1:])
+            if tr[2][0][:2] == 'AT':
+                return '%s %s = %s' % tup
             else:
-                at = tr[1:]
-                return '@%s' % ''.join(map(rec, at))
+                return '%s = %s' % tup
+        elif tag == 'MATCH':
+            _, form, exp = tr[1]
+            return group('%s::%s' % (rec(form), rec(exp)))
         elif tag == 'CLOSURE':
             _, local, exp = tr
             return '%s %s' % (rec(local), rec(exp))
@@ -244,11 +249,13 @@ def remake_str(tree, env):
             return 'when(%s)' % ', '.join(': '.join(map(rec, case[1:]))
                                           for case in cases)
         elif tag == 'AT':
-            return '@' + tr[1]
+            return '@' + rec(tr[1])
         elif 'PRINT' in tag:
             return ''
+        elif tag == 'DOC':
+            return ''
         else:
-            return str(tr)
+            return str(list(map(rec, tr)))
     return rec(tree)
 
 

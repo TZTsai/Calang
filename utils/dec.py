@@ -34,5 +34,7 @@ def trace(f):  # a decorator for debugging
     return _f
 
 
-def log(*message, level=0):
-    print(level*indent, *message, sep='')
+def log(*message):
+    print(log.depth*indent, *message, sep='')
+
+log.depth = 0
