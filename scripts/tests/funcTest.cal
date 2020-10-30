@@ -1,0 +1,18 @@
+double = x => 2x
+double[3] #6
+twice = f => x => f[f[x]]
+twice[double][3] #12
+g = []=>x
+x = 12321
+g[] #12321
+(x=(x=>x+1)[2]) x  #3
+
+d[f, d=1e-5] = x => (f[x+d]-f[x])/d
+root_newton[f, x=0, thr=1e-8] = (
+    (df=d[f], new_x=x-f[x]/df[x]) 
+    new_x if abs[f[x]] < thr else root_newton[f, new_x] `{x=}`)
+root_newton[sin, 3] == 3.141593  #1
+
+sin_series[n] = [x] => sum[(-1)^(i//2)*x^i/i! for i in 1..n if i%2]
+sin_ = sin_series[10]
+sin[PI/3] == sin_[PI/3]  #1

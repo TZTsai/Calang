@@ -101,12 +101,15 @@ def run(filename=None, test=False, start=0, verbose=True):
 
             count += 1
 
-        except KeyboardInterrupt: return
-        except ((Warning, Exception) if test else Exception) as err:
-            print('Error:', err)
-            if config.debug: raise err
+        except KeyboardInterrupt:
+            return
+        except Warning as w:
+            print('Wrong Answer:', w)
+            if test and config.debug: raise
+        except Exception as e:
+            print('Error:', e)
+            if config.debug: raise
             
-
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
 

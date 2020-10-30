@@ -1,0 +1,17 @@
+x = 12
+e = (x=x)
+e.x == x #1
+@e x #12
+f[x, y]@e = x+y
+f[2, 5] #7
+f[x, y] = @e x+y
+f[2, 5] #17
+x::4 3x #12
+(s=2, t=2s) [s, t] #(2, 4)
+person[age, sex] = (age=age, sex=sex)
+p = person[17, 'male]
+p.age == 17 and p.sex == 'male  #1
+[x,[y],z~]::[1,[2],4,5] x+y.+z  #(7,8)
+[x,y]::_ [y,x]  #(8,7)
+(x: 3) (y: 2x, z: ([x,y]=>x+y)[2,3+x], w: y*z, v: (y:1)y+z) [x, y, z, w, v] ...
+#(3, 6, 8, 48, 9)

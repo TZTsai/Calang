@@ -60,7 +60,7 @@ class Env(dict):
 
     def delete(self, name):
         try: self.pop(name)
-        except: raise NameError('unbound name:', name)
+        except: print('%s is unbound')
 
     def child(self, val=None, name=None, binds=None):
         env = Env(val, self, name, binds)
@@ -70,7 +70,7 @@ class Env(dict):
         return  '<env: %s>' % self.dir()
     
     def __str__(self):
-        content = ', '.join(f'{k}: {v}' for k, v in self.items())
+        content = ', '.join(f'{k} = {v}' for k, v in self.items())
         return f'({content})'
     
     def __bool__(self):
@@ -123,7 +123,7 @@ class Map:
         if self.at:  # "@" operator
             at = Map.eval(self.at, local)
             assert isinstance(at, Env), "@ not applied to an Env"
-            at.update(local); local = at
+            local = at.child(binds=local)
         if config.debug:
             signature = f'{self.dir}.{self.__name__}{list(val)}'
             log(signature, level=Map._depth)
@@ -235,7 +235,7 @@ def remake_str(tree, env):
                 at = tr[1:]
                 return '@%s' % ''.join(map(rec, at))
             else:
-                binds = ['%s: %s' % (rec(k), rec(v)) for _, k, v in tr[1:]]
+                binds = ['%s = %s' % (rec(k), rec(v)) for _, k, v in tr[1:]]
                 return '(%s)' % ', '.join(binds)
         elif tag == 'LET':
             _, local, exp = tr

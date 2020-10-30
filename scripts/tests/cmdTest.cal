@@ -1,0 +1,13 @@
+config tolerance 1e-4
+1.00009 == 1  #1
+x = 1
+del x, y
+x == 'x #1
+
+# load and import
+1234
+load scinums
+_ #1234
+T0 #273.15
+import gauss_jordan
+det[scalem[idmat[3], -3]]  #-27

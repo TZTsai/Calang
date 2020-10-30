@@ -221,13 +221,13 @@ def WHEN(tr, env):
 def GEN_LST(tr, env):
     def generate(exp, constraints):
         if constraints:
-            constr = constraints.pop(0)
+            constr = constraints[0]
             _, form, ran, *spec = constr
             if spec: spec = spec[0]
             for val in eval_tree(ran, local):
                 match(form, val, local)
                 if not spec or eval_tree(spec, local):
-                    yield from generate(exp, constraints)
+                    yield from generate(exp, constraints[1:])
         else:
             yield eval_tree(exp, local)
     _, exp, *constraints = tr

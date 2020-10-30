@@ -143,7 +143,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     must_have = {'DEF': '=', 'MAP': '=>', 'MATCH': '::', 'GEN_LST': 'for', '_EXT': '~',
-                 'SLICE': ':', '_DLST': ';', 'BIND': ':', 'PRINT': '`', 'DOC': '"'}
+                 'SLICE': ':', '_DLST': ';', 'BIND': '=', 'PRINT': '`', 'DOC': '"'}
     @trace
     @memo
     def parse_tag(tag, text):

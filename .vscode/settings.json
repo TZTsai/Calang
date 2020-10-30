@@ -1,8 +1,11 @@
 {
     "cSpell.words": [
+        "coeffs",
         "delim",
+        "egcd",
         "expt",
         "funcs",
+        "moddiv",
         "pynumfy",
         "scinum",
         "segs",
