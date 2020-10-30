@@ -91,7 +91,8 @@ class Attr:
 
     def getFrom(self, env):
         assert isinstance(env, Env), 'not an Env'
-        return env[self.name]
+        try: return env[self.name]
+        except: return getattr(env, self.name)
 
 
 class Map:

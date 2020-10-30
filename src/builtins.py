@@ -11,8 +11,8 @@ from sympy import (
 )
 
 import config
-from _obj import Op, Env, Range
-from _funcs import (
+from obj import Op, Env, Range
+from funcs import (
     is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, 
     add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_, adjoin, unpack,
     iadd, isub, imul, idiv, ipow, iand, ior, 

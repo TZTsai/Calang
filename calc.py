@@ -1,8 +1,8 @@
 import sys
-from _obj import stack
-from _eval import calc_eval, LOAD
-from _funcs import eq_ as equal
-from _format import calc_format
+from src.obj import stack
+from src.eval import calc_eval, LOAD
+from src.funcs import eq_ as equal
+from src.format import calc_format
 import config
 
 
@@ -113,25 +113,33 @@ def run(filename=None, test=False, start=0, verbose=True):
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
 
-
 LOAD.run = run  # enable LOAD in _eval to run a new script
 
 
-
 if __name__ == "__main__":
-    # usage:
-    # python calc.py
+    config.debug = '-d' in sys.argv
+    if config.debug:
+        sys.argv.remove('-d')
+        from utils.dec import log
+        from _grammar import grammar
+        import _parser
+        log.out = open('utils/log.yaml', 'w')
+        _parser.grammar = grammar
+    else:
+        log.out = None
+        
     if len(sys.argv) > 1:
         if sys.argv[1] == '-t':
+            config.debug = True
             if len(sys.argv) == 2:
                 testfile = 'tests.cal'
             else:
                 testfile = sys.argv[2]
             run("scripts/tests/" + testfile, test=True)
-        elif sys.argv[1] == '-d':
-            config.debug = True
-            run()
         else:
-            run("scripts/" + sys.argv[1])
+            try:
+                run("scripts/" + sys.argv[1])
+            except FileNotFoundError:
+                raise FileNotFoundError('script "%s" not found' % sys.argv[1])
     else:
         run()

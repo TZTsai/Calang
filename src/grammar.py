@@ -3,7 +3,7 @@
 from pprint import pprint
 from json import dump
 import re
-from _builtins import binary_ops, unary_l_ops, unary_r_ops
+from builtins import binary_ops, unary_l_ops, unary_r_ops
 from utils.dec import memo
 
 

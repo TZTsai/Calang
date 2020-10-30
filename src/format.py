@@ -1,6 +1,6 @@
 import config
-from _builtins import Rational, Fraction, Matrix, is_number, is_matrix, is_function, floor, inf, log
-from _obj import Range, Env, Map, remake_str
+from builtins import Rational, Fraction, Matrix, is_number, is_matrix, is_function, floor, inf, log
+from obj import Range, Env, Map, remake_str
 from sympy import latex, pretty
 from re import sub as translate
 from utils.greek import gr_to_tex

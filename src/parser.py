@@ -1,23 +1,14 @@
-# from debug.utils import trace, log, interact
-from utils.dec import memo
+from utils.dec import memo, trace
 from json import load, dump
 from pprint import pprint, pformat
 import re
-from _builtins import op_list, keywords, all_, any_
-from config import debug
+from builtins import op_list, keywords, all_, any_
 
 
-trace = lambda f: f
-
-if debug:
-    from debug.utils import log, trace
-    log.out = open('utils/log.yaml', 'w')
-    from _grammar import grammar
-else:
-    try:
-        grammar = load(open('utils/grammar.json', 'r'))
-    except:
-        from _grammar import grammar
+try:
+    grammar = load(open('utils/grammar.json', 'r'))
+except:
+    from grammar import grammar
 
 op_starts = ''.join(set(op[0] for op in op_list if op))
 

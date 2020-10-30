@@ -1,4 +1,5 @@
 from functools import wraps
+import sys
 
 
 def memo(f):  # a decorator to improve performance
@@ -18,23 +19,23 @@ def memo(f):  # a decorator to improve performance
     return _f
 
 
-indent = '  '
 def trace(f):  # a decorator for debugging
     "Print info before and after the call of a function."
-    trace.level = 0
     @wraps(f)
     def _f(*args):
         signature = f"{f.__name__}({', '.join(map(repr, args))})"
-        log(trace.level, f' ---> {signature}')
-        trace.level += 1
+        log(f' ---> {signature}')
+        log.depth += 1
         try: result = f(*args)
-        finally: trace.level -= 1
-        log(trace.level, f' <--- {signature} === {result}')
+        finally: log.depth -= 1
+        log(f' <--- {signature} === {result}')
         return result
     return _f
 
 
-def log(*message):
-    print(log.depth*indent, *message, sep='')
+indent = '  '
+def log(*messages, out=sys.stdout, end='\n', sep=''):
+    if out is None: return
+    out.write(log.depth*indent + sep.join(map(str, messages)))
 
 log.depth = 0
