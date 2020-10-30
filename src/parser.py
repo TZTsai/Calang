@@ -1,8 +1,10 @@
 import re, json
 from .builtins import op_list, keywords, all_, any_
-from utils.deco import memo, trace
+from utils.deco import memo, trace, disabled
 from utils.debug import interact, check_record
 
+
+trace = disabled
 
 try:
     grammar = load(open('utils/grammar.json', 'r'))

@@ -109,7 +109,7 @@ def run(filename=None, test=False, start=0, verbose=True):
         except Exception as e:
             if str(e): print('Error:', e)
             else: print('Exiting due to an exception...')
-            if config.debug: raise
+            if config.debug: raise Exception
             
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
@@ -131,17 +131,20 @@ if __name__ == "__main__":
         log.out = None
         
     if len(sys.argv) > 1:
-        if sys.argv[1] == '-t':
-            config.debug = True
-            if len(sys.argv) == 2:
+        if '-t' in sys.argv:
+            sys.argv.remove('-t')
+            if len(sys.argv) == 1:
                 testfile = 'tests.cal'
             else:
-                testfile = sys.argv[2]
-            run("scripts/tests/" + testfile, test=True)
+                testfile = sys.argv[1]
+            path = "scripts/tests/" + testfile
         else:
-            try:
-                run("scripts/" + sys.argv[1])
-            except FileNotFoundError:
-                raise FileNotFoundError('script "%s" not found' % sys.argv[1])
+            path = "scripts/" + sys.argv[1]
+        try:
+            run()
+        except FileNotFoundError:
+            raise FileNotFoundError('script "%s" not found' % sys.argv[1])
+        except Exception:
+            if config.debug: log.out.close()
     else:
         run()

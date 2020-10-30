@@ -11,7 +11,7 @@
       "program": "calc.py",
       "console": "integratedTerminal",
       "args": [
-        "-t",
+        "-t", "-d",
         "egTest.cal",
         "&&", "exit", "0"
       ]
@@ -33,7 +33,7 @@
       "type": "python",
       "request": "launch",
       "args": [
-        "-t",
+        "-t", "-d",
         "&&", "exit", "0"
       ],
       "program": "calc.py",

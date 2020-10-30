@@ -24,7 +24,7 @@ def trace(f):  # a decorator for debugging
     "Print info before and after the call of a function."
     @wraps(f)
     def _f(*args):
-        signature = f"{f.__name__}({', '.join(map(repr, args))})"
+        signature = f"{f.__name__}({', '.join(map(repr, args))}):"
         log(f' ---> {signature}')
         log.depth += 1
         try: result = f(*args)
@@ -32,3 +32,6 @@ def trace(f):  # a decorator for debugging
         log(f' <--- {signature} === {result}')
         return result
     return _f
+
+
+def disabled(f): return f  # used to disable a decorator
