@@ -1,7 +1,7 @@
-from parser import calc_parse
-from builtins import binary_ops, unary_l_ops, unary_r_ops, builtins, special_names
-from funcs import Symbol
-from obj import Env, stack, Op, Attr, Map, split_pars, remake_str
+from .parser import calc_parse
+from .builtins import binary_ops, unary_l_ops, unary_r_ops, builtins, special_names
+from .funcs import Symbol
+from .obj import Env, stack, Op, Attr, Map, split_pars, remake_str
 import config
 
 

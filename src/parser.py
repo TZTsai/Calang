@@ -2,7 +2,7 @@ from utils.dec import memo, trace
 from json import load, dump
 from pprint import pprint, pformat
 import re
-from builtins import op_list, keywords, all_, any_
+from .builtins import op_list, keywords, all_, any_
 
 
 try:

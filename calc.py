@@ -117,14 +117,15 @@ LOAD.run = run  # enable LOAD in _eval to run a new script
 
 
 if __name__ == "__main__":
+    from utils.dec import log
+    from src.grammar import grammar
+    import src.parser as parser
+    
     config.debug = '-d' in sys.argv
     if config.debug:
         sys.argv.remove('-d')
-        from utils.dec import log
-        from _grammar import grammar
-        import _parser
         log.out = open('utils/log.yaml', 'w')
-        _parser.grammar = grammar
+        parser.grammar = grammar
     else:
         log.out = None
         

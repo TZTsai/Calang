@@ -34,8 +34,10 @@ def trace(f):  # a decorator for debugging
 
 
 indent = '  '
-def log(*messages, out=sys.stdout, end='\n', sep=''):
-    if out is None: return
-    out.write(log.depth*indent + sep.join(map(str, messages)))
+def log(*messages, end='\n', sep=''):
+    if log.out is None: return
+    msg = log.depth*indent + sep.join(map(str, messages)) + end
+    log.out.write(msg)
 
 log.depth = 0
+log.out = sys.stdout

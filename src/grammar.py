@@ -3,7 +3,7 @@
 from pprint import pprint
 from json import dump
 import re
-from builtins import binary_ops, unary_l_ops, unary_r_ops
+from .builtins import binary_ops, unary_l_ops, unary_r_ops
 from utils.dec import memo
 
 
@@ -54,7 +54,7 @@ MARK    := [^>|)\s]\S*
 # MACRO:    used for sub_macro; will not exist in the processed grammar
 
 
-GrammarStr = open('grammar.txt', 'r').read()
+GrammarStr = open('src/grammar.txt', 'r').read()
 GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
 Grammar = split(GrammarStr, '\n')
 # add syntax for operations
