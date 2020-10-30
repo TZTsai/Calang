@@ -8,7 +8,7 @@ import config
 Builtins = Env(name='_builtins_', binds=builtins)
 
 def GlobalEnv():
-    Global = Env(name='(global)', parent=Builtins)
+    Global = Env(name='_global_', parent=Builtins)
     Global._ans = []
     return Global
 
@@ -242,9 +242,7 @@ def CLOSURE(tr, env):
     if not isinstance(local, Env):
         return tr
     result = eval_tree(body, env=local)
-    if isinstance(result, Env):
-        result.parent = local
-    elif is_tree(result):
+    if is_tree(result):  # only happens when @ is used
         result = eval_tree(result, env=env)
     return result
 
@@ -308,8 +306,6 @@ def define(var, exp, env, at=None, doc=None):
             val.__name__ = name
         elif isinstance(val, Env):
             val.name = name
-            if env is not Global:
-                val.parent = env
                 
         if doc:
             if not isinstance(val, Env):
@@ -385,15 +381,15 @@ def DIR(tr):
         print(f"{name}: {val}")
 
 def LOAD(tr):
-    script_path = 'scripts/' + '/'.join(tr[1].split('.')) + '.cal'
     test = '-t' in tr
     verbose = '-v' in tr
     overwrite = '-w' in tr
+    path = 'scripts/%s.cal' % '/'.join(tr[1].split('.'))
 
     global Global
     current_global = Global
     Global = GlobalEnv()  # a new global env
-    LOAD.run(script_path, test, start=0, verbose=verbose)
+    LOAD.run(path, test, start=0, verbose=verbose)
     
     if overwrite:
         current_global.update(Global)

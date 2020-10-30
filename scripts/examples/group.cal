@@ -19,7 +19,7 @@ CyclicGroup[g, m, o] @Group[m, o] = (
      elements[] = (rec[x, l] = l if x in l else rec[m[g,x], l+[x]])
                  rec[g, []],
      order[x='nan] = len[elements[]] if x=='nan else
-                    (rec[r, k] = k if r==zero else rec[mul[x,r], k+1])
+                    (rec[r, k] = k if r==o else rec[m[x,r], k+1])
                     rec[x, 1]
 )
 

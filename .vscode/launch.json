@@ -12,7 +12,7 @@
       "console": "integratedTerminal",
       "args": [
         "-t", "-d",
-        "egTest.cal",
+        "tests/egTest.cal",
         "&&", "exit", "0"
       ]
     },

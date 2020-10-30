@@ -48,7 +48,7 @@ class Env(dict):
         raise KeyError('unbound name: ' + name)
 
     def dir(self):
-        if self.parent or self.parent.name[0] in '_(':
+        if not self.parent or self.parent.name[0] == '_':
             return self.name
         else:
             return self.parent.dir() + '.' + self.name

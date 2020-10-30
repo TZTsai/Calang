@@ -105,11 +105,11 @@ def run(filename=None, test=False, start=0, verbose=True):
             return
         except Warning as w:
             print(w)
-            if test and config.debug: raise Exception
+            if test and config.debug: raise
         except Exception as e:
             if str(e): print('Error:', e)
             else: print('Exiting due to an exception...')
-            if config.debug: raise Exception
+            if config.debug: raise
             
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
@@ -122,29 +122,30 @@ if __name__ == "__main__":
     from src.grammar import grammar
     import src.parser as parser
     
-    config.debug = '-d' in sys.argv
-    if config.debug:
-        sys.argv.remove('-d')
-        log.out = open('utils/log.yaml', 'w')
-        parser.grammar = grammar
-    else:
-        log.out = None
-        
     if len(sys.argv) > 1:
-        if '-t' in sys.argv:
+        debug = '-d' in sys.argv
+        test = '-t' in sys.argv
+        config.debug = debug
+        if debug:
+            sys.argv.remove('-d')
+            log.out = open('utils/log.yaml', 'w')
+            parser.grammar = grammar
+        else:
+            log.out = None
+        if test:
             sys.argv.remove('-t')
             if len(sys.argv) == 1:
-                testfile = 'tests.cal'
+                filename = 'tests.cal'
             else:
-                testfile = sys.argv[1]
-            path = "scripts/tests/" + testfile
+                filename = sys.argv[1]
         else:
-            path = "scripts/" + sys.argv[1]
+            filename = sys.argv[1]
+        path = "scripts/" + filename
         try:
-            run()
+            run(path, test)
         except FileNotFoundError:
             raise FileNotFoundError('script "%s" not found' % sys.argv[1])
         except Exception:
-            if config.debug: log.out.close()
+            if config.debug: raise
     else:
         run()
