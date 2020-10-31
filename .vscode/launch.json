@@ -61,6 +61,7 @@
       "program": "${file}",
       // "cwd": "${fileDirname}",
       "console": "integratedTerminal",
+      "args": ["&&", "exit", "0"]
       // "justMyCode": false
     },
   ]

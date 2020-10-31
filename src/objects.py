@@ -121,7 +121,7 @@ class Map:
             at = Map.eval(self.at, local)
             assert isinstance(at, Env), "@ not applied to an Env"
             local['super'] = at.parent
-            body = ['CLOSURE', local, [body]]
+            body = ['CLOSURE', local, body]
             env = at
         else:
             env = local

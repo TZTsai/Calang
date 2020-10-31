@@ -20,9 +20,10 @@ FIELD   := NAME ATTR *
 NAME    := /[^\W\d_]\w*[?]?/                        ## allow '?' at the end
 ATTR    := . / NAME:ATTR                            ## '/' forces no space in between
 
-FORM    := PAR_LST | NAME:PAR   
+FORM    := PAR_IT
+PAR_IT  := PAR_LST | NAME:PAR   
 PAR_LST := %BKT < ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? ) >
-_PARS   := %SEQ < ( BIND ! FORM ~ ! ) , >           ## '!' forbids the match
+_PARS   := %SEQ < ( BIND ! PAR_IT ~ ! ) , >         ## '!' forbids the match
 _OPTS   := %SEQ < ( BIND:OPTPAR ~ ! ) , >
 _EXT    := NAME:EXTPAR ~
 

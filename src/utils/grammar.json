@@ -402,6 +402,10 @@
     ]
   ],
   "FORM": [
+    "OBJ",
+    "PAR_IT"
+  ],
+  "PAR_IT": [
     "EXP",
     [
       "OBJ",
@@ -536,7 +540,7 @@
       ],
       [
         "OBJ",
-        "FORM"
+        "PAR_IT"
       ],
       [
         "ITEM_OP",
@@ -573,7 +577,7 @@
           ],
           [
             "OBJ",
-            "FORM"
+            "PAR_IT"
           ],
           [
             "ITEM_OP",

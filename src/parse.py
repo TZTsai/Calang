@@ -1,13 +1,16 @@
 print('enter parse.py')
 import re, json
+import config
 from utils.deco import memo, trace, disabled
 from utils.debug import check, check_record, pprint
 
 
 try:
+    assert not config.debug
     grammar = json.load(open('src/utils/grammar.json', 'r'))
 except:
     from grammar import grammar
+
 
 keywords = {'if', 'else', 'in', 'dir', 'for', 'load', 'config', 'when', 'import', 'del'}
 
@@ -217,21 +220,25 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     return parse_tag(tag, text)
 
 
-def split_pars(form):
+def split_pars(form, top=True):
     "Split a FORM syntax tree into 3 parts: pars, opt-pars, ext-par."
-    if tag(form) == 'PAR':
-        return form
     pars, opt_pars = ['PARS'], ['OPTPARS']
     ext_par = None
-    for t in form[1:]:
-        if t[0] == 'PAR':
-            pars.append(t[1])
-        elif t[0] == 'PAR_LST':
-            pars.append(split_pars(t))
-        elif t[0] == 'OPTPAR':
-            opt_pars.append(t[1:])
+    if tag(form) == 'PAR':
+        if not top:
+            return form
         else:
-            ext_par = t[1]
+            pars.append(form[1])
+    else:
+        for t in form[1:]:
+            if t[0] == 'PAR':
+                pars.append(t[1])
+            elif t[0] == 'PAR_LST':
+                pars.append(split_pars(t, False))
+            elif t[0] == 'OPTPAR':
+                opt_pars.append(t[1:])
+            else:
+                ext_par = t[1]
     return ['FORM', pars, opt_pars, ext_par]
 
 

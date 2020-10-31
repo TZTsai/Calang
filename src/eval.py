@@ -153,7 +153,7 @@ def SEQtoTREE(tr):
         else:
             if not (push.prev is None or
                     isinstance(push.prev, Op)):
-                ops.push(adjoin)
+                push(adjoin)
             if isinstance(x, Env):
                 if hasattr(x, 'val'):
                     x = x.val  # convert Env to its 'val'
@@ -244,11 +244,10 @@ MAP = Map  # the MAP evaluation rule is the same as Map constructor
 
 def CLOSURE(tr, env):
     _, local, body = tr
-    if not isinstance(local, Env): return tr
-    result = eval_tree(body, env=local)
-    if is_tree(result):  # should only happen when @ is used
-        result = eval_tree(body, env=env)
-    return result
+    try:
+        return eval_tree(body, env=local)
+    except NameError:  # should only happen when @ is used
+        return eval_tree(body, env=env)
 
 def AT(tr, env):
     drop_tag(tr, 'AT')
@@ -278,14 +277,9 @@ def MATCH(tr, env):
 def match(form, val, local: Env):
     vals = list(val) if is_list(val) else [val]
         
-    if tag(form) == 'PAR':
-        pars = form[1:]
-        opt_pars = []
-        ext_par = None
-    else:
-        _, pars, opt_pars, ext_par = form
-        pars, opt_pars = pars[1:], opt_pars[1:]
-        # remove the tags & make copies
+    _, pars, opt_pars, ext_par = form
+    pars, opt_pars = pars[1:], opt_pars[1:]
+    # remove the tags & make copies
     
     if len(pars) > len(vals):
         raise ValueError(f'not enough items in {vals} to match')
