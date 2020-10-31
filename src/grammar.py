@@ -5,6 +5,7 @@ import re
 import json
 from builtin import binary_ops, unary_l_ops, unary_r_ops
 from utils.deco import memo, trace, disabled
+from utils.debug import check_record
 
 trace = disabled
 
@@ -191,55 +192,12 @@ def post_process(grammar, macros):
         grammar[obj] = proc_tree(tree)
 
 
-## tests
-testcases = {}
-def check(fun, args, exp):
-    testcases[args] = exp
-    
-with open('utils/grammar_tests.json', 'w') as testfile:
-    json.dump(testcases, testfile)
-
-def test_grammar():
-
-    def test_parse():
-        check(parse_grammar, ('ALT', ', -'), (['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['MARK', ',']]], ['OP', '-']]], ''))
-        check(parse_grammar, 
-        ('DEF', 'LIST    := %LST < "[" "]" ; %SEQ < , /.*/ > >'), 
-        (['DEF', ['OBJ', 'LIST'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['MACRO', '%LST', '<', ['ITEMS', ['ITEM', ['ATOM', ['STR', '"["']]], ['ITEMS', ['ITEM', ['ATOM', ['STR', '"]"']]], ['ITEMS', ['ITEM', ['ATOM', ['MARK', ';']]], ['ITEMS', ['ITEM', ['MACRO', '%SEQ', '<', ['ITEMS', ['ITEM', ['ATOM', ['MARK', ',']]], ['ITEMS', ['ITEM', ['ATOM', ['RE', '/.*/']]]]], '>']]]]]], '>']]]]]], ''))
-        check(parse_grammar, 
-        ('DEF', 'EXP := LOCAL | LAMBDA | IF_ELSE | OP_SEQ'), 
-        (['DEF', ['OBJ', 'EXP'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LOCAL']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LAMBDA']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'IF_ELSE']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'OP_SEQ']]]]]]]]]], ''))
-        check(parse_grammar,
-        ('DEF', 'LC := ( BLIST | BIND * ) ? "=>" EXP'),
-        (['DEF', ['OBJ', 'LC'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BLIST']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"=>"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]], ''))
-        check(parse_grammar,
-        ('DEF', '%M < $A > := $A $A +'),
-        (['DEF', ['MACRO', '%M', '<', ['VARS', ['VAR', '$A']], '>'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['VAR', '$A']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['VAR', '$A']]], ['OP', '+']]]]]], ''))
-
-    def test_refactor():
-        check(refactor_tree, 
-        [['DEF', ['OBJ', 'EXP'], ':=', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LOCAL']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'LAMBDA']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'IF_ELSE']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'OP_SEQ']]]]]]]]]]], 
-        ('DEF', ('OBJ', 'EXP'), ':=', ('EXP', ('OBJ', 'LOCAL'), ('OBJ', 'LAMBDA'), ('OBJ', 'IF_ELSE'), ('OBJ', 'OP_SEQ'))))
-        check(refactor_tree, 
-        [['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['GROUP', '(', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BLIST']]]]], '|', ['EXP', ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'BIND']]], ['OP', '*']]]]], ')']], ['OP', '?']], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['STR', '"=>"']]]], ['ALT', ['ITEM_OP', ['ITEM', ['ATOM', ['OBJ', 'EXP']]]]]]]]],
-        ('ALT', ('ITEM_OP', ('EXP', ('OBJ', 'BLIST'), ('ITEM_OP', ('OBJ', 'BIND'), ('OP', '*'))), ('OP', '?')), ('STR', '"=>"'), ('OBJ', 'EXP')))
-
-    def test_macro():    
-        rules = ['LIST    := %LST < "[" "]" ; %SEQ < , /.*/ > >',
-                '%LST < $OPN $CLS $SEP $ITM > := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS',
-                '%SEQ < $SEP $ITM >           := $ITM ? ( $SEP $ITM ) *']
-        check(calc_grammar, [rules],
-              {' ': '\\s*', 'LIST': ('EXP', ('ALT', ('STR', '"["'), ('STR', '"]"')), ('ALT', ('STR', '"["'), ('ALT', ('ITEM_OP', ('RE', '/.*/'), ('OP', '?')), ('ITEM_OP', ('ALT', ('MARK', ','), ('RE', '/.*/')), ('OP', '*'))), ('ITEM_OP', ('ALT', ('MARK', ';'), ('ALT', ('ITEM_OP', ('RE', '/.*/'), ('OP', '?')), ('ITEM_OP', ('ALT', ('MARK', ','), ('RE', '/.*/')), ('OP', '*')))), ('OP', '*')), ('STR', '"]"')))})
-
-    test_parse()
-    test_refactor()
-    test_macro()
-
-
 grammar = calc_grammar(Grammar)
 json.dump(grammar, open('utils/grammar.json', 'w', 
                         encoding='utf8'), indent=2)
 
+
 if __name__ == "__main__":
-    test_grammar()
     pprint(grammar)
+    for func in [parse_grammar, calc_grammar, refactor_tree]:
+        check_record('utils/syntax_tests.json', func)

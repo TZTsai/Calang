@@ -237,6 +237,7 @@ def split_pars(form):
 
 # for testing
 def interact(func):
+    print('interactive testing of calc_parse:')
     record = {}
     while True:
         exp = input('>>> ')
