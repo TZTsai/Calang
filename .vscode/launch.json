@@ -45,7 +45,7 @@
       "type": "python",
       "request": "launch",
       "program": "${file}",
-      "cwd": "${cwd}",
+      "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       // "justMyCode": false
     },

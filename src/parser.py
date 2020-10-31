@@ -1,22 +1,49 @@
+print('enter parser.py')
 import re, json
-from .builtins import op_list, keywords, all_, any_
 from utils.deco import memo, trace, disabled
 from utils.debug import interact, check_record
 
 
-trace = disabled
-
 try:
-    grammar = load(open('utils/grammar.json', 'r'))
+    grammar = json.load(open('utils/grammar.json', 'r'))
 except:
     from .grammar import grammar
 
-op_starts = ''.join(set(op[0] for op in op_list if op))
+keywords = {'if', 'else', 'in', 'dir', 'for', 'load', 'config', 'when', 'import', 'del'}
 
-tag_pat = re.compile('[A-Z_:]+')
+trace = disabled
+
+
+# functions dealing with tags
+def is_name(s):
+    return type(s) is str and s
+
+tag_pattern = re.compile('[A-Z_:]+')
 def is_tag(s):
-    try: return tag_pat.match(s.split(':', 1)[0])
-    except: return False
+    return is_name(s) and \
+        tag_pattern.match(s.split(':', 1)[0])
+
+def is_tree(t):
+    return type(t) is list and t and is_tag(t[0])
+
+def tag(t):
+    return t[0].split(':')[0] if is_tree(t) else None
+
+def add_tag(tr, tag):
+    assert is_tree(tr)
+    tr[0] = '%s:%s' % (tag, tr[0])
+
+def drop_tag(tr, expected=None):
+    if not is_tree(tr): return None
+    tag = tr[0]
+    try:
+        dropped, tag = tag.split(':', 1)
+    except: 
+        raise AssertionError('cannot drop tag')
+    if expected and dropped != expected:
+        raise AssertionError('unexpected tag dropped: "%s"' % dropped)
+    tr[0] = tag
+    return tag
 
 
 def calc_parse(text, tag='LINE', grammar=grammar):
@@ -75,7 +102,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
                     tr.pop(0)
                 elif no_space:
                     no_space = False
-                    if type(tr) is str:
+                    if is_name(tr):
                         try: tree[-1] += tr; continue
                         except: pass
                 add_to_seq(tree, tr)
@@ -150,8 +177,6 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             return None, None
         if tag[-2:] == 'OP':
             text = lstrip(text)
-            if text[0] not in op_starts:
-                return None, None
 
         tree, rem = parse_tree(grammar[tag], text)
         if rem is None:
@@ -163,22 +188,24 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    prefixes = {'NUM', 'DELAY', 'AT'}
-    list_obj = lambda tag: tag[-3:] == 'LST' or \
-        tag in ['DIR', 'DEL', 'VARS', 'DICT']
+    prefixes = {'DELAY', 'AT'}
+    list_tag = lambda tag: tag[-3:] == 'LST' or \
+        tag in {'DIR', 'DEL', 'VARS', 'DICT'}
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_': tag = '(merge)'
 
         if not tree:
             return [tag]
-        elif type(tree) is str:
+        elif is_name(tree):
             return [tag, tree]
-        elif is_tag(tree[0]):
-            if list_obj(tag):
+        elif is_tree(tree):
+            if list_tag(tag):
                 tree = [tag, tree]  # keep the list tag
             elif tag in prefixes:
-                tree = [tag + ':' + tree[0], *tree[1:]]
+                add_tag(tree, tag)
+            elif tag == 'FORM':  # special case: split the pars
+                tree = split_pars(tree)
             return tree
         elif len(tree) == 1:
             return process_tag(tag, tree[0])
@@ -188,6 +215,27 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     text = lstrip(text)
     if not text: return ['EMPTY'], ''
     return parse_tag(tag, text)
+
+
+def split_pars(form):
+    "Split a FORM syntax tree into 3 parts: pars, opt-pars, ext-par."
+    pars, opt_pars = [], []
+    ext_par = None
+    tag = drop_tag(form, 'FORM')
+    # if tag == 'PAR':
+        
+    # lst = [form] if len(form) == 2 and \
+    #     type(form[1]) is str else form[1:]
+    for t in lst:
+        if t[0] == 'PAR':
+            pars.append(t[1])
+        elif t[0] == 'PAR_LST':
+            pars.append(split_pars(t))
+        elif t[0] == 'OPTPAR':
+            opt_pars.append(t[1:])
+        else:
+            ext_par = t[1]
+    return ['FORM', pars, opt_pars, ext_par]
 
 
 

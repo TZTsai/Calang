@@ -24,9 +24,6 @@ E^(PI*I) #-1
 0.5*2^2 + lg[100+10*90] #5
 [x, [y]] = [3, [2]]
 [x, y] #(3, 2)
-subs['e^2+3, ['e, 4]]  #19
-del x, y
-lim[exp[-x], x, INF]  #0
 
 # basic function tests
 a = 9
@@ -55,4 +52,5 @@ load tests.cmdTest -t -v
 load tests.envTest -t -v
 load tests.funcTest -t -v
 load tests.listTest -t -v
+load tests.symTest -t -v
 # load tests.funcOpTest -t -v 

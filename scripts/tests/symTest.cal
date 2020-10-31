@@ -1,0 +1,4 @@
+subs['e^2+3, ['e, 4]]  #19
+config symbolic on
+lim[exp[-x], x, INF]  #0
+diff[x^3, x] == 3x^2  #1

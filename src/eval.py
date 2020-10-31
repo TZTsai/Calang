@@ -1,8 +1,9 @@
-from .parser import calc_parse
+from .parser import calc_parse, is_name, is_tree, tag, drop_tag
 from .builtins import binary_ops, unary_l_ops, unary_r_ops, builtins, special_names
-from .funcs import Symbol
+from .funcs import Symbol, is_list
 from .obj import Env, stack, Op, Attr, Map, split_pars, remake_str
 import config
+from functools import wraps
 
 
 Builtins = Env(name='_builtins_', binds=builtins)
@@ -27,32 +28,50 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
 
 
 # some utils
-
-def tag(tr): 
-    return tr[0].split(':')[0] if is_tree(tr) else None
-
-def drop_tag(tr, expected):
-    if not is_list(tr): return tr
-    tag = tr[0]
-    try: dropped, tag = tag.split(':', 1)
-    except: raise AssertionError
-    assert dropped == expected
-    tr[0] = tag
-
-def is_list(tr): return type(tr) in (tuple, list)
-def is_tree(tr): return type(tr) is list and tr and is_str(tr[0])
-def is_str(tr): return type(tr) is str
-
 def get_op(ops):
     def get(tr): return ops[tr[1]]
     return get
 
+def hold_tree(f):
+    @wraps(f)
+    def _f(tr):
+        if any(is_tree(t) for t in tr):
+            return tr
+        else:
+            return f(tr)
+    return _f
+
+# def forbid_tree(f):
+#     @wraps(f)
+#     def _f(tr, env):
+#         if any(is_tree(t) for t in tr[1:]):
+#             return RuntimeError
+#         else:
+#             return f(tr, env)
+#     return _f
+
 
 # substitution rules
 
-def SYM(tr): return Symbol(tr[1])
-
 def EMPTY(tr): return None
+
+def LINE(tr): return tr[-1]
+
+def COMPLEX(tr):
+    re, pm, im = tr[1:]
+    return re + im*1j if pm == '+' else re - im*1j
+
+def REAL(tr):
+    if len(tr) > 2: return eval(tr[1]+'e'+tr[2])
+    else: return eval(tr[1])
+
+def BIN(tr): return eval(tr[1])
+
+def HEX(tr): return eval(tr[1])
+
+def ATTR(tr): return Attr(tr[1])
+
+def SYM(tr): return Symbol(tr[1])
 
 def ANS(tr):
     s = tr[1]
@@ -63,123 +82,107 @@ def ANS(tr):
         except: raise SyntaxError('invalid history index!')
     return Global._ans[id]
 
-def NUM(tr):
-    type_ = tr[0].split(':')[-1]
-    if type_ == 'COMPLEX':
-        re, pm, im = tr[1:]
-        re, im = NUM(re), NUM(im)
-        if pm == '+':   return re + im*1j
-        else:           return re - im*1j
-    elif type_ == 'REAL' and len(tr) == 3:
-        return eval(tr[1]+'e'+tr[2])
-    else:
-        return eval(tr[1])
+def BODY(tr):
+    return tr[2] if tr[1] == 'PRINTED' else tr[1]
 
+@hold_tree
 def SEQtoTREE(tr):
-    stk = stack()
+    # stk = stack()
     ops = stack()
+    vals = stack()
     
     def pop_val():
-        v = stk.pop()
+        v = vals.pop()
         if isinstance(v, Op):
             raise SyntaxError('op sequence in disorder')
         return v
 
     def pop_op():
-        op = stk.pop()
-        if op != ops.pop():
+        op = ops.pop()
+        if not isinstance(op, Op):
             raise SyntaxError('op sequence in disorder')
         return op
     
-    def apply(op, *vals):
-        if any(map(is_tree, vals)):
-            raise RuntimeError
-        return op(*vals)
+    def hold_tree(op):
+        "Convert $op to a function that keeps the tree form."
+        @wraps(op)
+        def f(*args):
+            incomplete = any(is_tree(arg) for arg in args)
+            if op.type == 'BOP':
+                n1, n2 = args
+                if incomplete:
+                    return ['SEQ', n1, op, n2]
+                else:
+                    return op(n1, n2)
+            else:
+                n, = args
+                if incomplete:
+                    if op.type == 'LOP':
+                        return ['SEQ', op, n]
+                    else:
+                        return ['SEQ', n, op]
+                else:
+                    return op(n)
+        return f
 
     def reduce():
-        # try to evaluate or reduce several previous trees to a bigger tree
-        op = ops.peek()
-        tag = op.type
-        if tag == 'BOP':
+        op = pop_op()
+        # op = hold_tree(op)
+        if op.type == 'BOP':
             n2 = pop_val()
-            op = pop_op()
             n1 = pop_val()
-            try:
-                n = apply(op, n1, n2)
-            except RuntimeError:
-                n = ['SEQ', n1, op, n2]
+            args = n1, n2
         else:
-            if tag == 'LOP':
-                n1 = pop_val()
-                op = pop_op()
-                try: 
-                    n = apply(op, n1)
-                except RuntimeError:
-                    n = ['SEQ', op, n1]
-            else:
-                op = pop_op()
-                n1 = pop_val()
-                try:
-                    n = apply(op, n1)
-                except RuntimeError:
-                    n = ['SEQ', n1, op]
-        stk.push(n)
+            args = pop_val(),
+        vals.push(op(*args))
 
     def push(x):
         if isinstance(x, Op):
             while ops:
                 op = ops.peek()
-                if x.priority <= op.priority: reduce()
+                if x.priority <= op.priority:
+                    reduce()
                 else: break
             ops.push(x)
-        elif stk and not isinstance(stk.peek(), Op):
-            push(binary_ops[''])
-        if isinstance(x, Env):
-            if hasattr(x, 'val'):
-                x = x.val
-        stk.push(x)
+        else:
+            if not (push.prev is None or
+                    isinstance(push.prev, Op)):
+                ops.push(binary_ops[''])
+            if isinstance(x, Env):
+                if hasattr(x, 'val'):
+                    x = x.val  # convert Env to its 'val'
+            vals.push(x)
+        push.prev = x
+    push.prev = None
 
     for x in tr[1:]: push(x)
     while ops: reduce()
-    assert len(stk) == 1
-    return pop_val()
+    val = pop_val()
+    assert not vals, 'sequence evaluation failed'
+    return val
 
+@hold_tree
 def FIELD(tr):
-    if is_tree(tr[1]):
-        return tr
     field = tr[1]
     for attr in tr[2:]:
         field = attr.getFrom(field)
     return field
 
+@hold_tree
 def LIST(tr):
     lst = []
     for it in tr[1:]:
-        if is_tree(it):
-            if tag(it) == 'UNPACK':
-                lst.extend(it[1])
-            else:
-                return tr
+        if callable(it) and it.__name__ == 'UNPACK':
+            lst.extend(it())
         else:
             lst.append(it)
     return tuple(lst)
 
+@hold_tree
 def SYMLIST(tr): return tr[1:]
 
+@hold_tree
 def SLICE(tr): return slice(*tr[1:])
- 
-def ATTR(tr): return Attr(tr[1])
-    
-def LINE(tr):
-    return tr[-1]
-
-def BODY(tr):
-    if tr[1] == 'PRINTED':
-        return tr[2]
-    elif tag(tr[1]) == 'H_PRINT':
-        return tr
-    else:
-        return tr[1]
 
 
 ## eval rules which require environment
@@ -188,13 +191,10 @@ def NAME(tr, env):
     name = tr[1]
     try: return env[name]
     except KeyError:
-        if env is Global:
-            if config.symbolic:
-                return Symbol(name)
-            else:
-                raise NameError(f'unbound symbol \'{tr}\'')
+        if env is Global and config.symbolic:
+            return Symbol(name)
         else:
-            return tr
+            raise NameError(f'unbound symbol \'{tr}\'')
 
 def PRINT(tr, env):
     exec('print(f"%s")' % tr[1][1:-1], env.all())
@@ -202,8 +202,8 @@ def PRINT(tr, env):
 
 def IF_ELSE(tr, env):
     _, t_case, cond, f_case = tr
-    return eval_tree(t_case if eval_tree(cond, env)
-                     else f_case, env)
+    cond = eval_tree(cond, env)
+    return eval_tree(t_case if cond else f_case, env)
 
 def WHEN(tr, env):
     *cases, default = tr[1:]
@@ -234,16 +234,14 @@ def DICT(tr, env):
         BIND(t, local)
     return local
 
-def MAP(tr, env):
-    return Map(tr, env)
+MAP = Map
 
 def CLOSURE(tr, env):
     _, local, body = tr
-    if not isinstance(local, Env):
-        return tr
+    if not isinstance(local, Env): return tr
     result = eval_tree(body, env=local)
-    if is_tree(result):  # only happens when @ is used
-        result = eval_tree(result, env=env)
+    if is_tree(result):  # should only happen when @ is used
+        result = eval_tree(body, env=env)
     return result
 
 def AT(tr, env):
@@ -273,8 +271,7 @@ def MATCH(tr, env):
     return local
 
 def match(form, val, local: Env):
-    vals = list(val) if is_list(val) \
-        and not is_tree(val) else [val]
+    vals = list(val) if is_list(val) else [val]
         
     if form[0] != 'FORM': split_pars(form, local)
     _, pars, opt_pars, ext_par = form
@@ -284,13 +281,17 @@ def match(form, val, local: Env):
     
     for par in pars:
         val = vals.pop(0)
-        if is_str(par): local[par] = val
-        else: match(par, val, local)
+        if is_name(par): 
+            local[par] = val
+        else:
+            match(par, val, local)
+            
     opt_pars = opt_pars.copy()
     while opt_pars and vals:
         define(opt_pars.pop(0)[0], vals.pop(0), local)
     for opt_par, default in opt_pars:
         define(opt_par, default, local)
+        
     if ext_par:
         local[ext_par] = tuple(vals)
         
@@ -299,8 +300,8 @@ def define(var, exp, env, at=None, doc=None):
 
     def def_(name, val, env):
         if name in special_names:
-            raise NameError('"%s" cannot be bound - '
-                            'reserved for special use' % name)
+            raise NameError('"%s" cannot be bound ' % name
+                            + '(reserved for special use)')
 
         if isinstance(val, Map):
             val.__name__ = name
@@ -347,8 +348,9 @@ def split_field(tr):
         attr = tr[1]
         parent = Global
     elif tr[0] == 'FIELD':
-        tr, attr = tr[:-1], tr[-1][1]
-        parent = eval_tree(tr, Global) if len(tr) > 1 else Global
+        parent, attr = tr[:-1], tr[-1][1]
+        parent = eval_tree(parent, Global) \
+            if len(parent) > 1 else Global
     else:
         raise TypeError('wrong type for split_field')
     return parent, attr
@@ -438,26 +440,27 @@ def CONF(tr):
         raise ValueError('no such field in the config')
     
 
-
 def eval_tree(tree, env):
-    if not is_tree(tree): return tree
-    if env: tree = tree.copy()
-    # if evaluating in an Env, prevent the original tree from being mutated
+    if not is_tree(tree):
+        return tree
     type_ = tag(tree)
+    
     if type_ not in delay_types:
         for i in range(1, len(tree)):
             tree[i] = eval_tree(tree[i], env)
     elif type_ == 'DELAY' and env:
         drop_tag(tree, 'DELAY')
         return tree
+    
     if type_ in subs_rules:
-        tree = subs_rules[type_](tree)
+        return subs_rules[type_](tree)
     elif type_ in eval_rules and env:
-        tree = eval_rules[type_](tree, env)
+        return eval_rules[type_](tree, env)
     elif type_ in exec_rules:
         exec_rules[type_](tree)
         return
-    return tree
+    else:
+        return tree
 
 
 Map.match = match
@@ -469,28 +472,29 @@ LOAD.run  = None  # set this in calc.py
 delay_types = {
     'DELAY',    'DEF',      'BIND',     'IF_ELSE',
     'DEL',      'WHEN',     'GEN_LST',  'PAR_LST',
-    'FORM',     'T_PRINT',  'DICT'
+    'FORM',     'DICT'
 }
 
 subs_rules = {
+    'LINE': LINE,               'BODY': BODY,
     'ANS': ANS,                 'SYM': SYM,
-    'EMPTY': EMPTY,             'NUM': NUM,
+    'FIELD': FIELD,             'ATTR': ATTR,
+    'REAL': REAL,               'COMPLEX': COMPLEX,
+    'BIN': BIN,                 'HEX': HEX,
+    'IDC_LST': LIST,            'SLICE': SLICE,
+    'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
     'SEQ': SEQtoTREE,           'BOP': get_op(binary_ops),
     'LOP': get_op(unary_l_ops), 'ROP': get_op(unary_r_ops),
-    'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
-    'IDC_LST': LIST,            'LINE': LINE,
-    'FIELD': FIELD,             'ATTR': ATTR,
-    'SLICE': SLICE,             'BODY': BODY
+    'EMPTY': EMPTY,
 }
 
 eval_rules = {
     'NAME': NAME,               'MAP': MAP,
-    'H_PRINT': PRINT,           'T_PRINT': PRINT,  
-    'DICT': DICT,               'MATCH': MATCH,
-    'IF_ELSE': IF_ELSE,         'GEN_LST': GEN_LST,
+    'PRINT': PRINT,             'DICT': DICT,
+    'MATCH': MATCH,             'IF_ELSE': IF_ELSE,
     'WHEN': WHEN,               'CLOSURE': CLOSURE,
     'EXP': eval_tree,           'BIND': BIND,
-    'AT': AT
+    'GEN_LST': GEN_LST,         'AT': AT
 }
 
 exec_rules = {

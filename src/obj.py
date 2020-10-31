@@ -1,5 +1,8 @@
-import config
+print('enter obj.py')
+from copy import deepcopy
 from utils.deco import log
+from .decompiler import decompile
+import config
 
 
 class stack(list):
@@ -113,17 +116,21 @@ class Map:
     
     def __call__(self, val):
         local = self.parent.child()
+        body = deepcopy(self.body)
         Map.match(self.form, val, local)
         if self.at:
             at = Map.eval(self.at, local)
             assert isinstance(at, Env), "@ not applied to an Env"
-            local = at.child(binds=local)
             local['super'] = at.parent
+            body = ['CLOSURE', local, [body]]
+            env = at
+        else:
+            env = local
         if config.debug:
             signature = f'{self.dir}.{self.__name__}{list(val)}'
             log(signature)
             log.depth += 1
-            result = Map.eval(self.body, local)
+            result = Map.eval(body, env)
             log.depth -= 1
             log(signature, ' ==> ', result)
             return result
@@ -179,106 +186,6 @@ class Range:
                 and self.last == other.last)
         
         
-def remake_str(tree, env):
-    "Reconstruct a readable string from the syntax tree."
-    
-    def rec(tr, in_seq=False):  # $sub: whether it is a sub-recursion
-        if type(tr) is not list:
-            return str(tr)
-        
-        def group(s): return '(%s)' if in_seq else s
-        # if in an operation sequence, add a pair of parentheses
-        
-        tag = tr[0]
-        if ':' in tag: tag, subtag = tag.split(':', 1)
-        
-        if tag in ('NAME', 'SYM', 'PAR'):
-            return tr[1]
-        elif tag == 'DELAY':
-            tr = [subtag] + tr[1:]
-            return rec(tr, in_seq)
-        elif tag == 'FIELD':
-            return ''.join(map(rec, tr[1:]))
-        elif tag == 'ATTR':
-            return '.' + tr[1]
-        elif tag == 'SEQ':
-            return ''.join(rec(t, True) for t in tr[1:])
-        elif tag[-2:] == 'OP':
-            op = tr[1]
-            if type(op) is str: op = Map.eval(tr, None)
-            return (' %s ' if op.priority < 4 else '%s') % str(tr[1])
-        elif tag == 'NUM':
-            return str(tr[1])
-        elif tag == 'FORM':
-            _, pars, optpars, extpar = tr
-            pars = [rec(par) for par in pars]
-            optpars = [f'{rec(optpar)}: {default}' for optpar, default in optpars]
-            extpar = [extpar+'~'] if extpar else []
-            return "[%s]" % ', '.join(pars + optpars + extpar)
-        elif tag == 'IF_ELSE':
-            return group("%s if %s else %s" % tuple(map(rec, tr[1:])))
-        elif tag == 'PAR_LST':
-            split_pars(tr, env)
-            return rec(tr)
-        elif tag[-3:] == 'LST':
-            return '[%s]' % ', '.join(map(rec, tr[1:]))
-        elif tag == 'MAP':
-            _, form, exp = tr
-            return group('%s => %s' % (rec(form), rec(exp)))
-        elif tag == 'DICT':
-            return '(%s)' % ', '.join(map(rec, tr[1:]))
-        elif tag == 'BIND':
-            if tr[-1][0] == 'DOC': tr = tr[1:]
-            tup = tuple(rec(t) for t in tr[1:])
-            if tr[2][0][:2] == 'AT':
-                return '%s %s = %s' % tup
-            else:
-                return '%s = %s' % tup
-        elif tag == 'MATCH':
-            _, form, exp = tr[1]
-            return group('%s::%s' % (rec(form), rec(exp)))
-        elif tag == 'CLOSURE':
-            _, local, exp = tr
-            return '%s %s' % (rec(local), rec(exp))
-        elif tag == 'FUNC':
-            _, name, form = tr
-            return '%s%s' % (rec(name), rec(form))
-        elif tag == 'WHEN':
-            cases = tr[1:]
-            return 'when(%s)' % ', '.join(': '.join(map(rec, case[1:]))
-                                          for case in cases)
-        elif tag == 'AT':
-            return '@' + rec(tr[1])
-        elif 'PRINT' in tag:
-            return ''
-        elif tag == 'DOC':
-            return ''
-        else:
-            return str(list(map(rec, tr)))
-    return rec(tree)
-
-
-def split_pars(form, env):
-    "Split a FORM syntax tree into 3 parts: pars, opt-pars, ext-par."
-    if form[0] == 'FORM':
-        return
-    pars, opt_pars = [], []
-    ext_par = None
-    lst = [form] if len(form) == 2 and \
-        type(form[1]) is str else form[1:]
-    for t in lst:
-        if t[0] == 'PAR':
-            pars.append(t[1])
-        elif t[0] == 'PAR_LST':
-            split_pars(t, env)
-            pars.append(t)
-        elif t[0] == 'OPTPAR':
-            opt_pars.append([t[1], Map.eval(t[2], env)])
-        else:
-            ext_par = t[1]
-    form[:] = ['FORM', pars, opt_pars, ext_par]
-
-
 
 if __name__ == "__main__":
     # interact()

@@ -37,7 +37,7 @@ MATCH   := FORM :: _VAL
 _VAL    := APPLY:SEQ | ITEM
 APPLY   := FIELD ( GEN_LST | VAL_LST )
 
-BODY    := PRINT:H_PRINT ? ( IF_ELSE | SEQ ) PRINT:T_PRINT ?
+BODY    := PRINT ? ( IF_ELSE | SEQ ) PRINT ?
 IF_ELSE := SEQ if SEQ else EXP  ## DELAY
 SEQ     := _TERM ( BOP ? _TERM ) *
 _TERM   := LOP ? ITEM ATTR ? ROP ?
@@ -52,7 +52,7 @@ ATOM    := FIELD | SYM | ANS | NUM
 SYM     := ' NAME:SYM
 ANS     := /_(\d+|_*)/
 
-NUM     := COMPLEX | BIN | HEX | REAL
+NUM     := BIN | HEX | COMPLEX | REAL
 COMPLEX := REAL [+-] REAL I
 REAL    := /-?\d+(\.\d+)?/ ( [eE] - /-?\d+/ ) ?
 BIN     := /0b[01]+/

@@ -1,14 +1,12 @@
-# from debug.deco import memo, disabled
-# from debug.utils import trace, log
+print('Reading grammar.')
+
 from pprint import pprint
 import re
 import json
-from .builtins import binary_ops, unary_l_ops, unary_r_ops
-from utils.deco import memo
+from builtins import binary_ops, unary_l_ops, unary_r_ops
+from utils.deco import memo, trace, disabled
 
-
-# log.out = open('utils/log.yaml', 'w', encoding='utf8')
-# trace = disabled
+trace = disabled
 
 
 def split(text: str, sep=None, maxsplit=-1):
@@ -194,6 +192,12 @@ def post_process(grammar, macros):
 
 
 ## tests
+testcases = {}
+def check(fun, args, exp):
+    testcases[args] = exp
+    
+with open('utils/grammar_tests.json', 'w') as testfile:
+    json.dump(testcases, testfile)
 
 def test_grammar():
 

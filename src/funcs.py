@@ -251,7 +251,9 @@ ior  = itemwise(b_or)
 
 
 def unpack(lst):
-    return ['UNPACK', lst]
+    ret = lambda: lst
+    ret.__name__ = 'UNPACK'
+    return ret
 
 
 def help_(obj):

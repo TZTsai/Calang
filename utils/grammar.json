@@ -829,7 +829,7 @@
       "ITEM_OP",
       [
         "OBJ",
-        "PRINT:H_PRINT"
+        "PRINT"
       ],
       [
         "OP",
@@ -851,7 +851,7 @@
       "ITEM_OP",
       [
         "OBJ",
-        "PRINT:T_PRINT"
+        "PRINT"
       ],
       [
         "OP",
@@ -1116,15 +1116,15 @@
     "EXP",
     [
       "OBJ",
-      "COMPLEX"
-    ],
-    [
-      "OBJ",
       "BIN"
     ],
     [
       "OBJ",
       "HEX"
+    ],
+    [
+      "OBJ",
+      "COMPLEX"
     ],
     [
       "OBJ",

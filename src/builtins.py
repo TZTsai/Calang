@@ -1,3 +1,4 @@
+print('enter builtins.py')
 from operator import floordiv, mod, neg, lt, gt, le, ge, xor, inv
 from functools import reduce
 from numbers import Number, Rational
@@ -80,7 +81,6 @@ construct_ops(unary_r_ops,  'ROP')
 op_list = set(binary_ops).union(set(unary_l_ops)).union(set(unary_r_ops))
 
 
-keywords = {'if', 'else', 'in', 'dir', 'for', 'load', 'config', 'when', 'import', 'del'}
 special_names = {'this', 'super'}
 
 

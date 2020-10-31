@@ -3,6 +3,7 @@ from src.obj import stack
 from src.eval import calc_eval, LOAD
 from src.funcs import eq_ as equal
 from src.format import calc_format
+from utils.deco import log
 import config
 
 
@@ -118,28 +119,26 @@ LOAD.run = run  # enable LOAD in _eval to run a new script
 
 
 if __name__ == "__main__":
-    from utils.deco import log
-    from src.grammar import grammar
-    import src.parser as parser
+    debug = '-d' in sys.argv
+    test = '-t' in sys.argv
     
-    if len(sys.argv) > 1:
-        debug = '-d' in sys.argv
-        test = '-t' in sys.argv
-        config.debug = debug
-        if debug:
-            sys.argv.remove('-d')
-            log.out = open('utils/log.yaml', 'w')
-            parser.grammar = grammar
-        else:
-            log.out = None
-        if test:
-            sys.argv.remove('-t')
-            if len(sys.argv) == 1:
-                filename = 'tests.cal'
-            else:
-                filename = sys.argv[1]
-        else:
+    config.debug = debug
+    if debug:
+        sys.argv.remove('-d')
+        log.out = open('utils/log.yaml', 'w')
+        from src.grammar import grammar
+        import src.parser as parser
+        parser.grammar = grammar
+    else:
+        log.out = None
+        
+    if test: sys.argv.remove('-t')
+            
+    if len(sys.argv) > 1 or test:
+        if len(sys.argv) > 1:
             filename = sys.argv[1]
+        else:
+            filename = 'tests/tests.cal'
         path = "scripts/" + filename
         try:
             run(path, test)
