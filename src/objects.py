@@ -1,5 +1,4 @@
 print('enter objects.py')
-from copy import deepcopy
 from utils.deco import log
 import config
 
@@ -99,7 +98,7 @@ class Attr:
 
 class Map:
     match = lambda val, form, parent: NotImplemented
-    eval  = lambda tree, parent: NotImplemented
+    eval  = lambda tree, parent, mutable: NotImplemented
     decompile = lambda tree: NotImplemented
 
     def __init__(self, tree, env, at=None):
@@ -109,16 +108,18 @@ class Map:
         self.body = body
         self.parent = env
         self.at = at
+        if at:  # add DELAY tag to body to convert to CLOSURE later
+            self.body[0] = 'DELAY:' + self.body[0]
         self.dir = self.parent.dir()
         self.__name__ = '(map)'
         self._str = Map.decompile(tree)
     
     def __call__(self, val):
         local = self.parent.child()
-        body = deepcopy(self.body)
+        body = self.body
         Map.match(self.form, val, local)
         if self.at:
-            at = Map.eval(self.at, local)
+            at = Map.eval(self.at, local, mutable=False)
             assert isinstance(at, Env), "@ not applied to an Env"
             local['super'] = at.parent
             body = ['CLOSURE', local, body]
@@ -129,12 +130,12 @@ class Map:
             signature = f'{self.dir}.{self.__name__}{list(val)}'
             log(signature)
             log.depth += 1
-            result = Map.eval(body, env)
+            result = Map.eval(body, env, mutable=False)
             log.depth -= 1
             log(signature, ' ==> ', result)
             return result
         else:
-            return Map.eval(body, local)
+            return Map.eval(body, env, mutable=False)
     
     def __repr__(self):
         return '<map: %s.%s>' % (self.dir, self.__name__)

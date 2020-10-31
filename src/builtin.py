@@ -72,7 +72,7 @@ binary_ops = {
     'and': (and_, -5), 'or': (or_, -6), '': (adjoin, 20)
 }
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10)}
-unary_r_ops = {'!': (factorial, 20), '!!': (dbfact, 20), '~': (unpack, 20)}
+unary_r_ops = {'!': (factorial, 22), '!!': (dbfact, 22), '~': (unpack, 22)}
 
 operators = {'BOP': binary_ops, 'LOP': unary_l_ops, 'ROP': unary_r_ops}
 for op_type, op_dict in operators.items():

@@ -195,10 +195,9 @@ def adjoin(x1, x2):
     elif is_function(x1) and is_list(x2):
         return apply(x1, x2)
     elif is_list(x1) and is_list(x2):
-        try: return subscript(x1, x2)
-        except: return dot(x1, x2)
+        return subscript(x1, x2)
     else:
-        return imul(x1, x2)
+        raise TypeError('invalid types for adjoin')
 
 def dot(x1, x2):
     '''
@@ -207,13 +206,13 @@ def dot(x1, x2):
     >>> dot([1, 2], [2, 5])
     12
     '''
-    d1, d2 = depth(x1), depth(x2)
-    if d1 == 0 or d2 == 0:
+    if not (is_list(x1) and is_list(x2)):
         if is_function(x1) or is_function(x2):
             return compose(x1, x2)
         else:
             return imul(x1, x2)
-    elif d1 == d2 == 1:
+    d1, d2 = depth(x1), depth(x2)
+    if d1 == d2 == 1:
         if len(x1) != len(x2):
             raise ValueError('dim mismatch for dot product')
         return sum(map(adjoin, x1, x2))

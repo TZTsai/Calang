@@ -1,9 +1,11 @@
+from functools import wraps
+from copy import deepcopy
+
 from parse import calc_parse, is_name, is_tree, tag, drop_tag
 from builtin import operators, builtins, special_names
-from funcs import Symbol, is_list
+from funcs import Symbol, is_list, is_function
 from objects import Env, stack, Op, Attr, Map
 import config
-from functools import wraps
 
 
 def GlobalEnv():
@@ -96,52 +98,24 @@ def SEQtoTREE(tr):
     vals = stack()
     
     adjoin = operators['BOP']['']
+    dot = operators['BOP']['.']
     
-    def pop_val():
-        v = vals.pop()
-        if isinstance(v, Op):
-            raise SyntaxError('op sequence in disorder')
-        return v
-
-    def pop_op():
-        op = ops.pop()
-        if not isinstance(op, Op):
-            raise SyntaxError('op sequence in disorder')
-        return op
-    
-    def hold_tree(op):
-        "Convert $op to a function that keeps the tree form."
-        @wraps(op)
-        def f(*args):
-            incomplete = any(is_tree(arg) for arg in args)
-            if op.type == 'BOP':
-                n1, n2 = args
-                if incomplete:
-                    return ['SEQ', n1, op, n2]
-                else:
-                    return op(n1, n2)
-            else:
-                n, = args
-                if incomplete:
-                    if op.type == 'LOP':
-                        return ['SEQ', op, n]
-                    else:
-                        return ['SEQ', n, op]
-                else:
-                    return op(n)
-        return f
-
     def reduce():
-        op = pop_op()
-        # op = hold_tree(op)
+        op = ops.pop()
+        args = [vals.pop()]
         if op.type == 'BOP':
-            n2 = pop_val()
-            n1 = pop_val()
-            args = n1, n2
-        else:
-            args = pop_val(),
-        vals.push(op(*args))
-
+            args = [vals.peek()] + args
+        try:
+            result = op(*args)
+        except:
+            if op is adjoin:
+                push(dot)  # adjoin failed, change to dot product
+                push(args[-1])
+                return
+            else: raise
+        if op.type == 'BOP': vals.pop()
+        vals.push(result)
+                
     def push(x):
         if isinstance(x, Op):
             while ops:
@@ -163,7 +137,7 @@ def SEQtoTREE(tr):
 
     for x in tr[1:]: push(x)
     while ops: reduce()
-    val = pop_val()
+    val = vals.pop()
     assert not vals, 'sequence evaluation failed'
     return val
 
@@ -224,12 +198,12 @@ def GEN_LST(tr, env):
             constr = constraints[0]
             _, form, ran, *spec = constr
             if spec: spec = spec[0]
-            for val in eval_tree(ran, local):
+            for val in eval_tree(ran, local, False):
                 match(form, val, local)
-                if not spec or eval_tree(spec, local):
+                if not spec or eval_tree(spec, local, False):
                     yield from generate(exp, constraints[1:])
         else:
-            yield eval_tree(exp, local)
+            yield eval_tree(exp, local, False)
     _, exp, *constraints = tr
     local = env.child()
     return tuple(generate(exp, constraints))
@@ -431,9 +405,11 @@ def CONF(tr):
         raise ValueError('no such field in the config')
     
 
-def eval_tree(tree, env):
+def eval_tree(tree, env, mutable=True):
     if not is_tree(tree):
         return tree
+    if not mutable:
+        tree = deepcopy(tree)
     type = tag(tree)
     
     if type not in delay_types and type not in exec_rules:
