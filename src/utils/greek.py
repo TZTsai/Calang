@@ -1,6 +1,6 @@
 import re
 
-mappings = """
+alphabet = """
 Α	α	alpha
 Β	β	beta
 Γ	γ	gamma
@@ -29,7 +29,7 @@ mappings = """
 
 alphabet = {}
 
-for line in mappings:
+for line in alphabet:
     if not line: continue
     Gr, gr, english = line.split()
     if english == 'theta': 

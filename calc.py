@@ -6,6 +6,7 @@ from src.eval import calc_eval, LOAD
 from src.format import calc_format
 from src.funcs import eq_ as equal
 from src.utils.deco import log
+from src.utils.greek import escape_to_greek
 
 
 # track the brackets
@@ -37,10 +38,12 @@ class BracketTracker:
         return cls.stk.peek()[1] if cls.stk else -1
 
 
+scripts_dir = 'scripts/'
 def run(filename=None, test=False, start=0, verbose=True):
     def get_lines(filename):
         if filename:
-            file = open(filename, 'r')
+            path = scripts_dir + filename
+            file = open(path, 'r')
             return file.readlines()[start:]  # begins from line `start`
         else:
             return iter(lambda: '', 1)  # an infinite loop
@@ -87,6 +90,9 @@ def run(filename=None, test=False, start=0, verbose=True):
             if unfinished: continue
 
             line = ''.join(buffer)
+            line = escape_to_greek(line)
+            # convert escaped chars to greek
+            
             buffer, indent = [], 0
 
             result = calc_eval(line)
@@ -126,7 +132,7 @@ if __name__ == "__main__":
     config.debug = debug
     if debug:
         sys.argv.remove('-d')
-        log.out = open('utils/log.yaml', 'w')
+        log.out = open('src/utils/log.yaml', 'w')
         from src.grammar import grammar
         parse.grammar = grammar  # reload grammar only when debugging
     else:
@@ -139,11 +145,10 @@ if __name__ == "__main__":
             filename = sys.argv[1]
         else:
             filename = 'tests/tests.cal'
-        path = "scripts/" + filename
         try:
-            run(path, test)
+            run(filename, test)
         except FileNotFoundError:
-            raise FileNotFoundError('script "%s" not found' % sys.argv[1])
+            raise FileNotFoundError('script "%s" not found' % filename)
         except Exception:
             if config.debug: raise
     else:

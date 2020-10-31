@@ -74,11 +74,9 @@ binary_ops = {
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10)}
 unary_r_ops = {'!': (factorial, 20), '!!': (dbfact, 20), '~': (unpack, 20)}
 
-construct_ops(binary_ops,   'BOP')
-construct_ops(unary_l_ops,  'LOP')
-construct_ops(unary_r_ops,  'ROP')
-
-op_list = set(binary_ops).union(set(unary_l_ops)).union(set(unary_r_ops))
+operators = {'BOP': binary_ops, 'LOP': unary_l_ops, 'ROP': unary_r_ops}
+for op_type, op_dict in operators.items():
+    construct_ops(op_dict, op_type)
 
 
 special_names = {'this', 'super'}

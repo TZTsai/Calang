@@ -193,11 +193,11 @@ def post_process(grammar, macros):
 
 
 grammar = calc_grammar(Grammar)
-json.dump(grammar, open('utils/grammar.json', 'w', 
+json.dump(grammar, open('src/utils/grammar.json', 'w', 
                         encoding='utf8'), indent=2)
 
 
 if __name__ == "__main__":
     pprint(grammar)
     for func in [parse_grammar, calc_grammar, refactor_tree]:
-        check_record('utils/syntax_tests.json', func)
+        check_record('src/utils/syntax_tests.json', func)

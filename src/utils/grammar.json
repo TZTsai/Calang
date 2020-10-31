@@ -211,7 +211,7 @@
       "ITEM_OP",
       [
         "OBJ",
-        "SUPER:FIELD"
+        "SUPER"
       ],
       [
         "OP",
@@ -250,8 +250,8 @@
         "FUNC"
       ],
       [
-        "PAR",
-        "_VAR"
+        "OBJ",
+        "VAR_"
       ]
     ],
     [
@@ -289,14 +289,14 @@
     "ALT",
     [
       "OBJ",
-      "NAME"
+      "NAME:FUNC_NAME"
     ],
     [
       "OBJ",
       "FORM"
     ]
   ],
-  "_VAR": [
+  "VAR_": [
     "EXP",
     [
       "OBJ",
@@ -304,7 +304,7 @@
     ],
     [
       "OBJ",
-      "NAME"
+      "NAME:VAR"
     ]
   ],
   "VARS": [
@@ -323,8 +323,8 @@
     [
       "ALT",
       [
-        "PAR",
-        "_VAR"
+        "OBJ",
+        "VAR_"
       ],
       [
         "ITEM_OP",
@@ -335,8 +335,8 @@
             ","
           ],
           [
-            "PAR",
-            "_VAR"
+            "OBJ",
+            "VAR_"
           ]
         ],
         [
@@ -381,7 +381,7 @@
   ],
   "NAME": [
     "RE",
-    "/[\\u0374-\\u03FFa-zA-Z][a-zA-Z\\d_]*[?]?/"
+    "/[^\\W\\d_]\\w*[?]?/"
   ],
   "ATTR": [
     "ALT",
@@ -725,8 +725,8 @@
       "@"
     ],
     [
-      "PAR",
-      "_VAL"
+      "OBJ",
+      "VAL_"
     ]
   ],
   "DICT": [
@@ -790,11 +790,11 @@
       "::"
     ],
     [
-      "PAR",
-      "_VAL"
+      "OBJ",
+      "VAL_"
     ]
   ],
-  "_VAL": [
+  "VAL_": [
     "EXP",
     [
       "OBJ",

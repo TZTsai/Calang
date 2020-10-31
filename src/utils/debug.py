@@ -59,4 +59,4 @@ def check_record(filename, func, record=None):
         print('All tests passed for %s!' % funcname)
     elif input('Rewrite %s testcases? (y/N) ' % funcname) == 'y':
         all_tests[func.__name__] = tuple(record.items())
-        json.dump(pformat(all_tests), open(filename, 'w'))
+        json.dump(all_tests, open(filename, 'w'), indent=2)

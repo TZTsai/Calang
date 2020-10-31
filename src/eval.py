@@ -1,19 +1,17 @@
-print('enter eval.py')
 from parse import calc_parse, is_name, is_tree, tag, drop_tag
-from builtin import binary_ops, unary_l_ops, unary_r_ops, builtins, special_names
+from builtin import operators, builtins, special_names
 from funcs import Symbol, is_list
 from objects import Env, stack, Op, Attr, Map
 import config
 from functools import wraps
 
 
-Builtins = Env(name='_builtins_', binds=builtins)
-
 def GlobalEnv():
     Global = Env(name='_global_', parent=Builtins)
     Global._ans = []
     return Global
 
+Builtins = Env(name='_builtins_', binds=builtins)
 Global = GlobalEnv()
 
 
@@ -28,12 +26,9 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
         return result
 
 
-# some utils
-def get_op(ops):
-    def get(tr): return ops[tr[1]]
-    return get
 
 def hold_tree(f):
+    "A decorator that makes a substitution rule to hold the tree form."
     @wraps(f)
     def _f(tr):
         if any(is_tree(t) for t in tr):
@@ -42,21 +37,20 @@ def hold_tree(f):
             return f(tr)
     return _f
 
-# def forbid_tree(f):
-#     @wraps(f)
-#     def _f(tr, env):
-#         if any(is_tree(t) for t in tr[1:]):
-#             return RuntimeError
-#         else:
-#             return f(tr, env)
-#     return _f
-
 
 # substitution rules
 
 def EMPTY(tr): return None
 
 def LINE(tr): return tr[-1]
+
+def op_getter(op_type):
+    ops = operators[op_type]
+    def get(tr): return ops[tr[1]]
+    return get
+
+OP_RULES = {op_type: op_getter(op_type)
+            for op_type, op_dict in operators.items()}
 
 def COMPLEX(tr):
     re, pm, im = tr[1:]
@@ -86,11 +80,22 @@ def ANS(tr):
 def BODY(tr):
     return tr[2] if tr[1] == 'PRINTED' else tr[1]
 
+def DIR(tr):
+    if len(tr) == 1:
+        field = Global
+    else:
+        field = tr[1]
+    print(f"(dir): {field.dir()}")
+    for name, val in field.items():
+        print(f"{name}: {val}")
+
 @hold_tree
 def SEQtoTREE(tr):
     # stk = stack()
     ops = stack()
     vals = stack()
+    
+    adjoin = operators['BOP']['']
     
     def pop_val():
         v = vals.pop()
@@ -148,7 +153,7 @@ def SEQtoTREE(tr):
         else:
             if not (push.prev is None or
                     isinstance(push.prev, Op)):
-                ops.push(binary_ops[''])
+                ops.push(adjoin)
             if isinstance(x, Env):
                 if hasattr(x, 'val'):
                     x = x.val  # convert Env to its 'val'
@@ -202,9 +207,9 @@ def PRINT(tr, env):
     return 'PRINTED'
 
 def IF_ELSE(tr, env):
-    _, t_case, cond, f_case = tr
-    cond = eval_tree(cond, env)
-    return eval_tree(t_case if cond else f_case, env)
+    _, t_case, pred, f_case = tr
+    case = t_case if eval_tree(pred, env) else f_case
+    return eval_tree(case, env)
 
 def WHEN(tr, env):
     *cases, default = tr[1:]
@@ -235,7 +240,7 @@ def DICT(tr, env):
         BIND(t, local)
     return local
 
-MAP = Map
+MAP = Map  # the MAP evaluation rule is the same as Map constructor
 
 def CLOSURE(tr, env):
     _, local, body = tr
@@ -259,7 +264,6 @@ def BIND(tr, env):
         at = None
     exp = tr[i]; i+=1
     try:
-        assert tag(tr[i]) == 'DOC'
         doc = tr[i][1][1:-1]
     except:
         doc = None
@@ -274,8 +278,14 @@ def MATCH(tr, env):
 def match(form, val, local: Env):
     vals = list(val) if is_list(val) else [val]
         
-    if form[0] != 'FORM': split_pars(form, local)
-    _, pars, opt_pars, ext_par = form
+    if tag(form) == 'PAR':
+        pars = form[1:]
+        opt_pars = []
+        ext_par = None
+    else:
+        _, pars, opt_pars, ext_par = form
+        pars, opt_pars = pars[1:], opt_pars[1:]
+        # remove the tags & make copies
     
     if len(pars) > len(vals):
         raise ValueError(f'not enough items in {vals} to match')
@@ -287,13 +297,12 @@ def match(form, val, local: Env):
         else:
             match(par, val, local)
             
-    opt_pars = opt_pars.copy()
     while opt_pars and vals:
         define(opt_pars.pop(0)[0], vals.pop(0), local)
     for opt_par, default in opt_pars:
         define(opt_par, default, local)
         
-    if ext_par:
+    if ext_par is not None:
         local[ext_par] = tuple(vals)
         
 
@@ -309,7 +318,7 @@ def define(var, exp, env, at=None, doc=None):
         elif isinstance(val, Env):
             val.name = name
                 
-        if doc:
+        if doc:  # add __doc__
             if not isinstance(val, Env):
                 val = Env(val, name=name)
             try: val.__doc__ += '\n' + doc
@@ -327,67 +336,54 @@ def define(var, exp, env, at=None, doc=None):
         else:
             def_(vars[0], val, env)
     
-    tag_ = tag(var)
+    var_tag = tag(var)
 
     # evaluate the exp
-    if tag_ == 'FUNC':
-        form = var[2]
+    if var_tag == 'FUNC':
+        form = eval_tree(var[2], env)  # eval the opt_pars
         val = Map(['MAP', form, exp], env, at)
     else:
         assert at is None, 'invalid use of @'
         val = eval_tree(exp, env)
 
     # bind the variable(s)
-    if tag_ == 'VARS':
+    if var_tag == 'VARS':
         def_all(var, val, env)
     else:
-        name = var[1] if tag_ == 'NAME' else var[1][1]
+        name = var[1] if var_tag == 'VAR' else var[1][1]
         def_(name, val, env)
         
-def split_field(tr):
-    if tr[0] == 'NAME':
-        attr = tr[1]
-        parent = Global
-    elif tr[0] == 'FIELD':
-        parent, attr = tr[:-1], tr[-1][1]
-        parent = eval_tree(parent, Global) \
-            if len(parent) > 1 else Global
+def split_field(tr, env):
+    if is_name(tr[1]):
+        parent, attr = env, tr[1]
     else:
-        raise TypeError('wrong type for split_field')
+        parent, attr = tr[:-1], tr[-1][1]
+        parent = eval_tree(parent, env) if len(parent) > 1 else env
     return parent, attr
 
 
 # these rules are commands in the calc
 
 def DEF(tr):
-    _, env, bind = tr
-    upper, env_name = split_field(env)
-    env = upper[env_name]
-    if not isinstance(env, Env):
-        # if env is not Env instance, convert it
-        env = upper.child(env, env_name)
-        upper[env_name] = env
-    BIND(bind, env)
+    _, field, body = tr
+    upper, field_name = split_field(field, Global)
+    field = upper[field_name]
+    if not isinstance(field, Env):
+        # if field is not Env instance, convert it into one
+        field = upper.child(field, field_name)
+        upper[field_name] = field
+    BIND(body, field)
     
 def DEL(tr):
     for t in tr[1:]:
-        field, attr = split_field(t)
+        field, attr = split_field(t, Global)
         field.delete(attr)
-
-def DIR(tr):
-    if len(tr) == 1:
-        field = Global
-    else:
-        field = tr[1]
-        print(f"(dir): {field.dir()}")
-    for name, val in field.items():
-        print(f"{name}: {val}")
 
 def LOAD(tr):
     test = '-t' in tr
     verbose = '-v' in tr
     overwrite = '-w' in tr
-    path = 'scripts/%s.cal' % '/'.join(tr[1].split('.'))
+    path = '%s.cal' % '/'.join(tr[1].split('.'))
 
     global Global
     current_global = Global
@@ -426,12 +422,12 @@ def CONF(tr):
         if len(tr) == 2:
             print(config.precision)
         else:
-            config.precision = max(1, int(tr[2]))
+            config.precision = max(1, REAL(tr[2]))
     elif conf == 'tolerance':
         if len(tr) == 2:
             print(config.tolerance)
         else:
-            config.tolerance = float(tr[2])
+            config.tolerance = REAL(tr[2])
     elif hasattr(config, conf):
         if len(tr) == 2:
             print(getattr(config, conf))
@@ -444,37 +440,34 @@ def CONF(tr):
 def eval_tree(tree, env):
     if not is_tree(tree):
         return tree
-    type_ = tag(tree)
+    type = tag(tree)
     
-    if type_ not in delay_types:
+    if type not in delay_types and type not in exec_rules:
         for i in range(1, len(tree)):
             tree[i] = eval_tree(tree[i], env)
-    elif type_ == 'DELAY' and env:
+    elif type == 'DELAY' and env:
         drop_tag(tree, 'DELAY')
         return tree
     
-    if type_ in subs_rules:
-        return subs_rules[type_](tree)
-    elif type_ in eval_rules and env:
-        return eval_rules[type_](tree, env)
-    elif type_ in exec_rules:
-        exec_rules[type_](tree)
-        return
+    if type in subs_rules:
+        return subs_rules[type](tree)
+    elif type in eval_rules and env:
+        return eval_rules[type](tree, env)
+    elif type in exec_rules:
+        exec_rules[type](tree); return
     else:
         return tree
+
 
 
 Map.match = match
 Map.eval  = eval_tree
 
+LOAD.run  = lambda path, test, start, verbose: NotImplemented
+# implement this in calc.py
 
-LOAD.run  = None  # set this in calc.py
 
-delay_types = {
-    'DELAY',    'DEF',      'BIND',     'IF_ELSE',
-    'DEL',      'WHEN',     'GEN_LST',  'PAR_LST',
-    'FORM',     'DICT'
-}
+delay_types = {'DELAY', 'GEN_LST', 'BIND', 'DICT', 'IF_ELSE', 'WHEN'}
 
 subs_rules = {
     'LINE': LINE,               'BODY': BODY,
@@ -484,9 +477,8 @@ subs_rules = {
     'BIN': BIN,                 'HEX': HEX,
     'IDC_LST': LIST,            'SLICE': SLICE,
     'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
-    'SEQ': SEQtoTREE,           'BOP': get_op(binary_ops),
-    'LOP': get_op(unary_l_ops), 'ROP': get_op(unary_r_ops),
-    'EMPTY': EMPTY,
+    'SEQ': SEQtoTREE,           **OP_RULES,  # unpack 3 Op rules here
+    'EMPTY': EMPTY,             'DIR': DIR
 }
 
 eval_rules = {
@@ -499,9 +491,9 @@ eval_rules = {
 }
 
 exec_rules = {
-    'DIR': DIR,                 'CONF': CONF,
+    'DEL': DEL,                 'DEF': DEF,
     'LOAD': LOAD,               'IMPORT': IMPORT,
-    'DEL': DEL,                 'DEF': DEF
+    'CONF': CONF,
 }
 
 

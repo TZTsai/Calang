@@ -105,14 +105,13 @@ class Map:
     def __init__(self, tree, env, at=None):
         _, form, body = tree
         body = Map.eval(body, None)  # simplify the body
-        split_pars(form, env)
         self.form = form
         self.body = body
         self.parent = env
         self.at = at
         self.dir = self.parent.dir()
         self.__name__ = '(map)'
-        self._str = remake_str(tree, env)
+        self._str = Map.decompile(tree)
     
     def __call__(self, val):
         local = self.parent.child()
@@ -135,7 +134,7 @@ class Map:
             log(signature, ' ==> ', result)
             return result
         else:
-            return Map.eval(self.body, local)
+            return Map.eval(body, local)
     
     def __repr__(self):
         return '<map: %s.%s>' % (self.dir, self.__name__)

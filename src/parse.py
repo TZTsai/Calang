@@ -5,7 +5,7 @@ from utils.debug import check, check_record, pprint
 
 
 try:
-    grammar = json.load(open('utils/grammar.json', 'r'))
+    grammar = json.load(open('src/utils/grammar.json', 'r'))
 except:
     from grammar import grammar
 
@@ -161,8 +161,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             tree = ['(nospace)'] + tree
         return tree, rem
 
-    must_have = {'BIND': '=', 'MAP': '=>', 'MATCH': '::', 'GEN_LST': 'for', '_EXT': '~',
-                 'SLICE': ':', '_DLST': ';'}
+    must_have = {'BIND': '=', 'MAP': '=>', 'MATCH': '::', 'GEN_LST': 'for', 
+                 '_EXT': '~', 'SLICE': ':', '_DLST': ';'}
     @trace
     @memo
     def parse_tag(tag, text):
@@ -221,7 +221,7 @@ def split_pars(form):
     "Split a FORM syntax tree into 3 parts: pars, opt-pars, ext-par."
     if tag(form) == 'PAR':
         return form
-    pars, opt_pars = [], []
+    pars, opt_pars = ['PARS'], ['OPTPARS']
     ext_par = None
     for t in form[1:]:
         if t[0] == 'PAR':
@@ -250,6 +250,6 @@ def interact(func):
 
 
 if __name__ == "__main__":
-    testfile = 'utils/syntax_tests.json'
+    testfile = 'src/utils/syntax_tests.json'
     interact_record = interact(calc_parse)
     check_record(testfile, calc_parse, interact_record)

@@ -1,4 +1,5 @@
-from parse import tag, is_tree, drop_tag
+from parse import tag as tree_tag, is_tree, drop_tag
+from builtin import operators
 
 def decompile(tree):
     "Reconstruct a readable string from the syntax tree."
@@ -12,60 +13,63 @@ def decompile(tree):
         # if in an operation sequence, add a pair of parentheses
         
         tr = tr.copy()
-        type = tag(tr)
-        if type in ('NAME', 'SYM', 'PAR'):
+        tag = tree_tag(tr)
+        if tag in ('NAME', 'SYM', 'PAR'):
             return tr[1]
-        elif type == 'FIELD':
+        elif tag == 'FIELD':
             return ''.join(map(rec, tr[1:]))
-        elif type == 'ATTR':
+        elif tag == 'ATTR':
             return '.' + tr[1]
-        elif type == 'SEQ':
+        elif tag == 'SEQ':
             return ''.join(rec(t, True) for t in tr[1:])
-        elif type[-2:] == 'OP':
+        elif tag[-2:] == 'OP':
             op = tr[1]
-            return (' %s ' if op.priority < 4 else '%s') % str(tr[1])
-        elif type == 'NUM':
+            if type(op) is str:
+                op = operators[tag][op]
+            template = ' %s ' if op.priority < 4 else '%s'
+            return template % str(tr[1])
+        elif tag == 'NUM':
             return str(tr[1])
-        elif type == 'FORM':
+        elif tag == 'FORM':
             _, pars, optpars, extpar = tr
-            pars = [rec(par) for par in pars]
-            optpars = [f'{rec(optpar)}: {default}' for optpar, default in optpars]
+            pars = [rec(par) for par in pars[1:]]
+            optpars = [f'{rec(optpar)}: {default}' for optpar, default in optpars[1:]]
             extpar = [extpar+'~'] if extpar else []
             return "[%s]" % ', '.join(pars + optpars + extpar)
-        elif type == 'IF_ELSE':
+        elif tag == 'IF_ELSE':
             return group("%s if %s else %s" % tuple(map(rec, tr[1:])))
-        elif type[-3:] == 'LST':
+        elif tag[-3:] == 'LST':
             return '[%s]' % ', '.join(map(rec, tr[1:]))
-        elif type == 'MAP':
+        elif tag == 'MAP':
             _, form, exp = tr
             return group('%s => %s' % (rec(form), rec(exp)))
-        elif type == 'DICT':
+        elif tag == 'DICT':
             return '(%s)' % ', '.join(map(rec, tr[1:]))
-        elif type == 'BIND':
-            if tag(tr[-1]) == 'DOC': tr = tr[1:]
+        elif tag == 'BIND':
+            if tree_tag(tr[-1]) == 'DOC': tr = tr[1:]
             tup = tuple(rec(t) for t in tr[1:])
-            if tag(tr[2]) == 'AT':
+            if tree_tag(tr[2]) == 'AT':
                 return '%s %s = %s' % tup
             else:
                 return '%s = %s' % tup
-        elif type == 'MATCH':
+        elif tag == 'MATCH':
             _, form, exp = tr[1]
             return group('%s::%s' % (rec(form), rec(exp)))
-        elif type == 'CLOSURE':
+        elif tag == 'CLOSURE':
             _, local, exp = tr
             return '%s %s' % (rec(local), rec(exp))
-        elif type == 'FUNC':
+        elif tag == 'FUNC':
             _, name, form = tr
             return '%s%s' % (rec(name), rec(form))
-        elif type == 'WHEN':
+        elif tag == 'WHEN':
             return 'when(%s)' % ', '.join(': '.join(map(rec, case[1:]))
                                           for case in tr[1:])
-        elif type == 'AT':
+        elif tag == 'AT':
             return '@' + rec(tr[1])
-        elif type == 'DELAY':
+        elif tag == 'DELAY':
             drop_tag(tr)
             return rec(tr, in_seq)
-        elif type in ('PRINT', 'DOC'):
+        elif tag in ('PRINT', 'DOC'):
             return ''
         else:
             return str(list(map(rec, tr)))
