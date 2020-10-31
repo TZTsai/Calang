@@ -219,14 +219,11 @@ def calc_parse(text, tag='LINE', grammar=grammar):
 
 def split_pars(form):
     "Split a FORM syntax tree into 3 parts: pars, opt-pars, ext-par."
+    if tag(form) == 'PAR':
+        return form
     pars, opt_pars = [], []
     ext_par = None
-    tag = drop_tag(form, 'FORM')
-    # if tag == 'PAR':
-        
-    # lst = [form] if len(form) == 2 and \
-    #     type(form[1]) is str else form[1:]
-    for t in lst:
+    for t in form[1:]:
         if t[0] == 'PAR':
             pars.append(t[1])
         elif t[0] == 'PAR_LST':
