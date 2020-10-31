@@ -5,15 +5,24 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Python: Attach using Process Id",
+      "type": "python",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    },
+    {
       "name": "Python: Test Examples",
       "type": "python",
       "request": "launch",
       "program": "calc.py",
       "console": "integratedTerminal",
       "args": [
-        "-t", "-d",
+        "-t",
+        "-d",
         "tests/egTest.cal",
-        "&&", "exit", "0"
+        "&&",
+        "exit",
+        "0"
       ]
     },
     {
@@ -24,17 +33,22 @@
       "console": "integratedTerminal",
       "args": [
         "-d",
-        "&&", "exit", "0"
-      ]
-      // "justMyCode": false
+        "&&",
+        "exit",
+        "0"
+      ],
+      "justMyCode": false
     },
     {
       "name": "Python: Test",
       "type": "python",
       "request": "launch",
       "args": [
-        "-t", "-d",
-        "&&", "exit", "0"
+        "-t",
+        "-d",
+        "&&",
+        "exit",
+        "0"
       ],
       "program": "calc.py",
       "console": "integratedTerminal",
@@ -45,7 +59,7 @@
       "type": "python",
       "request": "launch",
       "program": "${file}",
-      "cwd": "${workspaceFolder}",
+      "cwd": "${fileDirname}",
       "console": "integratedTerminal",
       // "justMyCode": false
     },

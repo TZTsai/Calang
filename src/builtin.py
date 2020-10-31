@@ -1,4 +1,4 @@
-print('enter builtins.py')
+print('enter builtin.py')
 from operator import floordiv, mod, neg, lt, gt, le, ge, xor, inv
 from functools import reduce
 from numbers import Number, Rational
@@ -12,8 +12,8 @@ from sympy import (
 )
 
 import config
-from .obj import Op, Env, Range
-from .funcs import (
+from objects import Op, Env, Range
+from funcs import (
     is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, 
     add, sub, mul, div, dot, power, and_, or_, not_, eq_, ne_, adjoin, unpack,
     iadd, isub, imul, idiv, ipow, iand, ior, 

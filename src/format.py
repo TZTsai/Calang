@@ -1,10 +1,12 @@
 from sympy import latex, pretty
 from re import sub as translate
+from builtin import Rational, Fraction, Matrix, is_number, is_matrix, is_function, floor, inf, log
+from objects import Range, Env, Map
+from decompile import decompile
 from utils.greek import gr_to_tex
-from .builtins import Rational, Fraction, Matrix, is_number, is_matrix, is_function, floor, inf, log
-from .obj import Range, Env, Map, remake_str
 import config
 
+Map.decompile = decompile
 
 indent = 0
 
@@ -83,7 +85,7 @@ def calc_format(val, **opts):
             s += '[%s]' % ', '.join(
                 map(lambda v: calc_format(v, **opts), val))
     elif type(val) is list:
-        s += '<incomplete eval: %s>' % remake_str(val, None)
+        s += '<incomplete eval: %s>' % decompile(val)
     else:
         s += format_atom(val)
     return s

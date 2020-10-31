@@ -1,4 +1,4 @@
-from .parser import tag, is_tree, drop_tag
+from parse import tag, is_tree, drop_tag
 
 def decompile(tree):
     "Reconstruct a readable string from the syntax tree."

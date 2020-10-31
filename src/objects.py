@@ -1,7 +1,6 @@
-print('enter obj.py')
+print('enter objects.py')
 from copy import deepcopy
 from utils.deco import log
-from .decompiler import decompile
 import config
 
 
@@ -101,6 +100,7 @@ class Attr:
 class Map:
     match = lambda val, form, parent: NotImplemented
     eval  = lambda tree, parent: NotImplemented
+    decompile = lambda tree: NotImplemented
 
     def __init__(self, tree, env, at=None):
         _, form, body = tree

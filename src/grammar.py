@@ -3,7 +3,7 @@ print('Reading grammar.')
 from pprint import pprint
 import re
 import json
-from builtins import binary_ops, unary_l_ops, unary_r_ops
+from builtin import binary_ops, unary_l_ops, unary_r_ops
 from utils.deco import memo, trace, disabled
 
 trace = disabled
@@ -38,7 +38,7 @@ MARK    := [^>|)\s]\S*
 # OBJ:      OBJ is a tag of the syntax tree to identify its type
 #           it consists of A-Z and _
 #           Optionally, it can have a suffix beginning with : , in which case the
-#           parser should change the tag of the matched tree into that after : ,
+#           parse should change the tag of the matched tree into that after : ,
 #           very useful for the evaluator to determine its way of eval
 # PAR:      Similar to OBJ but begins with _ . The tree it matches will not be 
 #           tagged, but merged into the OBJ at its upper level instead
@@ -52,7 +52,7 @@ MARK    := [^>|)\s]\S*
 # MACRO:    used for sub_macro; will not exist in the processed grammar
 
 
-GrammarStr = open('src/grammar.txt', 'r').read()
+GrammarStr = open('grammar.txt', 'r').read()
 GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
 Grammar = split(GrammarStr, '\n')
 # add syntax for operations

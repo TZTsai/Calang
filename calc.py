@@ -1,10 +1,11 @@
 import sys
-from src.obj import stack
+from src import config
+from src import parse
+from src.objects import stack
 from src.eval import calc_eval, LOAD
-from src.funcs import eq_ as equal
 from src.format import calc_format
-from utils.deco import log
-import config
+from src.funcs import eq_ as equal
+from src.utils.deco import log
 
 
 # track the brackets
@@ -127,8 +128,7 @@ if __name__ == "__main__":
         sys.argv.remove('-d')
         log.out = open('utils/log.yaml', 'w')
         from src.grammar import grammar
-        import src.parser as parser
-        parser.grammar = grammar
+        parse.grammar = grammar  # reload grammar only when debugging
     else:
         log.out = None
         

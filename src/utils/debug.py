@@ -12,13 +12,13 @@ def log(*messages, end='\n', sep=''):
 log.depth = 0
 log.out = sys.stdout
 
-def check(f, args, expected, record=None):
-    actual = f(*args)
+def check(f, arg, expected, record=None):
+    actual = f(arg)
     if not rec_comp(expected, actual):
-        print(f'Wrong Answer of {f.__name__}{tuple(args)}\n'
+        print(f'Wrong Answer of {f.__name__}{tuple(arg)}\n'
               f'Expected: {pformat(expected)}\n'
               f'Actual: {pformat(actual)}\n')
-        if record: record[args] = actual
+        if record: record[arg] = actual
         return False
     return True
 

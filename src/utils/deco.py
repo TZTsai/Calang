@@ -1,6 +1,6 @@
+import sys
 from functools import wraps
 from .debug import log
-import sys
 
 
 def memo(f):  # a decorator to improve performance

@@ -1,4 +1,4 @@
-print('enter parser.py')
+print('enter parse.py')
 import re, json
 from utils.deco import memo, trace, disabled
 from utils.debug import interact, check_record
@@ -7,7 +7,7 @@ from utils.debug import interact, check_record
 try:
     grammar = json.load(open('utils/grammar.json', 'r'))
 except:
-    from .grammar import grammar
+    from grammar import grammar
 
 keywords = {'if', 'else', 'in', 'dir', 'for', 'load', 'config', 'when', 'import', 'del'}
 

@@ -1,7 +1,8 @@
-from .parser import calc_parse, is_name, is_tree, tag, drop_tag
-from .builtins import binary_ops, unary_l_ops, unary_r_ops, builtins, special_names
-from .funcs import Symbol, is_list
-from .obj import Env, stack, Op, Attr, Map, split_pars, remake_str
+print('enter eval.py')
+from parse import calc_parse, is_name, is_tree, tag, drop_tag
+from builtin import binary_ops, unary_l_ops, unary_r_ops, builtins, special_names
+from funcs import Symbol, is_list
+from objects import Env, stack, Op, Attr, Map
 import config
 from functools import wraps
 
