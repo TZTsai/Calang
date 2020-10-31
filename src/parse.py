@@ -1,7 +1,7 @@
 print('enter parse.py')
 import re, json
 from utils.deco import memo, trace, disabled
-from utils.debug import interact, check_record
+from utils.debug import check, check_record, pprint
 
 
 try:
@@ -235,13 +235,20 @@ def split_pars(form):
     return ['FORM', pars, opt_pars, ext_par]
 
 
+# for testing
+def interact(func):
+    record = {}
+    while True:
+        exp = input('>>> ')
+        if exp in 'qQ':
+            return record
+        else:
+            result = func(exp)
+            pprint(result)
+            record[exp,] = None  # for writing to testfile
+
 
 if __name__ == "__main__":
-    testfile = 'utils/parser_tests.json'
-    testcases, passed = check_record(testfile, calc_parse)
+    testfile = 'utils/syntax_tests.json'
     interact_record = interact(calc_parse)
-    if not passed or interact_record:
-        rewrite = input('rewrite? (y/N) ') == 'y'
-    if rewrite:
-        testcases.update(interact_record)
-        json.dump(testcases, open(testfile, 'w'))
+    check_record(testfile, calc_parse, interact_record)

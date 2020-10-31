@@ -12,13 +12,15 @@ def log(*messages, end='\n', sep=''):
 log.depth = 0
 log.out = sys.stdout
 
-def check(f, arg, expected, record=None):
-    actual = f(arg)
+def check(f, args, expected, record=None):
+    if type(args) is not tuple:
+        args = tuple(args)
+    actual = f(*args)
     if not rec_comp(expected, actual):
-        print(f'Wrong Answer of {f.__name__}{tuple(arg)}\n'
+        print(f'Wrong Answer of {f.__name__}{args}\n'
               f'Expected: {pformat(expected)}\n'
               f'Actual: {pformat(actual)}\n')
-        if record: record[arg] = actual
+        if record: record[args] = actual
         return False
     return True
 
@@ -35,22 +37,15 @@ def rec_comp(l1, l2):
     else:
         return all(rec_comp(i1, i2) for i1, i2 in zip(l1, l2))
 
-def check_record(filename, func):
-    testcases = json.load(open(filename, 'r'))
-    passed = all(check(func, *case, testcases)
-                 for case in testcases.items())
-    if passed: print('All tests passed!')
-    return testcases, passed
-    
-def interact(func):
-    record = {}
-    prev = None
-    while True:
-        exp = input('>>> ')
-        if exp in 'qQ':
-            return record
-        elif exp in 'wW':
-            check(func, [prev], None, record)
-        else:
-            pprint(func(exp))
-            prev = exp
+def check_record(filename, func, record={}):
+    all_tests = json.load(open(filename, 'r'))
+    testcases = all_tests[func.__name__]
+    testcases = {tuple(args): exp for args, exp in testcases}
+    record.update(testcases)
+    passed = all([check(func, args, exp, record)
+                  for args, exp in record.items()])
+    if passed:
+        print('All tests passed!')
+    elif input('rewrite? (y/N) ') == 'y':
+        all_tests[func.__name__] = tuple(record.items())
+        json.dump(all_tests, open(filename, 'w'))
