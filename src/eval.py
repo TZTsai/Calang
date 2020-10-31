@@ -107,7 +107,7 @@ def SEQtoTREE(tr):
             args = [vals.peek()] + args
         try:
             result = op(*args)
-        except:
+        except TypeError:
             if op is adjoin:
                 push(dot)  # adjoin failed, change to dot product
                 push(args[-1])

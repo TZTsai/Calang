@@ -207,7 +207,7 @@ def dot(x1, x2):
     12
     '''
     if not (is_list(x1) and is_list(x2)):
-        if is_function(x1) or is_function(x2):
+        if is_function(x1) and is_function(x2):
             return compose(x1, x2)
         else:
             return imul(x1, x2)
