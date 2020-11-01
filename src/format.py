@@ -1,12 +1,11 @@
 from sympy import latex, pretty
 from re import sub as translate
 from builtin import Rational, Fraction, Matrix, is_number, is_matrix, is_function, floor, inf, log
-from objects import Range, Env, Map
+from objects import Range, Env
 from parse import rev_parse
+from utils.deco import trace
 from utils.greek import gr_to_tex
-import config
-
-Map.to_str = rev_parse
+import config, objects
 
 indent = 0
 
@@ -84,8 +83,16 @@ def calc_format(val, **opts):
         else:
             s += '[%s]' % ', '.join(
                 map(lambda v: calc_format(v, **opts), val))
-    elif type(val) is list:
-        s += '<incomplete eval: %s>' % decompile(val)
     else:
         s += format_atom(val)
     return s
+
+
+def map_signature(_, args):
+    f, *args = args
+    opts = {'tex': config.latex, 'sci': 0, 'bin': 0, 'hex': 0}
+    return '%s%s' % (calc_format(f, **opts), calc_format(args, **opts))
+
+
+trace.signature = map_signature
+objects.tree_repr = rev_parse

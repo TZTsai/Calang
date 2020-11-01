@@ -132,7 +132,7 @@ if __name__ == "__main__":
     config.debug = debug
     if debug:
         sys.argv.remove('-d')
-        log.out = open('src/utils/log.yaml', 'w')
+        # log.out = open('src/utils/log.yaml', 'w')
         from src.grammar import grammar
         parse.grammar = grammar  # reload grammar only when debugging
     else:

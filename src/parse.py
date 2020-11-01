@@ -262,7 +262,10 @@ def rev_parse(tree):
     def rec(tr, in_seq=False):
         "$in_seq: whether it is in a sequence"
         
-        if not is_tree(tr): return str(tr)
+        if not is_tree(tr):
+            if type(tr) is tuple:
+                 tr = list(map(rec, tr))
+            return str(tr)
         
         def group(s): return '(%s)' if in_seq else s
         # if in an operation sequence, add a pair of parentheses

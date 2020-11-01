@@ -1,8 +1,8 @@
 config tolerance 1e-4
 1.00009 == 1  #1
-x == 'x #1
 x = 1
 del x, y
+config symbolic on
 x == 'x #1
 
 # load and import

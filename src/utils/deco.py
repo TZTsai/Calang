@@ -1,14 +1,14 @@
 import sys
 from functools import wraps
 from .debug import log
+import config
 
 
-def memo(f):  # a decorator to improve performance
+def memo(f): 
     "Use a table to store computed results of a function."
     table = {}
     @wraps(f)
     def _f(*args):
-        # print(table)
         try:
             return table[args]
         except KeyError:
@@ -20,18 +20,28 @@ def memo(f):  # a decorator to improve performance
     return _f
 
 
-def trace(f):  # a decorator for debugging
+def trace(f):
     "Print info before and after the call of a function."
     @wraps(f)
     def _f(*args):
-        signature = f"{f.__name__}({', '.join(map(repr, args))}):"
-        log(f' ---> {signature}')
+        signature = trace.signature(f, args)
+        log('%s:' % signature)
         log.depth += 1
-        try: result = f(*args)
-        finally: log.depth -= 1
-        log(f' <--- {signature} === {result}')
+        try:
+            result = f(*args)
+            log.depth -= 1
+        except:
+            log(f.__name__, 'exited due to exception')
+            log.depth -= 1
+            raise
+        log(f'{signature} ==> {result}')
         return result
     return _f
 
+trace.signature = lambda f, args: f'{f}{args}'
+    
 
-def disabled(f): return f  # used to disable a decorator
+def disabled(f, *ignore): return f  # used to disable a decorator
+
+
+if not config.debug: trace = disabled

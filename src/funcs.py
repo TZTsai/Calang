@@ -56,6 +56,8 @@ def apply(f, args):
     def convert_arg(arg):
         if isinstance(arg, Env) and hasattr(arg, 'val'):
             return arg.val
+        elif isinstance(arg, str):
+            return Symbol(arg)
         else:
             return arg
     result = f(*map(convert_arg, args))

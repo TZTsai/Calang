@@ -81,9 +81,6 @@ def ANS(tr):
         except: raise SyntaxError('invalid history index!')
     return Global._ans[id]
 
-def BODY(tr):
-    return tr[2] if tr[1] == '(printed)' else tr[1]
-
 def DIR(tr):
     if len(tr) == 1:
         field = Global
@@ -186,13 +183,16 @@ def NAME(tr, env):
     try: return env[name]
     except KeyError:
         if NAME.force_symbol:
-            return Symbol(name)
+            return name
         else:
             raise UnboundName(f"unbound symbol '{name}'")
 
 def PRINT(tr, env):
     exec('print(f"%s")' % tr[1][1:-1], env.all())
     return '(printed)'
+
+def BODY(tr, env):
+    return tr[2] if tr[1] == '(printed)' else tr[1]
 
 def IF_ELSE(tr, env):
     _, t_case, pred, f_case = tr
@@ -391,19 +391,19 @@ def CONF(tr):
     conf = tr[1]
     if conf in ('prec', 'precision'):
         if len(tr) == 2:
-            print(config.precision)
+            return config.precision
         else:
             config.precision = max(1, REAL(tr[2]))
     elif conf == 'tolerance':
         if len(tr) == 2:
-            print(config.tolerance)
+            return config.tolerance
         else:
             config.tolerance = REAL(tr[2])
     elif hasattr(config, conf):
         if len(tr) == 2:
-            print(getattr(config, conf))
+            return getattr(config, conf)
         else:
-            setattr(config, conf, tr[2] in ('on', '1'))
+            setattr(config, conf, tr[2] == 'on')
     else:
         raise ValueError('no such field in the config')
     
@@ -416,14 +416,8 @@ def eval_tree(tree, env, mutable=True):
     tag = tree_tag(tree)
     
     if tag not in delay_types and tag not in exec_rules:
-        err = None
         for i in range(1, len(tree)):
-            try:
-                tree[i] = eval_tree(tree[i], env)
-            except UnboundName as e:
-                err = e
-            # finish evaluating all children before re-raising the error
-        if err: raise err
+            tree[i] = eval_tree(tree[i], env, mutable)
     elif tag == 'DELAY' and env:
         drop_tag(tree, 'DELAY')
         return tree
@@ -433,7 +427,7 @@ def eval_tree(tree, env, mutable=True):
     elif tag in eval_rules and env:
         return eval_rules[tag](tree, env)
     elif tag in exec_rules:
-        exec_rules[tag](tree); return
+        return exec_rules[tag](tree)
     else:
         return tree
 
@@ -449,18 +443,17 @@ Map.eval  = eval_tree
 delay_types = {'DELAY', 'GEN_LST', 'BIND', 'DICT', 'IF_ELSE', 'WHEN'}
 
 subs_rules = {name: eval(name) for name in [
-    'LINE',     'BODY',     'ANS',      'SYM',
+    'LINE',     'DIR',      'ANS',      'SYM',
     'FIELD',    'ATTR',     'REAL',     'COMPLEX',
     'BIN',      'HEX',      'IDC_LST',  'SLICE',
     'VAL_LST',  'SYM_LST',  'SEQ',      'EMPTY',
-    'DIR',
 ]}
 subs_rules.update(OPERATORS)
 
 eval_rules = {name: eval(name) for name in [
     'NAME',     'MAP',      'PRINT',    'DICT',
     'MATCH',    'IF_ELSE',  'WHEN',     'CLOSURE',
-    'BIND',     'GEN_LST',
+    'BIND',     'GEN_LST',  'BODY'
 ]}
 
 exec_rules = {name: eval(name) for name in [

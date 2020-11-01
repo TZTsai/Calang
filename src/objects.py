@@ -1,4 +1,4 @@
-from utils.deco import log, memo
+from utils.deco import log, memo, trace
 import config
 
 
@@ -62,10 +62,10 @@ class Env(dict):
         env = Env(val, self, name, binds)
         return env
 
-    def __repr__(self):
+    def __str__(self):
         return '<%s: %s>' % (self.cls, self.dir())
     
-    def __str__(self):
+    def __repr__(self):
         content = ', '.join(f'{k} = {v}' for k, v in self.items())
         return f'({content})'
     
@@ -96,10 +96,13 @@ class Attr:
         except: return getattr(env, self.name)
 
 
+tree_repr = NotImplemented
+# a function to restore syntax tree to an expression
+# ASSIGN it in format.py
+
 class Map:
     match  = lambda val, form, parent: NotImplemented
     eval   = lambda tree, parent, mutable: NotImplemented
-    to_str = lambda tree: NotImplemented
 
     def __init__(self, tree, env):
         _, form, body = tree
@@ -111,12 +114,26 @@ class Map:
             body = Map.eval(body, None)  # simplify the body
         self.form = form
         self.body = body
+        # self.vars = self.search_vars()
         self.parent = env
-        self._repr = Map.to_str(tree)
+        self._repr = tree_repr(tree)
+        self._memo = {}
         self.__name__ = '(map)'
         self.__doc__ = self._repr
+
+    # def search_vars(self):
+    #     vars = []
+    #     def search(tr):
+    #         if type(tr) is list and tr:
+    #             if tr[0] == 'NAME':
+    #                 vars.append(tr[1])
+    #             else:
+    #                 [search(t) for t in tr]
+    #     search(self.body)
+    #     return vars
     
-    @memo
+    # @memo
+    @trace
     def __call__(self, *lst):
         local = self.parent.child()
         body = self.body
@@ -130,29 +147,18 @@ class Map:
         else:
             env = local
             
-        if config.debug:
-            signature = f'{self.dir()}{Map.to_str(lst)}'
-            log(signature)
-            log.depth += 1
         result = Map.eval(body, env, mutable=False)
-        if config.debug:
-            log.depth -= 1
-            log(signature, ' ==> ', result)
-            
         if isinstance(result, Env):
-            result.cls = self.dir()
+            result.cls = str(self)
         return result
     
-    def dir(self):
+    def __str__(self):
         parent_field = self.parent.dir() + '.' \
             if self.parent.name[0] != '_' else ''
         return parent_field + self.__name__
     
     def __repr__(self):
         return self._repr
-    
-    def __str__(self):
-        return '<map: %s>' % self.dir()
     
     def compose(self, func):
         "Enable arithmetic ops on Map."
