@@ -78,26 +78,29 @@
             ]
           ],
           [
-            "AT:SEQ",
+            "INHERIT",
             [
-              "NAME",
-              "g"
-            ],
-            [
-              "VAL_LST",
+              "SEQ",
               [
                 "NAME",
-                "x"
+                "g"
               ],
               [
-                "NAME",
-                "x"
+                "VAL_LST",
+                [
+                  "NAME",
+                  "x"
+                ],
+                [
+                  "NAME",
+                  "x"
+                ]
               ]
+            ],
+            [
+              "DELAY:NAME",
+              "this"
             ]
-          ],
-          [
-            "NAME",
-            "this"
           ]
         ],
         ""
@@ -217,7 +220,7 @@
             [
               "CLOSURE",
               [
-                "AT:NAME",
+                "NAME",
                 "a"
               ],
               [
@@ -267,12 +270,15 @@
             "f"
           ],
           [
-            "AT:NAME",
-            "e"
-          ],
-          [
-            "REAL",
-            "10"
+            "INHERIT",
+            [
+              "NAME",
+              "e"
+            ],
+            [
+              "DELAY:REAL",
+              "10"
+            ]
           ]
         ],
         ""
@@ -2491,7 +2497,7 @@
         [
           "CLOSURE",
           [
-            "AT:NAME",
+            "NAME",
             "a"
           ],
           [
@@ -2541,7 +2547,7 @@
           [
             "CLOSURE",
             [
-              "AT:SEQ",
+              "SEQ",
               [
                 "NAME",
                 "g"

@@ -10,7 +10,7 @@ IMPORT  := import /[\w\.]+/ /-[vw]/ *
 
 DEF     := SUPER ? BIND
 SUPER   := ( NAME . ) +
-BIND    := ( FUNC | VAR_ ) AT ? = EXP DOC ?         ## Delay this
+BIND    := ( FUNC | VAR_ ) AT:INHERIT ? = EXP DOC ? ## Delay this
 FUNC    := NAME:FUNC_NAME FORM
 VAR_    := VARS | NAME:VAR
 VARS    := %BKT < %SEQ < VAR_ , > >

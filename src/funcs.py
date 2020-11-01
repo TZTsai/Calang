@@ -3,9 +3,63 @@ from functools import reduce, wraps
 from numbers import Number, Rational
 from types import FunctionType
 from fractions import Fraction
-from sympy import Matrix, Symbol
-from objects import Range, Map, Attr, Env
+from sympy import Expr, Integer, Float, Matrix, Symbol, factor, simplify
+from objects import Range, Map, Attr, Env, Op
 import config
+
+
+def process_function(func):
+    """
+    A critical part of my program that standardize the output of applying
+    Map or built-in functions.
+    """
+    def numfy(val):
+        "convert a number into python number type"
+        if any(isinstance(val, c) for c in 
+               (int, float, complex, Fraction)):
+            if isinstance(val, complex):
+                return val.real if eq_(val.imag, 0) else val
+            else:
+                return val
+        elif isinstance(val, Integer):
+            return int(val)
+        elif isinstance(val, Float):
+            return float(val)
+        else:
+            val = complex(val)
+            return val.real if eq_(val.imag, 0) else val
+
+    def standardize(val):
+        "standardize the output value of the function"
+        if type(val) is bool:
+            return 1 if val else 0
+        elif type(val) is list:
+            return tuple(standardize(a) for a in val)
+        elif isinstance(val, dict):
+            return Env(binds=val)
+        else:
+            try: return numfy(val)
+            except (ValueError, TypeError):
+                if isinstance(val, Expr):
+                    return factor(simplify(val))
+                else: return val
+                
+    @wraps(func)
+    def app(*args):
+        result = apply(func, args)
+        return standardize(result)
+        
+    return app
+
+
+def apply(f, args):
+    def convert_arg(arg):
+        if isinstance(arg, Env) and hasattr(arg, 'val'):
+            return arg.val
+        else:
+            return arg
+    result = f(*map(convert_arg, args))
+    return result
 
 
 def is_number(value):
@@ -119,15 +173,15 @@ def div(x, y):
         return x / y
 
     
-def dbfact(x):  # returns the double factorial of x
+def fact2(x):  # returns the double factorial of x
     '''
-    >>> [dbfact(4), dbfact(5)]
+    >>> [fact2(4), fact2(5)]
     [8, 15]
     '''
     if not isinstance(x, int) or x < 0:
         raise ValueError('invalid argument for factorial!')
     if x in (0, 1): return 1
-    else: return x * dbfact(x-2)
+    else: return x * fact2(x-2)
 
 
 def depth(value, key=max):
@@ -174,13 +228,6 @@ def itemwise(op):
     return f
 
 
-def apply(f, args):
-    if isinstance(f, Map):
-        return f(args)
-    else:  # a builtin function
-        return f(*args)
-
-
 def adjoin(x1, x2):
     '''
     >>> adjoin(abs, [-3])
@@ -192,10 +239,10 @@ def adjoin(x1, x2):
     '''
     if isinstance(x2, Attr):
         return x2.getFrom(x1)
-    elif is_function(x1) and is_list(x2):
-        return apply(x1, x2)
     elif is_list(x1) and is_list(x2):
         return subscript(x1, x2)
+    elif is_function(x1) and is_list(x2):
+        return apply(x1, x2)
     else:
         raise TypeError('invalid types for adjoin')
 
@@ -251,7 +298,7 @@ ior  = itemwise(b_or)
 
 def unpack(lst):
     ret = lambda: lst
-    ret.__name__ = 'UNPACK'
+    ret.__name__ = '(unpack)'
     return ret
 
 
@@ -319,11 +366,11 @@ def transpose(value):
         return [[value[r][c] for r in range(rn)] for c in range(cn)]
 
 
-def canmap(f):
-    @wraps(f)
-    def _f(*lst, depth=1):
-        return tuple(map(f, *lst))
-    return _f
+# def canmap(f):
+#     @wraps(f)
+#     def _f(*lst, depth=1):
+#         return tuple(map(f, *lst))
+#     return _f
 
 
 def first(cond, lst):

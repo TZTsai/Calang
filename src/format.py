@@ -2,11 +2,11 @@ from sympy import latex, pretty
 from re import sub as translate
 from builtin import Rational, Fraction, Matrix, is_number, is_matrix, is_function, floor, inf, log
 from objects import Range, Env, Map
-from decompile import decompile
+from parse import rev_parse
 from utils.greek import gr_to_tex
 import config
 
-Map.decompile = decompile
+Map.to_str = rev_parse
 
 indent = 0
 
@@ -60,7 +60,7 @@ def calc_format(val, **opts):
             else: 
                 return str(format_float(val))
         elif is_function(val):
-            return str(val) if isinstance(val, Map) else val.__name__
+            return val.__name__
         elif isinstance(val, Range):
             return str(val)
         elif isinstance(val, Env):

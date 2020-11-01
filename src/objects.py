@@ -1,4 +1,3 @@
-print('enter objects.py')
 from utils.deco import log
 import config
 
@@ -12,11 +11,11 @@ class stack(list):
 
 
 class Op:
-    def __init__(self, type, function, priority):
+    def __init__(self, type, symbol, function, priority):
         self.type = type
+        self.sym = symbol
         self.func = function
         self.priority = priority
-        self.sym = self.func.__name__
 
     def __call__(self, *args):
         return self.func(*args)
@@ -38,6 +37,7 @@ class Env(dict):
         self.name = name
         if binds:
             self.update(binds)
+        self.cls = 'env'
     
     def __getitem__(self, name):
         if name == 'this':
@@ -63,7 +63,7 @@ class Env(dict):
         return env
 
     def __repr__(self):
-        return  '<env: %s>' % self.dir()
+        return '<%s: %s>' % (self.cls, self.dir())
     
     def __str__(self):
         content = ', '.join(f'{k} = {v}' for k, v in self.items())
@@ -97,56 +97,63 @@ class Attr:
 
 
 class Map:
-    match = lambda val, form, parent: NotImplemented
-    eval  = lambda tree, parent, mutable: NotImplemented
-    decompile = lambda tree: NotImplemented
+    match  = lambda val, form, parent: NotImplemented
+    eval   = lambda tree, parent, mutable: NotImplemented
+    to_str = lambda tree: NotImplemented
 
-    def __init__(self, tree, env, at=None):
+    def __init__(self, tree, env):
         _, form, body = tree
-        body = Map.eval(body, None)  # simplify the body
+        if body[0] == 'INHERIT':
+            self.inherit = body[1]
+            body = ['CLOSURE', ..., body[2]]
+        else:
+            self.inherit = None
+            body = Map.eval(body, None)  # simplify the body
         self.form = form
         self.body = body
         self.parent = env
-        self.at = at
-        if at:  # add DELAY tag to body to convert to CLOSURE later
-            self.body[0] = 'DELAY:' + self.body[0]
-        self.dir = self.parent.dir()
+        self._repr = Map.to_str(tree)
         self.__name__ = '(map)'
-        self._str = Map.decompile(tree)
+        self.__doc__ = self._repr
     
-    def __call__(self, val):
+    def __call__(self, *lst):
         local = self.parent.child()
         body = self.body
-        Map.match(self.form, val, local)
-        if self.at:
-            at = Map.eval(self.at, local, mutable=False)
-            assert isinstance(at, Env), "@ not applied to an Env"
-            local['super'] = at.parent
-            body = ['CLOSURE', local, body]
-            env = at
+        Map.match(self.form, lst, local)
+        if self.inherit:
+            upper = Map.eval(self.inherit, local, mutable=False)
+            assert isinstance(upper, Env), "@ not applied to an Env"
+            local['super'] = upper.parent
+            body[1] = local
+            env = upper
         else:
             env = local
+            
         if config.debug:
-            signature = f'{self.dir}.{self.__name__}{list(val)}'
+            signature = f'{self.dir()}{Map.to_str(lst)}'
             log(signature)
             log.depth += 1
-            result = Map.eval(body, env, mutable=False)
+        result = Map.eval(body, env, mutable=False)
+        if config.debug:
             log.depth -= 1
             log(signature, ' ==> ', result)
-            return result
-        else:
-            return Map.eval(body, env, mutable=False)
+            
+        if isinstance(result, Env):
+            result.cls = self.dir()
+        return result
+    
+    def dir(self):
+        return self.parent.dir() + '.' + self.__name__
     
     def __repr__(self):
-        return '<map: %s.%s>' % (self.dir, self.__name__)
+        return self._repr
     
     def __str__(self):
-        return self._str
+        return '<map: %s>' % self.dir()
     
-    # def composed(self, func):
-    #     "Enable arithmetic ops on Map."
-    #     body = ['SEQ', func, self.body]
-    #     return Map(self.form, body)
+    def compose(self, func):
+        "Enable arithmetic ops on Map."
+        return Map(self.form, ['SEQ', func, self.body])
 
 
 class Range:
@@ -184,6 +191,10 @@ class Range:
         if not isinstance(other, Range): return False
         return (self.first == other.first and self.second == other.second
                 and self.last == other.last)
+
+
+class UnboundName(NameError):
+    "My own class to indicate that a name is not bound in the environment."
         
         
 

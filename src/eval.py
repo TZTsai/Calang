@@ -1,10 +1,10 @@
 from functools import wraps
 from copy import deepcopy
 
-from parse import calc_parse, is_name, is_tree, tag, drop_tag
-from builtin import operators, builtins, special_names
-from funcs import Symbol, is_list, is_function
-from objects import Env, stack, Op, Attr, Map
+from parse import calc_parse, is_name, is_tree, tree_tag, drop_tag
+from builtin import operators, builtins
+from funcs import Symbol, is_list, is_function, apply
+from objects import Env, stack, Op, Attr, Map, UnboundName
 import config
 
 
@@ -27,17 +27,6 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
         Global._ans.append(result)
         return result
 
-
-
-def hold_tree(f):
-    "A decorator that makes a substitution rule to hold the tree form."
-    @wraps(f)
-    def _f(tr):
-        if any(is_tree(t) for t in tr):
-            return tr
-        else:
-            return f(tr)
-    return _f
 
 
 # substitution rules
@@ -80,7 +69,7 @@ def ANS(tr):
     return Global._ans[id]
 
 def BODY(tr):
-    return tr[2] if tr[1] == 'PRINTED' else tr[1]
+    return tr[2] if tr[1] == '(printed)' else tr[1]
 
 def DIR(tr):
     if len(tr) == 1:
@@ -90,6 +79,17 @@ def DIR(tr):
     print(f"(dir): {field.dir()}")
     for name, val in field.items():
         print(f"{name}: {val}")
+        
+
+def hold_tree(f):
+    "A decorator that makes a substitution rule to hold the tree form."
+    @wraps(f)
+    def _f(tr):
+        if any(is_tree(t) for t in tr):
+            return tr
+        else:
+            return f(tr)
+    return _f
 
 @hold_tree
 def SEQtoTREE(tr):
@@ -106,7 +106,7 @@ def SEQtoTREE(tr):
         if op.type == 'BOP':
             args = [vals.peek()] + args
         try:
-            result = op(*args)
+            result = apply(op, args)
         except TypeError:
             if op is adjoin:
                 push(dot)  # adjoin failed, change to dot product
@@ -128,9 +128,6 @@ def SEQtoTREE(tr):
             if not (push.prev is None or
                     isinstance(push.prev, Op)):
                 push(adjoin)
-            if isinstance(x, Env):
-                if hasattr(x, 'val'):
-                    x = x.val  # convert Env to its 'val'
             vals.push(x)
         push.prev = x
     push.prev = None
@@ -152,7 +149,7 @@ def FIELD(tr):
 def LIST(tr):
     lst = []
     for it in tr[1:]:
-        if callable(it) and it.__name__ == 'UNPACK':
+        if callable(it) and it.__name__ == '(unpack)':
             lst.extend(it())
         else:
             lst.append(it)
@@ -167,18 +164,20 @@ def SLICE(tr): return slice(*tr[1:])
 
 ## eval rules which require environment
 
+special_names = {'this', 'super'}
+
 def NAME(tr, env):
     name = tr[1]
     try: return env[name]
     except KeyError:
-        if env is Global and config.symbolic:
+        if NAME.force_symbol:
             return Symbol(name)
         else:
-            raise NameError(f'unbound symbol \'{tr}\'')
+            raise UnboundName(f"unbound symbol '{name}'")
 
 def PRINT(tr, env):
     exec('print(f"%s")' % tr[1][1:-1], env.all())
-    return 'PRINTED'
+    return '(printed)'
 
 def IF_ELSE(tr, env):
     _, t_case, pred, f_case = tr
@@ -209,9 +208,12 @@ def GEN_LST(tr, env):
     return tuple(generate(exp, constraints))
 
 def DICT(tr, env):
-    local = env.child()
     for t in tr[1:]:
-        BIND(t, local)
+        # eval body of each item in the current env first
+        try: t[2] = eval_tree(t[2], env)
+        except UnboundName: pass
+    local = env.child()
+    for t in tr[1:]: BIND(t, local)
     return local
 
 MAP = Map  # the MAP evaluation rule is the same as Map constructor
@@ -220,27 +222,14 @@ def CLOSURE(tr, env):
     _, local, body = tr
     try:
         return eval_tree(body, env=local)
-    except NameError:  # should only happen when @ is used
+    except UnboundName:  # should only happen when @ is used
         return eval_tree(body, env=env)
 
-def AT(tr, env):
-    drop_tag(tr, 'AT')
-    return eval_tree(tr, env)
-
 def BIND(tr, env):
-    i = 1
-    var = tr[i]; i+=1
-    try:
-        drop_tag(tr[i], 'AT')
-        at = tr[i]; i+=1
-    except:
-        at = None
-    exp = tr[i]; i+=1
-    try:
-        doc = tr[i][1][1:-1]
-    except:
-        doc = None
-    define(var, exp, env, at, doc)
+    var, exp = tr[1:3]
+    try: doc = tr[3][1][1:-1]
+    except: doc = None
+    define(var, exp, env, doc)
     
 def MATCH(tr, env):
     _, form, val = tr
@@ -274,7 +263,7 @@ def match(form, val, local: Env):
         local[ext_par] = tuple(vals)
         
 
-def define(var, exp, env, at=None, doc=None):
+def define(var, exp, env, doc=None):
 
     def def_(name, val, env):
         if name in special_names:
@@ -304,14 +293,13 @@ def define(var, exp, env, at=None, doc=None):
         else:
             def_(vars[0], val, env)
     
-    var_tag = tag(var)
+    var_tag = tree_tag(var)
 
     # evaluate the exp
     if var_tag == 'FUNC':
         form = eval_tree(var[2], env)  # eval the opt_pars
-        val = Map(['MAP', form, exp], env, at)
+        val = Map(['MAP', form, exp], env)
     else:
-        assert at is None, 'invalid use of @'
         val = eval_tree(exp, env)
 
     # bind the variable(s)
@@ -410,31 +398,40 @@ def eval_tree(tree, env, mutable=True):
         return tree
     if not mutable:
         tree = deepcopy(tree)
-    type = tag(tree)
+    tag = tree_tag(tree)
     
-    if type not in delay_types and type not in exec_rules:
+    if tag not in delay_types and tag not in exec_rules:
         for i in range(1, len(tree)):
             tree[i] = eval_tree(tree[i], env)
-    elif type == 'DELAY' and env:
+    elif tag == 'DELAY' and env:
         drop_tag(tree, 'DELAY')
         return tree
     
-    if type in subs_rules:
-        return subs_rules[type](tree)
-    elif type in eval_rules and env:
-        return eval_rules[type](tree, env)
-    elif type in exec_rules:
-        exec_rules[type](tree); return
+    if tag in subs_rules:
+        return subs_rules[tag](tree)
+    elif tag in eval_rules and env:
+        try:
+            return eval_rules[tag](tree, env)
+        except UnboundName:
+            if env is Global and config.symbolic:
+                NAME.force_symbol = True
+                result = eval_tree(tree, env, mutable)
+                NAME.force_symbol = False
+                return result
+            else: raise
+    elif tag in exec_rules:
+        exec_rules[tag](tree); return
     else:
         return tree
-
-
+    
+    
+NAME.force_symbol = False
 
 Map.match = match
 Map.eval  = eval_tree
 
 LOAD.run  = lambda path, test, start, verbose: NotImplemented
-# implement this in calc.py
+# ASSIGN this in 'calc.py'
 
 
 delay_types = {'DELAY', 'GEN_LST', 'BIND', 'DICT', 'IF_ELSE', 'WHEN'}
@@ -457,7 +454,7 @@ eval_rules = {
     'MATCH': MATCH,             'IF_ELSE': IF_ELSE,
     'WHEN': WHEN,               'CLOSURE': CLOSURE,
     'EXP': eval_tree,           'BIND': BIND,
-    'GEN_LST': GEN_LST,         'AT': AT
+    'GEN_LST': GEN_LST,
 }
 
 exec_rules = {
