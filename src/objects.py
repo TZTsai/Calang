@@ -1,4 +1,4 @@
-from utils.deco import log
+from utils.deco import log, memo
 import config
 
 
@@ -56,7 +56,7 @@ class Env(dict):
 
     def delete(self, name):
         try: self.pop(name)
-        except: print('%s is unbound')
+        except: print('%s is unbound' % name)
 
     def child(self, val=None, name=None, binds=None):
         env = Env(val, self, name, binds)
@@ -116,6 +116,7 @@ class Map:
         self.__name__ = '(map)'
         self.__doc__ = self._repr
     
+    @memo
     def __call__(self, *lst):
         local = self.parent.child()
         body = self.body

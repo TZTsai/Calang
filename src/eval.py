@@ -53,8 +53,8 @@ def op_getter(op_type):
     def get(tr): return ops[tr[1]]
     return get
 
-OP_RULES = {op_type: op_getter(op_type)
-            for op_type, op_dict in operators.items()}
+OPERATORS = {op_type: op_getter(op_type)
+             for op_type, op_dict in operators.items()}
 
 def COMPLEX(tr):
     re, pm, im = tr[1:]
@@ -105,7 +105,7 @@ def hold_tree(f):
     return _f
 
 @hold_tree
-def SEQtoTREE(tr):
+def SEQ(tr):
     # stk = stack()
     ops = stack()
     vals = stack()
@@ -159,7 +159,7 @@ def FIELD(tr):
     return field
 
 @hold_tree
-def LIST(tr):
+def VAL_LST(tr):
     lst = []
     for it in tr[1:]:
         if callable(it) and it.__name__ == '(unpack)':
@@ -168,8 +168,10 @@ def LIST(tr):
             lst.append(it)
     return tuple(lst)
 
+IDC_LST = VAL_LST
+
 @hold_tree
-def SYMLIST(tr): return tr[1:]
+def SYM_LST(tr): return tr[1:]
 
 @hold_tree
 def SLICE(tr): return slice(*tr[1:])
@@ -446,32 +448,25 @@ Map.eval  = eval_tree
 
 delay_types = {'DELAY', 'GEN_LST', 'BIND', 'DICT', 'IF_ELSE', 'WHEN'}
 
-subs_rules = {
-    'LINE': LINE,               'BODY': BODY,
-    'ANS': ANS,                 'SYM': SYM,
-    'FIELD': FIELD,             'ATTR': ATTR,
-    'REAL': REAL,               'COMPLEX': COMPLEX,
-    'BIN': BIN,                 'HEX': HEX,
-    'IDC_LST': LIST,            'SLICE': SLICE,
-    'VAL_LST': LIST,            'SYM_LST': SYMLIST, 
-    'SEQ': SEQtoTREE,           **OP_RULES,  # unpack 3 Op rules here
-    'EMPTY': EMPTY,             'DIR': DIR
-}
+subs_rules = {name: eval(name) for name in [
+    'LINE',     'BODY',     'ANS',      'SYM',
+    'FIELD',    'ATTR',     'REAL',     'COMPLEX',
+    'BIN',      'HEX',      'IDC_LST',  'SLICE',
+    'VAL_LST',  'SYM_LST',  'SEQ',      'EMPTY',
+    'DIR',
+]}
+subs_rules.update(OPERATORS)
 
-eval_rules = {
-    'NAME': NAME,               'MAP': MAP,
-    'PRINT': PRINT,             'DICT': DICT,
-    'MATCH': MATCH,             'IF_ELSE': IF_ELSE,
-    'WHEN': WHEN,               'CLOSURE': CLOSURE,
-    'EXP': eval_tree,           'BIND': BIND,
-    'GEN_LST': GEN_LST,
-}
+eval_rules = {name: eval(name) for name in [
+    'NAME',     'MAP',      'PRINT',    'DICT',
+    'MATCH',    'IF_ELSE',  'WHEN',     'CLOSURE',
+    'BIND',     'GEN_LST',
+]}
 
-exec_rules = {
-    'DEL': DEL,                 'DEF': DEF,
-    'LOAD': LOAD,               'IMPORT': IMPORT,
-    'CONF': CONF,
-}
+exec_rules = {name: eval(name) for name in [
+    'DEL',      'DEF',      'LOAD',     'IMPORT',
+    'CONF',
+]}
 
 
 if __name__ == "__main__":
