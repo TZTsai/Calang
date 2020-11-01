@@ -1,7 +1,7 @@
 from functools import wraps
 from copy import deepcopy
 
-from parse import calc_parse, is_name, is_tree, tree_tag, drop_tag
+from parse import calc_parse, is_name, is_tree, tree_tag
 from builtin import operators, builtins
 from funcs import Symbol, is_list, is_function, apply
 from objects import Env, stack, Op, Attr, Map, UnboundName
@@ -193,6 +193,9 @@ def PRINT(tr, env):
 
 def BODY(tr, env):
     return tr[2] if tr[1] == '(printed)' else tr[1]
+
+def DELAY(tr, env):
+    return tr[1]  # only delay the eval of tr[1]
 
 def IF_ELSE(tr, env):
     _, t_case, pred, f_case = tr
@@ -393,12 +396,12 @@ def CONF(tr):
         if len(tr) == 2:
             return config.precision
         else:
-            config.precision = max(1, REAL(tr[2]))
+            config.precision = max(1, tr[2])
     elif conf == 'tolerance':
         if len(tr) == 2:
             return config.tolerance
         else:
-            config.tolerance = REAL(tr[2])
+            config.tolerance = tr[2]
     elif hasattr(config, conf):
         if len(tr) == 2:
             return getattr(config, conf)
@@ -415,13 +418,11 @@ def eval_tree(tree, env, mutable=True):
         tree = deepcopy(tree)
     tag = tree_tag(tree)
     
-    if tag not in delay_types and tag not in exec_rules:
-        for i in range(1, len(tree)):
-            tree[i] = eval_tree(tree[i], env, mutable)
-    elif tag == 'DELAY' and env:
-        drop_tag(tree, 'DELAY')
-        return tree
-    
+    rec_env = None if tag in delay_types or \
+        tag in exec_rules else env
+    for i in range(1, len(tree)):
+        tree[i] = eval_tree(tree[i], rec_env, mutable)
+        
     if tag in subs_rules:
         return subs_rules[tag](tree)
     elif tag in eval_rules and env:
@@ -453,7 +454,7 @@ subs_rules.update(OPERATORS)
 eval_rules = {name: eval(name) for name in [
     'NAME',     'MAP',      'PRINT',    'DICT',
     'MATCH',    'IF_ELSE',  'WHEN',     'CLOSURE',
-    'BIND',     'GEN_LST',  'BODY'
+    'BIND',     'GEN_LST',  'BODY',     'DELAY'
 ]}
 
 exec_rules = {name: eval(name) for name in [

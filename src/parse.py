@@ -23,8 +23,7 @@ def is_name(s):
 
 tag_pattern = re.compile('[A-Z_:]+')
 def is_tag(s):
-    return is_name(s) and \
-        tag_pattern.match(s.split(':', 1)[0])
+    return is_name(s) and tag_pattern.match(s)
 
 def is_tree(t):
     return type(t) is list and t and is_tag(t[0])
@@ -32,21 +31,21 @@ def is_tree(t):
 def tree_tag(t):
     return t[0].split(':')[0] if is_tree(t) else None
 
-def add_tag(tr, tag):
-    assert is_tree(tr)
-    tr[0] = '%s:%s' % (tag, tr[0])
+# def add_tag(tr, tag):
+#     assert is_tree(tr)
+#     tr[0] = '%s:%s' % (tag, tr[0])
 
-def drop_tag(tr, expected=None):
-    if not is_tree(tr): return None
-    tag = tr[0]
-    try:
-        dropped, tag = tag.split(':', 1)
-    except: 
-        raise AssertionError('cannot drop tag')
-    if expected and dropped != expected:
-        raise AssertionError('unexpected tag dropped: "%s"' % dropped)
-    tr[0] = tag
-    return tag
+# def drop_tag(tr, expected=None):
+#     if not is_tree(tr): return None
+#     tag = tr[0]
+#     try:
+#         dropped, tag = tag.split(':', 1)
+#     except: 
+#         raise AssertionError('cannot drop tag')
+#     if expected and dropped != expected:
+#         raise AssertionError('unexpected tag dropped: "%s"' % dropped)
+#     tr[0] = tag
+#     return tag
 
 
 def calc_parse(text, tag='LINE', grammar=grammar):
@@ -191,9 +190,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    prefixes = {'DELAY', 'INHERIT'}
-    list_tag = lambda tag: tag[-3:] == 'LST' or \
-        tag in {'DIR', 'DEL', 'VARS', 'DICT'}
+    kept_tags = lambda tag: tag[-3:] == 'LST' or \
+        tag in {'DELAY', 'DIR', 'DEL', 'VARS', 'DICT', 'INHERIT'}
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_':
@@ -206,10 +204,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         elif is_name(tree):
             return [tag, tree]
         elif is_tree(tree):
-            if list_tag(tag):
+            if kept_tags(tag):
                 tree = [tag, tree]  # keep the list tag
-            elif tag in prefixes:
-                add_tag(tree, tag)
             elif tag == 'FORM':  # special case: split the pars
                 tree = split_pars(tree)
             return tree
@@ -249,11 +245,9 @@ def convert_if_inherit(bind):
     "Transform the BIND tree if it contains an INHERIT."
     is_inherit = tree_tag(bind[1]) == 'INHERIT'
     if is_inherit:
-        inherit = bind.pop(1)
-        drop_tag(inherit)
+        inherit = bind.pop(1)[1]
         body = bind[1]
-        add_tag(body, 'DELAY')
-        bind[1] = ['INHERIT', inherit, body]
+        bind[1] = ['INHERIT', inherit, ['DELAY', body]]
     
 
 def rev_parse(tree):
@@ -325,8 +319,7 @@ def rev_parse(tree):
         elif tag == 'AT':
             return '@' + rec(tr[1])
         elif tag == 'DELAY':
-            drop_tag(tr)
-            return rec(tr, in_seq)
+            return rec(tr[1], in_seq)
         elif tag in ('PRINT', 'DOC'):
             return ''
         else:
