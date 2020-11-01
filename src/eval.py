@@ -18,15 +18,28 @@ Global = GlobalEnv()
 
 
 def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
+    # suppress output (and recording) if the last character is ';'
     suppress = exp[-1] == ';'
     if suppress: exp = exp[:-1]
+    
+    # parse the expression into a syntax tree
     tree, rest = calc_parse(exp)
     if rest: raise SyntaxError(f'syntax error in "{rest}"')
-    result = eval_tree(tree, Global)
+    
+    try:  # evaluate the syntax tree
+        result = eval_tree(tree, Global)
+    except UnboundName:  # there is an unbound name in exp
+        if config.symbolic:
+            # force unbound names to be evaluated to symbols
+            NAME.force_symbol = True
+            result = eval_tree(tree, Global)  # retry
+            NAME.force_symbol = False
+        else: raise
+    
     if result is not None and not suppress:
+        # record and return the result
         Global._ans.append(result)
         return result
-
 
 
 # substitution rules
@@ -401,8 +414,14 @@ def eval_tree(tree, env, mutable=True):
     tag = tree_tag(tree)
     
     if tag not in delay_types and tag not in exec_rules:
+        err = None
         for i in range(1, len(tree)):
-            tree[i] = eval_tree(tree[i], env)
+            try:
+                tree[i] = eval_tree(tree[i], env)
+            except UnboundName as e:
+                err = e
+            # finish evaluating all children before re-raising the error
+        if err: raise err
     elif tag == 'DELAY' and env:
         drop_tag(tree, 'DELAY')
         return tree
@@ -410,28 +429,19 @@ def eval_tree(tree, env, mutable=True):
     if tag in subs_rules:
         return subs_rules[tag](tree)
     elif tag in eval_rules and env:
-        try:
-            return eval_rules[tag](tree, env)
-        except UnboundName:
-            if env is Global and config.symbolic:
-                NAME.force_symbol = True
-                result = eval_tree(tree, env, mutable)
-                NAME.force_symbol = False
-                return result
-            else: raise
+        return eval_rules[tag](tree, env)
     elif tag in exec_rules:
         exec_rules[tag](tree); return
     else:
         return tree
-    
-    
-NAME.force_symbol = False
 
+
+# manage function attributes here
+NAME.force_symbol = False
+LOAD.run  = lambda path, test, start, verbose: NotImplemented
+# ASSIGN it in 'calc.py'
 Map.match = match
 Map.eval  = eval_tree
-
-LOAD.run  = lambda path, test, start, verbose: NotImplemented
-# ASSIGN this in 'calc.py'
 
 
 delay_types = {'DELAY', 'GEN_LST', 'BIND', 'DICT', 'IF_ELSE', 'WHEN'}

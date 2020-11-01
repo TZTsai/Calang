@@ -143,7 +143,9 @@ class Map:
         return result
     
     def dir(self):
-        return self.parent.dir() + '.' + self.__name__
+        parent_field = self.parent.dir() + '.' \
+            if self.parent.name[0] != '_' else ''
+        return parent_field + self.__name__
     
     def __repr__(self):
         return self._repr
