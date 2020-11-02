@@ -85,7 +85,7 @@
           [
             "FUNC",
             [
-              "FUNC_NAME",
+              "VAR",
               "f"
             ],
             [
@@ -228,7 +228,7 @@
             [
               "FUNC",
               [
-                "FUNC_NAME",
+                "VAR",
                 "f"
               ],
               [
@@ -645,7 +645,7 @@
           [
             "FUNC",
             [
-              "FUNC_NAME",
+              "VAR",
               "f"
             ],
             [
@@ -689,7 +689,7 @@
           [
             "FUNC",
             [
-              "FUNC_NAME",
+              "VAR",
               "f"
             ],
             [
@@ -721,7 +721,7 @@
           [
             "FUNC",
             [
-              "FUNC_NAME",
+              "VAR",
               "f"
             ],
             [
@@ -1230,7 +1230,7 @@
             [
               "FUNC",
               [
-                "FUNC_NAME",
+                "VAR",
                 "f"
               ],
               [
@@ -1363,7 +1363,7 @@
             [
               "FUNC",
               [
-                "FUNC_NAME",
+                "VAR",
                 "b"
               ],
               [
@@ -1407,7 +1407,7 @@
           [
             "FUNC",
             [
-              "FUNC_NAME",
+              "VAR",
               "f"
             ],
             [
@@ -2080,7 +2080,7 @@
           [
             "FUNC",
             [
-              "FUNC_NAME",
+              "VAR",
               "f"
             ],
             [
@@ -2113,7 +2113,7 @@
           [
             "FUNC",
             [
-              "FUNC_NAME",
+              "VAR",
               "f"
             ],
             [
@@ -2252,7 +2252,7 @@
             [
               "FUNC",
               [
-                "FUNC_NAME",
+                "VAR",
                 "f"
               ],
               [
@@ -2277,7 +2277,7 @@
             [
               "FUNC",
               [
-                "FUNC_NAME",
+                "VAR",
                 "g"
               ],
               [
@@ -2513,7 +2513,7 @@
           [
             "FUNC",
             [
-              "FUNC_NAME",
+              "VAR",
               "f"
             ],
             [
@@ -2588,7 +2588,7 @@
           [
             "FUNC",
             [
-              "FUNC_NAME",
+              "VAR",
               "f"
             ],
             [

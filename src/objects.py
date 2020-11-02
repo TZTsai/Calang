@@ -1,4 +1,4 @@
-from utils.deco import log, memo, trace
+from utils.deco import log, trace
 import config
 
 
@@ -96,60 +96,82 @@ class Attr:
         except: return getattr(env, self.name)
 
 
-tree_repr = NotImplemented
+tree2str = NotImplemented
 # a function to restore syntax tree to an expression
 # ASSIGN it in format.py
 
 class Map:
     match  = lambda val, form, parent: NotImplemented
     eval   = lambda tree, parent, mutable: NotImplemented
+    check_local = lambda map, lst: NotImplemented
 
     def __init__(self, tree, env):
         _, form, body = tree
+        form = Map.eval(form, env)      # eval optpars
         if body[0] == 'INHERIT':
             self.inherit = body[1]
             body = ['CLOSURE', ..., body[2]]
         else:
             self.inherit = None
             body = Map.eval(body, None)  # simplify the body
+            
         self.form = form
         self.body = body
-        # self.vars = self.search_vars()
         self.parent = env
-        self._repr = tree_repr(tree)
-        self._memo = {}
+        self._pars = form[-1]
+        self._repr = tree2str(tree)
         self.__name__ = '(map)'
         self.__doc__ = self._repr
+        self._memo = NotImplemented
 
-    # def search_vars(self):
-    #     vars = []
+    # def _all_local(self):
+    #     tmp_local = {var: 0 for }
     #     def search(tr):
     #         if type(tr) is list and tr:
     #             if tr[0] == 'NAME':
-    #                 vars.append(tr[1])
+    #                 return tr[1] in self._vars
     #             else:
-    #                 [search(t) for t in tr]
-    #     search(self.body)
-    #     return vars
+    #                 return all(search(t) for t in tr)
+    #         else:
+    #             return True
+    #     return search(self.body)
     
-    # @memo
+    
     @trace
     def __call__(self, *lst):
+        try:  # try to return the memoized result
+            return self._memo[lst]
+        except:
+            if self._memo is NotImplemented:
+                try:
+                    result = Map.check_local(self, lst)
+                    log('Memoizing ', str(self))
+                    self._memo = {lst: result}
+                    return result
+                except:
+                    self._memo = None
+        
         local = self.parent.child()
         body = self.body
         Map.match(self.form, lst, local)
+                
         if self.inherit:
             upper = Map.eval(self.inherit, local, mutable=False)
             assert isinstance(upper, Env), "@ not applied to an Env"
-            local['super'] = upper.parent
+            # local['super'] = upper.parent
             body[1] = local
             env = upper
         else:
             env = local
             
         result = Map.eval(body, env, mutable=False)
-        if isinstance(result, Env):
+        if self.inherit and isinstance(result, Env):
+            result.parent = upper
             result.cls = str(self)
+            
+        # try to memoize result
+        try: self._memo[lst] = result
+        except: pass
         return result
     
     def __str__(self):

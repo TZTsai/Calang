@@ -34,23 +34,22 @@ RE      := /.*?/
 CHARS   := \[.*?\]
 MARK    := [^>|)\s]\S*
 """, '\n')
-
 ###  COMMENTS ON METAGRAMMAR  ###
-# OBJ:      OBJ is a tag of the syntax tree to identify its type
-#           it consists of A-Z and _
-#           Optionally, it can have a suffix beginning with : , in which case the
-#           parse should change the tag of the matched tree into that after : ,
-#           very useful for the evaluator to determine its way of eval
+# OBJ:      OBJ is a tag of the syntax tree to identify its type, 
+#           only consisting of 'A-Z' and '_'.
+#           Optionally, it can have a suffix beginning with ':' , in which case the
+#           parse should change the tag of the matched tree into that after ':',
+#           very useful for the evaluator to modify its way of evaluation
 # PAR:      Similar to OBJ but begins with _ . The tree it matches will not be 
-#           tagged, but merged into the OBJ at its upper level instead
-# OP:       * for 0 or more matches, + for 1 or more, ? for 0 or 1, 
-#           - for 1 match but it will not be included in the result,
-#           ! for prechecking and forbidding 1 match
-#           / for no space between its prev and its next items
+#           tagged, but instead merged into the OBJ at its upper level
+# OP:       '*' for 0 or more matches, '+' for 1 or more, '?' for 0 or 1, 
+#           '-' for 1 match but it will not be included in the result,
+#           '!' for prechecking and forbidding 1 match
+#           '/' for no space between its prev and its next items
 #           if more than one items are matched, merge them into the seq
 # MARK:     a token in the grammar that will be matched but not included in the result
 #           be cautious of conflicts with other symbols in MetaGrammar
-# MACRO:    used for sub_macro; will not exist in the processed grammar
+# MACRO:    a macro will be substituted by its evaluated expression 
 
 
 GrammarStr = open('grammar.txt', 'r').read()
@@ -126,7 +125,7 @@ def prune(tree):
     if type(tree) is list:
         if tree[0] == 'GROUP':
             tree[:] = tree[2]
-        if tree[0] == 'EXP' and len(tree) > 2:  # pop |
+        if tree[0] == 'EXP' and len(tree) > 2:  # pop '|'
             tree.pop(2)
         for t in tree: prune(t)
 

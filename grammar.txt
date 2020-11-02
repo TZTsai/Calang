@@ -11,7 +11,7 @@ IMPORT  := import /[\w\.]+/ /-[vw]/ *
 DEF     := SUPER ? BIND
 SUPER   := ( NAME . ) +
 BIND    := ( FUNC | VAR_ ) AT:INHERIT ? = EXP DOC ? ## Delay this
-FUNC    := NAME:FUNC_NAME FORM
+FUNC    := NAME:VAR FORM
 VAR_    := VARS | NAME:VAR
 VARS    := %BKT < %SEQ < VAR_ , > >
 DOC     := /".*"/
@@ -29,8 +29,9 @@ _EXT    := NAME:EXTPAR ~
 
 EXP     := MAP | CLOSURE | ENV | BODY
 
-MAP     := FORM => EXP:DELAY                        ## DELAY is a special tag to delay evaluation
-CLOSURE := ENV EXP:DELAY
+MAP     := FORM => DELAY
+CLOSURE := ENV DELAY
+DELAY   := EXP                                      ## Delay this
 ENV     := AT | DICT | MATCH
 AT      := @ VAL_
 DICT    := %GRP < %SEQ < BIND , > >                 ## Delay this
@@ -61,9 +62,9 @@ HEX     := /0x[0-9a-fA-F]+/
 
 LIST    := ' SYM_LST | GEN_LST | IDC_LST | VAL_LST
 SYM_LST := %LST < ( UNQUOTE | _SYM_IT ) , >
-UNQUOTE := ` ( LIST | NAME )                    ## convert the item back to a value
+UNQUOTE := ` ( LIST | NAME )                        ## convert the item back to a value
 _SYM_IT := SYM_LST | NAME:SYM
-GEN_LST := %BKT < ( EXP ( for CONSTR ) + ) >    ## Delay this
+GEN_LST := %BKT < ( EXP ( for CONSTR ) + ) >        ## Delay this
 CONSTR  := FORM in EXP ( if EXP ) ?
 IDC_LST := %BKT < %SEQ < SLICE , > >
 SLICE   := _SLC : _SLC ( : _SLC ) ?

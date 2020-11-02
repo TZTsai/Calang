@@ -31,22 +31,6 @@ def is_tree(t):
 def tree_tag(t):
     return t[0].split(':')[0] if is_tree(t) else None
 
-# def add_tag(tr, tag):
-#     assert is_tree(tr)
-#     tr[0] = '%s:%s' % (tag, tr[0])
-
-# def drop_tag(tr, expected=None):
-#     if not is_tree(tr): return None
-#     tag = tr[0]
-#     try:
-#         dropped, tag = tag.split(':', 1)
-#     except: 
-#         raise AssertionError('cannot drop tag')
-#     if expected and dropped != expected:
-#         raise AssertionError('unexpected tag dropped: "%s"' % dropped)
-#     tr[0] = tag
-#     return tag
-
 
 def calc_parse(text, tag='LINE', grammar=grammar):
 
@@ -137,7 +121,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             return pattern if tag == 'STR' else [], rem
 
     # @trace
-    # Caution: must not add memo decorator!
+    # Caution: must not add @memo decorator!
     def parse_op(item, op, text):
         seq, rem = [], text
         rep, maxrep = 0, (-1 if op in '+*' else 1)
@@ -220,23 +204,32 @@ def calc_parse(text, tag='LINE', grammar=grammar):
 
 
 def split_pars(form, top=True):
-    "Split a FORM syntax tree into 3 parts: pars, opt-pars, ext-par."
+    "Split a FORM syntax tree into 4 parts: pars, opt-pars, ext-par, all-pars."
+    def check_par(par):
+        if par in all_pars:
+            raise NameError('duplicate variable name')
+        else:
+            all_pars.add(par)
+            
     pars, opt_pars = ['PARS'], ['OPTPARS']
     ext_par = None
+    all_pars = set()
+
     if tree_tag(form) == 'PAR':
-        if not top:
-            return form
-        else:
-            pars.append(form[1])
+        check_par(form[1])
+        pars.append(form[1])
     else:
         for t in form[1:]:
             if t[0] == 'PAR':
+                check_par(t[1])
                 pars.append(t[1])
             elif t[0] == 'PAR_LST':
                 pars.append(split_pars(t, False))
             elif t[0] == 'OPTPAR':
+                check_par(t[1][1])
                 opt_pars.append(t[1:])
             else:
+                check_par(t[1])
                 ext_par = t[1]
     return ['FORM', pars, opt_pars, ext_par]
 
@@ -266,7 +259,7 @@ def rev_parse(tree):
         
         tr = tr.copy()
         tag = tree_tag(tr)
-        if tag in ('NAME', 'SYM', 'PAR'):
+        if tag in ('NAME', 'SYM', 'PAR', 'VAR'):
             return tr[1]
         elif tag == 'FIELD':
             return ''.join(map(rec, tr[1:]))

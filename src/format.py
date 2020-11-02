@@ -95,4 +95,4 @@ def map_signature(_, args):
 
 
 trace.signature = map_signature
-objects.tree_repr = rev_parse
+objects.tree2str = rev_parse

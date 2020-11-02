@@ -234,7 +234,14 @@ def DICT(tr, env):
     for t in tr[1:]: BIND(t, local)
     return local
 
+def checkMapLocal(map, lst):
+    "Try to apply $map on $lst to test if $map does not depend on variables outside."
+    local = MATCH([..., map.form, lst], Builtins)
+    local[map.__name__] = map
+    return eval_tree(map.body, local, False)
+
 MAP = Map  # the MAP evaluation rule is the same as Map constructor
+Map.check_local = checkMapLocal
 
 def CLOSURE(tr, env):
     _, local, body = tr
@@ -284,9 +291,8 @@ def match(form, val, local: Env):
 def define(var, exp, env, doc=None):
 
     def def_(name, val, env):
-        if name in special_names:
-            raise NameError('"%s" cannot be bound ' % name
-                            + '(reserved for special use)')
+        if name in special_names: # or name in builtins:
+            raise NameError('"%s" cannot be bound' % name)
 
         if isinstance(val, Map):
             val.__name__ = name

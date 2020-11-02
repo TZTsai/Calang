@@ -16,22 +16,23 @@ Group[m, o] = (
 
 CyclicGroup[g, m, o] @Group[m, o] = (
      gen = g,
-     elements[] = (rec[x, l] = l if x in l else rec[m[g,x], l+[x]])
-                 rec[g, []],
+     elements[] = (rec[x, l] = l if x in l else rec[mul[gen,x], l+[x]])
+                  rec[gen, []],
      order[x='nan] = len[elements[]] if x=='nan else
-                    (rec[r, k] = k if r==o else rec[m[x,r], k+1])
+                    (rec[r, k] = k if r==zero else rec[mul[x,r], k+1])
                     rec[x, 1]
 )
 
 # Integer Modular Multiplicative Group
-Zx[p] @CyclicGroup[Zx.find_gen[p], Zx.mul[p], 1] = (
-     elements = [x for x in 1..p-1 if gcd[x, p] == 1],
+Zx[n] @CyclicGroup[Zx.find_gen[n], Zx.mul[n], 1] = (
+     n = n,
+     elements = [x for x in 1..n-1 if gcd[x, n] == 1],
      inverse[x] = first[elements, el => mul[x, el]==1],
-     order[x = 'nan] = len[elements] if x=='nan else Zx.order[x, p]
+     order[x = 'nan] = len[elements] if x=='nan else Zx.order[x, n]
 )
-Zx.order[g, p] = (G = CyclicGroup[g, Zx.mul[p], 1]) G.order[g]
-Zx.mul[p] = [x, y] => x*y%p
-Zx.find_gen[p] = first[list[2..p-1], x => Zx.order[x, p]==p-1]
+Zx.order[g, n] = (G = CyclicGroup[g, Zx.mul[n], 1]) G.order[g]
+Zx.mul[n] = [x, y] => x*y%n
+Zx.find_gen[n] = first[list[2..n-1], x => Zx.order[x, n]==n-1]
 
 # Finite Field
 MakeGF[g, m, n] = (

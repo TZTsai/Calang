@@ -289,7 +289,7 @@
     "ALT",
     [
       "OBJ",
-      "NAME:FUNC_NAME"
+      "NAME:VAR"
     ],
     [
       "OBJ",
@@ -693,7 +693,7 @@
     ],
     [
       "OBJ",
-      "EXP:DELAY"
+      "DELAY"
     ]
   ],
   "CLOSURE": [
@@ -704,8 +704,12 @@
     ],
     [
       "OBJ",
-      "EXP:DELAY"
+      "DELAY"
     ]
+  ],
+  "DELAY": [
+    "OBJ",
+    "EXP"
   ],
   "ENV": [
     "EXP",
