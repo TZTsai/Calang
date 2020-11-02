@@ -1,3 +1,4 @@
+from sympy import Symbol
 from utils.deco import log, trace
 import config
 
@@ -8,23 +9,121 @@ class stack(list):
     def peek(self, i=-1):
         try: return self[i]
         except: return None
+        
+        
+class Function:
+    apply = lambda *args: NotImplemented
+
+    def __init__(self, func):
+        self.f = func
+        self.__name__ = func.__name__
+        self.__doc__ = func.__doc__
+                
+    def __repr__(self):
+        return self.__name__
+    
+    def __call__(self, *args):
+        return Function.apply(self.f, args)
 
 
-class Op:
+class Builtin(Function):
+    def __repr__(self):
+        return f'<builtin: {self.__name__}>'
+    
+    
+class Op(Function):
     def __init__(self, type, symbol, function, priority):
+        super().__init__(function)
         self.type = type
-        self.sym = symbol
-        self.func = function
+        self.symbol = symbol
         self.priority = priority
 
-    def __call__(self, *args):
-        return self.func(*args)
-
     def __repr__(self):
-        return f"{self.type}({self.sym}, {self.priority})"
+        return f"{self.type}({self.symbol}, {self.priority})"
+
+    def __str__(self):
+        return self.symbol
+    
+
+tree2str = NotImplemented
+# a function to restore syntax tree to an expression
+# ASSIGN it in format.py
+
+class Map(Function):
+    match  = lambda val, form, parent: NotImplemented
+    eval   = lambda tree, parent, mutable: NotImplemented
+    check_local = lambda map, lst: NotImplemented
+
+    def __init__(self, tree, env):
+        _, form, body = tree
+        form = Map.eval(form, env)      # eval optpars
+        if body[0] == 'INHERIT':
+            self.inherit = body[1]
+            body = ['CLOSURE', ..., body[2]]
+        else:
+            self.inherit = None
+            body = Map.eval(body, None)  # simplify the body
+            
+        self.form = form
+        self.body = body
+        self.parent = env
+        self._pars = form[-1]
+        self._repr = tree2str(tree)
+        self.__name__ = '(map)'
+        self.__doc__ = self._repr
+        self._memo = NotImplemented
+
+    @trace
+    def __call__(self, *lst):
+        try:  # try to return the memoized result
+            return self._memo[lst]
+        except:
+            if self._memo is NotImplemented:
+                try:
+                    self._memo = {}
+                    result = Map.check_local(self, lst)
+                    if type(result) in [Env, Map]:
+                        raise TypeError  # env dependent result
+                    log('Memoizing ', str(self))
+                    return result
+                except:
+                    self._memo = None
+        
+        local = self.parent.child()
+        body = self.body
+        Map.match(self.form, lst, local)
+                
+        if self.inherit:
+            upper = Map.eval(self.inherit, local, mutable=False)
+            assert isinstance(upper, Env), "@ not applied to an Env"
+            # local['super'] = upper.parent
+            body[1] = local
+            env = upper
+        else:
+            env = local
+            
+        result = Map.eval(body, env, mutable=False)
+        if self.inherit and isinstance(result, Env):
+            result.parent = upper
+            result.cls = str(self)
+            
+        # try to memoize result
+        try: self._memo[lst] = result
+        except: pass
+        return result
     
     def __str__(self):
-        return self.sym
+        return self.__name__
+    
+    def __repr__(self):
+        if self.__name__[0] != '(':
+            return self.parent.dir() + '.' + self.__name__
+        else:
+            return self._repr
+    
+    def compose(self, func):
+        "Enable arithmetic ops on Map."
+        return Map(self.form, ['SEQ', func, self.body])
 
 
 class Env(dict):
@@ -66,8 +165,11 @@ class Env(dict):
         return '<%s: %s>' % (self.cls, self.dir())
     
     def __repr__(self):
-        content = ', '.join(f'{k} = {v}' for k, v in self.items())
-        return f'({content})'
+        if self.name[0] != '(':
+            return self.dir()
+        else:
+            content = ', '.join(f'{k} = {v}' for k, v in self.items())
+            return f'({content})'
     
     def __bool__(self):
         return True
@@ -94,98 +196,7 @@ class Attr:
         assert isinstance(env, Env), 'not an Env'
         try: return env[self.name]
         except: return getattr(env, self.name)
-
-
-tree2str = NotImplemented
-# a function to restore syntax tree to an expression
-# ASSIGN it in format.py
-
-class Map:
-    match  = lambda val, form, parent: NotImplemented
-    eval   = lambda tree, parent, mutable: NotImplemented
-    check_local = lambda map, lst: NotImplemented
-
-    def __init__(self, tree, env):
-        _, form, body = tree
-        form = Map.eval(form, env)      # eval optpars
-        if body[0] == 'INHERIT':
-            self.inherit = body[1]
-            body = ['CLOSURE', ..., body[2]]
-        else:
-            self.inherit = None
-            body = Map.eval(body, None)  # simplify the body
-            
-        self.form = form
-        self.body = body
-        self.parent = env
-        self._pars = form[-1]
-        self._repr = tree2str(tree)
-        self.__name__ = '(map)'
-        self.__doc__ = self._repr
-        self._memo = NotImplemented
-
-    # def _all_local(self):
-    #     tmp_local = {var: 0 for }
-    #     def search(tr):
-    #         if type(tr) is list and tr:
-    #             if tr[0] == 'NAME':
-    #                 return tr[1] in self._vars
-    #             else:
-    #                 return all(search(t) for t in tr)
-    #         else:
-    #             return True
-    #     return search(self.body)
-    
-    
-    @trace
-    def __call__(self, *lst):
-        try:  # try to return the memoized result
-            return self._memo[lst]
-        except:
-            if self._memo is NotImplemented:
-                try:
-                    result = Map.check_local(self, lst)
-                    log('Memoizing ', str(self))
-                    self._memo = {lst: result}
-                    return result
-                except:
-                    self._memo = None
         
-        local = self.parent.child()
-        body = self.body
-        Map.match(self.form, lst, local)
-                
-        if self.inherit:
-            upper = Map.eval(self.inherit, local, mutable=False)
-            assert isinstance(upper, Env), "@ not applied to an Env"
-            # local['super'] = upper.parent
-            body[1] = local
-            env = upper
-        else:
-            env = local
-            
-        result = Map.eval(body, env, mutable=False)
-        if self.inherit and isinstance(result, Env):
-            result.parent = upper
-            result.cls = str(self)
-            
-        # try to memoize result
-        try: self._memo[lst] = result
-        except: pass
-        return result
-    
-    def __str__(self):
-        parent_field = self.parent.dir() + '.' \
-            if self.parent.name[0] != '_' else ''
-        return parent_field + self.__name__
-    
-    def __repr__(self):
-        return self._repr
-    
-    def compose(self, func):
-        "Enable arithmetic ops on Map."
-        return Map(self.form, ['SEQ', func, self.body])
-
 
 class Range:
 

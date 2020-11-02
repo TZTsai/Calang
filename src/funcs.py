@@ -1,21 +1,17 @@
 from operator import add, sub, mul, pow as pow_, and_ as b_and, or_ as b_or
 from functools import reduce, wraps
 from numbers import Number, Rational
-from types import FunctionType
 from fractions import Fraction
 from sympy import Expr, Integer, Float, Matrix, Symbol, factor, simplify
-from objects import Range, Map, Attr, Env, Op
+from objects import Range, Map, Attr, Env, Op, Function
 import config
 
 
-def process_function(func):
-    """
-    A critical part of my program that standardize the output of applying
-    Map or built-in functions.
-    """
+def apply(f, args):
+    
     def numfy(val):
         "convert a number into python number type"
-        if any(isinstance(val, c) for c in 
+        if any(isinstance(val, c) for c in
                (int, float, complex, Fraction)):
             if isinstance(val, complex):
                 return val.real if eq_(val.imag, 0) else val
@@ -35,7 +31,7 @@ def process_function(func):
             return 1 if val else 0
         elif type(val) is list:
             return tuple(standardize(a) for a in val)
-        elif isinstance(val, dict):
+        elif type(val) is dict:
             return Env(binds=val)
         else:
             try: return numfy(val)
@@ -44,15 +40,6 @@ def process_function(func):
                     return factor(simplify(val))
                 else: return val
                 
-    @wraps(func)
-    def app(*args):
-        result = apply(func, args)
-        return standardize(result)
-        
-    return app
-
-
-def apply(f, args):
     def convert_arg(arg):
         if isinstance(arg, Env) and hasattr(arg, 'val'):
             return arg.val
@@ -60,8 +47,11 @@ def apply(f, args):
             return Symbol(arg)
         else:
             return arg
+        
     result = f(*map(convert_arg, args))
-    return result
+    return standardize(result)
+
+Function.apply = apply
 
 
 def is_number(value):
@@ -108,7 +98,7 @@ def is_function(value):
     >>> is_function(lambda: 1)
     True
     '''
-    return callable(value)
+    return isinstance(value, Function)
 
 
 def all_(*lst, test=None):
@@ -273,12 +263,11 @@ def dot(x1, x2):
         return tuple(tuple(dot(r, c) for c in transpose(x2)) for r in x1)
 
 
-def compose(*funcs):  
+def compose(*funcs):
     def compose2(f, g):
-        def c(*args, **kwds):
-            return f(g(*args, **kwds))
-        c.__name__ = f'<composed: {f.__name__} and {g.__name__}>'
-        return c
+        def h(*args): return f(g(*args))
+        h.__name__ = f'<composed: {f.__name__} and {g.__name__}>'
+        return h
     return reduce(compose2, funcs)
 
 

@@ -10,20 +10,20 @@ from sympy import (
 )
 
 import config
-from objects import Op, Env, Range
+from objects import Op, Env, Range, Function, Builtin
 from funcs import (
-    process_function, is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, 
+    is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, apply,
     add, sub, mul, div, power, and_, or_, not_, eq_, ne_, iadd, isub, imul, idiv, ipow, iand, ior, 
     adjoin, unpack, dot, fact2, all_, any_, first, findall, range_, range_inc, range_dec, compose,
     transpose, depth, shape, substitute, flatten, row, col, row, cols, help_
 )
 
 
-def construct_ops(op_dict, type_):
+def construct_ops(op_dict, type):
     for op in op_dict:
         fun, pri = op_dict[op]
-        fun = process_function(fun)
-        op_dict[op] = Op(type_, op, fun, pri)
+        fun = Function(fun)
+        op_dict[op] = Op(type, op, fun, pri)
 
 
 binary_ops = {
@@ -34,7 +34,7 @@ binary_ops = {
     '==': (eq_, 0), '/=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
     'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'out': (lambda x, y: x not in y, -2), 
     '..': (range_, 4), '+..': (range_inc, 4), '-..': (range_dec, 4),
-    'and': (and_, -5), 'or': (or_, -6), '': (adjoin, 20), 'of': (NotImplemented, -3)
+    'and': (and_, -5), 'or': (or_, -6), '': (adjoin, 20), #'of': (NotImplemented, -3)
 }
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10)}
 unary_r_ops = {'!': (factorial, 22), '!!': (fact2, 22), '~': (unpack, 22)}
@@ -46,9 +46,6 @@ for op_type, op_dict in operators.items():
 
 builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos, 'atan': atan, 'abs': abs, 'sqrt': sqrt, 'floor': floor, 'log': log, 'E': E, 'PI': pi, 'I': 1j, 'INF': inf, 'max': max, 'min': min, 'gcd': gcd, 'binom': lambda n, m: factorial(n) / (factorial(m) * factorial(n-m)), 'len': len, 'sort': sorted, 'exit': lambda: exit(), 'exp': exp, 'lg': lambda x: log(x)/log(10), 'ln': log, 'log2': lambda x: log(x)/log(2), 'number?': is_number, 'symbol?': is_symbol, 'iter?': is_iter, 'lambda?': is_function, 'matrix?': is_matrix, 'vector?': is_vector, 'function?': is_function, 'list?': is_list, 'list': tuple, 'sum': lambda *x: reduce(add, x), 'product': lambda *x: reduce(dot, x), 'compose': compose, 'matrix': Matrix, 'set': set, 'car': lambda l: l[0], 'cdr': lambda l: l[1:], 'cons': lambda a, l: (a,) + l, 'enum': enumerate, 'row': row, 'col': col, 'shape': shape, 'depth': depth, 'transp': transpose, 'flatten': flatten, 'all': all_, 'any': any_, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]), 'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': lambda x: x / pi * 180, 'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else 0, 'conj': lambda z: z.conjugate(), 'angle': lambda z: atan(z.imag / z.real), 'reduce': reduce, 'filter': filter, 'map': map, 'zip': zip, 'find': findall, 'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute, 'expand': expand, 'factor': factor, 'pfactors': factorint, 'next': next, 'help': help_}
 
-for name in builtins:
-    val = builtins[name]
-    if is_function(val):
-        val = process_function(val)
-        builtins[name] = val
-        val.__name__ = f'<builtin: {name}>'
+for name, val in builtins.items():
+    if callable(val):
+        builtins[name] = Builtin(val)

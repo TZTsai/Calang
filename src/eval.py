@@ -4,7 +4,7 @@ from copy import deepcopy
 from parse import calc_parse, is_name, is_tree, tree_tag
 from builtin import operators, builtins
 from funcs import Symbol, is_list, is_function, apply
-from objects import Env, stack, Op, Attr, Map, UnboundName
+from objects import Env, stack, Op, Attr, Function, Map, UnboundName
 import config
 
 
@@ -116,7 +116,7 @@ def SEQ(tr):
         if op.type == 'BOP':
             args = [vals.peek()] + args
         try:
-            result = apply(op, args)
+            result = op(*args)
         except TypeError:
             if op is adjoin:
                 push(dot)  # adjoin failed, change to dot product
@@ -393,7 +393,10 @@ def IMPORT(tr):
     
     for name, val in definitions.items():
         if name not in Global or overwrite:
-            if verbose: print(f'imported: {name}')
+            if verbose:
+                print(f'imported: {name}')
+            if callable(val):
+                val = Function(val)
             Global[name] = val
 
 def CONF(tr):

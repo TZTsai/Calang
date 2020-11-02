@@ -4,10 +4,14 @@ from pprint import pformat, pprint
 
 
 indent = '  '
+max_depth = 50
 def log(*messages, end='\n', sep=''):
     if log.out is None: return
-    msg = log.depth*indent + sep.join(map(str, messages)) + end
-    log.out.write(msg)
+    log.out.write(log.depth*indent)
+    if log.depth < max_depth:
+        log.out.write(sep.join(map(str, messages)) + end)
+    else:
+        raise RecursionError('max depth reached!')
 
 log.depth = 0
 log.out = sys.stdout

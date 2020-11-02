@@ -1,7 +1,7 @@
 from sympy import latex, pretty
 from re import sub as translate
-from builtin import Rational, Fraction, Matrix, is_number, is_matrix, is_function, floor, inf, log
-from objects import Range, Env
+from builtin import Rational, Fraction, Matrix, is_number, is_matrix, floor, inf, log
+from objects import Range, Env, Function
 from parse import rev_parse
 from utils.deco import trace
 from utils.greek import gr_to_tex
@@ -40,13 +40,13 @@ def calc_format(val, **opts):
     def format_atom(val):
         if is_number(val):
             mag = abs(val)
-            if type(val) == complex:
+            if type(val) is complex:
                 re, im = format_float(val.real), format_float(val.imag)
                 return f"{re} {'-' if im<0 else '+'} {abs(im)}ⅈ"
             elif mag == inf:
                 return '∞'
             elif isinstance(val, Rational) and not opts['sci']:
-                if type(val) == Fraction:
+                if type(val) is Fraction:
                     val.limit_denominator(10**config.precision)
                 if opts['bin']:
                     return bin(val)
@@ -58,8 +58,8 @@ def calc_format(val, **opts):
                 return format_scinum(val)
             else: 
                 return str(format_float(val))
-        elif is_function(val):
-            return val.__name__
+        elif isinstance(val, Function):
+            return str(val)
         elif isinstance(val, Range):
             return str(val)
         elif isinstance(val, Env):
@@ -89,9 +89,10 @@ def calc_format(val, **opts):
 
 
 def map_signature(_, args):
-    f, *args = args
+    f, args = args[0], args[1:]
     opts = {'tex': config.latex, 'sci': 0, 'bin': 0, 'hex': 0}
-    return '%s%s' % (calc_format(f, **opts), calc_format(args, **opts))
+    return '%s%s' % (calc_format(f, **opts),
+                     calc_format(args, **opts))
 
 
 trace.signature = map_signature
