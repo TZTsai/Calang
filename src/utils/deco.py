@@ -42,6 +42,3 @@ trace.signature = lambda f, args: f'{f}{args}'
     
 
 def disabled(f, *ignore): return f  # used to disable a decorator
-
-
-if not config.debug: trace = disabled

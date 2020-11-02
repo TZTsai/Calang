@@ -1,41 +1,42 @@
-# utils
-gcd[a, b] = a if b == 0 else gcd[b, a%b]
-prime?[n] = ((find_divisor[t] =
-              when(t^2>n: n, n%t==0: t, find_divisor[t+1+t%2]))
-             n > 1 and find_divisor[2] == n)
-first[l, pred] = (rec[i] = l[i] if pred[l[i]] else rec[i+1]) rec[0]
-
 # Groups
 Group[m, o] = (
-     mul = m, zero = o,
+     mul = m, unit = o,
      pow[x, k] = (rec[a, b, i] = a if i==0 else
-                               rec[m[a,b], b, i-1] if i%2 else
-                               rec[a, m[b,b], i/2])
-                rec[1, x, k]
+                  rec[m[a,b], b, i-1] if i%2 else
+                  rec[a, m[b,b], i/2]) rec[1, x, k]
 )
 
 CyclicGroup[g, m, o] @Group[m, o] = (
      gen = g,
-     elements[] = (rec[x, l] = l if x in l else rec[mul[gen,x], l+[x]])
-                  rec[gen, []],
-     order[x='nan] = len[elements[]] if x=='nan else
-                    (rec[r, k] = k if r==zero else rec[mul[x,r], k+1])
-                    rec[x, 1]
+     elements = (rec[x, l] = l if x in l else rec[m[g,x], l+[x]])
+                rec[g, []],
+     order[x='nan] = len[elements] if x=='nan else
+                     first[list[1..order[]], k=>pow[x, k]==unit]
+                     if x in elements else 'not_an_element,
+     inverse[x] = first[elements, e => mul[e, x] == unit]
 )
+
 
 # Integer Modular Multiplicative Group
-Zx[n] @CyclicGroup[Zx.find_gen[n], Zx.mul[n], 1] = (
-     n = n,
-     elements = [x for x in 1..n-1 if gcd[x, n] == 1],
-     inverse[x] = first[elements, el => mul[x, el]==1],
-     order[x = 'nan] = len[elements] if x=='nan else Zx.order[x, n]
-)
-Zx.order[g, n] = (G = CyclicGroup[g, Zx.mul[n], 1]) G.order[g]
-Zx.mul[n] = [x, y] => x*y%n
-Zx.find_gen[n] = first[list[2..n-1], x => Zx.order[x, n]==n-1]
+Zx[n] = (
+     elements = coprimes[n],
+     mul[x, y] = x*y%n, pow[x, k] = x^k%n,
+     order[x] = first[list[1..n-1], k => pow[x, k]==1],
+     gen = first[list[2..n-1], x => order[x]==n-1],
+     get[] @(CyclicGroup[gen, mul, 1] if prime?[n] 
+             else Group[mul, 1]) = (N = n, pow = pow)
+) get[]
+
+gcd[a, b] = a if b == 0 else gcd[b, a%b]
+prime?[n] = ((find_divisor[t] =
+              when(t^2>n: n, n%t==0: t, find_divisor[t+1+t%2]))
+             n > 1 and find_divisor[2] == n)
+first[l, pred=(x=>x)] = (rec[i] = l[i] if pred[l[i]] else rec[i+1]) rec[0]
+coprimes[n] = list[1..n-1] if prime?[n] else [x for x in 1..n-1 if gcd[x, n] == 1]
+
 
 # Finite Field
-MakeGF[g, m, n] = (
+GF[g, m, n] = (
      reduce[p] = when(p == []: [0],
                       p[0] == 0: reduce[p[1:]],
                       len[p] > n: ((q = poly.pad_zero[g, len[p], 0]) ...
@@ -43,7 +44,7 @@ MakeGF[g, m, n] = (
                       [c%m for c in p]),
      mul[p, q] = reduce[poly.mul[p, q]],
      get[] @CyclicGroup[g, mul, [1]] = (mod = m, deg = n)
-)
+) get[]
 poly = (
      scale[p, a] = p .* a,
      pad_zero[p, n, right=1] = ((k = n-len[l]) ...
@@ -55,18 +56,20 @@ poly = (
      mul[p, q] = sum[raise[scale[p, c], i] for [i, c] in enum[q]],
      sub[p, q] = add[p, scale[q, -1]]
 )
-GF[g, m, n] = MakeGF[g, m, n].get[]
 
 
 #TEST
-h = Zx[7]
-h.elements #(1, 2, 3, 4, 5, 6)
-h.order[] #6
-[[x, h.order[x]] for x in h.elements] #((1,1),(2,3),(3,6),(4,3),(5,6),(6,2))
-[[x, h.inverse[x]] for x in h.elements] #((1,1),(2,4),(3,5),(4,2),(5,3),(6,6))
-h.pow[4, 87]
+g = Zx[7]
+g.N #7
+g.elements #(1, 2, 3, 4, 5, 6)
+g.order[] #6
+[[x, g.order[x]] for x in g.elements] #((1,1),(2,3),(3,6),(4,3),(5,6),(6,2))
+[[x, g.inverse[x]] for x in g.elements] #((1,1),(2,4),(3,5),(4,2),(5,3),(6,6))
+g.pow[4, 17]
 g = Zx[24]
+g.N #24
 g.elements #(1, 5, 7, 11, 13, 17, 19, 23)
+g.pow[4, 17]
 gf = GF[[1,0,2,1], 3, 3]
 [gf.mod, gf.deg] #(3, 3)
 gf.mul[[1, 2], [2, 0, 1, 2]]

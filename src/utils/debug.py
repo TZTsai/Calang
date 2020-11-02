@@ -1,12 +1,13 @@
 import sys
 import json
 from pprint import pformat, pprint
+import config
 
 
 indent = '  '
 max_depth = 50
 def log(*messages, end='\n', sep=''):
-    if log.out is None: return
+    if not config.debug: return
     log.out.write(log.depth*indent)
     if log.depth < max_depth:
         log.out.write(sep.join(map(str, messages)) + end)

@@ -32,7 +32,7 @@ binary_ops = {
     '.+': (iadd, 5), '.-': (isub, 5), '.*': (imul, 7), './': (idiv, 7), '.^': (ipow, 13),
     '&': (iand, 8), '|': (ior, 7),
     '==': (eq_, 0), '/=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
-    'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'out': (lambda x, y: x not in y, -2), 
+    'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'outof': (lambda x, y: x not in y, -2), 
     '..': (range_, 4), '+..': (range_inc, 4), '-..': (range_dec, 4),
     'and': (and_, -5), 'or': (or_, -6), '': (adjoin, 20), #'of': (NotImplemented, -3)
 }

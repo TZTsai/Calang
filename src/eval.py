@@ -415,7 +415,7 @@ def CONF(tr):
         if len(tr) == 2:
             return getattr(config, conf)
         else:
-            setattr(config, conf, tr[2] == 'on')
+            setattr(config, conf, tr[2] not in ['off', 0])
     else:
         raise ValueError('no such field in the config')
     

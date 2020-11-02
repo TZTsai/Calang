@@ -135,8 +135,6 @@ if __name__ == "__main__":
         # log.out = open('src/utils/log.yaml', 'w')
         from src.grammar import grammar
         parse.grammar = grammar  # reload grammar only when debugging
-    else:
-        log.out = None
         
     if test: sys.argv.remove('-t')
             

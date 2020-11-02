@@ -113,13 +113,13 @@ class Map(Function):
         return result
     
     def __str__(self):
-        return self.__name__
-    
-    def __repr__(self):
         if self.__name__[0] != '(':
-            return self.parent.dir() + '.' + self.__name__
+            return self.__name__
         else:
             return self._repr
+    
+    def __repr__(self):
+        return self.parent.dir() + '.' + self.__name__
     
     def compose(self, func):
         "Enable arithmetic ops on Map."
