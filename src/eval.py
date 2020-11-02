@@ -420,7 +420,7 @@ def CONF(tr):
         raise ValueError('no such field in the config')
     
 
-def eval_tree(tree, env, mutable=True):
+def eval_tree(tree, env=None, mutable=True):
     if not is_tree(tree):
         return tree
     if not mutable:

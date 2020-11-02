@@ -57,10 +57,11 @@ class Map(Function):
     def __init__(self, tree, env):
         _, form, body = tree
         form = Map.eval(form, env)      # eval optpars
-        if body[0] == 'INHERIT':
+        try:
+            assert body[0] == 'INHERIT'
             self.inherit = body[1]
             body = ['CLOSURE', ..., body[2]]
-        else:
+        except:
             self.inherit = None
             body = Map.eval(body, None)  # simplify the body
             
