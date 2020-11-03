@@ -22,9 +22,10 @@ Zx[n] = (
      elements = coprimes[n],
      mul[x, y] = x*y%n, pow[x, k] = x^k%n,
      order[x] = first[list[1..n-1], k => pow[x, k]==1],
-     gen = first[list[2..n-1], x => order[x]==n-1],
-     get[] @(CyclicGroup[gen, mul, 1] if prime?[n] 
-             else Group[mul, 1]) = (N = n, pow = pow)
+     type = Group[mul, 1] if not prime?[n] else
+            (gen = first[list[2..n-1], x => order[x]==n-1])
+            CyclicGroup[gen, mul, 1],
+     get[] @type = (elements = elements, N = n, pow = pow)
 ) get[]
 
 gcd[a, b] = a if b == 0 else gcd[b, a%b]
@@ -61,11 +62,12 @@ poly = (
 #TEST
 g = Zx[7]
 g.N #7
-g.elements #(1, 2, 3, 4, 5, 6)
+g.gen #3
+sort[g.elements] #(1, 2, 3, 4, 5, 6)
 g.order[] #6
-[[x, g.order[x]] for x in g.elements] #((1,1),(2,3),(3,6),(4,3),(5,6),(6,2))
-[[x, g.inverse[x]] for x in g.elements] #((1,1),(2,4),(3,5),(4,2),(5,3),(6,6))
-g.pow[4, 17]
+sort[[x, g.order[x]] for x in g.elements] #((1,1),(2,3),(3,6),(4,3),(5,6),(6,2))
+sort[[x, g.inverse[x]] for x in g.elements] #((1,1),(2,4),(3,5),(4,2),(5,3),(6,6))
+g.pow[4, 17] #2
 g = Zx[24]
 g.N #24
 g.elements #(1, 5, 7, 11, 13, 17, 19, 23)

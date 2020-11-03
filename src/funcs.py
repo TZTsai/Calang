@@ -3,7 +3,7 @@ from functools import reduce, wraps
 from numbers import Number, Rational
 from fractions import Fraction
 from sympy import Expr, Integer, Float, Matrix, Symbol, factor, simplify
-from objects import Range, Map, Attr, Env, Op, Function
+from objects import Range, Map, Attr, Env, Op, Function, Builtin
 import config
 
 
@@ -43,12 +43,17 @@ def apply(f, args):
     def convert_arg(arg):
         if isinstance(arg, Env) and hasattr(arg, 'val'):
             return arg.val
-        elif isinstance(arg, str):
+        elif isinstance(arg, str) and config.symbolic:
             return Symbol(arg)
         else:
             return arg
         
-    result = f(*map(convert_arg, args))
+    try:
+        result = f(*map(convert_arg, args))
+    except TypeError:
+        if len(args) > 1 and isinstance(f, Builtin):
+            result = f(tuple(map(convert_arg, args)))
+        else: raise
     return standardize(result)
 
 Function.apply = apply

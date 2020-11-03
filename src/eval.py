@@ -226,10 +226,12 @@ def GEN_LST(tr, env):
     return tuple(generate(exp, constraints))
 
 def DICT(tr, env):
-    for t in tr[1:]:
-        # eval body of each item in the current env first
-        try: t[2] = eval_tree(t[2], env)
-        except UnboundName: pass
+    # for t in tr[1:]:
+    #     if t[0] != 'FUNC':
+    #         # eval each value in the current env first
+    #         try: t[2] = eval_tree(t[2], env)
+    #         except UnboundName: pass
+    #         # if not in env, it may depend on previous bindings in this dict
     local = env.child()
     for t in tr[1:]: BIND(t, local)
     return local
@@ -410,12 +412,14 @@ def CONF(tr):
         if len(tr) == 2:
             return config.tolerance
         else:
-            config.tolerance = tr[2]
+            val = eval_tree(tr[2])
+            config.tolerance = float(val)
     elif hasattr(config, conf):
         if len(tr) == 2:
             return getattr(config, conf)
         else:
-            setattr(config, conf, tr[2] not in ['off', 0])
+            val = eval_tree(tr[2]) not in ['off', 0]  # boolean value
+            setattr(config, conf, val)
     else:
         raise ValueError('no such field in the config')
     
@@ -427,10 +431,9 @@ def eval_tree(tree, env=None, mutable=True):
         tree = deepcopy(tree)
     tag = tree_tag(tree)
     
-    rec_env = None if tag in delay_types or \
-        tag in exec_rules else env
-    for i in range(1, len(tree)):
-        tree[i] = eval_tree(tree[i], rec_env, mutable)
+    if tag not in dont_eval and env:
+        for i in range(1, len(tree)):
+            tree[i] = eval_tree(tree[i], env, mutable)
         
     if tag in subs_rules:
         return subs_rules[tag](tree)
@@ -450,7 +453,10 @@ Map.match = match
 Map.eval  = eval_tree
 
 
-delay_types = {'DELAY', 'GEN_LST', 'BIND', 'DICT', 'IF_ELSE', 'WHEN'}
+delay_types = {
+    'DELAY',    'GEN_LST',  'BIND',     'DICT',
+    'IF_ELSE',  'WHEN'
+}
 
 subs_rules = {name: eval(name) for name in [
     'LINE',     'DIR',      'ANS',      'SYM',
@@ -470,6 +476,8 @@ exec_rules = {name: eval(name) for name in [
     'DEL',      'DEF',      'LOAD',     'IMPORT',
     'CONF',
 ]}
+
+dont_eval = delay_types | set(exec_rules)
 
 
 if __name__ == "__main__":

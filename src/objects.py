@@ -57,11 +57,10 @@ class Map(Function):
     def __init__(self, tree, env):
         _, form, body = tree
         form = Map.eval(form, env)      # eval optpars
-        try:
-            assert body[0] == 'INHERIT'
+        if body[0] == 'INHERIT':
             self.inherit = body[1]
             body = ['CLOSURE', ..., body[2]]
-        except:
+        else:
             self.inherit = None
             body = Map.eval(body, None)  # simplify the body
             
@@ -85,7 +84,7 @@ class Map(Function):
                     result = Map.check_local(self, lst)
                     if type(result) in [Env, Map]:
                         raise TypeError  # env dependent result
-                    log('Memoizing ', str(self))
+                    # log('Memoizing ', str(self))
                     return result
                 except:
                     self._memo = None
