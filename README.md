@@ -64,7 +64,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   **Note**:  
   Thanks sympy, variable names that are greek letters will be displayed by the corresponding unicode characters. For instance, `pi` will be printed as π, `Sigma` as Σ, `alpha1` as α₁ and `gamma_i` as γᵢ. Note that `pi` is regarded as a symbol - for the constant value of π, use `PI`.  
-  As a short hand, you can add a backslash `\` at the start of an English letter (with the exception of `\th`: θ and `\ps`: ψ) to escape it into its corresponding Greek letter.
+  As a short hand, you can add a backslash `\` at the start of an English letter (with the exception of `\th`: θ and `\ps`: ψ) to convert it into its corresponding Greek letter.
 
   **Syntax**:  `_var_ = _exp_`  
 
@@ -85,8 +85,8 @@ Check "builtin.py" to see the available built-in operations and functions.
   **Syntax**: `_par_ => _exp_`
 
   **Note**:  
-  * `par` can be a single argument or a list of arguments. For a single argument `x`, it has no difference between `x => ...` and `[x] => ...`.
-  * The parameter `par` has a similar form of normal lists (can be nested). However, it additionally allows optional parameters (by using `=`) and an extra parameter (by using `~`: `args~` is the same as `*args` in python).
+  * `par` can be a single parameter or a list of parameters. For a single parameter `x`, it has no difference between `x => ...` and `[x] => ...`.
+  * The parameter `par` has a similar form to normal lists (can be nested). However, it additionally allows optional parameters (by using `=`) and an extra parameter (by using `~`: `args~` is the same as `*args` in python).
   
   **Examples**:
   
@@ -98,9 +98,9 @@ Check "builtin.py" to see the available built-in operations and functions.
   * `f = [a, b] => x => a*x + b`  
     `g = f[2, 3]`  
     `g[4]` (return: 11)
-  * `f = [a, [b, c], d~] => [a, b, c, d]`
+  * `f = [a, [b, c], d~] => [a, b, c, d]`  
     `f[1, [2, 3], 4, 5]` (return: [1, 2, 3, [4, 5]])
-  * `f = [x='none] => [] if x is 'none else [x]`
+  * `f = [x='none] => [] if x is 'none else [x]`  
     `f[] == [] and f[2] == [2]` (return: 1)
   
 * Map definition
@@ -193,8 +193,8 @@ Check "builtin.py" to see the available built-in operations and functions.
   * `[i for i in 1..100 if i%3==2 and i%7==4 and i%11==9]` (return: [53])
   * `f[n] = [[i, j] for i in 0..n for j in 0..i-1 if i+j == n]`  
     `f[6]` (return: [[4, 2], [5, 1], [6, 0]])
-  * `diff_poly[coeffs] = [coeffs[i]*i for i in 1..len[coeffs]-1]`
-    `diff_poly[[1,2,3]]` (return: [2, 6])
+  * `diff_poly[coeffs~] = [coeffs[i]*i for i in 1..len[coeffs]-1]`
+    `diff_poly[1,2,3]` (return: [2, 6])
     
 * Environment  
 
