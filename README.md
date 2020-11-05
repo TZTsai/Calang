@@ -64,7 +64,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   **Note**:  
   Thanks sympy, variable names that are greek letters will be displayed by the corresponding unicode characters. For instance, `pi` will be printed as π, `Sigma` as Σ, `alpha1` as α₁ and `gamma_i` as γᵢ. Note that `pi` is regarded as a symbol - for the constant value of π, use `PI`.  
-  As a short hand, you can added a backslash `\` at the start of an English letter (with the exception of `\th`: θ and `\ps`: ψ) to escape it into its corresponding Greek letter.
+  As a short hand, you can add a backslash `\` at the start of an English letter (with the exception of `\th`: θ and `\ps`: ψ) to escape it into its corresponding Greek letter.
 
   **Syntax**:  `_var_ = _exp_`  
 
@@ -74,7 +74,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   In the `symbolic` mode, all undefined names will be regarded as symbols.  
 
-  If this mode is off, then a symbol can be created by a single quotation mark `'` followed by a variable name.  
+  A symbol can also be created by a single quotation mark `'` followed by a variable name (regardless `symbolic` is on or off).  
 
   **Examples**: `'James`, `'\a_1` (printed as 'α₁'), `diff['x^2 +ln('x), 'x]` (for functions like `diff`(differentiation), `int`(integral), variable names had better begin with `'` in case of existing bindings)  
 
@@ -84,7 +84,9 @@ Check "builtin.py" to see the available built-in operations and functions.
   
   **Syntax**: `_par_ => _exp_`
 
-  **Note**: `_par_` can be a single argument or a list of arguments. For a single argument `x`, it has no difference between `x => ...` and `[x] => ...`.
+  **Note**:  
+  * `_par_` can be a single argument or a list of arguments. For a single argument `x`, it has no difference between `x => ...` and `[x] => ...`.
+  * The parameter `_par_` has a similar form of normal lists (can be nested). However, it additionally allows optional parameters (by using `=`) and an extra parameter (by using `~`: `args~` is the same as `*args` in python).
   
   **Examples**:
   
@@ -96,14 +98,16 @@ Check "builtin.py" to see the available built-in operations and functions.
   * `f = [a, b] => x => a*x + b`  
     `g = f[2, 3]`  
     `g[4]` (return: 11)
+  * `f = [a, [b, c], d~] => [a, b, c, d]`
+    `f[1, [2, 3], 4, 5]` (return: [1, 2, 3, [4, 5]])
+  * `f = [x='none] => [] if x is 'none else [x]`
+    `f[] == [] and f[2] == [2]` (return: 1)
   
 * Map definition
 
-  A variable can be bound to a map like any other types of values. But as a shorthand, you can define the map in
+  A variable can be bound to a map like any other types of values. But as a shorthand, you can define the map by
   
   **Syntax**: `_name__par_ = _exp_`
-
-  **Note**: The parameter `_par_` has a similar form of normal lists (can be nested). However, it additionally allows optional parameters (by using `=`) and an extra parameter (by using `~`, `args~` is the same as `*args` in python).
 
   **Examples**:  
 
@@ -122,11 +126,11 @@ Check "builtin.py" to see the available built-in operations and functions.
   **Syntax**:
   [*exp1*, *exp2*, ...]  
 
-  **Note**: The operators `in`, `+`, `*` have the same functions as those in Python. Besides, you can use `~` to unpack a list into its outer list (if it is not nested in a list, this will be an error).
+  **Note**: The operators `in`, `+`, `*` for lists have the same functions as those in Python. Besides, you can use `~` to unpack a list into its outer list (if it is not nested in a list, this will be an error).
 
   **Examples**:  
   * `3 in [1, 2, 3]`
-  * `[1, 2] + [3, 4]`
+  * `[1, 2] + [3, 4]` (return: [1, 2, 3, 4])
   * `a = [2, 3]`  
     `[1, a~]` (return: [1, 2, 3])
   * `sum[1, 2, 3, 4]` (the `sum` function sums all arguments up)  
@@ -134,8 +138,8 @@ Check "builtin.py" to see the available built-in operations and functions.
 
 * List subscription  
 
-  **Syntax**: *list*[$i_1$, ..., $i_n$]  
-  The list is sequentially subscripted by $i_1$, $i_2$, ... Each of the indices is an integer. If the index is negative, it will subscribe from the end, like python.
+  **Syntax**: `_list_[_i1_, ..., _in_]`  
+  The list is sequentially subscripted by `_i1_`, ..., `_in_`. Each of the indices is an integer. If an index is negative, it will subscribe from the end, like python.
 
   **Examples**:
   * `[1, 2, 3][1]`
