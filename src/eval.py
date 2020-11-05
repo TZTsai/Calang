@@ -122,6 +122,8 @@ def SEQ(tr):
                 push(dot)  # adjoin failed, change to dot product
                 push(args[-1])
                 return
+            elif op is dot:
+                raise TypeError('invalid operation')
             else: raise
         if op.type == 'BOP': vals.pop()
         vals.push(result)

@@ -5,14 +5,15 @@ import config
 
 
 indent = '  '
-max_depth = 50
+max_depth = 20
 def log(*messages, end='\n', sep=''):
     if not config.debug: return
     log.out.write(log.depth*indent)
     if log.depth < max_depth:
         log.out.write(sep.join(map(str, messages)) + end)
     else:
-        raise RecursionError('max depth reached!')
+        print('max depth reached!')
+        exit(-1)
 
 log.depth = 0
 log.out = sys.stdout

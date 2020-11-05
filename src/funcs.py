@@ -92,8 +92,9 @@ def is_matrix(value):
     '''
     if isinstance(value, Matrix): 
         return True
-    else: 
-        return depth(value) == depth(value, min) == 2 and same(*map(len, value))
+    else:
+        return (depth(value) == depth(value, min) == 2 and
+                same(*map(len, value)) and len(value[0]) > 0)
 
 
 def is_function(value):

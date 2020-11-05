@@ -37,25 +37,28 @@ coprimes[n] = list[1..n-1] if prime?[n] else [x for x in 1..n-1 if gcd[x, n] == 
 
 
 # Finite Field
-GF[g, m, n] = (
+GF[irr, m, n] = (
      reduce[p] = when(p == []: [0],
                       p[0] == 0: reduce[p[1:]],
-                      len[p] > n: ((q = poly.pad_zero[g, len[p], 0]) ...
-                                   reduce[poly.sub[p, poly.scale[q, p[-1]]]]),
+                      len[p] > n: ((q = poly.pad_zero[irr, len[p], 0]) ...
+                                   reduce[poly.sub[p, poly.scale[q, p[0]]]]),
                       [c%m for c in p]),
      mul[p, q] = reduce[poly.mul[p, q]],
-     get[] @CyclicGroup[g, mul, [1]] = (mod = m, deg = n)
+     # get[] @CyclicGroup[???, mul, [1]] = (mod = m, deg = n)
+     get[] @Group[mul, [1]] = (irr = irr, mod = m, deg = n)
 ) get[]
 poly = (
+     coefs[p] = (l=len[p]-1) [[l-k, c] for [k, c] in enum[p]],
      scale[p, a] = p .* a,
-     pad_zero[p, n, right=1] = ((k = n-len[l]) ...
-          when(k<=0: l, right: l+[0]*k, [0]*k+l)),
+     pad_zero[p, n, left=1] = ((k = n-len[p]) ...
+          when(k<=0: p, left: [0]*k+p, p+[0]*k)),
      add[p, q] = ((n = max[len[p], len[q]]) ...
           pad_zero[p, n] .+ pad_zero[q, n]),
-     sum[ps~] = [0] if ps == [] else add[ps[0], sum[ps[1:]~]],
-     raise[p, k] = [0]*k + p,
-     mul[p, q] = sum[raise[scale[p, c], i] for [i, c] in enum[q]],
-     sub[p, q] = add[p, scale[q, -1]]
+     sum[ps~] = [0] if ps == [] else add[ps[0], sum(ps[1:])],
+     raise[p, k] = d::len[p] pad_zero[p, d+k, 0],
+     mul[p, q] = sum[raise[scale[p, c], i] for [i, c] in coefs[q]],
+     sub[p, q] = add[p, scale[q, -1]],
+     eval[p, x] = [c*x^k for [k, c] in coefs[p]]
 )
 
 
@@ -72,9 +75,10 @@ g = Zx[24]
 g.N #24
 g.elements #(1, 5, 7, 11, 13, 17, 19, 23)
 g.pow[4, 17]
-gf = GF[[1,0,2,1], 3, 3]
+gf = GF[[1,2,0,1], 3, 3]
 [gf.mod, gf.deg] #(3, 3)
-gf.mul[[1, 2], [2, 0, 1, 2]]
-gf.elements[]
-gf = GF[[1, 1, 0, 1, 1, 0, 0, 0, 1], 2, 8]
-gf.mul[[1, 1, 0, 0, 1, 0, 0, 1], [1, 0, 1]]  #(1,0,0,1,0,1,1,1)
+gf.mul[[1, 2], [2, 0, 1, 2]]  #(1,2,1)
+gf.mul[[2, 0, 1, 2], [2, 0, 2, 0]] #(2,0,2)
+# gf.elements[]
+gf = GF[[1,0,0,0,1,1,0,1,1], 2, 8]
+gf.mul[[1,0,0,1,0,0,1,1], [1,0,1]]  #(1,1,1,0,1,0,0,1)

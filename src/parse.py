@@ -298,7 +298,7 @@ def rev_parse(tree):
             else:
                 return '%s = %s' % tup
         elif tag == 'MATCH':
-            _, form, exp = tr[1]
+            _, form, exp = tr
             return group('%s::%s' % (rec(form), rec(exp)))
         elif tag == 'CLOSURE':
             _, local, exp = tr
