@@ -24,11 +24,6 @@ class Function:
     
     def __call__(self, *args):
         return Function.apply(self.f, args)
-
-
-class Builtin(Function):
-    def __repr__(self):
-        return f'<builtin: {self.__name__}>'
     
     
 class Op(Function):
@@ -44,7 +39,16 @@ class Op(Function):
     def __str__(self):
         return self.symbol
     
+    
+class PyFunc(Function):
+    pass
 
+
+class Builtin(PyFunc):
+    def __repr__(self):
+        return f'<builtin: {self.__name__}>'
+    
+    
 tree2str = NotImplemented
 # a function to restore syntax tree to an expression
 # ASSIGN it in format.py
@@ -193,7 +197,6 @@ class Attr:
         return '.'+self.name
 
     def getFrom(self, env):
-        assert isinstance(env, Env), 'not an Env'
         try: return env[self.name]
         except: return getattr(env, self.name)
         
@@ -236,7 +239,10 @@ class Range:
 
 
 class UnboundName(NameError):
-    "My own class to indicate that a name is not bound in the environment."
+    "An error to indicate that a name is not bound in the environment."
+    
+class OperationError(TypeError):
+    "An error to indicate that the interpreted operation cannot be applied."
         
         
 

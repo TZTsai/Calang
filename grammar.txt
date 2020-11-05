@@ -1,12 +1,13 @@
 LINE    := %SEQ < ( CMD | DEF | EXP | EMPTY ) ; >
 EMPTY   := /\s*/
 
-CMD     := CONF | DIR | DEL | LOAD | IMPORT
+CMD     := CONF | DIR | DEL | LOAD | IMPORT | EXIT
 CONF    := config /\w+/ ( NUM | /on|off/ ) ?
 DIR     := dir FIELD ?
 DEL     := del %SEQ < FIELD , >
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
+EXIT    := exit
 
 DEF     := SUPER ? BIND
 SUPER   := ( NAME . ) +
@@ -69,8 +70,8 @@ CONSTR  := FORM in EXP ( if EXP ) ?
 IDC_LST := %BKT < %SEQ < SLICE , > >
 SLICE   := _SLC : _SLC ( : _SLC ) ?
 _SLC    := ( SEQ | EMPTY )
-VAL_LST := _DLST | %LST < EXP , >
-_DLST   := %LST < SUB_LST:VAL_LST ; >
+VAL_LST := _MAT | %LST < EXP , >
+_MAT    := %BKT < ( SUB_LST:VAL_LST ( ; SUB_LST:VAL_LST ) + ) >
 SUB_LST := %SEQ < EXP , > ?
 
 ### MACROS ###

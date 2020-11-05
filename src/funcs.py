@@ -3,7 +3,7 @@ from functools import reduce, wraps
 from numbers import Number, Rational
 from fractions import Fraction
 from sympy import Expr, Integer, Float, Matrix, Symbol, factor, simplify
-from objects import Range, Map, Attr, Env, Op, Function, Builtin
+from objects import Range, Map, Attr, Env, Op, Function, PyFunc, Builtin, OperationError
 import config
 
 
@@ -40,19 +40,22 @@ def apply(f, args):
                     return factor(simplify(val))
                 else: return val
                 
-    def convert_arg(arg):
-        if isinstance(arg, Env) and hasattr(arg, 'val'):
-            return arg.val
-        elif isinstance(arg, str) and config.symbolic:
-            return Symbol(arg)
+    def convert_args(args):
+        if is_list(args):
+            return list(map(convert_args, args))
+        if isinstance(args, Env) and hasattr(args, 'val'):
+            return args.val
+        elif isinstance(args, str) and config.symbolic:
+            return Symbol(args)
         else:
-            return arg
+            return args
         
+    args = convert_args(args)
     try:
-        result = f(*map(convert_arg, args))
+        result = f(*args)
     except TypeError:
-        if len(args) > 1 and isinstance(f, Builtin):
-            result = f(tuple(map(convert_arg, args)))
+        if len(args) > 1 and isinstance(f, PyFunc):
+            result = f(args)
         else: raise
     return standardize(result)
 
@@ -104,7 +107,7 @@ def is_function(value):
     >>> is_function(lambda: 1)
     True
     '''
-    return isinstance(value, Function)
+    return callable(value)
 
 
 def all_(*lst, test=None):
@@ -242,7 +245,7 @@ def adjoin(x1, x2):
     elif is_function(x1) and is_list(x2):
         return apply(x1, x2)
     else:
-        raise TypeError('invalid types for adjoin')
+        raise OperationError('invalid types for adjoin')
 
 def dot(x1, x2):
     '''

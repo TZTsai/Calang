@@ -80,6 +80,10 @@
     [
       "OBJ",
       "IMPORT"
+    ],
+    [
+      "OBJ",
+      "EXIT"
     ]
   ],
   "CONF": [
@@ -204,6 +208,10 @@
         "*"
       ]
     ]
+  ],
+  "EXIT": [
+    "MARK",
+    "exit"
   ],
   "DEF": [
     "ALT",
@@ -1505,7 +1513,7 @@
     "EXP",
     [
       "PAR",
-      "_DLST"
+      "_MAT"
     ],
     [
       "ALT",
@@ -1565,7 +1573,7 @@
       ]
     ]
   ],
-  "_DLST": [
+  "_MAT": [
     "ALT",
     [
       "ITEM_OP",
@@ -1579,35 +1587,28 @@
       ]
     ],
     [
-      "ITEM_OP",
+      "ALT",
       [
-        "ALT",
-        [
-          "OBJ",
-          "SUB_LST:VAL_LST"
-        ],
-        [
-          "ITEM_OP",
-          [
-            "ALT",
-            [
-              "MARK",
-              ";"
-            ],
-            [
-              "OBJ",
-              "SUB_LST:VAL_LST"
-            ]
-          ],
-          [
-            "OP",
-            "*"
-          ]
-        ]
+        "OBJ",
+        "SUB_LST:VAL_LST"
       ],
       [
-        "OP",
-        "?"
+        "ITEM_OP",
+        [
+          "ALT",
+          [
+            "MARK",
+            ";"
+          ],
+          [
+            "OBJ",
+            "SUB_LST:VAL_LST"
+          ]
+        ],
+        [
+          "OP",
+          "+"
+        ]
       ]
     ],
     [

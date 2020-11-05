@@ -5,7 +5,7 @@ import config
 
 
 indent = '  '
-max_depth = 20
+max_depth = 100
 def log(*messages, end='\n', sep=''):
     if not config.debug: return
     log.out.write(log.depth*indent)
@@ -17,6 +17,7 @@ def log(*messages, end='\n', sep=''):
 
 log.depth = 0
 log.out = sys.stdout
+# log.out = open('src/utils/log.yaml', 'w')
 
 def check(f, args, expected, record=None):
     args = freeze(args)

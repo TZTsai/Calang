@@ -4,7 +4,7 @@ from copy import deepcopy
 from parse import calc_parse, is_name, is_tree, tree_tag
 from builtin import operators, builtins
 from funcs import Symbol, is_list, is_function, apply
-from objects import Env, stack, Op, Attr, Function, Map, UnboundName
+from objects import Env, stack, Op, Attr, PyFunc, Map, UnboundName, OperationError
 import config
 
 
@@ -117,13 +117,11 @@ def SEQ(tr):
             args = [vals.peek()] + args
         try:
             result = op(*args)
-        except TypeError:
+        except OperationError:
             if op is adjoin:
                 push(dot)  # adjoin failed, change to dot product
                 push(args[-1])
                 return
-            elif op is dot:
-                raise TypeError('invalid operation')
             else: raise
         if op.type == 'BOP': vals.pop()
         vals.push(result)
@@ -274,7 +272,7 @@ def match(form, val, local: Env):
     # remove the tags & make copies
     
     if len(pars) > len(vals):
-        raise ValueError(f'not enough items in {vals} to match')
+        raise TypeError(f'not enough arguments in {vals}')
     
     for par in pars:
         val = vals.pop(0)
@@ -290,6 +288,8 @@ def match(form, val, local: Env):
         
     if ext_par is not None:
         local[ext_par] = tuple(vals)
+    elif vals:
+        raise TypeError(f'too many arguments in {vals}')
         
 
 def define(var, exp, env, doc=None):
@@ -400,7 +400,7 @@ def IMPORT(tr):
             if verbose:
                 print(f'imported: {name}')
             if callable(val):
-                val = Function(val)
+                val = PyFunc(val)
             Global[name] = val
 
 def CONF(tr):
@@ -425,6 +425,8 @@ def CONF(tr):
     else:
         raise ValueError('no such field in the config')
     
+def EXIT(tr): exit()
+    
 
 def eval_tree(tree, env=None, mutable=True):
     if not is_tree(tree):
@@ -435,7 +437,7 @@ def eval_tree(tree, env=None, mutable=True):
     
     if tag not in dont_eval and env:
         for i in range(1, len(tree)):
-            tree[i] = eval_tree(tree[i], env, mutable)
+            tree[i] = eval_tree(tree[i], env)
         
     if tag in subs_rules:
         return subs_rules[tag](tree)
@@ -476,7 +478,7 @@ eval_rules = {name: eval(name) for name in [
 
 exec_rules = {name: eval(name) for name in [
     'DEL',      'DEF',      'LOAD',     'IMPORT',
-    'CONF',
+    'CONF',     'EXIT'
 ]}
 
 dont_eval = delay_types | set(exec_rules)
