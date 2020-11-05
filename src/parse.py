@@ -175,7 +175,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     kept_tags = lambda tag: tag[-3:] == 'LST' or \
-        tag in {'DELAY', 'DIR', 'DEL', 'VARS', 'DICT', 'INHERIT'}
+        tag in {'DELAY', 'DIR', 'DEL', 'VARS', 'DICT', 'PARENT'}
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_':
@@ -235,12 +235,12 @@ def split_pars(form, top=True):
 
 
 def convert_if_inherit(bind):
-    "Transform the BIND tree if it contains an INHERIT."
-    is_inherit = tree_tag(bind[1]) == 'INHERIT'
-    if is_inherit:
-        inherit = bind.pop(1)[1]
+    "Transform the BIND tree if it contains an inheritance from PARENT."
+    if tree_tag(bind[1]) == 'PARENT':
+        parent = bind.pop(1)[1]
         body = bind[1]
-        bind[1] = ['INHERIT', inherit, ['DELAY', body]]
+        tag = 'INHERIT' if tree_tag(bind[0]) == 'FUNC' else 'CLOSURE'
+        bind[1] = [tag, parent, ['DELAY', body]]
     
 
 def rev_parse(tree):

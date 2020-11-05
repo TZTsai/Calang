@@ -100,7 +100,6 @@ class Map(Function):
         if self.inherit:
             upper = Map.eval(self.inherit, local, mutable=False)
             assert isinstance(upper, Env), "@ not applied to an Env"
-            # local['super'] = upper.parent
             body[1] = local
             env = upper
         else:
@@ -143,8 +142,6 @@ class Env(dict):
         self.cls = 'env'
     
     def __getitem__(self, name):
-        if name == 'this':
-            return self
         if name in self:
             return super().__getitem__(name)
         if self.parent:

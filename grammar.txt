@@ -11,7 +11,7 @@ EXIT    := exit
 
 DEF     := SUPER ? BIND
 SUPER   := ( NAME . ) +
-BIND    := ( FUNC | VAR_ ) AT:INHERIT ? = EXP DOC ? ## Delay this
+BIND    := ( FUNC | VAR_ ) AT:PARENT ? = EXP DOC ? ## Delay this
 FUNC    := NAME:VAR FORM
 VAR_    := VARS | NAME:VAR
 VARS    := %BKT < %SEQ < VAR_ , > >

@@ -2,6 +2,88 @@
   "calc_parse": [
     [
       [
+        "f[x] @g[x] = x"
+      ],
+      [
+        [
+          "BIND",
+          [
+            "FUNC",
+            [
+              "VAR",
+              "f"
+            ],
+            [
+              "FORM",
+              [
+                "PARS",
+                "x"
+              ],
+              [
+                "OPTPARS"
+              ],
+              null
+            ]
+          ],
+          [
+            "INHERIT",
+            [
+              "SEQ",
+              [
+                "NAME",
+                "g"
+              ],
+              [
+                "VAL_LST",
+                [
+                  "NAME",
+                  "x"
+                ]
+              ]
+            ],
+            [
+              "DELAY",
+              [
+                "NAME",
+                "x"
+              ]
+            ]
+          ]
+        ],
+        ""
+      ]
+    ],
+    [
+      [
+        "x @e = s"
+      ],
+      [
+        [
+          "BIND",
+          [
+            "VAR",
+            "x"
+          ],
+          [
+            "CLOSURE",
+            [
+              "NAME",
+              "e"
+            ],
+            [
+              "DELAY",
+              [
+                "NAME",
+                "s"
+              ]
+            ]
+          ]
+        ],
+        ""
+      ]
+    ],
+    [
+      [
         "import Matrix; m = Matrix[[1,2],[3,4]]; m.inv[]"
       ],
       [
@@ -435,7 +517,7 @@
             "f"
           ],
           [
-            "INHERIT",
+            "CLOSURE",
             [
               "NAME",
               "e"

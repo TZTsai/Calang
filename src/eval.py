@@ -176,11 +176,18 @@ def SLICE(tr): return slice(*tr[1:])
 
 ## eval rules which require environment
 
-special_names = {'this', 'super'}
+special_names = {'super'}
 
 def NAME(tr, env):
     name = tr[1]
-    try: return env[name]
+    try:
+        if name == 'super':
+            if env is Global:
+                raise EnvironmentError('no parent environment')
+            else:
+                return env.parent
+        else:
+            return env[name]
     except KeyError:
         if NAME.force_symbol:
             return name

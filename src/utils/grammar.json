@@ -266,7 +266,7 @@
       "ITEM_OP",
       [
         "OBJ",
-        "AT:INHERIT"
+        "AT:PARENT"
       ],
       [
         "OP",
