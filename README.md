@@ -52,7 +52,7 @@ Check "builtin.py" to see the available built-in operations and functions.
   `when(_cond1_: _exp1_, _cond2_: _exp2_, ... , _default_)`  
 
   **Note**:  
-  The `_default_` part does not have a condition preceding it. This is completely equivalent to `_exp1_ if _cond1_ else _exp2_ if _cond2_ else ... else _default_`.
+  The `default` part does not have a condition preceding it. This is completely equivalent to `_exp1_ if _cond1_ else _exp2_ if _cond2_ else ... else _default_`.
 
   **Examples**:  
 
@@ -85,8 +85,8 @@ Check "builtin.py" to see the available built-in operations and functions.
   **Syntax**: `_par_ => _exp_`
 
   **Note**:  
-  * `_par_` can be a single argument or a list of arguments. For a single argument `x`, it has no difference between `x => ...` and `[x] => ...`.
-  * The parameter `_par_` has a similar form of normal lists (can be nested). However, it additionally allows optional parameters (by using `=`) and an extra parameter (by using `~`: `args~` is the same as `*args` in python).
+  * `par` can be a single argument or a list of arguments. For a single argument `x`, it has no difference between `x => ...` and `[x] => ...`.
+  * The parameter `par` has a similar form of normal lists (can be nested). However, it additionally allows optional parameters (by using `=`) and an extra parameter (by using `~`: `args~` is the same as `*args` in python).
   
   **Examples**:
   
@@ -107,7 +107,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   A variable can be bound to a map like any other types of values. But as a shorthand, you can define the map by
   
-  **Syntax**: `_name__par_ = _exp_`
+  **Syntax**: `_name_ _par_ = _exp_`
 
   **Examples**:  
 
@@ -124,7 +124,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 * List  
 
   **Syntax**:
-  [*exp1*, *exp2*, ...]  
+  `[_exp1_, _exp2_, ...]` 
 
   **Note**: The operators `in`, `+`, `*` for lists have the same functions as those in Python. Besides, you can use `~` to unpack a list into its outer list (if it is not nested in a list, this will be an error).
 
@@ -139,7 +139,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 * List subscription  
 
   **Syntax**: `_list_[_i1_, ..., _in_]`  
-  The list is sequentially subscripted by `_i1_`, ..., `_in_`. Each of the indices is an integer. If an index is negative, it will subscribe from the end, like python.
+  The list is sequentially subscripted by `i1`, ..., `in`. Each of the indices is an integer. If an index is negative, it will subscribe from the end, like python.
 
   **Examples**:
   * `[1, 2, 3][1]`
@@ -149,9 +149,9 @@ Check "builtin.py" to see the available built-in operations and functions.
 
 * List slicing  
 
-  **Syntax**: `list`[`start`:`end`(:`step`)]  
+  **Syntax**: `_list_[_start_:_end_(:_step_)]`  
   This syntax is identical to the list slicing syntax in python.  
-  The second colon can be omitted, when `step` is 1 as default.  
+  The second colon can be omitted, where `step` is 1 as default.  
   When `start` is omitted, it is set to 0; when `end` is omitted, it is set to the end of the list.  
 
   **Examples**:  
@@ -160,6 +160,42 @@ Check "builtin.py" to see the available built-in operations and functions.
   * `m = [[1, 2, 3], [3, 4, 5]]`  
     `m[:, 1:3]` (return: [[2, 3], [4, 5]])
 
+
+* Range  
+
+  A range is a different type from list. It is useful to represent a wide range of numbers, eg. `1..1000`. For such a range, the calculation of each item is delayed, thus saving time and memory.  
+
+  **Syntax**:
+  * `_start_.._end_`  
+  This evaluates to a range including all integers from `_start_` to `_end_`.  
+  * `_start_.._next_.._end_`  
+  This creates an arithmetic sequence that begins with `_start_` **followed** by `_next_` and ends with `_end_` (if `_end_` is not included in this sequence, then it ends before `_end_`).  
+  * `_start_.._step_+.._end_`  
+  This creates an arithmetic sequence that has a step of `_step_`.  
+  * `_start_.._step_-.._end_`  
+  This is equivalent to `_start_..-_step_+.._end_` (the step is the negative of `_step_`).
+
+  **Examples**:  
+  * `r = 1..4`  
+    `list[r]` (return: [1, 2, 3, 4]; `list` converts a range to a list)
+  * `list[1..3..9]` (return: [1, 3, 5, 7, 9])
+  * `list[1..3+..9]` (return: [1, 4, 7])
+  * `sum[i^2 for i in 1..10]`
+
+* List comprehension  
+
+  **Syntax**:  
+    `[_exp_ for _arg1_ in _range1_ (if _cond1_) for _arg2_ in _range2_ (if _cond2_) ...]`  
+    The `if` parts are optional.
+
+  **Examples**:
+  * `[i for i in 1..5 and i%2]` (return: [1, 3, 5])
+  * `[i for i in 1..100 if i%3==2 and i%7==4 and i%11==9]` (return: [53])
+  * `f[n] = [[i, j] for i in 0..n for j in 0..i-1 if i+j == n]`  
+    `f[6]` (return: [[4, 2], [5, 1], [6, 0]])
+  * `diff_poly[coeffs] = [coeffs[i]*i for i in 1..len[coeffs]-1]`
+    `diff_poly[[1,2,3]]` (return: [2, 6])
+    
 * Environment  
 
   An environment is a collection of name-value bindings. Actually normally we are evaluating in the *Global* environment. When you create an environment yourself, it will set its parent to the current environment it is being evaluated.
@@ -227,41 +263,6 @@ Check "builtin.py" to see the available built-in operations and functions.
   * `[x, y]::[2, 3] x+y` (return: 5)
   * `m = [a, [b, c]] :: [2, [[1, 0], 3]]`  
     `[m.a, m.b, m.c]` (return: [2, [1, 0], 3])
-
-* Range  
-
-  A range is a different type from list. It is useful to represent a wide range of numbers, eg. `1..1000`. For such a range, the calculation of each item is delayed, thus saving time and memory.  
-
-  **Syntax**:
-  * `_start_.._end_`  
-  This evaluates to a range including all integers from `_start_` to `_end_`.  
-  * `_start_.._next_.._end_`  
-  This creates an arithmetic sequence that begins with `_start_` **followed** by `_next_` and ends with `_end_` (if `_end_` is not included in this sequence, then it ends before `_end_`).  
-  * `_start_.._step_+.._end_`  
-  This creates an arithmetic sequence that has a step of `_step_`.  
-  * `_start_.._step_-.._end_`  
-  This is equivalent to `_start_..-_step_+.._end_` (the step is the negative of `_step_`).
-
-  **Examples**:  
-  * `r = 1..4`  
-    `list[r]` (return: [1, 2, 3, 4]; `list` converts a range to a list)
-  * `list[1..3..9]` (return: [1, 3, 5, 7, 9])
-  * `list[1..3+..9]` (return: [1, 4, 7])
-  * `sum[i^2 for i in 1..10]`
-
-* List comprehension  
-
-  **Syntax**:  
-    `[_exp_ for _arg1_ in _range1_ <if _cond1_> for _arg2_ in _range2_ <if _cond2_> ...]`  
-    The `if` parts are optional.
-
-  **Examples**:
-  * `[i for i in 1..5 and i%2]` (return: [1, 3, 5])
-  * `[i for i in 1..100 if i%3==2 and i%7==4 and i%11==9]` (return: [53])
-  * `f[n] = [[i, j] for i in 0..n for j in 0..i-1 if i+j == n]`  
-    `f[6]` (return: [[4, 2], [5, 1], [6, 0]])
-  * `diff_poly[coeffs] = [coeffs[i]*i for i in 1..len[coeffs]-1]`
-    `diff_poly[[1,2,3]]` (return: [2, 6])
 
 * History  
 
@@ -335,8 +336,7 @@ Check "builtin.py" to see the available built-in operations and functions.
     `f[a] #2`  
 
     (in Calc)  
-    `load example -t`  
-    (output: Congratulations, tests all passed in "example"!)  
+    `load example -v -t`  (will display the test result)  
 
 * Import python files
 
