@@ -63,10 +63,12 @@ HEX     := /0x[0-9a-fA-F]+/
 
 LIST    := ' SYM_LST | GEN_LST | IDC_LST | VAL_LST
 SYM_LST := %LST < ( UNQUOTE | _SYM_IT ) , >
-UNQUOTE := ` ( LIST | NAME )                        ## convert the item back to a value
+UNQUOTE := $ ( LIST | NAME )                        ## convert the item back to a value
 _SYM_IT := SYM_LST | NAME:SYM
 GEN_LST := %BKT < ( EXP ( for CONSTR ) + ) >        ## Delay this
-CONSTR  := FORM in EXP ( if EXP ) ?
+CONSTR  := FORM in EXP WITH ? COND ?
+WITH    := with ( DICT | BIND )
+COND    := if EXP
 IDC_LST := %BKT < %SEQ < SLICE , > >
 SLICE   := _SLC : _SLC ( : _SLC ) ?
 _SLC    := ( SEQ | EMPTY )

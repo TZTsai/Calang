@@ -8,13 +8,12 @@ from utils.debug import check, check_record, pprint
 try:
     assert not config.debug
     grammar = json.load(open('src/utils/grammar.json', 'r'))
+    trace = disabled
 except:
     from grammar import grammar
 
 
-keywords = {'if', 'else', 'in', 'dir', 'for', 'load', 'config', 'when', 'import', 'del'}
-
-trace = disabled
+keywords = {'if', 'else', 'in', 'dir', 'for', 'with', 'load', 'config', 'when', 'import', 'del'}
 
 
 # functions dealing with tags
@@ -175,7 +174,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     kept_tags = lambda tag: tag[-3:] == 'LST' or \
-        tag in {'DELAY', 'DIR', 'DEL', 'VARS', 'DICT', 'PARENT'}
+        tag in {'DELAY', 'DIR', 'DEL', 'VARS', 'DICT', 'PARENT', 'WITH'}
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_':

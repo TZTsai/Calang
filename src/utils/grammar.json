@@ -1307,7 +1307,7 @@
     "ALT",
     [
       "MARK",
-      "`"
+      "$"
     ],
     [
       "EXP",
@@ -1399,20 +1399,53 @@
     [
       "ITEM_OP",
       [
-        "ALT",
-        [
-          "MARK",
-          "if"
-        ],
-        [
-          "OBJ",
-          "EXP"
-        ]
+        "OBJ",
+        "WITH"
       ],
       [
         "OP",
         "?"
       ]
+    ],
+    [
+      "ITEM_OP",
+      [
+        "OBJ",
+        "COND"
+      ],
+      [
+        "OP",
+        "?"
+      ]
+    ]
+  ],
+  "WITH": [
+    "ALT",
+    [
+      "MARK",
+      "with"
+    ],
+    [
+      "EXP",
+      [
+        "OBJ",
+        "DICT"
+      ],
+      [
+        "OBJ",
+        "BIND"
+      ]
+    ]
+  ],
+  "COND": [
+    "ALT",
+    [
+      "MARK",
+      "if"
+    ],
+    [
+      "OBJ",
+      "EXP"
     ]
   ],
   "IDC_LST": [

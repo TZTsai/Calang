@@ -220,11 +220,20 @@ def GEN_LST(tr, env):
     def generate(exp, constraints):
         if constraints:
             constr = constraints[0]
-            _, form, ran, *spec = constr
-            if spec: spec = spec[0]
+            _, form, ran, *rest = constr
+            binds, cond = None, None
+            if len(rest) == 1:
+                if tree_tag(rest[0]) == 'WITH':
+                    binds = rest[0][1]
+                    binds = binds[1:] if tree_tag(binds) == 'DICT' else [binds]
+                else:
+                    cond = rest[0]
+            else:
+                binds, cond = rest[0][1], rest[1]
             for val in eval_tree(ran, local, False):
                 match(form, val, local)
-                if not spec or eval_tree(spec, local, False):
+                for bind in binds: BIND(bind, local)
+                if not cond or eval_tree(cond, local, False):
                     yield from generate(exp, constraints[1:])
         else:
             yield eval_tree(exp, local, False)

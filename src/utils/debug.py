@@ -16,8 +16,8 @@ def log(*messages, end='\n', sep=''):
         exit(-1)
 
 log.depth = 0
-log.out = sys.stdout
-# log.out = open('src/utils/log.yaml', 'w')
+# log.out = sys.stdout
+log.out = open('src/utils/log.yaml', 'w')
 
 def check(f, args, expected, record=None):
     args = freeze(args)
