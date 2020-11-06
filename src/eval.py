@@ -222,17 +222,13 @@ def GEN_LST(tr, env):
             constr = constraints[0]
             _, form, ran, *rest = constr
             binds, cond = [], None
-            if len(rest) == 1:
-                if tree_tag(rest[0]) == 'WITH':
-                    binds = rest[0][1]
-                    binds = binds[1:] if tree_tag(binds) == 'DICT' else [binds]
-                else:
-                    cond = rest[0]
-            elif len(rest) == 2:
-                binds, cond = rest[0][1], rest[1]
+            if rest and tree_tag(rest[0]) == 'WITH':
+                binds = rest.pop(0)[1]
+                binds = binds[1:] if tree_tag(binds) == 'DICT' else [binds]
+            if rest: cond = rest[0]
             for val in eval_tree(ran, local, False):
                 match(form, val, local)
-                for bind in binds: BIND(bind, local)
+                for bind in binds: BIND(deepcopy(bind), local)
                 if not cond or eval_tree(cond, local, False):
                     yield from generate(exp, constraints[1:])
         else:
