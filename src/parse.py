@@ -15,6 +15,8 @@ except:
 
 keywords = {'if', 'else', 'in', 'dir', 'for', 'with', 'load', 'config', 'when', 'import', 'del'}
 
+trace = disabled
+
 
 # functions dealing with tags
 def is_name(s):

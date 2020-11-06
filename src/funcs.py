@@ -41,14 +41,14 @@ def apply(f, args):
                 else: return val
                 
     def convert_args(args):
-        if is_list(args):
-            return list(map(convert_args, args))
-        if isinstance(args, Env) and hasattr(args, 'val'):
-            return args.val
-        elif isinstance(args, str) and config.symbolic:
-            return Symbol(args)
-        else:
-            return args
+        def convert(arg):
+            if isinstance(arg, Env) and hasattr(arg, 'val'):
+                return arg.val
+            elif isinstance(arg, str) and config.symbolic:
+                return Symbol(arg)
+            else:
+                return arg
+        return tuple(map(convert, args))
         
     args = convert_args(args)
     try:

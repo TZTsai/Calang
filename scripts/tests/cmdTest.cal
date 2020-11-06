@@ -12,3 +12,8 @@ _ #1234
 T0 #273.15
 import gauss_jordan
 det[scalem[idmat[3], -3]]  #-27
+
+m = [[1, 3], [4, 2]]
+inv1 = inverse[m]
+import Matrix
+m = Matrix[m]; inv2 = m.inv[]

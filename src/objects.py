@@ -238,7 +238,7 @@ class Range:
 class UnboundName(NameError):
     "An error to indicate that a name is not bound in the environment."
     
-class OperationError(TypeError):
+class OperationError(RuntimeError):
     "An error to indicate that the interpreted operation cannot be applied."
         
         
