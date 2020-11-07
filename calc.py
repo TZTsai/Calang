@@ -19,7 +19,7 @@ class BracketTracker:
 
     @classmethod
     def _pop(cls, par):
-        if cls.stk.peek()[0] == cls.par_map[par]:
+        if cls.stk and cls.stk.peek()[0] == cls.par_map[par]:
             cls.stk.pop()
         else:
             cls.stk.clear()

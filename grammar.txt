@@ -51,8 +51,8 @@ GROUP   := %GRP < EXP >
 WHEN    := when %GRP < ( ( CASE , ) + EXP ) >       ## Delay this
 CASE    := EXP : EXP
 
-ATOM    := FIELD | SYM | ANS | NUM
-SYM     := ' NAME:SYM
+ATOM    := FIELD | ' SYM | ANS | NUM
+SYM     := /(\w+|{.*})+/
 ANS     := /_(\d+|_*)/
 
 NUM     := BIN | HEX | COMPLEX | REAL
@@ -62,9 +62,8 @@ BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
 LIST    := ' SYM_LST | GEN_LST | IDC_LST | VAL_LST
-SYM_LST := %LST < ( UNQUOTE | _SYM_IT ) , >
-UNQUOTE := $ ( LIST | NAME )                        ## convert the item back to a value
-_SYM_IT := SYM_LST | NAME:SYM
+SYM_LST := %LST < ( UNQUOTE | SYM_LST | SYM ) , >
+UNQUOTE := $ ITEM                                   ## convert the item back to a value
 GEN_LST := %BKT < ( EXP ( for CONSTR ) + ) >        ## Delay this
 CONSTR  := FORM in EXP WITH ? COND ?
 WITH    := with ( DICT | BIND )

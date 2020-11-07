@@ -1101,8 +1101,15 @@
       "FIELD"
     ],
     [
-      "OBJ",
-      "SYM"
+      "ALT",
+      [
+        "MARK",
+        "'"
+      ],
+      [
+        "OBJ",
+        "SYM"
+      ]
     ],
     [
       "OBJ",
@@ -1114,15 +1121,8 @@
     ]
   ],
   "SYM": [
-    "ALT",
-    [
-      "MARK",
-      "'"
-    ],
-    [
-      "OBJ",
-      "NAME:SYM"
-    ]
+    "RE",
+    "/(\\w+|{.*})+/"
   ],
   "ANS": [
     "RE",
@@ -1256,8 +1256,12 @@
             "UNQUOTE"
           ],
           [
-            "PAR",
-            "_SYM_IT"
+            "OBJ",
+            "SYM_LST"
+          ],
+          [
+            "OBJ",
+            "SYM"
           ]
         ],
         [
@@ -1275,8 +1279,12 @@
                 "UNQUOTE"
               ],
               [
-                "PAR",
-                "_SYM_IT"
+                "OBJ",
+                "SYM_LST"
+              ],
+              [
+                "OBJ",
+                "SYM"
               ]
             ]
           ],
@@ -1310,26 +1318,8 @@
       "$"
     ],
     [
-      "EXP",
-      [
-        "OBJ",
-        "LIST"
-      ],
-      [
-        "OBJ",
-        "NAME"
-      ]
-    ]
-  ],
-  "_SYM_IT": [
-    "EXP",
-    [
       "OBJ",
-      "SYM_LST"
-    ],
-    [
-      "OBJ",
-      "NAME:SYM"
+      "ITEM"
     ]
   ],
   "GEN_LST": [

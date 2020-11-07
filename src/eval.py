@@ -70,8 +70,6 @@ def HEX(tr): return eval(tr[1])
 
 def ATTR(tr): return Attr(tr[1])
 
-def SYM(tr): return Symbol(tr[1])
-
 def ANS(tr):
     s = tr[1]
     if all(c == '_' for c in s):
@@ -193,6 +191,9 @@ def NAME(tr, env):
             return name
         else:
             raise UnboundName(f"unbound symbol '{name}'")
+        
+def SYM(tr, env):
+    return eval('f"%s"' % tr[1], env.all())
 
 def PRINT(tr, env):
     exec('print(f"%s")' % tr[1][1:-1], env.all())
@@ -475,10 +476,10 @@ delay_types = {
 }
 
 subs_types = {
-    'LINE',     'DIR',      'ANS',      'SYM',
+    'LINE',     'DIR',      'ANS',      'SEQ',
     'FIELD',    'ATTR',     'REAL',     'COMPLEX',
     'BIN',      'HEX',      'IDC_LST',  'SLICE',
-    'VAL_LST',  'SYM_LST',  'SEQ',      'EMPTY',
+    'VAL_LST',  'SYM_LST',  'EMPTY',
 }
 subs_rules = {name: eval(name) for name in subs_types}
 subs_rules.update(OPERATORS)
@@ -486,7 +487,8 @@ subs_rules.update(OPERATORS)
 eval_types = {
     'NAME',     'MAP',      'PRINT',    'DICT',
     'MATCH',    'IF_ELSE',  'WHEN',     'CLOSURE',
-    'BIND',     'GEN_LST',  'BODY',     'DELAY'
+    'BIND',     'GEN_LST',  'BODY',     'DELAY',
+    'SYM',
 } 
 eval_rules = {name: eval(name) for name in eval_types}
 
