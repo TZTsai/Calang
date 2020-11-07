@@ -168,7 +168,7 @@ def VAL_LST(tr):
 IDC_LST = VAL_LST
 
 @hold_tree
-def SYM_LST(tr): return tr[1:]
+def SYM_LST(tr): return tuple(tr[1:])
 
 @hold_tree
 def SLICE(tr): return slice(*tr[1:])
@@ -474,26 +474,30 @@ delay_types = {
     'IF_ELSE',  'WHEN'
 }
 
-subs_rules = {name: eval(name) for name in [
+subs_types = {
     'LINE',     'DIR',      'ANS',      'SYM',
     'FIELD',    'ATTR',     'REAL',     'COMPLEX',
     'BIN',      'HEX',      'IDC_LST',  'SLICE',
     'VAL_LST',  'SYM_LST',  'SEQ',      'EMPTY',
-]}
+}
+subs_rules = {name: eval(name) for name in subs_types}
 subs_rules.update(OPERATORS)
 
-eval_rules = {name: eval(name) for name in [
+eval_types = {
     'NAME',     'MAP',      'PRINT',    'DICT',
     'MATCH',    'IF_ELSE',  'WHEN',     'CLOSURE',
     'BIND',     'GEN_LST',  'BODY',     'DELAY'
-]}
+} 
+eval_rules = {name: eval(name) for name in eval_types}
 
-exec_rules = {name: eval(name) for name in [
+exec_types = {
     'DEL',      'DEF',      'LOAD',     'IMPORT',
     'CONF',     'EXIT'
-]}
+}
+exec_rules = {name: eval(name) for name in exec_types}
 
-dont_eval = delay_types | set(exec_rules)
+dont_eval = delay_types | exec_types
+# trees of these types are not recursively evaluated
 
 
 if __name__ == "__main__":
