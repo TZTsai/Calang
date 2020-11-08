@@ -4,7 +4,7 @@ from pprint import pformat, pprint
 import config
 
 
-indent = ' '
+indent = '  '
 max_depth = 100
 def log(*messages, end='\n', sep='', out=None):
     if not config.debug: return

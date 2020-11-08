@@ -50,7 +50,7 @@ def calc_format(val, **opts):
         mat = [[format(x) for x in row] for row in mat]
         space = max([max([len(s) for s in row]) for row in mat])
         col_num = len(mat[0])
-        return f'{indent}\n'.join(
+        return f'\n{indent}'.join(
             [row_str(['']*col_num, '╭', '╮')] +
             [row_str(row, ' ', ' ', ', ') for row in mat] +
             [row_str(['']*col_num, '╰', '╯')])

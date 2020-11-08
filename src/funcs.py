@@ -280,13 +280,10 @@ def broadcast(f):
     @wraps(f)
     def wrapped(args):
         depths = [depth(a) for a in args]
-        if same(depths):
-            return f(args)
-        else:
-            dmax = max(depths)
-            i = depths.index(dmax)
-            args_list = [[*args[:i], a, *args[i+1:]] for a in args[i]]
-            return tuple(f(args) for args in args_list)
+        if not same(depths):
+            i = depths.index(max(depths))
+            args = [[*args[:i], a, *args[i+1:]] for a in args[i]]
+        return tuple(map(f, args))
     return wrapped
 
 Function.broadcast = broadcast
