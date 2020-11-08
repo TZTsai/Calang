@@ -4,7 +4,7 @@ from copy import deepcopy
 from parse import calc_parse, is_name, is_tree, tree_tag
 from builtin import operators, builtins
 from funcs import Symbol, is_list, is_function, apply
-from objects import Env, stack, Op, Attr, PyFunc, Map, UnboundName, OperationError
+from objects import Env, stack, Op, Attr, Function, Map, UnboundName, OperationError
 import config
 
 
@@ -72,7 +72,7 @@ def ATTR(tr): return Attr(tr[1])
 
 def ANS(tr):
     s = tr[1]
-    if all(c == '_' for c in s):
+    if all(c == '%' for c in s):
         id = -len(s)
     else:
         try: id = int(s[1:])
@@ -84,9 +84,12 @@ def DIR(tr):
         field = Global
     else:
         field = tr[1]
-    print(f"(dir): {field.dir()}")
+        print(f"(dir): {field.dir()}")
     for name, val in field.items():
         print(f"{name}: {val}")
+        
+def INFO(tr):
+    print(tr[1].__doc__)
         
 
 def hold_tree(f):
@@ -110,11 +113,11 @@ def SEQ(tr):
     
     def reduce():
         op = ops.pop()
-        args = [vals.pop()]
+        args = vals.pop(),
         if op.type == 'BOP':
-            args = [vals.peek()] + args
+            args = (vals.peek(), args[0])
         try:
-            result = op(*args)
+            result = apply(op, args)
         except OperationError:
             if op is adjoin:
                 push(dot)  # adjoin failed, change to dot product
@@ -157,8 +160,8 @@ def FIELD(tr):
 def VAL_LST(tr):
     lst = []
     for it in tr[1:]:
-        if callable(it) and it.__name__ == '(unpack)':
-            lst.extend(it())
+        if is_list(it) and it[0] == '(unpack)':
+            lst.extend(it[1])
         else:
             lst.append(it)
     return tuple(lst)
@@ -278,11 +281,17 @@ def MATCH(tr, env):
     return local
 
 def match(form, val, local: Env):
-    vals = list(val) if is_list(val) else [val]
-        
-    _, pars, opt_pars, ext_par = form
-    pars, opt_pars = pars[1:], opt_pars[1:]
-    # remove the tags & make copies
+    try:
+        _, pars, opt_pars, ext_par = form
+        pars, opt_pars = pars[1:], opt_pars[1:]
+        # remove the tags & make copies
+        vals = list(val) if is_list(val) else [val]
+    except:  # a single parameter
+        if tree_tag(form) == 'PAR':
+            par = form[1]
+            local[par] = val
+            return
+        else: raise
     
     if len(pars) > len(vals):
         raise TypeError(f'not enough arguments in {vals}')
@@ -394,7 +403,7 @@ def LOAD(tr):
             if name not in current_global:
                 current_global[name] = Global[name]
             else:
-                print(f'name {name} not loaded because it is bounded')
+                print(f'name "{name}" not loaded because it is already bound')
     Global = current_global
 
 def IMPORT(tr):
@@ -413,7 +422,7 @@ def IMPORT(tr):
             if verbose:
                 print(f'imported: {name}')
             if callable(val):
-                val = PyFunc(val)
+                val = Function(val)
             Global[name] = val
 
 def CONF(tr):
@@ -479,7 +488,7 @@ subs_types = {
     'LINE',     'DIR',      'ANS',      'SEQ',
     'FIELD',    'ATTR',     'REAL',     'COMPLEX',
     'BIN',      'HEX',      'IDC_LST',  'SLICE',
-    'VAL_LST',  'SYM_LST',  'EMPTY',
+    'VAL_LST',  'SYM_LST',  'EMPTY',    'INFO'
 }
 subs_rules = {name: eval(name) for name in subs_types}
 subs_rules.update(OPERATORS)

@@ -1,12 +1,13 @@
 LINE    := %SEQ < ( CMD | DEF | EXP | EMPTY ) ; >
 EMPTY   := /\s*/
 
-CMD     := CONF | DIR | DEL | LOAD | IMPORT | EXIT
+CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | EXIT
 CONF    := config /\w+/ ( NUM | /on|off/ ) ?
 DIR     := dir FIELD ?
 DEL     := del %SEQ < FIELD , >
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
+INFO    := info FIELD ?
 EXIT    := exit
 
 DEF     := SUPER ? BIND
@@ -18,7 +19,7 @@ VARS    := %BKT < %SEQ < VAR_ , > >
 DOC     := /".*"/
 
 FIELD   := NAME ATTR *
-NAME    := /[^\W\d_]\w*[?]?/                        ## allow '?' at the end
+NAME    := /[^\W\d][\w?]*/                          ## allow '?'
 ATTR    := . / NAME:ATTR                            ## '/' forces no space in between
 
 FORM    := PAR_IT
@@ -48,12 +49,13 @@ _TERM   := LOP ? ITEM ATTR ? ROP ?
 PRINT   := /`.*?`/
 ITEM    := GROUP | WHEN | ATOM | LIST
 GROUP   := %GRP < EXP >
-WHEN    := when %GRP < ( ( CASE , ) + EXP ) >       ## Delay this
+WHEN    := when %GRP < ( ( CASE , ) * DEFAULT ) >   ## Delay this
 CASE    := EXP : EXP
+DEFAULT := ( else : ) ? EXP
 
-ATOM    := FIELD | ' SYM | ANS | NUM
-SYM     := /(\w+|{.*})+/
-ANS     := /_(\d+|_*)/
+ATOM    := FIELD | "?" / NAME | ' SYM | ANS | NUM
+SYM     := /([\w?]+|{.*?})+/
+ANS     := /%(\d+|%*)/
 
 NUM     := BIN | HEX | COMPLEX | REAL
 COMPLEX := REAL [+-] REAL I

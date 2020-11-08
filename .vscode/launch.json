@@ -32,7 +32,6 @@
       "program": "calc.py",
       "console": "integratedTerminal",
       "args": [
-        "-d",
         "&&",
         "exit",
         "0"

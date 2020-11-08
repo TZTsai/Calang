@@ -7,8 +7,8 @@ x == 'x #1
 
 # load and import
 1234
-load scinums
-_ #1234
+load science
+% #1234
 T0 #273.15
 import gauss_jordan
 det[scalem[idmat[3], -3]]  #-27

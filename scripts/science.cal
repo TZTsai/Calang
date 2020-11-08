@@ -1,0 +1,12 @@
+# scientific constants
+c0 = 299792458
+qe = 1.6022e-19
+T0 = 273.15
+kC = 1.38e-23
+
+# physics
+force[m, a] = m*a^2
+
+
+# electronics
+para[r1, r2] = r1*r2/(r1+r2) "the resistance of two paralleled resistors"

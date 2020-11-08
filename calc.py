@@ -113,11 +113,11 @@ def run(filename=None, test=False, start=0, verbose=True):
             return
         except Warning as w:
             print(w)
-            if test and config.debug: raise
+            if test and config.debug: raise Warning
         except Exception as e:
             if str(e): print('Error:', e)
             else: print('Exiting due to an exception...')
-            if config.debug: raise
+            if test or config.debug: raise
             
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)

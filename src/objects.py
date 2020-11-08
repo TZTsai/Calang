@@ -12,18 +12,25 @@ class stack(list):
         
         
 class Function:
-    apply = lambda *args: NotImplemented
+    broadcast = lambda f: NotImplemented
 
     def __init__(self, func):
         self.f = func
+        self.bc = True  # whether allow broadcast
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
                 
     def __repr__(self):
         return self.__name__
     
-    def __call__(self, *args):
-        return Function.apply(self.f, args)
+    def __call__(self, args):
+        try: return self.f(args)
+        except TypeError: pass
+        try: return self.f(*args)
+        except TypeError: pass
+        try: return tuple(map(self.f, *args))
+        except TypeError: assert self.bc
+        return self.broadcast(self.__call__)(args)
     
     
 class Op(Function):
@@ -38,16 +45,12 @@ class Op(Function):
 
     def __str__(self):
         return self.symbol
-    
-    
-class PyFunc(Function):
-    pass
 
 
-class Builtin(PyFunc):
+class Builtin(Function):
     def __repr__(self):
         return f'<builtin: {self.__name__}>'
-    
+
     
 tree2str = NotImplemented
 # a function to restore syntax tree to an expression
@@ -78,14 +81,14 @@ class Map(Function):
         self._memo = NotImplemented
 
     @trace
-    def __call__(self, *lst):
+    def f(self, val):
         try:  # try to return the memoized result
-            return self._memo[lst]
+            return self._memo[val]
         except:
             if self._memo is NotImplemented:
                 try:
                     self._memo = {}
-                    result = Map.check_local(self, lst)
+                    result = Map.check_local(self, val)
                     if type(result) in [Env, Map]:
                         raise TypeError  # env dependent result
                     # log('Memoizing ', str(self))
@@ -95,7 +98,7 @@ class Map(Function):
         
         local = self.parent.child()
         body = self.body
-        Map.match(self.form, lst, local)
+        Map.match(self.form, val, local)
                 
         if self.inherit:
             upper = Map.eval(self.inherit, local, mutable=False)
@@ -111,7 +114,7 @@ class Map(Function):
             result.cls = str(self)
             
         # try to memoize result
-        try: self._memo[lst] = result
+        try: self._memo[val] = result
         except: pass
         return result
     

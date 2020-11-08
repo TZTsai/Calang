@@ -124,7 +124,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 * List  
 
   **Syntax**:
-  `[_exp1_, _exp2_, ...]` 
+  `[_exp1_, _exp2_, ...]`
 
   **Note**: The operators `in`, `+`, `*` for lists have the same functions as those in Python. Besides, you can use `~` to unpack a list into its outer list (if it is not nested in a list, this will be an error).
 
@@ -160,7 +160,6 @@ Check "builtin.py" to see the available built-in operations and functions.
   * `m = [[1, 2, 3], [3, 4, 5]]`  
     `m[:, 1:3]` (return: [[2, 3], [4, 5]])
 
-
 * Range  
 
   A range is a different type from list. It is useful to represent a wide range of numbers, eg. `1..1000`. For such a range, the calculation of each item is delayed, thus saving time and memory.  
@@ -195,7 +194,7 @@ Check "builtin.py" to see the available built-in operations and functions.
     `f[6]` (return: [[4, 2], [5, 1], [6, 0]])
   * `diff_poly[coeffs~] = [coeffs[i]*i for i in 1..len[coeffs]-1]`
     `diff_poly[1,2,3]` (return: [2, 6])
-    
+
 * Environment  
 
   An environment is a collection of name-value bindings. Actually normally we are evaluating in the *Global* environment. When you create an environment yourself, it will set its parent to the current environment it is being evaluated.
@@ -266,8 +265,8 @@ Check "builtin.py" to see the available built-in operations and functions.
 
 * History  
 
-  Use the symbol \_ to represent the result of the last calculation, \_\_ the second last, \_\_\_ the third last, and so on.  
-  Use `_n` to represent the result of calculation no. `n`.  
+  Use the symbol % to represent the result of the last calculation, %% the second last, etc.  
+  Use `%n` to represent the result of calculation no. `n`.  
   Only results that have been printed out will be recorded in the history, which means results of definitions, loading/importing and evaluation of expressions ending with `;` will not be recorded.
 
 * Config
@@ -347,9 +346,28 @@ Check "builtin.py" to see the available built-in operations and functions.
     `inverse[[1,2],[4,3]]`
   * `import Matrix` (not found in "modules", import from sympy)  
     `m = Matrix[[[1,2],[4,3]]]; m.inv[]`
+
+* Logging
   
+  Use \`\` to wrap around text to let Calc print some information when evaluating the expression.  
+  Like python f-string, inside \`\`, you can wrap an expression with `{}` to evaluate it.
+
+  **Examples**:  
+  * count_down[n] = \`n={n}\` 'end if n==0 else count_down[n-1]
+  * count_up[n] = 'end if n==0 else count_up[n-1] \`n={n}\`
+  
+* Docstring
+
+  Add a string wrapped by `""` at the end of a definition to create a docstring for the defined variable. Use the function `help` to display the docstring.
+
+  **Examples**:  
+  * `sr = 1.414 "square root of 2"`  
+    `help[sr]`
+  * `fact[n] = 1 if n <= 1 else n*fact[n-1] "factorial of an integer"`
+    `help[fact]`
+
 * Exit  
 
   Ctrl+C or a single command `exit`
 
-You can find more examples in the "examples" folder.
+You can find the detailed grammar of Calc in "grammar.txt". You can also find more examples in the "scripts/examples" folder.

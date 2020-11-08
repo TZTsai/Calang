@@ -2,6 +2,84 @@
   "calc_parse": [
     [
       [
+        "x = 9"
+      ],
+      [
+        [
+          "BIND",
+          [
+            "VAR",
+            "x"
+          ],
+          [
+            "REAL",
+            "9"
+          ]
+        ],
+        ""
+      ]
+    ],
+    [
+      [
+        "f[x] = 9"
+      ],
+      [
+        [
+          "BIND",
+          [
+            "FUNC",
+            [
+              "VAR",
+              "f"
+            ],
+            [
+              "FORM",
+              [
+                "PARS",
+                "x"
+              ],
+              [
+                "OPTPARS"
+              ],
+              null
+            ]
+          ],
+          [
+            "REAL",
+            "9"
+          ]
+        ],
+        ""
+      ]
+    ],
+    [
+      [
+        "f x = 9"
+      ],
+      [
+        [
+          "BIND",
+          [
+            "FUNC",
+            [
+              "VAR",
+              "f"
+            ],
+            [
+              "PAR",
+              "x"
+            ]
+          ],
+          [
+            "REAL",
+            "9"
+          ]
+        ],
+        ""
+      ]
+    ],
+    [
+      [
         "f[x] @g[x] = x"
       ],
       [
@@ -249,15 +327,8 @@
         [
           "MATCH",
           [
-            "FORM",
-            [
-              "PARS",
-              "a"
-            ],
-            [
-              "OPTPARS"
-            ],
-            null
+            "PAR",
+            "a"
           ],
           [
             "REAL",
@@ -275,15 +346,8 @@
         [
           "MATCH",
           [
-            "FORM",
-            [
-              "PARS",
-              "x"
-            ],
-            [
-              "OPTPARS"
-            ],
-            null
+            "PAR",
+            "x"
           ],
           [
             "REAL",
@@ -1275,15 +1339,8 @@
           [
             "CONSTR",
             [
-              "FORM",
-              [
-                "PARS",
-                "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              "PAR",
+              "x"
             ],
             [
               "VAL_LST",
@@ -1969,15 +2026,8 @@
           [
             "CONSTR",
             [
-              "FORM",
-              [
-                "PARS",
-                "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              "PAR",
+              "x"
             ],
             [
               "SEQ",
@@ -2013,15 +2063,8 @@
           [
             "CONSTR",
             [
-              "FORM",
-              [
-                "PARS",
-                "y"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              "PAR",
+              "y"
             ],
             [
               "SEQ",
@@ -2299,15 +2342,8 @@
               "f"
             ],
             [
-              "FORM",
-              [
-                "PARS",
-                "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              "PAR",
+              "x"
             ]
           ],
           [
@@ -2375,15 +2411,8 @@
           [
             "MATCH",
             [
-              "FORM",
-              [
-                "PARS",
-                "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              "PAR",
+              "x"
             ],
             [
               "CLOSURE",

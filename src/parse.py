@@ -176,7 +176,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     kept_tags = lambda tag: tag[-3:] == 'LST' or \
-        tag in {'DELAY', 'DIR', 'DEL', 'VARS', 'DICT', 'PARENT', 'WITH'}
+        tag in {'DELAY', 'DIR', 'DEL', 'VARS', 
+                'DICT', 'PARENT', 'WITH', 'INFO'}
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_':
@@ -204,28 +205,27 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     return parse_tag(tag, text)
 
 
-def split_pars(form, top=True):
+def split_pars(form):
     "Split a FORM syntax tree into 4 parts: pars, opt-pars, ext-par, all-pars."
+
     def check_par(par):
         if par in all_pars:
             raise NameError('duplicate variable name')
         else:
             all_pars.add(par)
             
-    pars, opt_pars = ['PARS'], ['OPTPARS']
-    ext_par = None
-    all_pars = set()
-
     if tree_tag(form) == 'PAR':
-        check_par(form[1])
-        pars.append(form[1])
+        return form
     else:
+        pars, opt_pars = ['PARS'], ['OPTPARS']
+        ext_par = None
+        all_pars = set()
         for t in form[1:]:
             if t[0] == 'PAR':
                 check_par(t[1])
                 pars.append(t[1])
             elif t[0] == 'PAR_LST':
-                pars.append(split_pars(t, False))
+                pars.append(split_pars(t))
             elif t[0] == 'OPTPAR':
                 check_par(t[1][1])
                 opt_pars.append(t[1:])

@@ -1,7 +1,7 @@
 double = x => 2x
-double[3] #6
+double 3 #6
 twice = f => x => f[f[x]]
-twice[double][3] #12
+twice double 3 #12
 g = []=>x
 x = 12321
 g[] #12321
@@ -11,7 +11,7 @@ binomial[n, m] = 1 if (n==0 or m in [0, n]) else ...
     (b1=binomial[n-1, m-1], b2=binomial[n-1, m]) b1 + b2
 binomial[10, 3] == 10!/(3!*(10-3)!) #1
 
-d[f, d=1e-5] = x => (f[x+d]-f[x])/d
+d[f, d=1e-5] = [x] => (f[x+d]-f[x])/d
 root_newton[f, x=0, thr=1e-8] = (
     (df=d[f], new_x=x-f[x]/df[x]) `{x=}`  # `` is used for printing
     new_x if abs[f[x]] < thr else root_newton[f, new_x])

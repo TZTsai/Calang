@@ -1,13 +1,14 @@
-from operator import add, sub, mul, pow as pow_, and_ as b_and, or_ as b_or
+from operator import add, sub, mul, pow as pow_, and_ as b_and, or_ as b_or, concat
 from functools import reduce, wraps
 from numbers import Number, Rational
 from fractions import Fraction
-from sympy import Expr, Integer, Float, Matrix, Symbol, factor, simplify
-from objects import Range, Map, Attr, Env, Op, Function, PyFunc, Builtin, OperationError
+from sympy import Expr, Integer, Float, Matrix, Symbol, factor, simplify, factorial
+from objects import Range, Map, Attr, Env, Op, Function, Builtin, OperationError
 import config
 
 
-def apply(f, args):
+def apply(func, val):
+    "Apply $func on $val with pre-processing and post-processing."
     
     def numfy(val):
         "convert a number into python number type"
@@ -26,7 +27,7 @@ def apply(f, args):
             return val.real if eq_(val.imag, 0) else val
 
     def standardize(val):
-        "standardize the output value of the function"
+        "standardize the result"
         if type(val) is bool:
             return 1 if val else 0
         elif type(val) is list:
@@ -40,26 +41,20 @@ def apply(f, args):
                     return factor(simplify(val))
                 else: return val
                 
-    def convert_args(args):
-        def convert(arg):
-            if isinstance(arg, Env) and hasattr(arg, 'val'):
-                return arg.val
-            elif isinstance(arg, str) and config.symbolic:
-                return Symbol(arg)
-            else:
-                return arg
-        return tuple(map(convert, args))
+    def convert(arg):
+        "convert input value"
+        if type(arg) is tuple:
+            return tuple(map(convert, arg))
+        elif isinstance(arg, Env) and hasattr(arg, 'val'):
+            return arg.val
+        elif isinstance(arg, str) and config.symbolic:
+            return Symbol(arg)
+        else:
+            return arg
         
-    args = convert_args(args)
-    try:
-        result = f(*args)
-    except TypeError:
-        if len(args) > 1 and isinstance(f, PyFunc):
-            result = f(args)
-        else: raise
+    val = convert(val)
+    result = func(val)
     return standardize(result)
-
-Function.apply = apply
 
 
 def is_number(value):
@@ -110,7 +105,11 @@ def is_function(value):
     return callable(value)
 
 
-def all_(*lst, test=None):
+def is_env(value):
+    return isinstance(value, Env)
+
+
+def all_(lst, test=None):
     '''
     >>> all_(2, 4, 6, test=lambda x: x%2==0)
     True
@@ -125,7 +124,7 @@ def all_(*lst, test=None):
     else: return all(lst)
 
 
-def any_(*lst, test=None):
+def any_(lst, test=None):
     if test: return any(map(test, lst))
     else: return any(lst)
 
@@ -149,9 +148,25 @@ def same(*lst):
     return all(eq_(x, y) for y in lst[1:])
 
 
-def and_(x, y): return x if not x else y
-def or_(x, y): return x if x else y
-def not_(x): return 0 if x else 1
+def and_(x, y):
+    if all_([x, y], is_list):
+        return [i for i in x if i in y]
+    else:
+        return b_and(x, y)
+
+def or_(x, y):
+    if all_([x, y], is_list):
+        return concat(x, y)
+    elif all_([x, y], is_env):
+        assert x.parent is y.parent, 'two objects do not have the same parent'
+        e = Env(parent=x.parent, binds=x)
+        e.update(y)
+    else:
+        return b_or(x, y)
+
+def not_(x):
+    return 0 if x else 1
+
 def eq_(x, y):
     if is_list(x):
         if not is_list(y) or len(x) != len(y):
@@ -164,7 +179,9 @@ def eq_(x, y):
         else:
             return abs(x - y) <= config.tolerance
     return x == y
-def ne_(x, y): return not eq_(x, y)
+
+def ne_(x, y):
+    return not eq_(x, y)
 
 
 def div(x, y):
@@ -180,9 +197,10 @@ def fact2(x):  # returns the double factorial of x
     [8, 15]
     '''
     if not isinstance(x, int) or x < 0:
-        raise ValueError('invalid argument for factorial!')
-    if x in (0, 1): return 1
-    else: return x * fact2(x-2)
+        raise ValueError('invalid number for "!!"')
+    result = 1
+    for i in range(x, 0, -2): result *= i
+    return result
 
 
 def depth(value, key=max):
@@ -205,28 +223,18 @@ def depth(value, key=max):
     return 1 + key(map(depth, value))
 
 
-def itemwise(op):
-    '''
-    >>> iadd([1, 2], [2, 3])
-    (3, 5)
-    >>> iadd([[1, 2], [2, 3]], [[3, 4], [-2, 0]])
-    ((4, 6), (0, 3))
-    >>> iadd(3, [3, 4, 5])
-    (6, 7, 8)
-    '''
-    @wraps(op)
-    def f(x1, x2):
-        d1, d2 = depth(x1), depth(x2)
-        if d1 == d2:
-            if d1 == 0:
-                return op(x1, x2)
-            else:
-                return tuple(f(a1, a2) for a1, a2 in zip(x1, x2))
-        elif d1 > d2:
-            return tuple(f(a1, x2) for a1 in x1)
+def broadcast(f):
+    @wraps(f)
+    def wrapped(args):
+        depths = [depth(a) for a in args]
+        if same(depths):
+            return f(args)
         else:
-            return tuple(f(x1, a2) for a2 in x2)
-    return f
+            dmax = max(depths)
+            i = depths.index(dmax)
+            args_list = [[*args[:i], a, *args[:i]] for a in args[i]]
+            return tuple(f(args) for args in args_list)
+    return wrapped
 
 
 def adjoin(x1, x2):
@@ -242,7 +250,7 @@ def adjoin(x1, x2):
         return x2.getFrom(x1)
     elif is_list(x1) and is_list(x2):
         return subscript(x1, x2)
-    elif is_function(x1) and is_list(x2):
+    elif is_function(x1):
         return apply(x1, x2)
     else:
         raise OperationError('invalid types for adjoin')
@@ -287,24 +295,9 @@ def power(x, y):
         return x ** y
 
 
-iadd = itemwise(add)
-isub = itemwise(sub)
-idiv = itemwise(div)
-imul = itemwise(mul)
-ipow = itemwise(power)
-iand = itemwise(b_and)
-ior  = itemwise(b_or)
-
-
 def unpack(lst):
-    ret = lambda: lst
-    ret.__name__ = '(unpack)'
-    return ret
+    return ['(unpack)', lst]
 
-
-def help_(obj):
-    return obj.__doc__
-    
 
 def subscript(lst, subs):
     if not subs: return lst

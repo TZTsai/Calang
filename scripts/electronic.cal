@@ -1,2 +1,0 @@
-para(r1, r2) = r1*r2/(r1+r2)
-# the resistance of two paralleled resistors

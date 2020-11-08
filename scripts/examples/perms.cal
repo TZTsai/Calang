@@ -1,6 +1,5 @@
-perms(l) := [l] if len(l) = 1 else with insert(l, a, i)=l[:i]+[a]+l[i:]: ...
-    (first:l[0], rest:l[1:]) => subperms:perms(rest) => ...
-    sum([[insert(p, first, i) | i in range(len(l))] | p in subperms])
+perms[l~] = [l] if len[l] == 1 else (insert[l, a, i] = [l[:i]~, a, l[i:]~]) ...
+    [`{l=}` insert[p, l[0], i-1] for i in 1..len[l] for p in perms[l[1:]~]]
 
 #TEST
-perms([1,2,3])
+perms[1,2,3]
