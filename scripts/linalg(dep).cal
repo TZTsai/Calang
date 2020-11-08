@@ -30,7 +30,7 @@ import gauss_jordan
 load util
 eigenvalues(m) := solve(det(subm(m, scalem(id(rnum(m)), _l))), _l)	
 
-minormat(m, i, j) := [row[:j-1]+row[j:] | row in m[:i-1]+m[i:]]
+minormat[m, i, j] := [row[:j-1]|row[j:] for row in m[:i-1]|m[i:]]
 adj(m) := with n=rnum(m): [[(-1)^(i+j)*det(minormat(m, i, j)) | i in 1..n] | j in 1..n]
 
 #TEST

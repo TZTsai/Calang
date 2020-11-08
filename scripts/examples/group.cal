@@ -49,11 +49,11 @@ GF[irr, m, n] = (
 ) get[]
 poly = (
      coefs[p] = (l=len[p]-1) [[l-k, c] for [k, c] in enum[p]],
-     scale[p, a] = p .* a,
+     scale[p, a] = p * a,
      pad_zero[p, n, left=1] = ((k = n-len[p]) ...
           when(k<=0: p, left: [0]*k+p, p+[0]*k)),
      add[p, q] = ((n = max[len[p], len[q]]) ...
-          pad_zero[p, n] .+ pad_zero[q, n]),
+          pad_zero[p, n] + pad_zero[q, n]),
      sum[ps~] = [0] if ps == [] else add[ps[0], sum(ps[1:])],
      raise[p, k] = d::len[p] pad_zero[p, d+k, 0],
      mul[p, q] = sum[raise[scale[p, c], i] for [i, c] in coefs[q]],

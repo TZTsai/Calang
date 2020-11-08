@@ -25,7 +25,7 @@ class Function:
     
     def __call__(self, args):
         try: return self.f(*args)
-        except TypeError: pass
+        except (TypeError, ValueError): pass
         try: return self.f(args)
         except TypeError: pass
         try: return tuple(map(self.f, *args))
@@ -51,7 +51,7 @@ class Builtin(Function):
     def __init__(self, func, name):
         super().__init__(func)
         self.__name__ = name
-        
+
     def __repr__(self):
         return f'<builtin: {self.__name__}>'
 

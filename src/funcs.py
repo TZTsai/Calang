@@ -157,8 +157,6 @@ def sub_(x, y):
     return x - y
 
 def mul_(x, y):
-    if is_list(x) or is_list(y):
-        raise TypeError
     return x * y
 
 def div_(x, y):
@@ -174,12 +172,14 @@ def dot(x1, x2):
     >>> dot([1, 2], [2, 5])
     12
     '''
-    if not (is_list(x1) and is_list(x2)):
+    if not (is_list(x1) or is_list(x2)):
         if is_function(x1) and is_function(x2):
             return compose(x1, x2)
         else:
             return mul_(x1, x2)
     d1, d2 = depth(x1), depth(x2)
+    if 0 in [d1, d2]:
+        raise TypeError  # for broadcast
     if d1 == d2 == 1:
         if len(x1) != len(x2):
             raise ValueError('dim mismatch for dot product')
@@ -207,11 +207,18 @@ def and_(x, y):
 
 def or_(x, y):
     if any_([x, y], is_list):
-        if not is_list(x): x = x,
-        elif not is_list(y): y = y,
-        return concat(x, y)
+        dx, dy = depth(x), depth(y)
+        if abs(dx - dy) <= 1:
+            if max(dx, dy) == 2 and len(x) == len(y):  # matrix augmentation
+                return tuple(or_(xi, yi) for xi, yi in zip(x, y))
+            if dx < dy: x = x,
+            if dx > dy: y = y,
+            return concat(x, y)
+        else:
+            raise TypeError('dimension mismatch')
     elif all_([x, y], is_env):
-        assert x.parent is y.parent, 'two objects do not have the same parent'
+        assert x.parent is y.parent, \
+            'two objects do not have the same parent'
         e = Env(parent=x.parent, binds=x)
         e.update(y)
     else:

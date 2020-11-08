@@ -126,15 +126,15 @@ Check "builtin.py" to see the available built-in operations and functions.
   **Syntax**:
   `[_exp1_, _exp2_, ...]`
 
-  **Note**: The operators `in`, `+`, `*` for lists have the same functions as those in Python. Besides, you can use `~` to unpack a list into its outer list (if it is not nested in a list, this will be an error).
+  **Note**: For lists, operations can be automatically broadcasted. The operation `in` allows you to check whether a value is an item of a list. The operation `&` finds common items between two lists and `|` concatenates two lists together. Besides, you can use `~` to unpack a list into its outer list (if it is not nested in a list, this will be an error).
 
   **Examples**:  
   * `3 in [1, 2, 3]`
-  * `[1, 2] + [3, 4]` (return: [1, 2, 3, 4])
+  * `[1, 2] | [3, 4]` (return: [1, 2, 3, 4])
+  * `1 | [2, 3] | 4` (return: [1, 2, 3, 4])
   * `a = [2, 3]`  
     `[1, a~]` (return: [1, 2, 3])
   * `sum[1, 2, 3, 4]` (the `sum` function sums all arguments up)  
-  * `sum[[1, 2], [3, 4]]` (since we can concatenate two lists by `+`, the `sum` function will concatenate all the lists; return: [1, 2, 3, 4])  
 
 * List subscription  
 
