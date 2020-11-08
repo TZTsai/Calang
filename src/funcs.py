@@ -92,7 +92,7 @@ def is_matrix(value):
         return True
     else:
         return (depth(value) == depth(value, min) == 2 and
-                same(*map(len, value)) and len(value[0]) > 0)
+                same(map(len, value)) and len(value[0]) > 0)
 
 
 def is_function(value):
@@ -185,9 +185,9 @@ def dot(x1, x2):
             raise ValueError('dim mismatch for dot product')
         return sum(map(mul_, x1, x2))
     elif d1 == 1:
-        return tuple(dot([x1], x2))
+        return dot([x1], x2)
     elif d2 == 1:
-        return tuple(dot(x1, transpose(x2)))
+        return dot(x1, transpose(x2))
     else:
         return tuple(tuple(dot(r, c) for c in transpose(x2)) for r in x1)
 

@@ -48,6 +48,10 @@ class Op(Function):
 
 
 class Builtin(Function):
+    def __init__(self, func, name):
+        super().__init__(func)
+        self.__name__ = name
+        
     def __repr__(self):
         return f'<builtin: {self.__name__}>'
 

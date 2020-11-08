@@ -48,4 +48,4 @@ builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos, 'ata
 
 for name, val in builtins.items():
     if callable(val):
-        builtins[name] = Builtin(val)
+        builtins[name] = Builtin(val, name)
