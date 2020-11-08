@@ -17,8 +17,8 @@ def split(text: str, sep=None, maxsplit=-1):
 MetaGrammar = split(r"""
 DEF     := PAR := EXP | OBJ := EXP | MACRO := EXP
 OBJ     := [A-Z][A-Z_:]*
-PAR     := _[A-Z_:]+
-MACRO   := %[A-Z_]+ < VARS > | %[A-Z_]+ < ITEMS >
+PAR     := _[A-Z_]+
+MACRO   := @[A-Z_]+ < VARS > | @[A-Z_]+ < ITEMS >
 VARS    := VAR VARS | VAR
 VAR     := \$[A-Z_]+
 EXP     := ALT [|] EXP | ALT
@@ -112,7 +112,7 @@ def calc_grammar(rules, whitespace=r'\s*'):
         tree, rem = parse_grammar('DEF', rule)
         assert tree[0] == 'DEF' and not rem
         name, body = tree[1][1], refactor_tree(tree[3])
-        if name[0] == '%': 
+        if name[0] == '@': 
             pars = tree[1][3]
             flatten_nested(pars)
             M[name] = [pars, body]  # MACRO

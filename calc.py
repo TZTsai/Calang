@@ -71,7 +71,7 @@ def run(filename=None, test=False, start=0, verbose=True):
         if indent: return indent * ' '
         arrows = arrow_choices[config.arrow]
         arrow = arrows[0] if in_out == 'in' else arrows[1]
-        return f'({count}){arrow} '
+        return '(%d)%s ' % (count, arrow)
 
     buffer, count, indent = [], 0, 0
 

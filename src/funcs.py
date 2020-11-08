@@ -43,7 +43,7 @@ def apply(func, val):
                 
     def convert(arg):
         "convert input value"
-        if type(arg) is tuple:
+        if type(arg) in (list, tuple):
             return tuple(map(convert, arg))
         elif isinstance(arg, Env) and hasattr(arg, 'val'):
             return arg.val

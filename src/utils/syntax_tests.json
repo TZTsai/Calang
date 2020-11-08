@@ -2920,7 +2920,7 @@
     [
       [
         "DEF",
-        "LIST    := %LST < \"[\" \"]\" ; %SEQ < , /.*/ > >"
+        "LIST    := @LST < \"[\" \"]\" ; @SEQ < , /.*/ > >"
       ],
       [
         [
@@ -2940,7 +2940,7 @@
                   "ITEM",
                   [
                     "MACRO",
-                    "%LST",
+                    "@LST",
                     "<",
                     [
                       "ITEMS",
@@ -2984,7 +2984,7 @@
                               "ITEM",
                               [
                                 "MACRO",
-                                "%SEQ",
+                                "@SEQ",
                                 "<",
                                 [
                                   "ITEMS",
@@ -3241,14 +3241,14 @@
     [
       [
         "DEF",
-        "%M < $A > := $A $A +"
+        "@M < $A > := $A $A +"
       ],
       [
         [
           "DEF",
           [
             "MACRO",
-            "%M",
+            "@M",
             "<",
             [
               "VARS",
@@ -3684,9 +3684,9 @@
     [
       [
         [
-          "LIST    := %LST < \"[\" \"]\" ; %SEQ < , /.*/ > >",
-          "%LST < $OPN $CLS $SEP $ITM > := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS",
-          "%SEQ < $SEP $ITM >           := $ITM ? ( $SEP $ITM ) *"
+          "LIST    := @LST < \"[\" \"]\" ; @SEQ < , /.*/ > >",
+          "@LST < $OPN $CLS $SEP $ITM > := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS",
+          "@SEQ < $SEP $ITM >           := $ITM ? ( $SEP $ITM ) *"
         ]
       ],
       {
