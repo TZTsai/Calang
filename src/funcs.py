@@ -1,4 +1,4 @@
-from operator import add, sub, mul, pow as pow_, and_ as b_and, or_ as b_or, concat
+from operator import and_ as b_and, or_ as b_or, concat
 from functools import reduce, wraps
 from numbers import Number, Rational
 from fractions import Fraction
@@ -129,7 +129,7 @@ def any_(lst, test=None):
     else: return any(lst)
 
 
-def same(*lst):
+def same(lst):
     '''
     >>> same(1, 1.0, 2/2)
     True
@@ -148,6 +148,57 @@ def same(*lst):
     return all(eq_(x, y) for y in lst[1:])
 
 
+def add_(x, y):
+    if is_list(x) or is_list(y):
+        raise TypeError
+    return x + y
+
+def sub_(x, y):
+    return x - y
+
+def mul_(x, y):
+    if is_list(x) or is_list(y):
+        raise TypeError
+    return x * y
+
+def div_(x, y):
+    if all(isinstance(w, Rational) for w in (x, y)):
+        return Fraction(x, y)
+    else:
+        return x / y
+
+def dot(x1, x2):
+    '''
+    >>> dot(3, [1,2,3])
+    (3, 6, 9)
+    >>> dot([1, 2], [2, 5])
+    12
+    '''
+    if not (is_list(x1) and is_list(x2)):
+        if is_function(x1) and is_function(x2):
+            return compose(x1, x2)
+        else:
+            return mul_(x1, x2)
+    d1, d2 = depth(x1), depth(x2)
+    if d1 == d2 == 1:
+        if len(x1) != len(x2):
+            raise ValueError('dim mismatch for dot product')
+        return sum(map(mul_, x1, x2))
+    elif d1 == 1:
+        return tuple(dot([x1], x2))
+    elif d2 == 1:
+        return tuple(dot(x1, transpose(x2)))
+    else:
+        return tuple(tuple(dot(r, c) for c in transpose(x2)) for r in x1)
+
+def pow_(x, y):
+    if isinstance(y, int):
+        return reduce(dot, [x] * y, 1)
+    else:
+        return x ** y
+
+
+
 def and_(x, y):
     if all_([x, y], is_list):
         return [i for i in x if i in y]
@@ -155,7 +206,9 @@ def and_(x, y):
         return b_and(x, y)
 
 def or_(x, y):
-    if all_([x, y], is_list):
+    if any_([x, y], is_list):
+        if not is_list(x): x = x,
+        elif not is_list(y): y = y,
         return concat(x, y)
     elif all_([x, y], is_env):
         assert x.parent is y.parent, 'two objects do not have the same parent'
@@ -184,13 +237,6 @@ def ne_(x, y):
     return not eq_(x, y)
 
 
-def div(x, y):
-    if all(isinstance(w, Rational) for w in (x, y)):
-        return Fraction(x, y)
-    else:
-        return x / y
-
-    
 def fact2(x):  # returns the double factorial of x
     '''
     >>> [fact2(4), fact2(5)]
@@ -232,9 +278,11 @@ def broadcast(f):
         else:
             dmax = max(depths)
             i = depths.index(dmax)
-            args_list = [[*args[:i], a, *args[:i]] for a in args[i]]
+            args_list = [[*args[:i], a, *args[i+1:]] for a in args[i]]
             return tuple(f(args) for args in args_list)
     return wrapped
+
+Function.broadcast = broadcast
 
 
 def adjoin(x1, x2):
@@ -255,30 +303,6 @@ def adjoin(x1, x2):
     else:
         raise OperationError('invalid types for adjoin')
 
-def dot(x1, x2):
-    '''
-    >>> dot(3, [1,2,3])
-    (3, 6, 9)
-    >>> dot([1, 2], [2, 5])
-    12
-    '''
-    if not (is_list(x1) and is_list(x2)):
-        if is_function(x1) and is_function(x2):
-            return compose(x1, x2)
-        else:
-            return imul(x1, x2)
-    d1, d2 = depth(x1), depth(x2)
-    if d1 == d2 == 1:
-        if len(x1) != len(x2):
-            raise ValueError('dim mismatch for dot product')
-        return sum(map(adjoin, x1, x2))
-    elif d1 == 1:
-        return tuple(dot([x1], x2))
-    elif d2 == 1:
-        return tuple(dot(x1, transpose(x2)))
-    else:
-        return tuple(tuple(dot(r, c) for c in transpose(x2)) for r in x1)
-
 
 def compose(*funcs):
     def compose2(f, g):
@@ -286,13 +310,6 @@ def compose(*funcs):
         h.__name__ = f'<composed: {f.__name__} and {g.__name__}>'
         return h
     return reduce(compose2, funcs)
-
-
-def power(x, y):
-    if isinstance(y, int):
-        return reduce(dot, [x] * y, 1)
-    else:
-        return x ** y
 
 
 def unpack(lst):

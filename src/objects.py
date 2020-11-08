@@ -24,13 +24,13 @@ class Function:
         return self.__name__
     
     def __call__(self, args):
-        try: return self.f(args)
-        except TypeError: pass
         try: return self.f(*args)
+        except TypeError: pass
+        try: return self.f(args)
         except TypeError: pass
         try: return tuple(map(self.f, *args))
         except TypeError: assert self.bc
-        return self.broadcast(self.__call__)(args)
+        return Function.broadcast(self.__call__)(args)
     
     
 class Op(Function):

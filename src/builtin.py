@@ -2,10 +2,7 @@ from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from math import inf
-from operator import (
-    floordiv, mod, neg, lt, gt, le, ge,
-    xor as XOR, inv as INV, and_ as AND, or_ as OR
-)
+from operator import (floordiv, mod, neg, lt, gt, le, ge, xor, inv)
 from sympy import (
     sqrt, log, exp, gcd, factorial, floor, E, pi, factorint,
     sin, cos, tan, asin, acos, atan, cosh, sinh, tanh, nan,
@@ -16,7 +13,7 @@ import config
 from objects import Op, Env, Range, Builtin
 from funcs import (
     is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, is_env,
-    add, sub, mul, div, power, and_, or_, not_, eq_, ne_, adjoin, unpack, dot, fact2, 
+    add_, sub_, mul_, div_, pow_, and_, or_, not_, eq_, ne_, adjoin, unpack, dot, fact2, 
     all_, any_, first, findall, range_, range_inc, range_dec, compose,
     transpose, depth, shape, substitute, flatten, row, col, row, cols
 )
@@ -28,16 +25,18 @@ def construct_ops(op_dict, type):
         op_dict[op] = Op(type, op, fun, pri)
 
 
+AND = lambda x, y: x and y
+OR  = lambda x, y: x or y
+
 binary_ops = {
-    '+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (div, 8), '^': (power, 18),
-    '//': (floordiv, 8), '%': (mod, 8), '.': (dot, 10),
-    '&': (and_, 8), '|': (or_, 7),
+    '+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '^': (pow_, 18),
+    '//': (floordiv, 8), '%': (mod, 8), '.': (dot, 10), '&': (and_, 8), '|': (or_, 7),
     '==': (eq_, 0), '/=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
-    'xor': (XOR, 3), 'in': (lambda x, y: x in y, -2), 'outof': (lambda x, y: x not in y, -2), 
+    'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), 'outof': (lambda x, y: x not in y, -2), 
     '..': (range_, 4), '+..': (range_inc, 4), '-..': (range_dec, 4),
     'and': (AND, -5), 'or': (OR, -6), '': (adjoin, 20), #'of': (NotImplemented, -3)
 }
-unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (INV, 10)}
+unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10)}
 unary_r_ops = {'!': (factorial, 22), '!!': (fact2, 22), '~': (unpack, 11)}
 
 operators = {'BOP': binary_ops, 'LOP': unary_l_ops, 'ROP': unary_r_ops}
