@@ -415,7 +415,9 @@ def LOAD(tr):
     global Global
     current_global = Global
     Global = GlobalEnv()  # a new global env
+    debug.log.depth += 1
     LOAD.run(path, test, start=0, verbose=verbose)
+    debug.log.depth -= 1
     
     if overwrite:
         current_global.update(Global)
@@ -463,7 +465,8 @@ def CONF(tr):
         if len(tr) == 2:
             return getattr(config, conf)
         else:
-            val = eval_tree(tr[2]) not in ['off', 0]  # boolean value
+            val = eval_tree(tr[2])
+            if val == 'off': val = False
             setattr(config, conf, val)
     else:
         raise ValueError('no such field in the config')

@@ -9,9 +9,10 @@ from src.utils.debug import log
 from src.utils.greek import escape_to_greek
 
 
-# overwrite the builtin printing
+# overwrite the builtin print
 def print(*msgs, end='\n', flush=True):
     log(*msgs, end=end, out=sys.stdout)
+    if flush: sys.stdout.flush()
 
 
 # track the brackets
@@ -35,12 +36,12 @@ class BracketTracker:
     par_map = dict(parentheses)
 
     @classmethod
-    def track(cls, line):
-        "Track the brackets in the line and return the pos of the last unclosed bracket."
+    def next_insertion(cls, line):
+        "Track the brackets in the line and return the appropriate pooint of the nest insertion."
         for i, c in enumerate(line):
             if c in cls.open_pars: cls._push(c, i)
             elif c in cls.close_pars: cls._pop(c)
-        return cls.stk.peek()[1] if cls.stk else -1
+        return cls.stk.peek()[1] + 1 if cls.stk else 0
 
 
 scripts_dir = 'scripts/'
@@ -64,6 +65,13 @@ def run(filename=None, test=False, start=0, verbose=True):
         else:
             raise Warning('--- Fail! Expected answer of %s is %s, but actual result is %s ---'
                           % (exp, answer, str(result)))
+            
+    arrow_choices = ['❰❱', '«»', '◀▶']
+    def make_prompt(in_out='in'):
+        if indent: return indent * ' '
+        arrows = arrow_choices[config.arrow]
+        arrow = arrows[0] if in_out == 'in' else arrows[1]
+        return f'({count}){arrow} '
 
     buffer, count, indent = [], 0, 0
 
@@ -72,7 +80,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             if line.find('#TEST') == 0 and not test:
                 return  # the lines after #TEST are run only in test mode
             # get input
-            prompt = indent*' ' if indent else f'({count})▶ '
+            prompt = make_prompt()
             if verbose:
                 print(prompt, end='', flush=True)  # prompt
                 if filename is None:
@@ -84,15 +92,13 @@ def run(filename=None, test=False, start=0, verbose=True):
             if not line: continue
 
             # check whether the line is unfinished
-            unfinished = False
+            indent = BracketTracker.next_insertion(prompt+line)
             if line[-3:] == '...':
                 line = line[:-3]
-                unfinished = True
-            indent = BracketTracker.track(prompt+line) + 1
-            if indent: unfinished = True
+                if not indent: indent = len(prompt)
 
             buffer.append(line)
-            if unfinished: continue
+            if indent: continue
 
             line = ''.join(buffer)
             line = escape_to_greek(line)
@@ -106,7 +112,9 @@ def run(filename=None, test=False, start=0, verbose=True):
             if verbose:  # print output
                 opts = {opt: comment == opt.upper() 
                         for opt in ['sci', 'tex', 'bin', 'hex']}
-                print(calc_format(result, **opts), flush=True)
+                s = calc_format(result, **opts)
+                p = make_prompt('out')
+                print(p + s, flush=True)
 
             # test
             if test and comment:

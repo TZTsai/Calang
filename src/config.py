@@ -3,3 +3,4 @@ precision = 6
 latex = False
 symbolic = 0
 debug = 1
+arrow = 2

@@ -1,4 +1,4 @@
-print('Calc grammar loaded.')
+print('Calc grammar loaded.', flush=True)
 
 from pprint import pprint
 import re
