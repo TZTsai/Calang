@@ -1,10 +1,12 @@
 from functools import wraps
 from copy import deepcopy
+import re
 
 from parse import calc_parse, is_name, is_tree, tree_tag
 from builtin import operators, builtins
 from funcs import Symbol, is_list, is_function, apply
 from objects import Env, stack, Op, Attr, Function, Map, UnboundName, OperationError
+from utils import debug
 import config
 
 
@@ -17,7 +19,7 @@ Builtins = Env(name='_builtins_', binds=builtins)
 Global = GlobalEnv()
 
 
-def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
+def calc_eval(exp, env=None):
     # suppress output (and recording) if the last character is ';'
     suppress = exp[-1] == ';'
     if suppress: exp = exp[:-1]
@@ -25,6 +27,8 @@ def calc_eval(exp):  # only for testing; calc_exec will use eval_tree
     # parse the expression into a syntax tree
     tree, rest = calc_parse(exp)
     if rest: raise SyntaxError(f'syntax error in "{rest}"')
+    
+    if env is None: env = Global 
     
     try:  # evaluate the syntax tree
         result = eval_tree(tree, Global)
@@ -196,11 +200,25 @@ def NAME(tr, env):
             raise UnboundName(f"unbound symbol '{name}'")
         
 def SYM(tr, env):
-    return eval('f"%s"' % tr[1], env.all())
+    return format_string(tr[1], env)
 
 def PRINT(tr, env):
-    exec('print(f"%s")' % tr[1][1:-1], env.all())
+    print(format_string(tr[1][1:-1], env))
     return '(printed)'
+
+def format_string(s, env):
+    def subs(match):
+        s = match[1].strip()
+        if s[-1] == '=':
+            s = s[:-1]
+            eq = 1
+        else:
+            eq = 0
+        val = calc_eval(s, env)
+            
+    brace_pattern = r'{(.+?)}'
+    eval_brace = lambda m: calc_eval(m[1], env)
+    return re.sub(brace_pattern, eval_brace, s)
 
 def BODY(tr, env):
     return tr[2] if tr[1] == '(printed)' else tr[1]

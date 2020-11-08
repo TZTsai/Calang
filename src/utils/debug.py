@@ -4,13 +4,14 @@ from pprint import pformat, pprint
 import config
 
 
-indent = '  '
+indent = ' '
 max_depth = 100
-def log(*messages, end='\n', sep=''):
+def log(*messages, end='\n', sep='', out=None):
     if not config.debug: return
+    if out is None: out = log.out
     log.out.write(log.depth*indent)
     if log.depth < max_depth:
-        log.out.write(sep.join(map(str, messages)) + end)
+        log.out.write(sep.join(map(log.format, messages)) + end)
     else:
         print('max depth reached!')
         exit(-1)
@@ -18,6 +19,7 @@ def log(*messages, end='\n', sep=''):
 log.depth = 0
 log.out = sys.stdout
 # log.out = open('src/utils/log.yaml', 'w')
+log.format = str
 
 def check(f, args, expected, record=None):
     args = freeze(args)

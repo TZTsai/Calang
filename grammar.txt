@@ -23,7 +23,7 @@ NAME    := /[^\W\d][\w?]*/                          ## allow '?'
 ATTR    := . / NAME:ATTR                            ## '/' forces no space in between
 
 FORM    := PAR_IT
-PAR_IT  := PAR_LST | NAME:PAR   
+PAR_IT  := PAR_LST | NAME:PAR
 PAR_LST := %BKT < ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? ) >
 _PARS   := %SEQ < ( BIND ! PAR_IT ~ ! ) , >         ## '!' forbids the match
 _OPTS   := %SEQ < ( BIND:OPTPAR ~ ! ) , >
@@ -53,7 +53,8 @@ WHEN    := when %GRP < ( ( CASE , ) * DEFAULT ) >   ## Delay this
 CASE    := EXP : EXP
 DEFAULT := ( else : ) ? EXP
 
-ATOM    := FIELD | "?" / NAME | ' SYM | ANS | NUM
+ATOM    := FIELD | UNKNOWN | ' SYM | ANS | NUM
+UNKNOWN := /\?\w*/
 SYM     := /([\w?]+|{.*?})+/
 ANS     := /%(\d+|%*)/
 

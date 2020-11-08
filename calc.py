@@ -5,8 +5,13 @@ from src.objects import stack
 from src.eval import calc_eval, LOAD
 from src.format import calc_format
 from src.funcs import eq_ as equal
-from src.utils.deco import log
+from src.utils.debug import log
 from src.utils.greek import escape_to_greek
+
+
+# overwrite the builtin printing
+def print(*msgs, end='\n', flush=True):
+    log(*msgs, end=end, out=sys.stdout)
 
 
 # track the brackets

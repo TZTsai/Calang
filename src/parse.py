@@ -13,7 +13,8 @@ except:
     from grammar import grammar
 
 
-keywords = {'if', 'else', 'in', 'dir', 'for', 'with', 'load', 'config', 'when', 'import', 'del'}
+keywords = {'if', 'else', 'in', 'dir', 'for', 'with', 'load',
+            'config', 'when', 'import', 'del', 'info'}
 
 trace = disabled
 

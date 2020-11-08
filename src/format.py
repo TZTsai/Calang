@@ -3,13 +3,27 @@ from re import sub as translate
 from builtin import Rational, Fraction, Matrix, is_number, is_matrix, floor, inf, log
 from objects import Range, Env, Function
 from parse import rev_parse
-from utils.deco import trace
+from utils.debug import log
 from utils.greek import gr_to_tex
 import config, objects
 
-indent = 0
+
+depth = 0  # recursion depth
+indent_width = 1
+indent_level = 0
+options = {}
+
 
 def calc_format(val, **opts):
+    global options, depth, indent_level
+    
+    if opts:
+        options = opts
+    else:
+        if depth == 0:
+            options = {'tex': config.latex, 'sci': 0, 'bin': 0, 'hex': 0}
+        opts = options
+
     if config.latex or opts['tex']:
         s = latex(Matrix(val) if is_matrix(val) else val)
         # substitute the Greek letters to tex representations
@@ -18,6 +32,7 @@ def calc_format(val, **opts):
     def format_float(x):
         prec = config.precision
         return float(f'%.{prec}g' % x)
+    
     def format_scinum(x):
         def positive_case(x):
             supscripts = '⁰¹²³⁴⁵⁶⁷⁸⁹'
@@ -28,15 +43,18 @@ def calc_format(val, **opts):
             return f"{b}×10{supscript(e)}"
         if x == 0: return '0'
         return positive_case(x) if x > 0 else '-' + positive_case(-x)
+    
     def format_matrix(mat):
         def row_str(row, start, end, sep='  '):
-            return ' '*indent + f"{start}{sep.join([s.ljust(space) for s in row])}{end}"
+            return f"{start}{sep.join([s.ljust(space) for s in row])}{end}"
         mat = [[format(x) for x in row] for row in mat]
         space = max([max([len(s) for s in row]) for row in mat])
         col_num = len(mat[0])
-        return '\n'.join([row_str(['']*col_num, '╭', '╮')] +
-                         [row_str(row, ' ', ' ', ', ') for row in mat] +
-                         [row_str(['']*col_num, '╰', '╯')])
+        return f'{indent}\n'.join(
+            [row_str(['']*col_num, '╭', '╮')] +
+            [row_str(row, ' ', ' ', ', ') for row in mat] +
+            [row_str(['']*col_num, '╰', '╯')])
+        
     def format_atom(val):
         if is_number(val):
             mag = abs(val)
@@ -48,12 +66,9 @@ def calc_format(val, **opts):
             elif isinstance(val, Rational) and not opts['sci']:
                 if type(val) is Fraction:
                     val.limit_denominator(10**config.precision)
-                if opts['bin']:
-                    return bin(val)
-                elif opts['hex']:
-                    return hex(val)
-                else:
-                    return str(val)
+                if opts['bin']: return bin(val)
+                elif opts['hex']: return hex(val)
+                else: return str(val)
             elif mag <= 0.001 or mag >= 10000:
                 return format_scinum(val)
             else: 
@@ -70,30 +85,24 @@ def calc_format(val, **opts):
         else:
             return pretty(val, use_unicode=True)
 
-    global indent
-    s = ' ' * indent
+    depth += 1
+    indent = ' ' * indent_width * indent_level
+    s = indent
     if type(val) is tuple:
         if any(map(is_matrix, val)):
-            indent += 2
-            s += '[\n%s\n%s]' % (',\n'.join(
-                map(lambda v: calc_format(v, **opts), val)), s)
-            indent -= 2
+            indent_level += 1
+            items = ',\n'.join(map(calc_format, val))
+            s += '[\n%s\n%s]' % (items, indent)
+            indent_level -= 1
         elif is_matrix(val):
-            s = format_matrix(val)
+            s += format_matrix(val)
         else:
-            s += '[%s]' % ', '.join(
-                map(lambda v: calc_format(v, **opts), val))
+            s += '[%s]' % ', '.join(map(calc_format, val))
     else:
         s += format_atom(val)
+    depth -= 1
     return s
 
 
-def map_signature(_, args):
-    f, args = args[0], args[1:]
-    opts = {'tex': config.latex, 'sci': 0, 'bin': 0, 'hex': 0}
-    return '%s%s' % (calc_format(f, **opts),
-                     calc_format(args, **opts))
-
-
-trace.signature = map_signature
+log.format = calc_format
 objects.tree2str = rev_parse
