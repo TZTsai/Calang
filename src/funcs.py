@@ -47,8 +47,8 @@ def apply(func, val):
             return tuple(map(convert, arg))
         elif isinstance(arg, Env) and hasattr(arg, 'val'):
             return arg.val
-        elif isinstance(arg, str) and config.symbolic:
-            return Symbol(arg)
+        # elif isinstance(arg, str) and config.symbolic:
+        #     return Symbol(arg)
         else:
             return arg
         

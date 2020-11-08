@@ -55,7 +55,7 @@ DEFAULT := ( else : ) ? EXP
 
 ATOM    := FIELD | UNKNOWN | ' SYM | ANS | NUM
 UNKNOWN := /\?\w*/
-SYM     := /([\w?]+|{.*?})+/
+SYM     := /[^\W\d]([\w?]+|{\w*?})*/
 ANS     := /%(\d+|%*)/
 
 NUM     := BIN | HEX | COMPLEX | REAL

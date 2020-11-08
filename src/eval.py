@@ -195,18 +195,19 @@ def NAME(tr, env):
             return env[name]
     except KeyError:
         if NAME.force_symbol:
-            return name
+            return Symbol(name)
         else:
             raise UnboundName(f"unbound symbol '{name}'")
         
 def SYM(tr, env):
-    return format_string(tr[1], env)
+    s = format_string(tr[1], env, char=r'\w')
+    return Symbol(s)
 
 def PRINT(tr, env):
     print(format_string(tr[1][1:-1], env))
     return '(printed)'
 
-def format_string(s, env):
+def format_string(s, env, char='.'):
     def subs(match):
         s = match[1].strip()
         if s[-1] == '=':
@@ -215,10 +216,12 @@ def format_string(s, env):
         else:
             eq = 0
         val = calc_eval(s, env)
-            
-    brace_pattern = r'{(.+?)}'
-    eval_brace = lambda m: calc_eval(m[1], env)
-    return re.sub(brace_pattern, eval_brace, s)
+        ss = debug.log.format(val)
+        if eq: ss = '%s = %s' % (s, ss)
+        return ss
+
+    brace_pattern = '{(%s+?)}' % char
+    return re.sub(brace_pattern, subs, s)
 
 def BODY(tr, env):
     return tr[2] if tr[1] == '(printed)' else tr[1]

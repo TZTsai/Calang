@@ -182,16 +182,6 @@ class Env(dict):
     def __bool__(self):
         return True
     
-    def all(self):
-        d = {'(parent)': self.parent}
-        env = self
-        while env:
-            for k in env:
-                if k not in d:
-                    d[k] = env[k]
-            env = env.parent
-        return d
-
 
 class Attr:
     def __init__(self, name):
