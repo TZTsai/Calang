@@ -16,7 +16,7 @@ class Function:
 
     def __init__(self, func):
         self.f = func
-        self.bc = True  # whether allow broadcast
+        # self.bc = True  # whether allow broadcast
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
                 
@@ -29,8 +29,9 @@ class Function:
         try: return self.f(args)
         except TypeError: pass
         try: return tuple(map(self.f, *args))
-        except TypeError: assert self.bc
-        return Function.broadcast(self.__call__)(args)
+        except TypeError: pass
+        try: return Function.broadcast(self.__call__)(args)
+        except TypeError: raise OperationError
     
     
 class Op(Function):

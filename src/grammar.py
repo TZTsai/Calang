@@ -18,7 +18,7 @@ MetaGrammar = split(r"""
 DEF     := PAR := EXP | OBJ := EXP | MACRO := EXP
 OBJ     := [A-Z][A-Z_:]*
 PAR     := _[A-Z_]+
-MACRO   := @[A-Z_]+ < VARS > | @[A-Z_]+ < ITEMS >
+MACRO   := @[A-Z_]+ VARS | @[A-Z_]+ ITEMS
 VARS    := VAR VARS | VAR
 VAR     := \$[A-Z_]+
 EXP     := ALT [|] EXP | ALT
@@ -113,7 +113,7 @@ def calc_grammar(rules, whitespace=r'\s*'):
         assert tree[0] == 'DEF' and not rem
         name, body = tree[1][1], refactor_tree(tree[3])
         if name[0] == '@': 
-            pars = tree[1][3]
+            pars = tree[1][2]
             flatten_nested(pars)
             M[name] = [pars, body]  # MACRO
         else: G[name] = body
@@ -153,7 +153,7 @@ def refactor_tree(tree: list):
 def post_process(grammar, macros):
 
     def apply_macro(tree):
-        name, args = tree[1], tree[3]
+        name, args = tree[1], tree[2]
         pars, body = macros[name]
         args = args[1:]
         pars = [p[1] for p in pars[1:]]

@@ -1,10 +1,10 @@
-LINE    := @SEQ < ( CMD | DEF | EXP | EMPTY ) ; >
+LINE    := @SEQ ( CMD | DEF | EXP | EMPTY ) ;
 EMPTY   := /\s*/
 
 CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | EXIT
 CONF    := config /\w+/ ( NUM | /on|off/ ) ?
 DIR     := dir FIELD ?
-DEL     := del @SEQ < FIELD , >
+DEL     := del @SEQ FIELD ,
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
 INFO    := info FIELD ?
@@ -12,10 +12,10 @@ EXIT    := exit
 
 DEF     := SUPER ? BIND
 SUPER   := ( NAME . ) +
-BIND    := ( FUNC | VAR_ ) AT:PARENT ? = EXP DOC ? ## Delay this
+BIND    := ( FUNC | VAR_ ) AT:PARENT ? = EXP DOC ?  ## Delay this
 FUNC    := NAME:VAR FORM
 VAR_    := VARS | NAME:VAR
-VARS    := @BKT < @SEQ < VAR_ , > >
+VARS    := @BKT @SEQ VAR_ ,
 DOC     := /".*"/
 
 FIELD   := NAME ATTR *
@@ -24,9 +24,9 @@ ATTR    := . / NAME:ATTR                            ## '/' forces no space in be
 
 FORM    := PAR_IT
 PAR_IT  := PAR_LST | NAME:PAR
-PAR_LST := @BKT < ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? ) >
-_PARS   := @SEQ < ( BIND ! PAR_IT ~ ! ) , >         ## '!' forbids the match
-_OPTS   := @SEQ < ( BIND:OPTPAR ~ ! ) , >
+PAR_LST := @BKT ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? )
+_PARS   := @SEQ ( BIND ! PAR_IT ~ ! ) ,             ## '!' forbids the match
+_OPTS   := @SEQ ( BIND:OPTPAR ~ ! ) ,
 _EXT    := NAME:EXTPAR ~
 
 EXP     := MAP | CLOSURE | ENV | BODY
@@ -36,7 +36,7 @@ CLOSURE := ENV DELAY
 DELAY   := EXP                                      ## Delay this
 ENV     := AT | DICT | MATCH
 AT      := @ VAL_
-DICT    := @GRP < @SEQ < BIND , > >                 ## Delay this
+DICT    := @GRP @SEQ BIND ,                         ## Delay this
 MATCH   := FORM :: VAL_
 VAL_    := APPLY:SEQ | ITEM
 APPLY   := FIELD ( GEN_LST | VAL_LST )
@@ -47,11 +47,8 @@ SEQ     := _TERM ( BOP ? _TERM ) *
 _TERM   := LOP ? ITEM ATTR ? ROP ?
 
 PRINT   := /`.*?`/
-ITEM    := GROUP | WHEN | ATOM | LIST
-GROUP   := @GRP < EXP >
-WHEN    := when @GRP < ( ( CASE , ) * DEFAULT ) >   ## Delay this
-CASE    := EXP : EXP
-DEFAULT := ( else : ) ? EXP
+ITEM    := GROUP | ATOM | LIST
+GROUP   := @GRP EXP
 
 ATOM    := FIELD | UNKNOWN | ' SYM | ANS | NUM
 UNKNOWN := /\?\w*/
@@ -65,21 +62,20 @@ BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
 LIST    := ' SYM_LST | GEN_LST | IDC_LST | VAL_LST
-SYM_LST := @LST < ( UNQUOTE | SYM_LST | SYM ) , >
+SYM_LST := @LST ( UNQUOTE | SYM_LST | SYM ) ,
 UNQUOTE := $ ITEM                                   ## convert the item back to a value
-GEN_LST := @BKT < ( EXP ( for CONSTR ) + ) >        ## Delay this
+GEN_LST := @BKT ( EXP ( for CONSTR ) + )            ## Delay this
 CONSTR  := FORM in EXP WITH ? COND ?
 WITH    := with ( DICT | BIND )
 COND    := if EXP
-IDC_LST := @BKT < @SEQ < SLICE , > >
+IDC_LST := @BKT @SEQ SLICE ,
 SLICE   := _SLC : _SLC ( : _SLC ) ?
 _SLC    := ( SEQ | EMPTY )
-VAL_LST := _MAT | @LST < EXP , >
-_MAT    := @BKT < ( SUB_LST:VAL_LST ( ; SUB_LST:VAL_LST ) + ) >
-SUB_LST := @SEQ < EXP , > ?
+VAL_LST := @LST EXP , | @LST SUB_LST:VAL_LST ;
+SUB_LST := @SEQ EXP ,
 
 ### MACROS ###
-@LST < $ITM $SEP >  := @BKT < ( @SEQ < $ITM $SEP > ? ) >
-@BKT < $EXP >       := "[" - $EXP "]" -
-@GRP < $EXP >       := "(" - $EXP ")" -
-@SEQ < $ITM $SEP >  := $ITM ( $SEP $ITM ) *
+@LST $ITM $SEP  := @BKT ( @SEQ $ITM $SEP ? )
+@BKT $EXP       := "[" - $EXP "]" -
+@GRP $EXP       := "(" - $EXP ")" -
+@SEQ $ITM $SEP  := $ITM ( $SEP $ITM ) *

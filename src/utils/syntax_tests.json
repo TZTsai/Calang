@@ -2920,7 +2920,7 @@
     [
       [
         "DEF",
-        "LIST    := @LST < \"[\" \"]\" ; @SEQ < , /.*/ > >"
+        "LIST    := @LST \"[\" \"]\" ; @SEQ , /.*/"
       ],
       [
         [
@@ -2941,7 +2941,6 @@
                   [
                     "MACRO",
                     "@LST",
-                    "<",
                     [
                       "ITEMS",
                       [
@@ -2985,7 +2984,6 @@
                               [
                                 "MACRO",
                                 "@SEQ",
-                                "<",
                                 [
                                   "ITEMS",
                                   [
@@ -3011,15 +3009,13 @@
                                       ]
                                     ]
                                   ]
-                                ],
-                                ">"
+                                ]
                               ]
                             ]
                           ]
                         ]
                       ]
-                    ],
-                    ">"
+                    ]
                   ]
                 ]
               ]
@@ -3241,7 +3237,7 @@
     [
       [
         "DEF",
-        "@M < $A > := $A $A +"
+        "@M $A := $A $A +"
       ],
       [
         [
@@ -3249,15 +3245,13 @@
           [
             "MACRO",
             "@M",
-            "<",
             [
               "VARS",
               [
                 "VAR",
                 "$A"
               ]
-            ],
-            ">"
+            ]
           ],
           ":=",
           [
@@ -3684,9 +3678,9 @@
     [
       [
         [
-          "LIST    := @LST < \"[\" \"]\" ; @SEQ < , /.*/ > >",
-          "@LST < $OPN $CLS $SEP $ITM > := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS",
-          "@SEQ < $SEP $ITM >           := $ITM ? ( $SEP $ITM ) *"
+          "LIST    := @LST \"[\" \"]\" ; @SEQ , /.*/",
+          "@LST $OPN $CLS $SEP $ITM := $OPN $CLS | $OPN $ITM ( $SEP $ITM ) * $CLS",
+          "@SEQ $SEP $ITM           := $ITM ? ( $SEP $ITM ) *"
         ]
       ],
       {

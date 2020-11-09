@@ -66,12 +66,20 @@ def run(filename=None, test=False, start=0, verbose=True):
             raise Warning('--- Fail! Expected answer of %s is %s, but actual result is %s ---'
                           % (exp, answer, str(result)))
             
-    arrow_choices = ['❰❱', '«»', '◀▶']
+    arrow_choices = ['»=«', '▶=◀', '➤=', '▷=◁']
+    bracket_choices = ['()', '[]', '⟦⟧', '﴾﴿']
+    my_arrows = 0
+    my_brackets = 1
     def make_prompt(in_out='in'):
         if indent: return indent * ' '
-        arrows = arrow_choices[config.arrow]
-        arrow = arrows[0] if in_out == 'in' else arrows[1]
-        return '(%d)%s ' % (count, arrow)
+        arrows = arrow_choices[my_arrows]
+        if in_out == 'in':
+            arrow = arrows[0]
+            brackets = bracket_choices[my_brackets]
+        else:
+            arrow = arrows[1]
+            brackets = '% '
+        return '%s%d%s%s ' % (brackets[0], count, brackets[1], arrow)
 
     buffer, count, indent = [], 0, 0
 
