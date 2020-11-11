@@ -31,7 +31,7 @@ def trace(f):
             result = f(*args)
             log.depth -= 1
         except Exception as e:
-            log(signature, ' exited due to %s' % e)
+            log(signature, ' exited due to %s' % (str(e) or 'an exception'))
             log.depth -= 1
             raise
         log(f'{signature} ==> {result}')

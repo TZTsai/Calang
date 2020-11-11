@@ -62,13 +62,13 @@ tree2str = NotImplemented
 # ASSIGN it in format.py
 
 class Map(Function):
-    match  = lambda val, form, parent: NotImplemented
-    eval   = lambda tree, parent, mutable: NotImplemented
-    check_local = lambda map, lst: NotImplemented
+    match = lambda val, form, parent: NotImplemented
+    eval = lambda tree, parent, mutable: NotImplemented
+    builtins = None
 
     def __init__(self, tree, env):
         _, form, body = tree
-        form = Map.eval(form, env)      # eval optpars
+        form = Map.eval(form, env)      # eval opt-pars
         if body[0] == 'INHERIT':
             self.inherit = body[1]
             body = ['CLOSURE', ..., body[2]]
@@ -81,7 +81,7 @@ class Map(Function):
         self.parent = env
         self._pars = form[-1]
         self._repr = tree2str(tree)
-        self.__name__ = '(map)'
+        self.__name__ = None
         self.__doc__ = self._repr
         self._memo = NotImplemented
 
@@ -92,26 +92,24 @@ class Map(Function):
             if self._memo is NotImplemented:
                 try:
                     self._memo = {}
-                    result = Map.check_local(self, val)
-                    if type(result) in [Env, Map]:
-                        raise RuntimeError  # env dependent result
+                    result = self.check_local(val)
+                    assert type(result) not in [Env, Map]
                     return result
-                except RuntimeError:
+                except (UnboundName, AssertionError):
                     self._memo = None
         
         local = self.parent.child()
-        body = self.body
         Map.match(self.form, val, local)
                 
         if self.inherit:
             upper = Map.eval(self.inherit, local, mutable=False)
             assert isinstance(upper, Env), "@ not applied to an Env"
-            body[1] = local
+            self.body[1] = local
             env = upper
         else:
             env = local
             
-        result = Map.eval(body, env, mutable=False)
+        result = Map.eval(self.body, env, mutable=False)
         if self.inherit and isinstance(result, Env):
             result.parent = upper
             result.cls = str(self)
@@ -120,6 +118,14 @@ class Map(Function):
         try: self._memo[val] = result
         except: pass
         return result
+    
+    def check_local(self, val):
+        "Try to apply on $val to test if self does not depend on outside variables."
+        local = Map.builtins.child()
+        local[self.__name__] = self
+        Map.match(self.form, val, local)
+        if self.inherit: self.body[1] = local
+        return Map.eval(self.body, local, False)
     
     @trace
     def __call__(self, val):
@@ -134,7 +140,7 @@ class Map(Function):
         return '<map%s: %s>' % (where, self._repr)
     
     def __repr__(self):
-        if self.__name__[0] != '(':
+        if self.__name__:
             return self.__name__
         else:
             return '(%s)' % self._repr
