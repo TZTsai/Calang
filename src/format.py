@@ -1,6 +1,6 @@
 from sympy import latex, pretty
 from re import sub as translate
-from builtin import Rational, Fraction, Matrix, is_number, is_matrix, floor, inf, log
+from builtin import Rational, Fraction, Matrix, is_number, is_function, is_env, is_matrix, floor, inf, log
 from objects import Range, Env, Function
 from parse import rev_parse
 from utils.debug import log
@@ -73,15 +73,15 @@ def calc_format(val, **opts):
                 return format_scinum(val)
             else: 
                 return str(format_float(val))
-        elif isinstance(val, Function):
-            return str(val)
+        elif is_function(val):
+            return str(val) if depth == 1 else repr(val)
+        elif is_env(val):
+            if hasattr(val, 'val'):
+                return calc_format(val.val)
+            else:
+                return str(val) if depth == 1 else repr(val)
         elif isinstance(val, Range):
             return str(val)
-        elif isinstance(val, Env):
-            if hasattr(val, 'val'):
-                return calc_format(val.val, **opts)
-            else:
-                return str(val)
         else:
             return pretty(val, use_unicode=True)
 

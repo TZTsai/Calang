@@ -68,7 +68,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             
     arrow_choices = ['»=«', '▶=◀', '➤=', '▷=◁']
     bracket_choices = ['()', '[]', '⟦⟧', '﴾﴿']
-    my_arrows = 0
+    my_arrows = 2
     my_brackets = 1
     def make_prompt(in_out='in'):
         if indent: return indent * ' '

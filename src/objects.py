@@ -85,7 +85,6 @@ class Map(Function):
         self.__doc__ = self._repr
         self._memo = NotImplemented
 
-    @trace
     def f(self, val):
         try:  # try to return the memoized result
             return self._memo[val]
@@ -123,14 +122,23 @@ class Map(Function):
         except: pass
         return result
     
+    @trace
+    def __call__(self, val):
+        return super().__call__(val)
+    
     def __str__(self):
+        path = self.parent.dir()
+        if path[0] == '_':  # hidden
+            where = ''
+        else:
+            where = ' in %s' % path
+        return '<map%s: %s>' % (where, self._repr)
+    
+    def __repr__(self):
         if self.__name__[0] != '(':
             return self.__name__
         else:
-            return self._repr
-    
-    def __repr__(self):
-        return self.parent.dir() + '.' + self.__name__
+            return '(%s)' % self._repr
     
     def compose(self, func):
         "Enable arithmetic ops on Map."
@@ -142,8 +150,6 @@ class Env(dict):
         if val is not None:
             self.val = val
         self.parent = parent
-        if not name:
-            name = '(%s)' % hex(id(self))[-3:]
         self.name = name
         if binds:
             self.update(binds)
@@ -157,10 +163,11 @@ class Env(dict):
         raise KeyError('unbound name: ' + name)
 
     def dir(self):
-        if not self.parent or self.parent.name[0] == '_':
-            return self.name
-        else:
-            return self.parent.dir() + '.' + self.name
+        prefix = '' if not self.parent or self.parent.name[0] == '_' \
+            else self.parent.dir() + '.'
+        suffix = self.name if self.name else '(%s)' % ', '.join(
+            f'{log.format(k)} = {log.format(v)}' for k, v in self.items())
+        return prefix + suffix
 
     def delete(self, name):
         try: self.pop(name)
@@ -174,11 +181,7 @@ class Env(dict):
         return '<%s: %s>' % (self.cls, self.dir())
     
     def __repr__(self):
-        if self.name[0] != '(':
-            return self.dir()
-        else:
-            content = ', '.join(f'{k} = {v}' for k, v in self.items())
-            return f'({content})'
+        return self.dir().rsplit('.', 1)[-1]
     
     def __bool__(self):
         return True
