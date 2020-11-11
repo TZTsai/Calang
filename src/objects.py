@@ -13,25 +13,20 @@ class stack(list):
         
 class Function:
     broadcast = lambda f: NotImplemented
+    compose = lambda f, g: NotImplemented
 
     def __init__(self, func):
-        self.f = func
-        # self.bc = True  # whether allow broadcast
+        self._func = func
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
                 
     def __repr__(self):
         return self.__name__
     
-    def __call__(self, args):
-        try: return self.f(*args)
-        except: pass
-        try: return self.f(args)
-        except TypeError: pass
-        try: return tuple(map(self.f, *args))
-        except TypeError: pass
-        try: return Function.broadcast(self.__call__)(args)
-        except TypeError: raise OperationError
+    def __call__(self, *args):
+        try: return self._func(*args)
+        except TypeError: return self._func(args)
+        
     
     
 class Op(Function):
@@ -40,6 +35,18 @@ class Op(Function):
         self.type = type
         self.symbol = symbol
         self.priority = priority
+        self.nested = True
+        
+    def __call__(self, *args):
+        try:
+            return super().__call__(*args)
+        except TypeError:
+            if not self.nested: raise
+        call = self.__call__
+        try: return tuple(map(call, *args))
+        except TypeError: pass
+        try: return Function.broadcast(call)(*args)
+        except TypeError: raise OperationError
 
     def __repr__(self):
         return f"{self.type}({self.symbol}, {self.priority})"
@@ -85,7 +92,8 @@ class Map(Function):
         self.__doc__ = self._repr
         self._memo = NotImplemented
 
-    def f(self, val):
+    @trace
+    def _func(self, val):
         try:  # try to return the memoized result
             return self._memo[val]
         except:
@@ -127,10 +135,6 @@ class Map(Function):
         if self.inherit: self.body[1] = local
         return Map.eval(self.body, local, False)
     
-    @trace
-    def __call__(self, val):
-        return super().__call__(val)
-    
     def __str__(self):
         path = self.parent.dir()
         if path[0] == '_':  # hidden
@@ -156,8 +160,7 @@ class Env(dict):
             self.val = val
         self.parent = parent
         self.name = name
-        if binds:
-            self.update(binds)
+        if binds: self.update(binds)
         self.cls = 'env'
     
     def __getitem__(self, name):
@@ -168,7 +171,7 @@ class Env(dict):
         raise KeyError('unbound name: ' + name)
 
     def dir(self):
-        prefix = '' if not self.parent or self.parent.name[0] == '_' \
+        prefix = '' if not self.parent or not self.parent.name \
             else self.parent.dir() + '.'
         suffix = self.name if self.name else '(%s)' % ', '.join(
             f'{log.format(k)} = {log.format(v)}' for k, v in self.items())
@@ -200,8 +203,10 @@ class Attr:
         return '.'+self.name
 
     def getFrom(self, env):
-        try: return env[self.name]
-        except: return getattr(env, self.name)
+        if isinstance(env, Env):
+            return env[self.name]
+        else:
+            return getattr(env, self.name)
         
 
 class Range:

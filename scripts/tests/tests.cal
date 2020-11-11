@@ -42,6 +42,7 @@ f[2] #3
 f[2,4] #6
 fact[x] = x*fact[x-1] if x > 0 else 1
 fact[4] #24
+sum[1,2,3] #6
 
 
 [x, y] = [3, 2]

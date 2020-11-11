@@ -71,7 +71,6 @@ def run(filename=None, test=False, start=0, verbose=True):
     my_arrows = 2
     my_brackets = 1
     def make_prompt(in_out='in'):
-        if indent: return indent * ' '
         arrows = arrow_choices[my_arrows]
         if in_out == 'in':
             arrow = arrows[0]
@@ -79,31 +78,36 @@ def run(filename=None, test=False, start=0, verbose=True):
         else:
             arrow = arrows[1]
             brackets = '% '
-        return '%s%d%s%s ' % (brackets[0], count, brackets[1], arrow)
+        prompt = '%s%d%s%s ' % (brackets[0], count, brackets[1], arrow)
+        print(prompt, end='')
+        log.indent = log_indent + len(prompt)
+        return prompt
 
     buffer, count, indent = [], 0, 0
+    log_indent = log.indent
 
     for line in get_lines(filename):
         try:
             if line.find('#TEST') == 0 and not test:
                 return  # the lines after #TEST are run only in test mode
-            # get input
-            prompt = make_prompt()
-            if verbose:
-                print(prompt, end='', flush=True)  # prompt
-                if filename is None:
-                    line = input()
-                else:  # loading a script
-                    print(line, flush=True)
+
+            if not buffer and verbose:  # make prompt
+                prompt = make_prompt()
+            else:
+                prompt = ''
+            if filename is None:  # get input
+                line = input(' ' * indent)
+            elif verbose:  # print content in the loaded script
+                print(line, flush=True)
 
             line, comment = split_comment(line)
             if not line: continue
 
-            # check whether the line is unfinished
             indent = BracketTracker.next_insertion(prompt+line)
             if line[-3:] == '...':
                 line = line[:-3]
-                if not indent: indent = len(prompt)
+                if not indent:
+                    indent = len(prompt)
 
             buffer.append(line)
             if indent: continue
@@ -113,16 +117,16 @@ def run(filename=None, test=False, start=0, verbose=True):
             # convert escaped chars to greek
             
             buffer, indent = [], 0
+            log.indent = log_indent
 
             result = calc_eval(line)
             if result is None: continue
 
             if verbose:  # print output
+                make_prompt('out')
                 opts = {opt: comment == opt.upper() 
                         for opt in ['sci', 'tex', 'bin', 'hex']}
-                s = calc_format(result, **opts)
-                p = make_prompt('out')
-                print(p + s, flush=True)
+                print(calc_format(result, **opts), flush=True)
 
             # test
             if test and comment:

@@ -4,7 +4,7 @@ import re
 
 from parse import calc_parse, is_name, is_tree, tree_tag
 from builtin import operators, builtins
-from funcs import Symbol, is_list, is_function, apply
+from funcs import Symbol, is_list, is_function
 from objects import Env, stack, Op, Attr, Function, Map, UnboundName, OperationError
 from utils import debug
 import config
@@ -90,7 +90,7 @@ def DIR(tr):
         field = tr[1]
         print(f"(dir): {field.dir()}")
     for name, val in field.items():
-        print(f"{name}: {val}")
+        print(f"{name}: {debug.log.format(val)}")
         
 def INFO(tr):
     print(tr[1].__doc__)
@@ -112,23 +112,29 @@ def SEQ(tr):
     ops = stack()
     vals = stack()
     
-    adjoin = operators['BOP']['']
-    dot = operators['BOP']['.']
+    BOP = operators['BOP']
+    adjoin = BOP['(adj)']
+    apply = BOP['(app)']
+    dot = BOP['.']
     
     def reduce():
         op = ops.pop()
-        args = vals.pop(),
         if op.type == 'BOP':
-            args = (vals.peek(), args[0])
+            args = vals.pop(-2), vals.pop(-1)
+        else:
+            args = vals.pop(),
+        
         try:
             result = apply(op, args)
         except OperationError:
-            if op is adjoin:
-                push(dot)  # adjoin failed, change to dot product
-                push(args[-1])
+            if op is adjoin:  # adjoin failed, change to dot product
+                push.prev = None
+                push(args[0])
+                push(dot)
+                push(args[1])
                 return
             else: raise
-        if op.type == 'BOP': vals.pop()
+            
         vals.push(result)
                 
     def push(x):
@@ -140,13 +146,16 @@ def SEQ(tr):
                 else: break
             ops.push(x)
         else:
-            if not (push.prev is None or
-                    isinstance(push.prev, Op)):
-                push(adjoin)
+            if (push.prev is not None and 
+                not isinstance(push.prev, Op)):
+                if is_function(push.prev):
+                    ops.push(apply)
+                else:
+                    push(adjoin)
             vals.push(x)
         push.prev = x
-    push.prev = None
 
+    push.prev = None
     for x in tr[1:]: push(x)
     while ops: reduce()
     val = vals.pop()
@@ -403,9 +412,9 @@ def LOAD(tr):
     global Global
     current_global = Global
     Global = GlobalEnv()  # a new global env
-    debug.log.depth += 1
+    debug.log.indent += 2
     LOAD.run(path, test, start=0, verbose=verbose)
-    debug.log.depth -= 1
+    debug.log.indent -= 2
     
     if overwrite:
         current_global.update(Global)

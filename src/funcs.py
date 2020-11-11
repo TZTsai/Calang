@@ -7,7 +7,7 @@ from objects import Range, Map, Attr, Env, Op, Function, Builtin, OperationError
 import config
 
 
-def apply(func, val):
+def apply(func, args):
     "Apply $func on $val with pre-processing and post-processing."
     
     def numfy(val):
@@ -34,6 +34,8 @@ def apply(func, val):
             return tuple(standardize(a) for a in val)
         elif type(val) is dict:
             return Env(binds=val)
+        elif callable(val) and not isinstance(val, Function):
+            return Function(val)
         else:
             try: return numfy(val)
             except (ValueError, TypeError):
@@ -52,8 +54,11 @@ def apply(func, val):
         else:
             return arg
         
-    val = convert(val)
-    result = func(val)
+    args = convert(args)
+    if isinstance(func, Map):
+        result = func(args)
+    else:
+        result = func(*args)
     return standardize(result)
 
 
@@ -172,11 +177,10 @@ def dot(x1, x2):
     >>> dot([1, 2], [2, 5])
     12
     '''
+    if is_function(x1) and is_list(x2):
+        return broadcast(x1)(x2)
     if not (is_list(x1) or is_list(x2)):
-        if is_function(x1) and is_function(x2):
-            return compose(x1, x2)
-        else:
-            return mul_(x1, x2)
+        return mul_(x1, x2)
     d1, d2 = depth(x1), depth(x2)
     if 0 in [d1, d2]:
         raise TypeError  # for broadcast
@@ -278,12 +282,12 @@ def depth(value, key=max):
 
 def broadcast(f):
     @wraps(f)
-    def wrapped(args):
-        depths = [depth(a) for a in args]
+    def wrapped(*args):
+        depths = [depth(l) for l in args]
         if not same(depths):
             i = depths.index(max(depths))
             args = [[*args[:i], a, *args[i+1:]] for a in args[i]]
-        return tuple(map(f, args))
+        return tuple(f(*a) for a in args)
     return wrapped
 
 Function.broadcast = broadcast
@@ -302,8 +306,6 @@ def adjoin(x1, x2):
         return x2.getFrom(x1)
     elif is_list(x1) and is_list(x2):
         return subscript(x1, x2)
-    elif is_function(x1):
-        return apply(x1, x2)
     else:
         raise OperationError('invalid types for adjoin')
 
@@ -311,7 +313,7 @@ def adjoin(x1, x2):
 def compose(*funcs):
     def compose2(f, g):
         def h(*args): return f(g(*args))
-        h.__name__ = f'<composed: {f.__name__} and {g.__name__}>'
+        h.__name__ = f'<composed: {f.__name__} ⋅ {g.__name__}>'
         return h
     return reduce(compose2, funcs)
 

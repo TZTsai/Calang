@@ -26,21 +26,20 @@ def trace(f):
     def _f(*args):
         signature = format_call(f, args)
         log('%s:' % signature)
-        log.depth += 1
+        log.indent += 2
         try:
             result = f(*args)
-            log.depth -= 1
+            log.indent -= 2
         except Exception as e:
             log(signature, ' exited due to %s' % (str(e) or 'an exception'))
-            log.depth -= 1
+            log.indent -= 2
             raise
         log(f'{signature} ==> {result}')
         return result
     return _f
 
 def format_call(f, args):
-    if f.__name__ == '__call__':
-        f, args = args
+    if f.__name__ == '_func': f, args = args
     return '%s%s' % (repr(f), log.format(args))
     
 
