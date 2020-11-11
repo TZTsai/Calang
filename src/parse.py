@@ -14,7 +14,7 @@ except:
 
 
 keywords = {'if', 'else', 'in', 'dir', 'for', 'with', 'load',
-            'config', 'when', 'import', 'del', 'info'}
+            'config', 'import', 'del', 'info'}
 
 trace = disabled
 
@@ -308,9 +308,6 @@ def rev_parse(tree):
         elif tag == 'FUNC':
             _, name, form = tr
             return '%s%s' % (rec(name), rec(form))
-        elif tag == 'WHEN':
-            return 'when(%s)' % ', '.join(': '.join(map(rec, case[1:]))
-                                          for case in tr[1:])
         elif tag == 'AT':
             return '@' + rec(tr[1])
         elif tag == 'DELAY':

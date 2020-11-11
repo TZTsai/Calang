@@ -234,12 +234,12 @@ def IF_ELSE(tr, env):
     case = t_case if eval_tree(pred, env) else f_case
     return eval_tree(case, env)
 
-def WHEN(tr, env):
-    *cases, default = tr[1:]
-    for _, cond, exp in cases:
-        if eval_tree(cond, env):
-            return eval_tree(exp, env)
-    return eval_tree(default, env)
+# def WHEN(tr, env):
+#     *cases, default = tr[1:]
+#     for _, cond, exp in cases:
+#         if eval_tree(cond, env):
+#             return eval_tree(exp, env)
+#     return eval_tree(default, env)
 
 def GEN_LST(tr, env):
     def generate(exp, constraints):
@@ -263,12 +263,6 @@ def GEN_LST(tr, env):
     return tuple(generate(exp, constraints))
 
 def DICT(tr, env):
-    # for t in tr[1:]:
-    #     if t[0] != 'FUNC':
-    #         # eval each value in the current env first
-    #         try: t[2] = eval_tree(t[2], env)
-    #         except UnboundName: pass
-    #         # if not in env, it may depend on previous bindings in this dict
     local = env.child()
     for t in tr[1:]: BIND(t, local)
     return local
@@ -505,7 +499,7 @@ Map.eval  = eval_tree
 
 delay_types = {
     'DELAY',    'GEN_LST',  'BIND',     'DICT',
-    'IF_ELSE',  'WHEN'
+    'IF_ELSE',  # 'WHEN'
 }
 
 subs_types = {
@@ -519,9 +513,9 @@ subs_rules.update(OPERATORS)
 
 eval_types = {
     'NAME',     'MAP',      'PRINT',    'DICT',
-    'MATCH',    'IF_ELSE',  'WHEN',     'CLOSURE',
+    'MATCH',    'IF_ELSE',  'CLOSURE',  'SYM',
     'BIND',     'GEN_LST',  'BODY',     'DELAY',
-    'SYM',
+    # 'WHEN',
 } 
 eval_rules = {name: eval(name) for name in eval_types}
 

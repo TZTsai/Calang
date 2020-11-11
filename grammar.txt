@@ -47,8 +47,9 @@ SEQ     := _TERM ( BOP ? _TERM ) *
 _TERM   := LOP ? ITEM ATTR ? ROP ?
 
 PRINT   := /`.*?`/
-ITEM    := GROUP | ATOM | LIST
+ITEM    := GROUP | MACRO | ATOM | LIST
 GROUP   := @GRP EXP
+MACRO   := & / NAME VAL_LST
 
 ATOM    := FIELD | UNKNOWN | ' SYM | ANS | NUM
 UNKNOWN := /\?\w*/

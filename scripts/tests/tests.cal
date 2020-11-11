@@ -40,10 +40,6 @@ f[1,2,3,4] #(1,2,(3,4))
 f[a, b=1] = a+b
 f[2] #3
 f[2,4] #6
-max3[x, y, z] = when(x>=y and x>=z: x, y>=z: y, z)
-max3[4, 2, 5] #5
-max3[5, 2, 3] #5
-max3[3, 2, 5] #5
 fact[x] = x*fact[x-1] if x > 0 else 1
 fact[4] #24
 

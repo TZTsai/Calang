@@ -1,6 +1,9 @@
 # TODO List
 
 * EXP with UNKNOWN converted to MAP
+* MACRO
+* function operations like f+g, f*g, f^3, etc.
+* unify FORM and VAL_LST
 
 ## Syntax Update  
 

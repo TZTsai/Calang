@@ -94,10 +94,9 @@ class Map(Function):
                     self._memo = {}
                     result = Map.check_local(self, val)
                     if type(result) in [Env, Map]:
-                        raise TypeError  # env dependent result
-                    # log('Memoizing ', str(self))
+                        raise RuntimeError  # env dependent result
                     return result
-                except:
+                except RuntimeError:
                     self._memo = None
         
         local = self.parent.child()
