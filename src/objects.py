@@ -210,40 +210,54 @@ class Attr:
         
 
 class Range:
-
-    class Iter:
-        def __init__(self, first, last, step):
-            self.current = first
-            self.last = last
-            self.step = step
-
-        def __next__(self):
-            current = self.current
-            if (self.step > 0 and current > self.last) or \
-                (self.step < 0 and current < self.last):
-                raise StopIteration
-            self.current += self.step
-            return current
-
-    def __init__(self, first, last, second=None):
+    def __init__(self, first, last, step=None, second=None):
         self.first = first
-        self.second = second
         self.last = last
-        self.step = 1 if second is None else second - first
-        if self.step == 0: raise ValueError('the step of this range is 0')
+        self.iterable = None
+        
+        if second:
+            self.step = second - first
+        elif step is None:
+            self.step = 1 if first <= last else -1
+        else:
+            self.step = step
+            
+        # some checks
+        if self.step == 0:
+            raise ValueError('range step is 0')
+        
+    def __new__(cls, first, last, step=None, second=None):
+        obj = super().__new__(cls)
+        obj.__init__(first, last, step, second)
+        if (obj.last - obj.first) * obj.step <= 0:
+            return ()  # empty range
+        else:
+            obj.iterable = range(obj.first, obj.last + obj.step, obj.step)
+            return obj
 
     def __repr__(self):
-        items = [self.first, self.second, self.last]
-        if self.second is None: items.pop(1)
-        return '..'.join(map(str, items))
+        items = [self.first, self.last, self.step]
+        if self.step in (1, -1): items.pop()
+        return ':'.join(map(str, items))
         
     def __iter__(self):
-        return Range.Iter(self.first, self.last, self.step)
+        return iter(self.iterable)
 
     def __eq__(self, other):
         if not isinstance(other, Range): return False
-        return (self.first == other.first and self.second == other.second
-                and self.last == other.last)
+        return all(getattr(self, a) == getattr(other, a)
+                   for a in ['first', 'last', 'step'])
+        
+        
+class Enum:
+    def __init__(self, iterable):
+        self.it = iterable
+        
+    def __iter__(self):
+        return enumerate(self.it)
+    
+    def __repr__(self):
+        return '<enum: %s>' % self.it
 
 
 class UnboundName(NameError):

@@ -50,10 +50,11 @@ def gr_to_tex(letter):
     return '\\' + alphabet[letter]
 
 
-def escape_to_greek(s):
-    return re.sub(r'\\([Tt]h|[Pp]s|[a-zA-Z])', lambda m: alphabet[m[1]], s)
+def subst_escape(s):
+    """Substitute escaped characters."""
+    return re.sub(r'\\([a-zA-Z])', lambda m: alphabet[m[1]], s)
 
 
 if __name__ == "__main__":
-    print(escape_to_greek(r'\a \bXy\c1 \D3\s\t\u \t\theta\Psi'))
-    print(gr_to_tex(escape_to_greek(r'\th')))
+    print(subst_escape(r'\a \bXy\c1 \D3\s\t\u \t\h\Psi'))
+    print(gr_to_tex(subst_escape(r'\h')))

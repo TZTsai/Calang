@@ -375,7 +375,7 @@ def findall(cond, lst):
 
 def range_(x, y):
     if isinstance(x, Range):
-        return Range(x.first, y, x.last)
+        return Range(x.first, x.last, y)
     else:
         return Range(x, y)
 

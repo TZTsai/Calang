@@ -9,7 +9,7 @@ from format import calc_format
 from funcs import eq_ as equal
 from parse import BracketTracker
 from utils.debug import log
-from utils.backslash import escape_to_greek
+from utils.backslash import subst_escape
 
 
 scripts_dir = 'scripts/'
@@ -87,22 +87,21 @@ def run(filename=None, test=False, start=0, verbose=True):
             buffer.append(line)
             if indent: continue
 
-            line = ''.join(buffer)
-            line = escape_to_greek(line)
-            # convert escaped chars to greek
-            
+            line = subst_escape(''.join(buffer))
             buffer, indent = [], 0
 
             result = calc_eval(line)
             if result is None: continue
 
             if verbose:  # print output
-                print(make_prompt('out'), end='')
-                opts = {opt: comment == opt.upper() 
+                prompt = make_prompt('out')
+                print(prompt, end='')
+                opts = {opt: comment == opt.upper()
                         for opt in ['sci', 'tex', 'bin', 'hex']}
-                print(calc_format(result, **opts), flush=True)
+                linesep = '\n' + ' ' * len(prompt)
+                output = calc_format(result, linesep=linesep, **opts)
+                print(output, flush=True)
 
-            # test
             if test and comment:
                 verify_answer(line, result, comment)
 

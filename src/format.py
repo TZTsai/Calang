@@ -11,11 +11,15 @@ import config, objects
 depth = 0  # recursion depth
 indent_width = 1
 indent_level = 0
+line_sep_space = '\n'
 options = {}
 
 
-def calc_format(val, **opts):
-    global options, depth, indent_level
+def calc_format(val, linesep='\n', **opts):
+    global options, depth, indent_level, line_sep_space
+    
+    if isinstance(val, str):
+        return val
     
     if opts:
         options = opts
@@ -23,12 +27,17 @@ def calc_format(val, **opts):
         if depth == 0:
             options = {'tex': config.latex, 'sci': 0, 'bin': 0, 'hex': 0}
         opts = options
-
+        
     if config.latex or opts['tex']:
         s = latex(Matrix(val) if is_matrix(val) else val)
         # substitute the Greek letters to tex representations
         return translate(r'[^\x00-\x7F]', lambda m: gr_to_tex(m[0]), s)
     
+    if linesep != '\n':
+        line_sep_space = linesep
+    else:
+        linesep = line_sep_space
+
     def format_float(x):
         prec = config.precision
         return float(f'%.{prec}g' % x)
@@ -50,7 +59,7 @@ def calc_format(val, **opts):
         mat = [[format(x) for x in row] for row in mat]
         space = max([max([len(s) for s in row]) for row in mat])
         col_num = len(mat[0])
-        return f'\n{indent}'.join(
+        return f'{linesep}{indent}'.join(
             [row_str(['']*col_num, '╭', '╮')] +
             [row_str(row, ' ', ' ', ', ') for row in mat] +
             [row_str(['']*col_num, '╰', '╯')])
@@ -91,8 +100,8 @@ def calc_format(val, **opts):
     if type(val) is tuple:
         if any(map(is_matrix, val)):
             indent_level += 1
-            items = ',\n'.join(map(calc_format, val))
-            s += '[\n%s\n%s]' % (items, indent)
+            items = f',{linesep}'.join(map(calc_format, val))
+            s += '[{0}{1}{0}{2}]'.format(linesep, items, indent)
             indent_level -= 1
         elif is_matrix(val):
             s += format_matrix(val)
