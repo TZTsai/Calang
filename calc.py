@@ -16,19 +16,19 @@ scripts_dir = 'scripts/'
 
 
 # override the builtin print
-def print(*msgs, end='\n', flush=True):
-    log(*msgs, sep=' ', end=end, out=sys.stdout, level=1)
+def print(*msgs, end='\n', indent='default', flush=True):
+    log(*msgs, sep=' ', end=end, indent=indent, out=sys.stdout, debug=False)
     if flush: sys.stdout.flush()
 
 
 def run(filename=None, test=False, start=0, verbose=True):
     def get_lines(filename):
-        if filename:
+        if interactive:
+            return iter(lambda: '', 1)  # infinite loop
+        else:
             path = scripts_dir + filename
             file = open(path, 'r')
             return file.readlines()[start:]
-        else:
-            return iter(lambda: '', 1)  # infinite loop
 
     def split_comment(line):
         try: exp, comment = line.rsplit('#', 1)
@@ -44,8 +44,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             
     arrow_choices = ['»=«', '▶=◀', '➤=', '▷=◁']
     bracket_choices = ['()', '[]', '⟦⟧', '﴾﴿']
-    my_arrows = 2
-    my_brackets = 1
+    my_arrows, my_brackets = 2, 1
     def make_prompt(in_out='in'):
         arrows = arrow_choices[my_arrows]
         if in_out == 'in':
@@ -55,9 +54,9 @@ def run(filename=None, test=False, start=0, verbose=True):
             arrow = arrows[1]
             brackets = '% '
         prompt = '%s%d%s%s ' % (brackets[0], count, brackets[1], arrow)
-        print(prompt, end='', flush=True)
         return prompt
 
+    interactive = filename is None
     buffer, count, indent = [], 0, 0
 
     for line in get_lines(filename):
@@ -65,23 +64,25 @@ def run(filename=None, test=False, start=0, verbose=True):
             if line.find('#TEST') == 0 and not test:
                 return  # the lines after #TEST are run only in test mode
 
-            if not buffer and verbose:  # make prompt
-                prompt = make_prompt()
-            else:
-                prompt = ''
-            if filename is None:  # get input
-                line = input(' ' * indent)
+            if verbose:  # make prompt
+                if buffer:  # last line not completed
+                    prompt = ' ' * indent
+                else:
+                    prompt = make_prompt()
+                print(prompt, end='', flush=True)
+                
+            if interactive:  # get input
+                line = input()
             elif verbose:  # print content in the loaded script
-                print(' ' * indent + line, flush=True)
+                print(line, indent=0)
 
             line, comment = split_comment(line)
             if not line: continue
 
-            indent = BracketTracker.next_insertion(prompt+line)
+            indent = BracketTracker.next_insertion(prompt + line)
             if line[-3:] == '...':
                 line = line[:-3]
-                if not indent:
-                    indent = len(prompt)
+                if not indent: indent = len(prompt)
 
             buffer.append(line)
             if indent: continue
@@ -96,7 +97,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             if result is None: continue
 
             if verbose:  # print output
-                make_prompt('out')
+                print(make_prompt('out'), end='')
                 opts = {opt: comment == opt.upper() 
                         for opt in ['sci', 'tex', 'bin', 'hex']}
                 print(calc_format(result, **opts), flush=True)

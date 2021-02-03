@@ -4,11 +4,18 @@ from pprint import pformat, pprint
 import config
 
 
-def log(*messages, level=0, end='\n', sep='', out=None):
-    if not config.debug and level < 1: return  
-    if out is None: out = log.out
-    log.out.write(log.indent * ' ')
-    log.out.write(sep.join(map(log.format, messages)) + end)
+def log(*messages, debug=True, end='\n', sep='',
+        indent='default', out='default'):
+    if not config.debug and debug:
+        return
+    
+    if out == 'default':
+        out = log.out
+    if indent == 'default':
+        indent = log.indent
+        
+    message = sep.join(map(log.format, messages))
+    log.out.write(indent * ' ' + message + end)
 
 log.indent = 0
 log.format = str
