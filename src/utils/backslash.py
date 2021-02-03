@@ -1,6 +1,6 @@
 import re
 
-mappings = """
+en_gr_map = """
 Α	α	alpha
 Β	β	beta
 Γ	γ	gamma
@@ -15,7 +15,6 @@ mappings = """
 Μ	μ	mu
 Ν	ν	nu
 Ξ	ξ	xi
-Ο	ο	omicron
 Π	π	pi
 Ρ	ρ	rho
 Σ	σ	sigma
@@ -29,13 +28,13 @@ mappings = """
 
 alphabet = {}
 
-for line in mappings:
+for line in en_gr_map:
     if not line: continue
     Gr, gr, english = line.split()
     if english == 'theta': 
-        en, En = 'th', 'Th'
-    elif english == 'psi': 
-        en, En = 'ps', 'Ps'
+        en, En = 'h', 'H'
+    elif english == 'psi':
+        en, En = 'y', 'Y'
     elif english == 'phi':
         en, En = 'f', 'F'
     else: 

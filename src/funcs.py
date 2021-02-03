@@ -248,18 +248,6 @@ def ne_(x, y):
     return not eq_(x, y)
 
 
-def fact2(x):  # returns the double factorial of x
-    '''
-    >>> [fact2(4), fact2(5)]
-    [8, 15]
-    '''
-    if not isinstance(x, int) or x < 0:
-        raise ValueError('invalid number for "!!"')
-    result = 1
-    for i in range(x, 0, -2): result *= i
-    return result
-
-
 def depth(value, key=max):
     '''
     >>> depth([1])
@@ -354,23 +342,6 @@ def flatten(l):
     return fl
 
 
-def row(mat, k):
-    assert is_matrix(mat)
-    return mat[k]
-
-def rows(mat):
-    assert is_matrix(mat)
-    return len(mat)
-
-def col(mat, k):
-    assert is_matrix(mat)
-    return subscript(mat, [slice(None), k])
-
-def cols(mat):
-    assert is_matrix(mat)
-    return len(mat[0])
-
-
 def transpose(value):
     d = depth(value, min)
     if d == 0:
@@ -407,14 +378,6 @@ def range_(x, y):
         return Range(x.first, y, x.last)
     else:
         return Range(x, y)
-
-def range_inc(x: Range, y):
-    first, step = x.first, x.last
-    return Range(first, y, first+step)
-
-def range_dec(x: Range, y):
-    first, step = x.first, x.last
-    return Range(first, y, first-step)
 
 
 def substitute(exp, *bindings):

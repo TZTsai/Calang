@@ -4,7 +4,7 @@ from builtin import Rational, Fraction, Matrix, is_number, is_function, is_env, 
 from objects import Range, Env, Function
 from parse import rev_parse
 from utils.debug import log
-from utils.greek import gr_to_tex
+from utils.backslash import gr_to_tex
 import config, objects
 
 

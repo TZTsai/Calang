@@ -4,16 +4,16 @@ from pprint import pformat, pprint
 import config
 
 
-def log(*messages, end='\n', sep='', out=None):
-    if not config.debug: return
+def log(*messages, level=0, end='\n', sep='', out=None):
+    if not config.debug and level < 1: return  
     if out is None: out = log.out
     log.out.write(log.indent * ' ')
     log.out.write(sep.join(map(log.format, messages)) + end)
 
 log.indent = 0
+log.format = str
 log.out = sys.stdout
 # log.out = open('src/utils/log.yaml', 'w')
-log.format = str
 
 def check(f, args, expected, record=None):
     args = freeze(args)

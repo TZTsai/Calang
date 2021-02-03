@@ -15,19 +15,19 @@ SUPER   := ( NAME . ) +
 BIND    := ( FUNC | VAR_ ) AT:PARENT ? = EXP DOC ?  ## Delay this
 FUNC    := NAME:VAR FORM
 VAR_    := VARS | NAME:VAR
-VARS    := @BKT @SEQ VAR_ ,
+VARS    := [ ( @SEQ VAR_ , ) ]
 DOC     := /".*"/
 
 FIELD   := NAME ATTR *
-NAME    := /[^\W\d][\w?]*/                          ## allow '?'
+NAME    := /[^\W\d][\w?']*/                         ## allow `?` and `'`
 ATTR    := . / NAME:ATTR                            ## '/' forces no space in between
 
 FORM    := PAR_IT
 PAR_IT  := PAR_LST | NAME:PAR
-PAR_LST := @BKT ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? )
-_PARS   := @SEQ ( BIND ! PAR_IT ~ ! ) ,             ## '!' forbids the match
-_OPTS   := @SEQ ( BIND:OPTPAR ~ ! ) ,
-_EXT    := NAME:EXTPAR ~
+PAR_LST := [ ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? ) ]
+_PARS   := @SEQ ( BIND ! PAR_IT .. ! ) ,             ## '!' forbids the match
+_OPTS   := @SEQ ( BIND:OPTPAR .. ! ) ,
+_EXT    := NAME:EXTPAR ..
 
 EXP     := MAP | CLOSURE | ENV | BODY
 
@@ -46,7 +46,8 @@ IF_ELSE := SEQ if SEQ else EXP                      ## Delay this
 SEQ     := _TERM ( BOP ? _TERM ) *
 _TERM   := LOP ? ITEM ATTR ? ROP ?
 
-PRINT   := /`.*?`/
+STR     := /".*?"/
+PRINT   := /f".*?"/
 ITEM    := GROUP | MACRO | ATOM | LIST
 GROUP   := @GRP EXP
 MACRO   := & / NAME VAL_LST
@@ -57,26 +58,23 @@ SYM     := /[^\W\d]([\w?]+|{\w*?})*/
 ANS     := /%(\d+|%*)/
 
 NUM     := BIN | HEX | COMPLEX | REAL
-COMPLEX := REAL [+-] REAL I
-REAL    := /-?\d+(\.\d+)?/ ( [eE] - /-?\d+/ ) ?
+COMPLEX := REAL /[+-]/ REAL I
+REAL    := /-?\d+(\.\d+)?/ ( /[eE]/ - /-?\d+/ ) ?
 BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
 LIST    := ' SYM_LST | GEN_LST | IDC_LST | VAL_LST
 SYM_LST := @LST ( UNQUOTE | SYM_LST | SYM ) ,
 UNQUOTE := $ ITEM                                   ## convert the item back to a value
-GEN_LST := @BKT ( EXP ( for CONSTR ) + )            ## Delay this
+GEN_LST := [ ( EXP ( for CONSTR ) + ) ]             ## Delay this
+## RAN_LST := [ EXP , EXP .. EXP ]
 CONSTR  := FORM in EXP WITH ? COND ?
 WITH    := with ( DICT | BIND )
 COND    := if EXP
-IDC_LST := @BKT @SEQ SLICE ,
-SLICE   := _SLC : _SLC ( : _SLC ) ?
-_SLC    := ( SEQ | EMPTY )
 VAL_LST := @LST EXP , | @LST SUB_LST:VAL_LST ;
 SUB_LST := @SEQ EXP ,
 
 ### MACROS ###
-@LST $ITM $SEP  := @BKT ( @SEQ $ITM $SEP ? )
-@BKT $EXP       := "[" - $EXP "]" -
+@LST $ITM $SEP  := [ ( @SEQ $ITM $SEP ? ) ]
 @GRP $EXP       := "(" - $EXP ")" -
 @SEQ $ITM $SEP  := $ITM ( $SEP $ITM ) *

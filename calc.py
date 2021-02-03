@@ -1,58 +1,34 @@
 import sys
-from src import config
-from src import parse
-from src.objects import stack
-from src.eval import calc_eval, LOAD
-from src.format import calc_format
-from src.funcs import eq_ as equal
-from src.utils.debug import log
-from src.utils.greek import escape_to_greek
+sys.path.append('src')
 
-
-# overwrite the builtin print
-def print(*msgs, end='\n', flush=True):
-    log(*msgs, end=end, out=sys.stdout)
-    if flush: sys.stdout.flush()
-
-
-# track the brackets
-class BracketTracker:
-    stk = stack()
-
-    @classmethod
-    def _push(cls, par, pos):
-        cls.stk.push((par, pos))
-
-    @classmethod
-    def _pop(cls, par):
-        if cls.stk and cls.stk.peek()[0] == cls.par_map[par]:
-            cls.stk.pop()
-        else:
-            cls.stk.clear()
-            raise SyntaxError('invalid parentheses')
-
-    parentheses = ')(', '][', '}{'
-    close_pars, open_pars = zip(*parentheses)
-    par_map = dict(parentheses)
-
-    @classmethod
-    def next_insertion(cls, line):
-        "Track the brackets in the line and return the appropriate pooint of the nest insertion."
-        for i, c in enumerate(line):
-            if c in cls.open_pars: cls._push(c, i)
-            elif c in cls.close_pars: cls._pop(c)
-        return cls.stk.peek()[1] + 1 if cls.stk else 0
+import config
+import parse
+from objects import stack
+from eval import calc_eval, LOAD
+from format import calc_format
+from funcs import eq_ as equal
+from parse import BracketTracker
+from utils.debug import log
+from utils.backslash import escape_to_greek
 
 
 scripts_dir = 'scripts/'
+
+
+# override the builtin print
+def print(*msgs, end='\n', flush=True):
+    log(*msgs, sep=' ', end=end, out=sys.stdout, level=1)
+    if flush: sys.stdout.flush()
+
+
 def run(filename=None, test=False, start=0, verbose=True):
     def get_lines(filename):
         if filename:
             path = scripts_dir + filename
             file = open(path, 'r')
-            return file.readlines()[start:]  # begins from line `start`
+            return file.readlines()[start:]
         else:
-            return iter(lambda: '', 1)  # an infinite loop
+            return iter(lambda: '', 1)  # infinite loop
 
     def split_comment(line):
         try: exp, comment = line.rsplit('#', 1)
@@ -79,12 +55,10 @@ def run(filename=None, test=False, start=0, verbose=True):
             arrow = arrows[1]
             brackets = '% '
         prompt = '%s%d%s%s ' % (brackets[0], count, brackets[1], arrow)
-        print(prompt, end='')
-        log.indent = log_indent + len(prompt)
+        print(prompt, end='', flush=True)
         return prompt
 
     buffer, count, indent = [], 0, 0
-    log_indent = log.indent
 
     for line in get_lines(filename):
         try:
@@ -98,7 +72,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             if filename is None:  # get input
                 line = input(' ' * indent)
             elif verbose:  # print content in the loaded script
-                print(line, flush=True)
+                print(' ' * indent + line, flush=True)
 
             line, comment = split_comment(line)
             if not line: continue
@@ -117,7 +91,6 @@ def run(filename=None, test=False, start=0, verbose=True):
             # convert escaped chars to greek
             
             buffer, indent = [], 0
-            log.indent = log_indent
 
             result = calc_eval(line)
             if result is None: continue
@@ -146,6 +119,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
+
 
 LOAD.run = run  # enable LOAD in _eval to run a new script
 

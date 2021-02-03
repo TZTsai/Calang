@@ -1,5 +1,3 @@
-print('Calc grammar loaded.', flush=True)
-
 from pprint import pprint
 import re
 import json
@@ -31,7 +29,6 @@ GROUP   := [(] EXP [)]
 ATOM    := PAR | OBJ | STR | RE | CHARS | VAR | MARK
 STR     := ".*?"
 RE      := /.*?/
-CHARS   := \[.*?\]
 MARK    := [^>|)\s]\S*
 """, '\n')
 ###  COMMENTS ON METAGRAMMAR  ###
@@ -52,7 +49,7 @@ MARK    := [^>|)\s]\S*
 # MACRO:    a macro will be substituted by its evaluated expression 
 
 
-GrammarStr = open('grammar.txt', 'r').read()
+GrammarStr = open('src/grammar.txt', 'r').read()
 GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
 Grammar = split(GrammarStr, '\n')
 # add syntax for operations
@@ -197,6 +194,7 @@ json.dump(grammar, open('src/utils/grammar.json', 'w',
 
 
 if __name__ == "__main__":
-    pprint(grammar)
-    for func in [parse_grammar, calc_grammar, refactor_tree]:
-        check_record('src/utils/syntax_tests.json', func)
+    # pprint(grammar)
+    print(parse_grammar('EXP', '[ x ]'))
+    # for func in [parse_grammar, calc_grammar, refactor_tree]:
+    #     check_record('src/utils/syntax_tests.json', func)

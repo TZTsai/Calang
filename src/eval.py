@@ -213,7 +213,7 @@ def SYM(tr, env):
     return Symbol(s)
 
 def PRINT(tr, env):
-    print(format_string(tr[1][1:-1], env))
+    print(format_string(tr[1][2:-1], env))
     return '(printed)'
 
 def format_string(s, env, char='.'):
