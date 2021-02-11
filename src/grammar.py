@@ -52,12 +52,12 @@ MARK    := [^>|)\s]\S*
 GrammarStr = open('src/grammar.txt', 'r').read()
 GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
 Grammar = split(GrammarStr, '\n')
-# add syntax for operations
-bin_op, unl_op, unr_op = ['"' + '" | "'.join(sorted(ops, reverse=1, key=len)) + '"' 
-                          for ops in (binary_ops, unary_l_ops, unary_r_ops)]
-Grammar.append('BOP := ' + bin_op)
-Grammar.append('LOP := ' + unl_op)
-Grammar.append('ROP := ' + unr_op)
+# # add syntax for operations
+# bin_op, unl_op, unr_op = ['"' + '" | "'.join(sorted(ops, reverse=1, key=len)) + '"' 
+#                           for ops in (binary_ops, unary_l_ops, unary_r_ops)]
+# Grammar.append('BOP := ' + bin_op)
+# Grammar.append('LOP := ' + unl_op)
+# Grammar.append('ROP := ' + unr_op)
 
 
 def simple_grammar(rules, whitespace=r'\s+'):

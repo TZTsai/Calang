@@ -25,15 +25,12 @@ def construct_ops(op_dict, type):
         op_dict[op] = Op(type, op, fun, pri)
 
 
-AND = lambda x, y: x and y
-OR  = lambda x, y: x or y
-
 binary_ops = {
     '+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '^': (pow_, 18),
-    '//': (floordiv, 8), '%': (mod, 8), '.': (dot, 10), '&': (and_, 8), '|': (or_, 7),
-    '==': (eq_, 0), '/=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
-    'xor': (xor, 3), 'in': (lambda x, y: x in y, -2), ':': (range_, 4), 
-    'and': (AND, -5), 'or': (OR, -6), '(adj)': (adjoin, 20), '(app)': (apply, 22)
+    '//': (floordiv, 8), '%': (mod, 8), '.': (dot, 10), '/\\': (and_, 8), '\\/': (or_, 7),
+    '==': (eq_, 0), '~=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
+    'or': (lambda x, y: x or y, -6), 'in': (lambda x, y: x in y, -2), 'xor': (xor, 3),
+    ':': (range_, 4), '(adj)': (adjoin, 20), '(app)': (apply, 22)
     #'of': (NotImplemented, -3)
 }
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10)}

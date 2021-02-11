@@ -157,7 +157,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     def parse_tag(tag, text):
         # allow OBJ:ALTNAME; changes the tag to ALTNAME
         alttag = None
-        if ':' in tag: tag, alttag = tag.split(':')
+        if ':' in tag: alttag, tag = tag.split(':')
 
         # prechecks to speed up parsing
         if not text and tag not in ('LINE', 'EMPTY'):
@@ -177,9 +177,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    kept_tags = lambda tag: tag[-3:] == 'LST' or \
-        tag in {'DIR', 'DEL', 'VARS', 'DICT',
-                'PARENT', 'WITH', 'INFO'}
+    kept_tags = lambda tag: tag in {'DIR', 'DEL', 'NM_SP', 'QUOTE', 'INFO'}
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_':

@@ -216,6 +216,7 @@ def PRINT(tr, env):
     return '(printed)'
 
 def format_string(s, env, char='.'):
+    # TODO: use the builtin evaluation of f-string
     def subs(match):
         s = match[1].strip()
         if s[-1] == '=':

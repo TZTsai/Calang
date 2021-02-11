@@ -1,55 +1,40 @@
-LINE    := @SEQ ( CMD | DEF | EXP | EMPTY ) ;
+LINE    := @SEQ ( CMD | EXP | EMPTY ) ;
 EMPTY   := /\s*/
 
 CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | EXIT
 CONF    := config /\w+/ ( NUM | /on|off/ ) ?
-DIR     := dir FIELD ?
-DEL     := del @SEQ FIELD ,
+DIR     := dir VAR ?
+DEL     := del @SEQ VAR ,
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
-INFO    := info FIELD ?
+INFO    := info VAR ?
 EXIT    := exit
 
-DEF     := NM_SP ? BIND
-NM_SP   := ( NAME . ) +     ## name space
-BIND    := ( FUNC | VAR_ ) AT:PARENT ? = EXP DOC ?  ## Delay this
-FUNC    := NAME:VAR FORM
-VAR_    := VARS | NAME:VAR
-VARS    := [ ( @SEQ VAR_ , ) ]
-DOC     := /".*"/
+EXP     := BIND | MAP | CLOSURE | VAL
+BIND    := VAR ARGS:ITEMS ? = EXP DOC:STR ?         ## DELAY this
+MAP     := FORM:ITEMS -> EXP                        ## DELAY this
+CLOSURE := @ ITEM EXP                               ## DELAY this
 
-FIELD   := NAME ATTR *
+VAR     := NAME ATTR *
 NAME    := /[^\W\d][\w]*'*/
-ATTR    := . / NAME:ATTR                            ## '/' forces no space in between
+ATTR    := . / ATTR:NAME
 
-FORM    := PAR_IT
-PAR_IT  := PAR_LST | NAME:PAR
-PAR_LST := [ ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? ) ]
-_PARS   := @SEQ ( BIND ! PAR_IT .. ! ) ,             ## '!' forbids the match
-_OPTS   := @SEQ ( BIND:OPTPAR .. ! ) ,
-_EXT    := NAME:EXTPAR ..
+VAL     := IF_ELSE | ITEMS
+IF_ELSE := ITEMS if SEQ else EXP                    ## DELAY this
+SEQ     := @SEQ EXP ,
+ITEMS   := ITEM +                                   ## sentence
 
-EXP     := MAP | CLOSURE | ENV | BODY
+ITEM    := GROUP | QUOTE | ATOM | LIST | PRINT
+GROUP   := @GRP SEQ
+QUOTE   := ' ITEM
+PRINT   := /f`.*?`/
+## UNQUOTE := $ ITEM                                ## TODO
+## MACRO   := & / NAME ITEM                         ## TODO
 
-MAP     := FORM -> EXP                              ## Delay this
-CLOSURE := @ ITEM EXP                               ## Delay this
-DICT    := @GRP @SEQ BIND ,                         ## Delay this
-
-BODY    := PRINT ? ( IF_ELSE | SEQ ) PRINT ?
-IF_ELSE := SEQ if SEQ else EXP                      ## Delay this
-SEQ     := _TERM ( BOP ? _TERM ) *
-_TERM   := LOP ? ITEM ATTR ? ROP ?
-
-STR     := /".*?"/
-PRINT   := /f".*?"/
-ITEM    := GROUP | MACRO | ATOM | LIST
-GROUP   := @GRP EXP
-MACRO   := & / NAME VAL_LST
-
-ATOM    := FIELD | UNKNOWN | ' SYM | ANS | NUM
+ATOM    := VAR | UNKNOWN | ANS | NUM | STR
 UNKNOWN := /\?\w*/
-SYM     := /[^\W\d]([\w?]+|{\w*?})*/
 ANS     := /%(\d+|%*)/
+STR     := /".*?"/
 
 NUM     := BIN | HEX | COMPLEX | REAL
 COMPLEX := REAL /[+-]/ REAL I
@@ -57,17 +42,12 @@ REAL    := /-?\d+(\.\d+)?/ ( /[eE]/ - /-?\d+/ ) ?
 BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
-LIST    := ' SYM_LST | GEN_LST | IDC_LST | VAL_LST
-SYM_LST := @LST ( UNQUOTE | SYM_LST | SYM ) ,
-UNQUOTE := $ ITEM                                   ## convert the item back to a value
-GEN_LST := [ ( EXP ( for CONSTR ) + ) ]             ## Delay this
-CONSTR  := FORM in EXP WITH ? COND ?
-WITH    := with ( DICT | BIND )
-COND    := if EXP
-VAL_LST := @LST EXP , | @LST SUB_LST:VAL_LST ;
-SUB_LST := @SEQ EXP ,
+LIST    := [ SEQ ? ] | GEN_LST | MATRIX
+GEN_LST := [ EXP "|" - CONSTR:SEQ ]                 ## DELAY this
+MATRIX  := @LST SEQ ;
+
 
 ### MACROS ###
-@LST $ITM $SEP  := [ ( @SEQ $ITM $SEP ? ) ]
+@LST $ITM $SEP  := [ ( @SEQ $ITM $SEP ) ? ]
 @GRP $EXP       := "(" - $EXP ")" -
 @SEQ $ITM $SEP  := $ITM ( $SEP $ITM ) *

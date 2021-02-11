@@ -222,8 +222,8 @@ def or_(x, y):
     elif all_([x, y], is_env):
         assert x.parent is y.parent, \
             'two objects do not have the same parent'
-        e = Env(parent=x.parent, binds=x)
-        e.update(y)
+        e = Env(parent=x.parent)
+        e.update(x); e.update(y)
     else:
         return b_or(x, y)
 
