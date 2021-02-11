@@ -150,8 +150,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             tree = ['(nospace)'] + tree
         return tree, rem
 
-    must_have = {'BIND': '=', 'MAP': '=>', 'MATCH': '::', 'GEN_LST': 'for', 
-                 '_EXT': '~', 'SLICE': ':', '_DLST': ';'}
+    must_have = {'BIND': '=', 'MAP': '->', 'MATCH': '::', 'GEN_LST': 'for', 
+                 '_EXT': '..', 'SLICE': ':', '_DLST': ';'}
     @trace
     @memo
     def parse_tag(tag, text):
@@ -178,8 +178,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     kept_tags = lambda tag: tag[-3:] == 'LST' or \
-        tag in {'DELAY', 'DIR', 'DEL', 'VARS', 
-                'DICT', 'PARENT', 'WITH', 'INFO'}
+        tag in {'DIR', 'DEL', 'VARS', 'DICT',
+                'PARENT', 'WITH', 'INFO'}
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_':
@@ -243,7 +243,7 @@ def convert_if_inherit(bind):
         parent = bind.pop(1)[1]
         body = bind[1]
         tag = 'INHERIT' if tree_tag(bind[0]) == 'FUNC' else 'CLOSURE'
-        bind[1] = [tag, parent, ['DELAY', body]]
+        bind[1] = [tag, parent, body]
     
 
 def rev_parse(tree):
@@ -282,7 +282,7 @@ def rev_parse(tree):
             _, pars, optpars, extpar = tr
             pars = [rec(par) for par in pars[1:]]
             optpars = [f'{rec(optpar)}: {default}' for optpar, default in optpars[1:]]
-            extpar = [extpar+'~'] if extpar else []
+            extpar = [extpar+'..'] if extpar else []
             return "[%s]" % ', '.join(pars + optpars + extpar)
         elif tag == 'IF_ELSE':
             return group("%s if %s else %s" % tuple(map(rec, tr[1:])))
@@ -290,7 +290,7 @@ def rev_parse(tree):
             return '[%s]' % ', '.join(map(rec, tr[1:]))
         elif tag == 'MAP':
             _, form, exp = tr
-            return group('%s => %s' % (rec(form), rec(exp)))
+            return group('%s -> %s' % (rec(form), rec(exp)))
         elif tag == 'DICT':
             return '(%s)' % ', '.join(map(rec, tr[1:]))
         elif tag == 'BIND':

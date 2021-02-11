@@ -11,9 +11,9 @@ CyclicGroup[g, m, o] @Group[m, o] = (
      elements = (rec[x, l] = l if x in l else rec[m[g,x], l+[x]])
                 rec[g, []],
      order[x='nan] = len[elements] if x=='nan else
-                     first[list[1..order[]], k=>pow[x, k]==unit]
+                     first[list[1..order[]], k->pow[x, k]==unit]
                      if x in elements else 'not_an_element,
-     inverse[x] = first[elements, e => mul[e, x] == unit]
+     inverse[x] = first[elements, e -> mul[e, x] == unit]
 )
 
 
@@ -21,9 +21,9 @@ CyclicGroup[g, m, o] @Group[m, o] = (
 Zx[n] = (
      elements = coprimes[n],
      mul[x, y] = x*y%n, pow[x, k] = x^k%n,
-     order[x] = first[list[1..n-1], k => pow[x, k]==1],
+     order[x] = first[list[1..n-1], k -> pow[x, k]==1],
      type = Group[mul, 1] if not prime?[n] else
-            (gen = first[list[2..n-1], x => order[x]==n-1])
+            (gen = first[list[2..n-1], x -> order[x]==n-1])
             CyclicGroup[gen, mul, 1],
      get[] @type = (elements = elements, N = n, pow = pow)
 ) get[]
@@ -32,7 +32,7 @@ gcd[a, b] = a if b == 0 else gcd[b, a%b]
 prime?[n] = ((find_divisor[t] =
               when(t^2>n: n, n%t==0: t, find_divisor[t+1+t%2]))
              n > 1 and find_divisor[2] == n)
-first[l, pred=(x=>x)] = (rec[i] = l[i] if pred[l[i]] else rec[i+1]) rec[0]
+first[l, pred=(x->x)] = (rec[i] = l[i] if pred[l[i]] else rec[i+1]) rec[0]
 coprimes[n] = list[1..n-1] if prime?[n] else [x for x in 1..n-1 if gcd[x, n] == 1]
 
 

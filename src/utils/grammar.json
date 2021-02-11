@@ -241,7 +241,7 @@
       "ITEM_OP",
       [
         "OBJ",
-        "SUPER"
+        "NM_SP"
       ],
       [
         "OP",
@@ -253,7 +253,7 @@
       "BIND"
     ]
   ],
-  "SUPER": [
+  "NM_SP": [
     "ITEM_OP",
     [
       "ALT",
@@ -397,7 +397,7 @@
   ],
   "NAME": [
     "RE",
-    "/[^\\W\\d][\\w?']*/"
+    "/[^\\W\\d][\\w]*'*/"
   ],
   "ATTR": [
     "ALT",
@@ -691,27 +691,27 @@
     ],
     [
       "MARK",
-      "=>"
+      "->"
     ],
     [
       "OBJ",
-      "DELAY"
+      "EXP"
     ]
   ],
   "CLOSURE": [
     "ALT",
+    [
+      "MARK",
+      "@"
+    ],
     [
       "OBJ",
       "ENV"
     ],
     [
       "OBJ",
-      "DELAY"
+      "EXP"
     ]
-  ],
-  "DELAY": [
-    "OBJ",
-    "EXP"
   ],
   "ENV": [
     "EXP",

@@ -194,7 +194,6 @@ json.dump(grammar, open('src/utils/grammar.json', 'w',
 
 
 if __name__ == "__main__":
-    # pprint(grammar)
-    print(parse_grammar('EXP', '[ x ]'))
-    # for func in [parse_grammar, calc_grammar, refactor_tree]:
-    #     check_record('src/utils/syntax_tests.json', func)
+    pprint(grammar)
+    for func in [parse_grammar, calc_grammar, refactor_tree]:
+        check_record('src/utils/syntax_tests.json', func)

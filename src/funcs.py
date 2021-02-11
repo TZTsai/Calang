@@ -12,8 +12,7 @@ def apply(func, args):
     
     def numfy(val):
         "convert a number into python number type"
-        if any(isinstance(val, c) for c in
-               (int, float, complex, Fraction)):
+        if isinstance(val, (int, float, complex, Fraction)):
             if isinstance(val, complex):
                 return val.real if eq_(val.imag, 0) else val
             else:

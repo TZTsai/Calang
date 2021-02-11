@@ -10,8 +10,8 @@ IMPORT  := import /[\w\.]+/ /-[vw]/ *
 INFO    := info FIELD ?
 EXIT    := exit
 
-DEF     := SUPER ? BIND
-SUPER   := ( NAME . ) +
+DEF     := NM_SP ? BIND
+NM_SP   := ( NAME . ) +     ## name space
 BIND    := ( FUNC | VAR_ ) AT:PARENT ? = EXP DOC ?  ## Delay this
 FUNC    := NAME:VAR FORM
 VAR_    := VARS | NAME:VAR
@@ -19,7 +19,7 @@ VARS    := [ ( @SEQ VAR_ , ) ]
 DOC     := /".*"/
 
 FIELD   := NAME ATTR *
-NAME    := /[^\W\d][\w?']*/                         ## allow `?` and `'`
+NAME    := /[^\W\d][\w]*'*/
 ATTR    := . / NAME:ATTR                            ## '/' forces no space in between
 
 FORM    := PAR_IT
@@ -31,15 +31,9 @@ _EXT    := NAME:EXTPAR ..
 
 EXP     := MAP | CLOSURE | ENV | BODY
 
-MAP     := FORM => DELAY
-CLOSURE := ENV DELAY
-DELAY   := EXP                                      ## Delay this
-ENV     := AT | DICT | MATCH
-AT      := @ VAL_
+MAP     := FORM -> EXP                              ## Delay this
+CLOSURE := @ ITEM EXP                               ## Delay this
 DICT    := @GRP @SEQ BIND ,                         ## Delay this
-MATCH   := FORM :: VAL_
-VAL_    := APPLY:SEQ | ITEM
-APPLY   := FIELD ( GEN_LST | VAL_LST )
 
 BODY    := PRINT ? ( IF_ELSE | SEQ ) PRINT ?
 IF_ELSE := SEQ if SEQ else EXP                      ## Delay this
@@ -67,7 +61,6 @@ LIST    := ' SYM_LST | GEN_LST | IDC_LST | VAL_LST
 SYM_LST := @LST ( UNQUOTE | SYM_LST | SYM ) ,
 UNQUOTE := $ ITEM                                   ## convert the item back to a value
 GEN_LST := [ ( EXP ( for CONSTR ) + ) ]             ## Delay this
-## RAN_LST := [ EXP , EXP .. EXP ]
 CONSTR  := FORM in EXP WITH ? COND ?
 WITH    := with ( DICT | BIND )
 COND    := if EXP

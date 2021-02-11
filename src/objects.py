@@ -248,7 +248,7 @@ class Range:
         return all(getattr(self, a) == getattr(other, a)
                    for a in ['first', 'last', 'step'])
         
-        
+
 class Enum:
     def __init__(self, iterable):
         self.it = iterable

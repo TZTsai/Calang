@@ -1,9 +1,9 @@
-compose[f, g] = x => f[g[x]]
+compose[f, g] = x -> f[g[x]]
 identity[x] = x
 fold[f, times] = when(times == 0: identity,
                       times % 2:  compose[f, fold[f, times-1]],
                       else:       fold[compose[f, f], times/2])
 
 #TEST
-pow[x, n] = fold[y=>x*y, n][1]
+pow[x, n] = fold[y->x*y, n][1]
 pow[2, 5] #32

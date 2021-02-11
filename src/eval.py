@@ -146,8 +146,7 @@ def SEQ(tr):
                 else: break
             ops.push(x)
         else:
-            if (push.prev is not None and 
-                not isinstance(push.prev, Op)):
+            if not (push.prev is None or isinstance(push.prev, Op)):
                 if is_function(push.prev):
                     ops.push(apply)
                 else:
@@ -234,9 +233,6 @@ def format_string(s, env, char='.'):
 
 def BODY(tr, env):
     return tr[2] if tr[1] == '(printed)' else tr[1]
-
-def DELAY(tr, env):
-    return tr[1]  # only delay the eval of tr[1]
 
 def IF_ELSE(tr, env):
     _, t_case, pred, f_case = tr
@@ -501,8 +497,8 @@ Map.eval  = eval_tree
 
 
 delay_types = {
-    'DELAY',    'GEN_LST',  'BIND',     'DICT',
-    'IF_ELSE',  # 'WHEN'
+    'MAP',      'GEN_LST',  'BIND',     'CLOSURE' 
+    'IF_ELSE',  'DICT',     'INHERIT'
 }
 
 subs_types = {
@@ -517,8 +513,7 @@ subs_rules.update(OPERATORS)
 eval_types = {
     'NAME',     'MAP',      'PRINT',    'DICT',
     'MATCH',    'IF_ELSE',  'CLOSURE',  'SYM',
-    'BIND',     'GEN_LST',  'BODY',     'DELAY',
-    # 'WHEN',
+    'BIND',     'GEN_LST',  'BODY',
 } 
 eval_rules = {name: eval(name) for name in eval_types}
 
