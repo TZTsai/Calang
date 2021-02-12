@@ -1,26 +1,25 @@
 import sys
+import threading
 sys.path.append('src')
 
 import config
-import parse
-from objects import stack
-from eval import calc_eval, LOAD
-from format import calc_format
-from funcs import eq_ as equal
-from parse import BracketTracker
 from utils.debug import log
 from utils.backslash import subst_escape
 
 
+debug = '-d' in sys.argv
+test = '-t' in sys.argv
+
 scripts_dir = 'scripts/'
+config.debug = debug
 
 
 # override the builtin print
 def print(*msgs, end='\n', indent='default', flush=True):
     log(*msgs, sep=' ', end=end, indent=indent, out=sys.stdout, debug=False)
     if flush: sys.stdout.flush()
-
-
+    
+    
 def run(filename=None, test=False, start=0, verbose=True):
     def get_lines(filename):
         if interactive:
@@ -75,7 +74,7 @@ def run(filename=None, test=False, start=0, verbose=True):
                 line = input()
             elif verbose:  # print content in the loaded script
                 print(line, indent=0)
-
+                
             line, comment = split_comment(line)
             if not line: continue
 
@@ -119,33 +118,40 @@ def run(filename=None, test=False, start=0, verbose=True):
             
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
-
-
-LOAD.run = run  # enable LOAD in _eval to run a new script
-
-
-if __name__ == "__main__":
-    debug = '-d' in sys.argv
-    test = '-t' in sys.argv
-    
-    config.debug = debug
-    if debug:
-        sys.argv.remove('-d')
-        from src.grammar import grammar
-        parse.grammar = grammar  # reload grammar only when debugging
         
-    if test: sys.argv.remove('-t')
-            
-    if len(sys.argv) > 1 or test:
-        if len(sys.argv) > 1:
-            filename = sys.argv[1]
-        else:
-            filename = 'tests/tests.cal'
-        try:
-            run(filename, test)
-        except FileNotFoundError:
-            raise FileNotFoundError('script "%s" not found' % filename)
-        except Exception:
-            if config.debug: raise
+        
+def load_src():  # to boost up the startup of calc
+    from eval import calc_eval, LOAD
+    from format import calc_format
+    from funcs import eq_ as equal
+    from parse import BracketTracker
+    LOAD.run = run
+    globals().update((obj.__name__, obj) for obj in
+                     [calc_eval, calc_format,
+                      equal, BracketTracker])
+
+loading_thread = threading.Thread(target=load_src)
+loading_thread.start()
+
+
+if debug:
+    sys.argv.remove('-d')
+    from src.grammar import grammar
+    parse.grammar = grammar  # reload grammar only when debugging
+    
+if test:
+    sys.argv.remove('-t')
+        
+if len(sys.argv) > 1 or test:
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
     else:
-        run()
+        filename = 'tests/tests.cal'
+    try:
+        run(filename, test)
+    except FileNotFoundError:
+        raise FileNotFoundError('script "%s" not found' % filename)
+    except Exception:
+        if config.debug: raise
+else:
+    run()

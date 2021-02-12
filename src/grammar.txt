@@ -10,16 +10,16 @@ IMPORT  := import /[\w\.]+/ /-[vw]/ *
 INFO    := info VAR ?
 EXIT    := exit
 
-EXP     := BIND | MAP | CLOSURE | VAL
+EXP     := BIND | MAP | VAL
 BIND    := VAR ARGS:ITEMS ? = EXP DOC:STR ?         ## DELAY this
 MAP     := FORM:ITEMS -> EXP                        ## DELAY this
-CLOSURE := @ ITEM EXP                               ## DELAY this
 
 VAR     := NAME ATTR *
 NAME    := /[^\W\d][\w]*'*/
 ATTR    := . / ATTR:NAME
 
-VAL     := IF_ELSE | ITEMS
+VAL     := CLOSURE | IF_ELSE | ITEMS
+CLOSURE := @ ITEM EXP                               ## DELAY this
 IF_ELSE := ITEMS if SEQ else EXP                    ## DELAY this
 SEQ     := @SEQ EXP ,
 ITEMS   := ITEM +                                   ## sentence
@@ -43,7 +43,9 @@ BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
 LIST    := [ SEQ ? ] | GEN_LST | MATRIX
-GEN_LST := [ EXP "|" - CONSTR:SEQ ]                 ## DELAY this
+GEN_LST := [ EXP "|" - ( @SEQ CONSTR , ) ]          ## DELAY this
+CONSTR  := RANGE | BIND | VAL
+RANGE   := NAME in VAL
 MATRIX  := @LST SEQ ;
 
 
