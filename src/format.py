@@ -4,7 +4,6 @@ from builtin import Rational, Fraction, Matrix, is_number, is_function, is_env, 
 from objects import Range, Env, Function
 from parse import rev_parse
 from utils.debug import log
-from utils.backslash import gr_to_tex
 import config, objects
 
 
@@ -29,9 +28,7 @@ def calc_format(val, linesep='\n', **opts):
         opts = options
         
     if config.latex or opts['tex']:
-        s = latex(Matrix(val) if is_matrix(val) else val)
-        # substitute the Greek letters to tex representations
-        return translate(r'[^\x00-\x7F]', lambda m: gr_to_tex(m[0]), s)
+        return latex(Matrix(val) if is_matrix(val) else val)
     
     if linesep != '\n':
         line_sep_space = linesep

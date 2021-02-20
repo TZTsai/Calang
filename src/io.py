@@ -1,5 +1,7 @@
 import sys
+import os
 import re
+import psutil
 import msvcrt
 from objects import stack
 from utils.debug import log
@@ -25,7 +27,7 @@ def input(end='\n', sub='\t', ccl='\x1a'):
             
             n_del = len(s) - i + tab_space - 1
             backspace(n_del)  # remove substituted chars from console
-            s, t = s[:i], s[i+1:-1]
+            s, t = s[:i], s[i:-1]
             
             t = subst(''.join(t))
             write(t)
