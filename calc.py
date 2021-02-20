@@ -1,10 +1,10 @@
 import sys
 import threading
+
 sys.path.append('src')
 
+from src.io import BracketTracker, print, input
 import config
-from utils.debug import log
-from utils.backslash import subst_escape
 
 
 debug = '-d' in sys.argv
@@ -13,12 +13,6 @@ test = '-t' in sys.argv
 scripts_dir = 'scripts/'
 config.debug = debug
 
-
-# override the builtin print
-def print(*msgs, end='\n', indent='default', flush=True):
-    log(*msgs, sep=' ', end=end, indent=indent, out=sys.stdout, debug=False)
-    if flush: sys.stdout.flush()
-    
     
 def run(filename=None, test=False, start=0, verbose=True):
     def get_lines(filename):
@@ -71,9 +65,16 @@ def run(filename=None, test=False, start=0, verbose=True):
                 print(prompt, end='', flush=True)
                 
             if interactive:  # get input
-                line = input()
+                try:
+                    line = input()
+                except IOError:
+                    print(indent=0)
+                    continue  # abandon current input
             elif verbose:  # print content in the loaded script
                 print(line, indent=0)
+                
+            if loading_thread.is_alive():
+                loading_thread.join()
                 
             line, comment = split_comment(line)
             if not line: continue
@@ -86,7 +87,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             buffer.append(line)
             if indent: continue
 
-            line = subst_escape(''.join(buffer))
+            line = ''.join(buffer)
             buffer, indent = [], 0
 
             result = calc_eval(line)
@@ -107,6 +108,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             count += 1
 
         except KeyboardInterrupt:
+            print('Byebye!')
             return
         except Warning as w:
             print(w)
@@ -120,11 +122,11 @@ def run(filename=None, test=False, start=0, verbose=True):
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
         
         
-def load_src():  # to boost up the startup of calc
+def load_src():  # to speed up the startup of calc
     from eval import calc_eval, LOAD
     from format import calc_format
     from funcs import eq_ as equal
-    from parse import BracketTracker
+    
     LOAD.run = run
     globals().update((obj.__name__, obj) for obj in
                      [calc_eval, calc_format,

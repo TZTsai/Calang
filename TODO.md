@@ -14,6 +14,31 @@
     * a successful match, which defines names in the present env
 * rename MAP to RULE
 
+## TODO2
+
+* [ ] index starts from 1
+* [ ] `_` has value 'none', it can be used in `_ = x` but its value does not change
+* [ ] use dot `.` to index lists: `l.1, l.2:-1, l.-2:1, l.-1:-2:1, l.[1:3, 2:-1]` (convert negative index to index from the end)
+* [ ] list comprehension: `[x*y @ x in 1:5, y = x ^ 2, y < 20]`
+* [ ] conditional: `{a == 1, 3; a == 2, 2; 4}` <=> `3 if a == 1 else 2 if a == 2 else 4`
+* [ ] str: `"abc"`, print: `p"abc"`, re: `r"abc"`, insert value: `"{a}bc"` (`a` is evaluated)
+* [ ] functions: `f x = x`, `add a b = a + b`, `f [x, y] = 2x + y`, `f [a, b.., c=3] = [a, b.., c]`
+* [ ] lambda: `x -> 2x`, `[x, [t]] -> x + t`, `(x y) -> x + y`
+* [ ] unpack: `[1, [2, 3]..] == [1, 2, 3]`, `f [x, y..] = x | y`
+* [ ] concat: `x | y`, if at least one of `x` and `y` is a list, then the operation becomes concat. `[1] | [2, 3] == [1, 2, 3]`, `1 | [[2], [3]] == [[1, 2], [1, 3]]`
+* [ ] auto broadcast of operations: `1 + [1, 0] == [2, 1]`
+* [ ] arrays: `[<1, 2, 3; 4, 5, 6>]`, `[<1, 2, 3>]`, `[<[1, 2], [3, 4]>]` (converted to sympy array)
+* [ ] pattern matching: `max x y = x if x > y else y`, `max lst = ...`
+* [ ] type system: `add a::Int b::Int = a + b`, `add a::Complex b::Complex = ...`
+* [ ] backslash auto substitution: `\i` -> (imaginary number i), `\ga` -> (greek letter alpha)
+* [ ] broadcast function: `abs! [1, -2]` (overload the factorial operator)
+* [ ] pattern matching tree: `[(f x y), [[(f x::Num y::Num), [(f x::Int y::Int)]], (f x::List y::List)]`
+* [ ] `?` to quickly create function `? + 2` <=> `x -> x + 2`, `[?1, ?2]` <=> `(x y) -> [x, y]`
+* [ ] sequence: `a, b, c` evaluates from the first expression and returns the first false one (with short-circuit), otherwise returns the last one
+* [ ] parsing uses yield from ?
+* [ ] value dependent parsing `x y` is parsed differently if `x` is a function, a number, etc.
+* [ ] `x.f(y, ...)` is evaluated as `f(x, y, ...)` if `x` has no attribute `f`
+
 ## Syntax Update  
 
 * EVAL  := BIND | EXP

@@ -18,7 +18,7 @@ VAR     := NAME ATTR *
 NAME    := /[^\W\d][\w]*'*/
 ATTR    := . / ATTR:NAME
 
-VAL     := CLOSURE | IF_ELSE | ITEMS
+VAL     := CLOSURE | IF_ELSE | ITEMS                ## DELAY this (to search for UNKNOWN)
 CLOSURE := @ ITEM EXP                               ## DELAY this
 IF_ELSE := ITEMS if SEQ else EXP                    ## DELAY this
 SEQ     := @SEQ EXP ,

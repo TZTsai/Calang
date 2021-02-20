@@ -1,6 +1,5 @@
 import re, json
 import config
-from objects import stack
 from builtin import operators
 from utils.deco import memo, trace, disabled
 from utils.debug import check, check_record, pprint
@@ -316,36 +315,6 @@ def rev_parse(tree):
         else:
             return str(list(map(rec, tr)))
     return rec(tree)
-
-
-class BracketTracker:
-    stk = stack()
-
-    @classmethod
-    def _push(cls, par, pos):
-        cls.stk.push((par, pos))
-
-    @classmethod
-    def _pop(cls, par):
-        if cls.stk and cls.stk.peek()[0] == cls.par_map[par]:
-            cls.stk.pop()
-        else:
-            cls.stk.clear()
-            raise SyntaxError('invalid parentheses')
-
-    parentheses = ')(', '][', '}{'
-    close_pars, open_pars = zip(*parentheses)
-    par_map = dict(parentheses)
-
-    @classmethod
-    def next_insertion(cls, line):
-        "Track the brackets in the line and return the appropriate pooint of the nest insertion."
-        for i, c in enumerate(line):
-            if c in cls.open_pars:
-                cls._push(c, i)
-            elif c in cls.close_pars:
-                cls._pop(c)
-        return cls.stk.peek()[1] + 1 if cls.stk else 0
 
 
 # for testing
