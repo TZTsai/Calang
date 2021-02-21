@@ -20,7 +20,7 @@
 * [ ] `_` has value 'none', it can be used in `_ = x` but its value does not change
 * [ ] use dot `.` to index lists: `l.1, l.2:-1, l.-2:1, l.-1:-2:1, l.[1:3, 2:-1]` (convert negative index to index from the end)
 * [ ] list comprehension: `[x*y @ x in 1:5, y = x ^ 2, y < 20]`
-* [ ] conditional: `{a == 1, 3; a == 2, 2; 4}` <=> `3 if a == 1 else 2 if a == 2 else 4`
+* [ ] conditional: `x; y; z` returns the first true value (short-circuit) or the last value; `x if y` returns the value of `x` if `y` is true or the value of `y` (also short-circuit); combining them together, we can write `x if y; z; w if v; u`. Besides, we support `a /\ b` and `a \/ b` for logical and/or (no short-circuit). `&` and `|` are used for binary and/or.
 * [ ] str: `"abc"`, print: `p"abc"`, re: `r"abc"`, insert value: `"{a}bc"` (`a` is evaluated)
 * [ ] functions: `f x = x`, `add a b = a + b`, `f [x, y] = 2x + y`, `f [a, b.., c=3] = [a, b.., c]`
 * [ ] lambda: `x -> 2x`, `[x, [t]] -> x + t`, `(x y) -> x + y`
@@ -34,7 +34,6 @@
 * [ ] broadcast function: `abs! [1, -2]` (overload the factorial operator)
 * [ ] pattern matching tree: `[(f x y), [[(f x::Num y::Num), [(f x::Int y::Int)]], (f x::List y::List)]`
 * [ ] `?` to quickly create function `? + 2` <=> `x -> x + 2`, `[?1, ?2]` <=> `(x y) -> [x, y]`
-* [ ] sequence: `a, b, c` evaluates from the first expression and returns the first false one (with short-circuit), otherwise returns the last one
 * [ ] parsing uses yield from ?
 * [ ] value dependent parsing `x y` is parsed differently if `x` is a function, a number, etc.
 * [ ] `x.f(y, ...)` is evaluated as `f(x, y, ...)` if `x` has no attribute `f`

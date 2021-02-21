@@ -1,25 +1,24 @@
-import sys
-import json
 from pprint import pformat, pprint
+import json
+import utils.io as stdio
 import config
 
 
 def log(*messages, debug=True, end='\n', sep='',
-        indent='default', out='default'):
+        indent='default', file=stdio):
     if not config.debug and debug:
         return
     
-    if out == 'default':
-        out = log.out
+    if file == 'default':
+        file = log.file
     if indent == 'default':
         indent = log.indent
         
     message = sep.join(map(log.format, messages))
-    log.out.write(indent * ' ' + message + end)
+    file.write(indent * ' ' + message + end)
 
 log.indent = 0
 log.format = str
-log.out = sys.stdout
 # log.out = open('src/utils/log.yaml', 'w')
 
 def check(f, args, expected, record=None):

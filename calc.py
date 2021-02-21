@@ -3,15 +3,20 @@ import threading
 
 sys.path.append('src')
 
-from src.io import BracketTracker, print, input
 import config
+from utils.io import print, input, BracketTracker
 
 
+# read program arguments
 debug = '-d' in sys.argv
 test = '-t' in sys.argv
-
-scripts_dir = 'scripts/'
 config.debug = debug
+
+# directory of scripts to load
+scripts_dir = 'scripts/'
+
+# track bracket inputs
+bktracker = BracketTracker()
 
     
 def run(filename=None, test=False, start=0, verbose=True):
@@ -62,7 +67,7 @@ def run(filename=None, test=False, start=0, verbose=True):
                     prompt = ' ' * indent
                 else:
                     prompt = make_prompt()
-                print(prompt, end='', flush=True)
+                print(prompt, end='')
                 
             if interactive:  # get input
                 try:
@@ -79,7 +84,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             line, comment = split_comment(line)
             if not line: continue
 
-            indent = BracketTracker.next_insertion(prompt + line)
+            indent = bktracker.next_insertion(prompt + line)
             if line[-3:] == '...':
                 line = line[:-3]
                 if not indent: indent = len(prompt)
@@ -100,7 +105,7 @@ def run(filename=None, test=False, start=0, verbose=True):
                         for opt in ['sci', 'tex', 'bin', 'hex']}
                 linesep = '\n' + ' ' * len(prompt)
                 output = calc_format(result, linesep=linesep, **opts)
-                print(output, flush=True)
+                print(output)
 
             if test and comment:
                 verify_answer(line, result, comment)
@@ -122,17 +127,21 @@ def run(filename=None, test=False, start=0, verbose=True):
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
         
         
-def load_src():  # to speed up the startup of calc
+def load_mods():
+    "Load modules, which can cost some time."
+    from utils.backslash import subst
     from eval import calc_eval, LOAD
     from format import calc_format
     from funcs import eq_ as equal
     
+    input.subst = subst
     LOAD.run = run
+    
     globals().update((obj.__name__, obj) for obj in
-                     [calc_eval, calc_format,
-                      equal, BracketTracker])
+                     [calc_eval, calc_format, equal])
 
-loading_thread = threading.Thread(target=load_src)
+# start another thread to speed up the startup
+loading_thread = threading.Thread(target=load_mods)
 loading_thread.start()
 
 
