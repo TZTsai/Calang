@@ -1,10 +1,8 @@
-import sys
 import threading
-
-sys.path.append('src')
-
+import sys
+import src
 import config
-from utils.io import print, input, BracketTracker
+from utils.io import *
 
 
 # read program arguments
@@ -113,7 +111,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             count += 1
 
         except KeyboardInterrupt:
-            print('Byebye!')
+            print('\nByebye!')
             return
         except Warning as w:
             print(w)
@@ -134,7 +132,7 @@ def load_mods():
     from format import calc_format
     from funcs import eq_ as equal
     
-    input.subst = subst
+    read.subst = subst
     LOAD.run = run
     
     globals().update((obj.__name__, obj) for obj in

@@ -21,6 +21,7 @@
 * [ ] use dot `.` to index lists: `l.1, l.2:-1, l.-2:1, l.-1:-2:1, l.[1:3, 2:-1]` (convert negative index to index from the end)
 * [ ] list comprehension: `[x*y @ x in 1:5, y = x ^ 2, y < 20]`
 * [ ] conditional: `x; y; z` returns the first true value (short-circuit) or the last value; `x if y` returns the value of `x` if `y` is true or the value of `y` (also short-circuit); combining them together, we can write `x if y; z; w if v; u`. Besides, we support `a /\ b` and `a \/ b` for logical and/or (no short-circuit). `&` and `|` are used for binary and/or.
+* [ ] evaluate a sequence of the same priority from right to left: `double double 2` should be 4
 * [ ] str: `"abc"`, print: `p"abc"`, re: `r"abc"`, insert value: `"{a}bc"` (`a` is evaluated)
 * [ ] functions: `f x = x`, `add a b = a + b`, `f [x, y] = 2x + y`, `f [a, b.., c=3] = [a, b.., c]`
 * [ ] lambda: `x -> 2x`, `[x, [t]] -> x + t`, `(x y) -> x + y`

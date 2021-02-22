@@ -332,6 +332,6 @@ def interact(func):
 
 
 if __name__ == "__main__":
-    testfile = 'src/utils/syntax_tests.json'
+    testfile = 'utils/syntax_tests.json'
     interact_record = interact(calc_parse)
     check_record(testfile, calc_parse, interact_record)

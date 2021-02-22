@@ -12,54 +12,63 @@ getch = msvcrt.getwch
 
 tab_space = 2
 exit_signal = '\x03\x04'
-ctrl_chars = re.compile(r'^[\x00-\x1f\x7f-\x9f]$')
-subst = None
+ctrl_chars = re.compile(r'^[\x00-\x1f\x7f-\x9f ]$')
 
 
 def write(s: str):
     for c in s: putch(c)
 
 
-def input(prompt='', *, end='\n', sub='\t', cancel='\x1a'):
+def read(end='\n', sub=' \t', cancel='\x1a'):
     """Reads the input; supports writing LaTeX symbols by typing a tab
     at the end of a string beginning with a backslash.
     
     Args:
       prompt: The string to print before input.
       end: Keys indicating the end of input, default Enter.
-      sub: Keys indicating a backslashed substitution, default Tab.
+      sub: Keys indicating a backslashed substitution, default Space or Tab.
       cancel: Keys indicating cancellation of the current input, default Ctrl-Z.
       """
-    write(prompt)
 
     s = []
     while True:
-        _read(s)
+        end_ch = _read(s)
 
-        if s[-1] in sub:  # substitute backslash if it exists
+        if end_ch in sub:  # substitute backslash if it exists
             i = rfind(s, '\\')
-            if i is None:
-                continue
+            if i is None: continue
 
-            n_del = len(s) - i + tab_space - 1
-            backspace(n_del)  # remove substituted chars from console
+            if end_ch == '\t':
+                n_del = len(s) - i + tab_space - 1
+            else:
+                n_del = len(s) - i
+                
+            # remove substituted chars from the input
+            backspace(n_del)
+            
+            # split out the part beginning with a backslash
             s, t = s[:i], s[i:-1]
 
-            t = input.subst(''.join(t))
+            # substitute the expression into its latex symbol
+            t = read.subst(''.join(t))
+            
             write(t)
+            if end_ch == ' ': putch(' ')
+            
             s.extend(t)
 
-        elif s[-1] in cancel:  # cancel input
+        elif end_ch in cancel:  # cancel input
             raise IOError("input cancelled")
 
-        elif s[-1] in end:
+        elif end_ch in end:
             return ''.join(s[:-1])
-        
-input.subst = None
+
+read.subst = None
 
 
 def _read(s=[]):
-    c = 1
+    c = -1
+    
     while c and not is_ctrl_char(c):
         c = getch()
 
@@ -69,7 +78,7 @@ def _read(s=[]):
             raise KeyboardInterrupt
 
         if c == '\t':
-            write('  ')
+            write(' ' * tab_space)
         elif c == '\x08':  # backspace
             backspace()
             if s:
@@ -79,8 +88,8 @@ def _read(s=[]):
             putch(c)
 
         s.append(c)
-
-    return s
+        
+    return c
 
 
 def rfind(l: list, x):
@@ -102,9 +111,19 @@ def is_ctrl_char(ch):
     return type(ch) is str and ctrl_chars.match(ch)
 
 
+class StdIO:
+    write = write
+    read = read
+
+    
+def input(prompt=''):
+    write(prompt)
+    return read()
+
+
 def print(*msgs, end='\n', indent='default'):
     "Overrides the builtin print."
-    log(*msgs, sep=' ', end=end, indent=indent, debug=False)
+    log(*msgs, sep=' ', end=end, indent=indent, debug=False, file=StdIO)
 
 
 class BracketTracker:

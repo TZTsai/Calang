@@ -2,7 +2,7 @@ import re
 import json
 import requests
 
-symfile = 'symbols.json'
+symfile = 'utils/symbols.json'
 url = 'https://raw.githubusercontent.com/joom/latex-unicoder.vim/master/autoload/unicoder.vim'
 
 try:
@@ -10,12 +10,20 @@ try:
         symbols = json.load(f)
         
 except FileNotFoundError:
+    # print('Downloading latex symbols...')
     content = requests.get(url).content.decode()
             
     # read symbol dict
-    content = content.replace("'", '"').replace(' \\ ', '').replace('\\', '\\\\')
+    content = (content.replace("'", '"').replace(' \\ ', '')
+               .replace('\\\\', '\\').replace('\\', '\\\\'))
     dict_text = re.search(r'\{[\s\S]*?\}\s', content)[0]
     symbols = json.loads(dict_text)
+
+    # cleaning
+    pairs = tuple(symbols.items())
+    for k, v in pairs:
+        if k[0] != '\\' or len(v.encode('unicode_escape')) > 8:
+            del symbols[k]
     
     with open(symfile, 'w', encoding='utf8') as f:
         json.dump(symbols, f)
@@ -23,7 +31,7 @@ except FileNotFoundError:
 
 def subst(s):
     """Substitute escaped characters."""
-    return symbols.get(s, s[1:])
+    return symbols.get(s, s)
 
 
 if __name__ == "__main__":

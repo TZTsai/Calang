@@ -5,7 +5,7 @@ import config
 
 
 def log(*messages, debug=True, end='\n', sep='',
-        indent='default', file=stdio):
+        indent='default', file='default'):
     if not config.debug and debug:
         return
     
@@ -19,7 +19,7 @@ def log(*messages, debug=True, end='\n', sep='',
 
 log.indent = 0
 log.format = str
-# log.out = open('src/utils/log.yaml', 'w')
+log.file = open('utils/calc.log', 'w')
 
 def check(f, args, expected, record=None):
     args = freeze(args)

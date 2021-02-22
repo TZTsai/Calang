@@ -49,7 +49,7 @@ MARK    := [^>|)\s]\S*
 # MACRO:    a macro will be substituted by its evaluated expression 
 
 
-GrammarStr = open('src/grammar.txt', 'r').read()
+GrammarStr = open('grammar.txt', 'r').read()
 GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
 Grammar = split(GrammarStr, '\n')
 # # add syntax for operations
@@ -189,11 +189,11 @@ def post_process(grammar, macros):
 
 
 grammar = calc_grammar(Grammar)
-json.dump(grammar, open('src/utils/grammar.json', 'w', 
+json.dump(grammar, open('utils/grammar.json', 'w', 
                         encoding='utf8'), indent=2)
 
 
 if __name__ == "__main__":
     pprint(grammar)
     for func in [parse_grammar, calc_grammar, refactor_tree]:
-        check_record('src/utils/syntax_tests.json', func)
+        check_record('utils/syntax_tests.json', func)
