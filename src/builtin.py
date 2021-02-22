@@ -2,12 +2,16 @@ from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from math import inf
-from operator import (floordiv, mod, neg, lt, gt, le, ge, xor, inv)
-from numpy import (array, where)
+from operator import floordiv, mod, neg, lt, gt, le, ge, xor, inv
+import symengine  # TODO: use this to do symbolic calculation
 from sympy import (
-    sqrt, log, exp, gcd, factorial, floor, E, pi, factorint,
-    sin, cos, tan, asin, acos, atan, cosh, sinh, tanh, nan,
-    solve, limit, integrate, diff, expand, factor, Matrix
+    S, E, pi, nan,
+    Array, Matrix,
+    floor, ceiling, expand, factor, solve,
+    sqrt, log, exp, gamma,
+    gcd, factorint, factorial, binomial,
+    sin, cos, tan, asin, acos, atan, cosh, sinh, tanh,
+    limit, integrate, diff, 
 )
 
 import config
@@ -43,7 +47,36 @@ for op_type, op_dict in operators.items():
 binary_ops['(app)'].nested = False
 
 
-builtins = {'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos, 'atan': atan, 'abs': abs, 'sqrt': sqrt, 'floor': floor, 'log': log, 'ℯ': E, 'pi': pi, 'π': pi, 'ⅈ': 1j, '∞': inf, 'max': max, 'min': min, 'gcd': gcd, 'binom': lambda n, m: factorial(n) / (factorial(m) * factorial(n-m)), 'len': len, 'sort': sorted, 'exp': exp, 'lg': lambda x: log(x)/log(10), 'ln': log, 'log2': lambda x: log(x)/log(2), 'number?': is_number, 'symbol?': is_symbol, 'iter?': is_iter, 'map?': is_function, 'matrix?': is_matrix, 'vector?': is_vector, 'list?': is_list, 'list': tuple, 'sum': lambda *x: reduce(add_, x), 'prod': lambda *x: reduce(dot, x), 'compose': compose, 'matrix': Matrix, 'enum': Enum, 'shape': shape, 'depth': depth, 'transp': transpose, 'flatten': flatten, 'all': all_, 'any': any_, 'same': lambda l: True if l == [] else all(x == l[0] for x in l[1:]), 'sinh': sinh, 'cosh': cosh, 'tanh': tanh, 'degrees': lambda x: x / pi * 180, 'real': lambda z: z.real if type(z) is complex else z, 'imag': lambda z: z.imag if type(z) is complex else 0, 'conj': lambda z: z.conjugate(), 'angle': lambda z: atan(z.imag / z.real), 'reduce': reduce, 'filter': filter, 'map': map, 'zip': zip, 'find': findall, 'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute, 'expand': expand, 'factor': factor, 'factors': factorint, 'next': next, 'array': array, 'where': where}
+def log2(x): return log(x) / log(2)
+def log10(x): return log(x) / log(10)
+def sum(*x): return reduce(add_, x, initial=0)
+def prod(*x): return reduce(dot, x, initial=1)
+
+
+builtins = {
+    # constants
+    'euler': E, 'ℯ': E, 'pi': pi, 'π': pi, 'φ': S.GoldenRatio, 'im': 1j, 'ⅈ': 1j, '∞': inf,
+    # common functions
+    'abs': abs, 'sqrt': sqrt, 'floor': floor, 'ceil': ceiling, 
+    # list functions
+    'list': tuple, 'len': len, 'sort': sorted, 'max': max, 'min': min,
+    'enum': enumerate, 'zip': zip, 'sum': sum, 'prod': prod,
+    'all': all_, 'any': any_, 'find': findall, 'next': next,
+    # array functions
+    'matrix': Matrix, 'shape': shape, 'depth': depth, 'transp': transpose, 'flatten': flatten,
+    # real valued functions
+    'exp': exp, 'log': log, 'ln': log, 'lg': log10, 'log2': log2,
+    # higher order functions
+    'compose': compose, 'reduce': reduce, 'filter': filter, 'map': map,
+    # triangular functions
+    'sin': sin, 'cos': cos, 'tan': tan, 'asin': asin, 'acos': acos, 'atan': atan, 
+    'sinh': sinh, 'cosh': cosh, 'tanh': tanh,
+    # symbolic functions
+    'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute,
+    'expand': expand, 'factor': factor,
+    # whole number functions
+    'gcd': gcd, 'factorial': factorial, 'binomial': binomial, 'factors': factorint
+}
 
 for name, val in builtins.items():
     if callable(val):

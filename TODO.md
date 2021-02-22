@@ -19,7 +19,9 @@
 * [ ] index starts from 1
 * [ ] `_` has value 'none', it can be used in `_ = x` but its value does not change
 * [ ] use dot `.` to index lists: `l.1, l.2:-1, l.-2:1, l.-1:-2:1, l.[1:3, 2:-1]` (convert negative index to index from the end)
-* [ ] list comprehension: `[x*y @ x in 1:5, y = x ^ 2, y < 20]`
+* [ ] list comprehension: `[x*y for x in 1:5, y = x ^ 2, y < 20]`
+* [ ] generator: `(x in 1:5, y = x^2, y < 20)`
+* [ ] switch from sympy to symengine
 * [ ] conditional: `x; y; z` returns the first true value (short-circuit) or the last value; `x if y` returns the value of `x` if `y` is true or the value of `y` (also short-circuit); combining them together, we can write `x if y; z; w if v; u`. Besides, we support `a /\ b` and `a \/ b` for logical and/or (no short-circuit). `&` and `|` are used for binary and/or.
 * [ ] evaluate a sequence of the same priority from right to left: `double double 2` should be 4
 * [ ] str: `"abc"`, print: `p"abc"`, re: `r"abc"`, insert value: `"{a}bc"` (`a` is evaluated)
@@ -35,7 +37,7 @@
 * [x] backslash auto substitution: `\i` -> (imaginary number i), `\ga` -> (greek letter alpha)
 * [ ] broadcast function: `abs! [1, -2]` (overload the factorial operator)
 * [ ] pattern matching tree: `[(f x y), [[(f x::Num y::Num), [(f x::Int y::Int)]], (f x::List y::List)]`
-* [ ] `?` to quickly create function `? + 2` <=> `x -> x + 2`, `[?1, ?2]` <=> `(x y) -> [x, y]`
+* [ ] `$` to quickly create function `$ + 2` <=> `x -> x + 2`, `[$1, $2]` <=> `(x y) -> [x, y]`
 * [ ] (what?) parsing uses `yield from`
 * [ ] value dependent parsing `x y` is parsed differently if `x` is a function, a number, etc.
 * [ ] (optional) `x.f(y, ...)` is evaluated as `f(x, y, ...)` if `x` has no attribute `f`

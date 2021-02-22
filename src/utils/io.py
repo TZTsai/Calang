@@ -1,115 +1,146 @@
 import sys
 import os
 import re
-import psutil
 import msvcrt
+import time
 from utils.debug import log
+
+
+spaces = ' \t\n'          # invokes a substitution if possible
+cancel_signal = '\x1a'    # cancels the current input, here ^Z
+exit_signal = '\x03\x04'  # exits the program, here ^C or ^D
+
+arrow_map = dict(zip('HPMK', 'ABCD'))  # moves the cursor
+arrow_dir = dict(zip('ABCD', 'UDRL'))  # corresponding directions
 
 
 putch = msvcrt.putwch
 getch = msvcrt.getwch
 
 
-tab_space = 2
-ctrl_chars = re.compile(r'^[\x00-\x1f\x7f-\x9f ]$')
-sub_signal = ' \t'
-cancel_signal = '\x1a'
-exit_signal = '\x03\x04'
+buffer = []
+caret = 0  # position of insertion from the end of buffer
+
+def insp():  # insertion position from the beginning
+    return len(buffer) - caret
 
 
-def write(s: str):
-    for c in s: putch(c)
+def write(s, track=False):
+    for ch in s:
+        putch(ch)
+        if track:
+            ins = insp()
+            buffer.insert(ins, ch)
+            for ch in buffer[ins+1:]:
+                putch(ch)
+            for _ in buffer[ins+1:]:
+                putch('\b')
+    
+        
+def delete(n=1):
+    write('\b' * n)
+    write(' ' * n)
+    write('\b' * n)
+    for _ in range(n):
+        buffer.pop(-caret-1)
+        
+
+def resetbuffer():
+    global caret
+    caret = 0
+    buffer.clear()
 
 
 def read(end='\n'):
     """Reads the input; supports writing LaTeX symbols by typing a tab
     at the end of a string beginning with a backslash.
-    
-    Args:
-      prompt: The string to print before input.
-      end: Keys indicating the end of input, default Enter.
-      sub: Keys indicating a backslashed substitution, default Space or Tab.
-      cancel: Keys indicating cancellation of the current input, default Ctrl-Z.
-      """
+    """
+    assert end in spaces
+    resetbuffer()
 
-    s = []
     while True:
-        end_ch = _read(s)
+        end_ch = _read()
 
-        if end_ch in sub_signal:  # substitute backslash if it exists
-            i = rfind(s, '\\')
-            if i is None: continue
-
-            # remove substituted chars from the input
-            n_del = len(s) - i - 1
-            backspace(n_del)
+        ins = insp()
+        i = rfind('\\')
             
-            # split out the part beginning with a backslash
-            s, t = s[:i], s[i:-1]
+        if i is not None:
+            # the part to be replaced
+            t = buffer[i:ins]
+            
+            # remove substituted chars from the input
+            delete(ins - i)
 
             # substitute the expression into its latex symbol
             t = read.subst(''.join(t))
             
-            write(t)
-            if end_ch == ' ': putch(' ')
+            write(t, True)
             
-            s.extend(t)
-
-        elif end_ch in cancel_signal:  # cancel input
-            raise IOError("input cancelled")
-
-        elif end_ch in end:
-            return ''.join(s[:-1])
+        if end_ch != '\t':  # still print the last char
+            write(end_ch, True)
+            
+        if end_ch in end:
+            return ''.join(buffer)
 
 read.subst = None
 
+def rfind(x):
+    i = insp() - 1
+    while i >= 0:
+        if buffer[i] == x:
+            return i
+        else:
+            i -= 1
 
-def _read(s=[]):
+def _read():
     c = -1
     
-    while c and not is_ctrl_char(c):
+    while c:
         c = getch()
 
         if c == '\r': c = '\n'
 
         if c in exit_signal:
             raise KeyboardInterrupt
-
-        if c in sub_signal:
-            pass
-        elif c == '\x08':  # backspace
-            backspace()
-            if s: s.pop()
-            continue
+        elif c in cancel_signal:
+            raise IOError("input cancelled")
+        elif c in spaces:
+            return c
+        elif c == '\b':  # backspace
+            if caret < len(buffer):
+                delete()
+        elif c in '\x00\xe0':  # arrow key
+            if (d := getch()) in 'KHMP':
+                move_cursor(d)
+            else:
+                write(c + d, True)
         else:
-            putch(c)
-
-        s.append(c)
-        
-    return c
+            write(c, True)
+    
+    raise IOError("failed to read input")
 
 
-def rfind(l: list, x):
-    i = len(l) - 1
-    while i >= 0:
-        if l[i] == x:
-            return i
-        else:
-            i -= 1
-
-
-def backspace(n=1):
-    write('\b' * n)
-    write(' ' * n)
-    write('\b' * n)
-
-
-def is_ctrl_char(ch):
-    return type(ch) is str and ctrl_chars.match(ch)
+def move_cursor(code):
+    global caret
+    
+    c = arrow_map[code]
+    d = arrow_dir[c]
+    cs = '\x1b[' + c
+    
+    write(cs)
+    if d in 'UD':  # up or down
+        return  # TODO
+    else:
+        if d == 'L' and caret < len(buffer):
+            caret += 1
+            # write(cs, False)
+        elif d == 'R' and caret > 0:
+            caret -= 1
+            # write(cs, False)
 
 
 class StdIO:
-    write = write
+    write = write  
     read = read
 
     
