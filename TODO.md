@@ -31,13 +31,14 @@
 * [ ] arrays: `[<1, 2, 3; 4, 5, 6>]`, `[<1, 2, 3>]`, `[<[1, 2], [3, 4]>]` (converted to sympy array)
 * [ ] pattern matching: `max x y = x if x > y else y`, `max lst = ...`
 * [ ] type system: `add a::Int b::Int = a + b`, `add a::Complex b::Complex = ...`
-* [ ] backslash auto substitution: `\i` -> (imaginary number i), `\ga` -> (greek letter alpha)
+* [ ] type checking: `a in Int` or `a ∈ Int`
+* [x] backslash auto substitution: `\i` -> (imaginary number i), `\ga` -> (greek letter alpha)
 * [ ] broadcast function: `abs! [1, -2]` (overload the factorial operator)
 * [ ] pattern matching tree: `[(f x y), [[(f x::Num y::Num), [(f x::Int y::Int)]], (f x::List y::List)]`
 * [ ] `?` to quickly create function `? + 2` <=> `x -> x + 2`, `[?1, ?2]` <=> `(x y) -> [x, y]`
-* [ ] parsing uses yield from ?
+* [ ] (what?) parsing uses `yield from`
 * [ ] value dependent parsing `x y` is parsed differently if `x` is a function, a number, etc.
-* [ ] `x.f(y, ...)` is evaluated as `f(x, y, ...)` if `x` has no attribute `f`
+* [ ] (optional) `x.f(y, ...)` is evaluated as `f(x, y, ...)` if `x` has no attribute `f`
 
 ## Syntax Update  
 

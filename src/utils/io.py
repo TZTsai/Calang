@@ -11,15 +11,17 @@ getch = msvcrt.getwch
 
 
 tab_space = 2
-exit_signal = '\x03\x04'
 ctrl_chars = re.compile(r'^[\x00-\x1f\x7f-\x9f ]$')
+sub_signal = ' \t'
+cancel_signal = '\x1a'
+exit_signal = '\x03\x04'
 
 
 def write(s: str):
     for c in s: putch(c)
 
 
-def read(end='\n', sub=' \t', cancel='\x1a'):
+def read(end='\n'):
     """Reads the input; supports writing LaTeX symbols by typing a tab
     at the end of a string beginning with a backslash.
     
@@ -34,16 +36,12 @@ def read(end='\n', sub=' \t', cancel='\x1a'):
     while True:
         end_ch = _read(s)
 
-        if end_ch in sub:  # substitute backslash if it exists
+        if end_ch in sub_signal:  # substitute backslash if it exists
             i = rfind(s, '\\')
             if i is None: continue
 
-            if end_ch == '\t':
-                n_del = len(s) - i + tab_space - 1
-            else:
-                n_del = len(s) - i
-                
             # remove substituted chars from the input
+            n_del = len(s) - i - 1
             backspace(n_del)
             
             # split out the part beginning with a backslash
@@ -57,7 +55,7 @@ def read(end='\n', sub=' \t', cancel='\x1a'):
             
             s.extend(t)
 
-        elif end_ch in cancel:  # cancel input
+        elif end_ch in cancel_signal:  # cancel input
             raise IOError("input cancelled")
 
         elif end_ch in end:
@@ -77,12 +75,11 @@ def _read(s=[]):
         if c in exit_signal:
             raise KeyboardInterrupt
 
-        if c == '\t':
-            write(' ' * tab_space)
+        if c in sub_signal:
+            pass
         elif c == '\x08':  # backspace
             backspace()
-            if s:
-                s.pop()
+            if s: s.pop()
             continue
         else:
             putch(c)

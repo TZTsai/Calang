@@ -28,10 +28,38 @@ except FileNotFoundError:
     with open(symfile, 'w', encoding='utf8') as f:
         json.dump(symbols, f)
 
+        
+extra_mappings = {
+    '\\sum': '\\Sigma',
+    '\\prod': '\\Pi',
+    '\\/\\': '\\land',
+    '\\\\/': '\\lor',
+    '\\->': '\\rightarrow',
+    '\\<-': '\\leftarrow',
+    '\\=>': '\\Rightarrow',
+    '\\<=': '\\Leftarrow',
+    '\\*': '\\times',
+    '\\i': 'ⅈ',
+    '\\e': 'ℯ',
+    '\\inf': '\\infty',
+    '\\ga': '\\alpha',
+    '\\gb': '\\beta',
+    '\\gd': '\\delta',
+    '\\ge': '\\epsilon',
+    '\\gg': '\\gamma',
+    '\\gi': '\\iota',
+    '\\gk': '\\kappa',
+    '\\gl': '\\lambda',
+    '\\go': '\\omega',
+    '\\gs': '\\sigma',
+    '\\gu': '\\upsilon'
+}
+
 
 def subst(s):
     """Substitute escaped characters."""
-    return symbols.get(s, s)
+    t = extra_mappings.get(s, s)
+    return symbols.get(t, t)
 
 
 if __name__ == "__main__":
