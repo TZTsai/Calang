@@ -27,6 +27,14 @@ def construct_ops(op_dict, type):
     for op in op_dict:
         fun, pri = op_dict[op]
         op_dict[op] = Op(type, op, fun, pri)
+        
+        
+def log2(x): return log(x) / log(2)
+def log10(x): return log(x) / log(10)
+def sum(*x): return reduce(add_, x, initial=0)
+def prod(*x): return reduce(dot, x, initial=1)
+def deg(x): return x / 180 * pi
+def ang(z): return atan(z.imag / z.real)
 
 
 binary_ops = {
@@ -37,20 +45,14 @@ binary_ops = {
     ':': (range_, 4), '(adj)': (adjoin, 20), '(app)': (apply, 22)
     #'is': (NotImplemented, -3)
 }
-unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10)}
-unary_r_ops = {'!': (factorial, 22), '..': (unpack, 11)}
+unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10), '∠': (ang, 4)}
+unary_r_ops = {'!': (factorial, 22), '..': (unpack, 11), '°': (deg, 24)}
 operators = {'BOP': binary_ops, 'LOP': unary_l_ops, 'ROP': unary_r_ops}
 
 for op_type, op_dict in operators.items():
     construct_ops(op_dict, op_type)
 
 binary_ops['(app)'].nested = False
-
-
-def log2(x): return log(x) / log(2)
-def log10(x): return log(x) / log(10)
-def sum(*x): return reduce(add_, x, initial=0)
-def prod(*x): return reduce(dot, x, initial=1)
 
 
 builtins = {

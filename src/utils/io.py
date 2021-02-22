@@ -19,23 +19,28 @@ getch = msvcrt.getwch
 
 
 buffer = []
-caret = 0  # position of insertion from the end of buffer
+caret = 0       # position of insertion from the end of buffer
+newline = False
 
-def insp():  # insertion position from the beginning
+
+def ins():  # insertion position from the beginning
     return len(buffer) - caret
 
 
 def write(s, track=False):
-    for ch in s:
-        putch(ch)
-        if track:
-            ins = insp()
-            buffer.insert(ins, ch)
-            for ch in buffer[ins+1:]:
-                putch(ch)
-            for _ in buffer[ins+1:]:
-                putch('\b')
+    sys.stdout.write(s)
+    sys.stdout.flush()
     
+    if track:
+        global newline
+        newline = False
+        for ch in s:
+            buffer.insert(ins(), ch)
+        if tail := ''.join(buffer[ins():]):
+            sys.stdout.write(tail)
+            sys.stdout.flush()
+            for _ in tail: putch('\b')
+        
         
 def delete(n=1):
     write('\b' * n)
@@ -61,15 +66,14 @@ def read(end='\n'):
     while True:
         end_ch = _read()
 
-        ins = insp()
-        i = rfind('\\')
+        i, j = rfind('\\'), ins()
             
         if i is not None:
             # the part to be replaced
-            t = buffer[i:ins]
+            t = buffer[i:j]
             
             # remove substituted chars from the input
-            delete(ins - i)
+            delete(j - i)
 
             # substitute the expression into its latex symbol
             t = read.subst(''.join(t))
@@ -85,7 +89,7 @@ def read(end='\n'):
 read.subst = None
 
 def rfind(x):
-    i = insp() - 1
+    i = ins() - 1
     while i >= 0:
         if buffer[i] == x:
             return i
@@ -121,16 +125,16 @@ def _read():
 
 
 def move_cursor(code):
-    global caret
+    global caret, newline
     
     c = arrow_map[code]
     d = arrow_dir[c]
     cs = '\x1b[' + c
     
     write(cs)
-    if d in 'UD':  # up or down
-        return  # TODO
-    else:
+    if d in 'UD':  # up or down; TODO
+        newline = True
+    elif not newline:
         if d == 'L' and caret < len(buffer):
             caret += 1
             # write(cs, False)

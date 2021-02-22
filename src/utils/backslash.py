@@ -52,7 +52,15 @@ extra_mappings = {
     '\\gl': '\\lambda',
     '\\go': '\\omega',
     '\\gs': '\\sigma',
-    '\\gu': '\\upsilon'
+    '\\gu': '\\upsilon',
+    '\\deg': '°',
+    '\\ang': '∠',
+    '\\dee': '∂',
+    '\\E': '\\exists',
+    '\\A': '\\forall',
+    '\\grin': '😁',
+    '\\smile': '🙂',
+    '\\lol': '🤣'
 }
 
 
