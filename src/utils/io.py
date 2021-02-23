@@ -6,7 +6,10 @@ import time
 from utils.debug import log
 
 
-spaces = ' \t\n'          # invokes a substitution if possible
+getch = msvcrt.getwch
+getche = msvcrt.getwche
+
+spaces = ' \t\r\n'        # invokes a substitution if possible
 cancel_signal = '\x1a'    # cancels the current input, here ^Z
 exit_signal = '\x03\x04'  # exits the program, here ^C or ^D
 
@@ -14,12 +17,9 @@ arrow_map = dict(zip('HPMK', 'ABCD'))  # moves the cursor
 arrow_dir = dict(zip('ABCD', 'UDRL'))  # corresponding directions
 
 
-putch = msvcrt.putwch
-getch = msvcrt.getwch
-
-
 buffer = []
-caret = 0       # position of insertion from the end of buffer
+caret = 0           # position of insertion from the end of buffer
+backslash = None    # position of the last backslash from the end
 newline = False
 
 
@@ -38,9 +38,9 @@ def write(s, track=False):
             buffer.insert(ins(), ch)
         if tail := ''.join(buffer[ins():]):
             sys.stdout.write(tail)
+            sys.stdout.write('\b' * caret)  # move back the caret
             sys.stdout.flush()
-            for _ in tail: putch('\b')
-        
+            
         
 def delete(n=1):
     write('\b' * n)
@@ -56,17 +56,19 @@ def resetbuffer():
     buffer.clear()
 
 
-def read(end='\n'):
+def read(end='\r\n'):
     """Reads the input; supports writing LaTeX symbols by typing a tab
     at the end of a string beginning with a backslash.
     """
     assert end in spaces
+    global backslash
+    
     resetbuffer()
 
     while True:
         end_ch = _read()
 
-        i, j = rfind('\\'), ins()
+        i, j = backslash, ins()
             
         if i is not None:
             # the part to be replaced
@@ -79,30 +81,30 @@ def read(end='\n'):
             t = read.subst(''.join(t))
             
             write(t, True)
+            backslash = None
             
-        if end_ch != '\t':  # still print the last char
+        if end_ch == ' ':  # still print the last char
             write(end_ch, True)
+        elif end_ch in '\r\n':
+            write(end_ch)
             
         if end_ch in end:
             return ''.join(buffer)
 
 read.subst = None
 
-def rfind(x):
-    i = ins() - 1
-    while i >= 0:
-        if buffer[i] == x:
-            return i
-        else:
-            i -= 1
 
 def _read():
+    global backslash
     c = -1
     
     while c:
         c = getch()
 
-        if c == '\r': c = '\n'
+        if c == '\r':
+            c += '\n'
+        elif c == '\\':
+            backslash = ins()
 
         if c in exit_signal:
             raise KeyboardInterrupt
