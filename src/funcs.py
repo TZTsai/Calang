@@ -2,7 +2,7 @@ from operator import and_ as b_and, or_ as b_or, concat
 from functools import reduce, wraps
 from numbers import Number, Rational
 from fractions import Fraction
-from sympy import Expr, Integer, Float, Matrix, Symbol, factor, simplify, factorial
+from sympy import Expr, Integer, Float, Matrix, Array, Symbol, factor, simplify, factorial
 from objects import Range, Map, Attr, Env, Op, Function, Builtin, OperationError
 import config
 
@@ -200,6 +200,9 @@ def pow_(x, y):
     else:
         return x ** y
 
+def fact_(x):
+    if type(x) is str:
+        print(x)
 
 
 def and_(x, y):

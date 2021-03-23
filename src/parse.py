@@ -1,4 +1,4 @@
-import re, json
+import re, json, ast
 import config
 from builtin import operators
 from utils.deco import memo, trace, disabled
@@ -13,8 +13,8 @@ except:
     from grammar import grammar
 
 
-keywords = {'if', 'else', 'in', 'dir', 'for', 'with', 'load',
-            'config', 'import', 'del', 'info'}
+keywords = {'or', 'in', 'dir', 'load', 'config', 
+            'import', 'del', 'info', 'exit'}
 
 trace = disabled
 
@@ -115,13 +115,15 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             if not m: return None, None
             else: return m[0], text[m.end():]
         else:  # STR or MARK
+            if tag == 'MARK':
+                pattern = ast.literal_eval('"%s"' % pattern)
             try:
                 pre, rem = text.split(pattern, 1)
                 assert not pre
+                return pattern if tag == 'STR' else [], rem
             except:
                 return None, None
-            return pattern if tag == 'STR' else [], rem
-
+           
     # @trace
     # Caution: must not add @memo decorator!
     def parse_op(item, op, text):
@@ -149,8 +151,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             tree = ['(nospace)'] + tree
         return tree, rem
 
-    must_have = {'BIND': '=', 'MAP': '->', 'MATCH': '::', 'GEN_LST': 'for', 
-                 '_EXT': '..', 'SLICE': ':', '_DLST': ';'}
+    must_have = {'BIND': '=', 'MAP': '->', 'GENER': '@', 'AT': '@'}
     @trace
     @memo
     def parse_tag(tag, text):
@@ -176,7 +177,10 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
-    kept_tags = lambda tag: tag in {'DIR', 'DEL', 'NM_SP', 'QUOTE', 'INFO'}
+    kept_tags = lambda tag: tag in {
+        'DIR', 'DEL', 'ARG', 'QUOTE', 'INFO', 'ENV',
+        'LIST', 'ARRAY'
+    }
     # @trace
     def process_tag(tag, tree):
         if tag[0] == '_':

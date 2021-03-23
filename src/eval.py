@@ -4,7 +4,7 @@ import re
 
 from parse import calc_parse, is_name, is_tree, tree_tag
 from builtin import operators, builtins
-from funcs import Symbol, is_list, is_function
+from funcs import Symbol, Array, is_list, is_function
 from objects import Env, stack, Op, Attr, Function, Map, UnboundName, OperationError
 from utils import debug
 import config
@@ -50,12 +50,11 @@ def calc_eval(exp, env=None):
 
 def EMPTY(tr): return None
 
-def LINE(tr): return tr[-1]
+def EXPS(tr): return tr[-1]
 
 def op_getter(op_type):
     ops = operators[op_type]
-    def get(tr): return ops[tr[1]]
-    return get
+    return lambda tr: ops[tr[1]]
 
 OPERATORS = {op_type: op_getter(op_type)
              for op_type, op_dict in operators.items()}
@@ -76,7 +75,7 @@ def ATTR(tr): return Attr(tr[1])
 
 def ANS(tr):
     s = tr[1]
-    if all(c == '%' for c in s):
+    if all(c == '$' for c in s):
         id = -len(s)
     else:
         try: id = int(s[1:])
@@ -99,16 +98,11 @@ def INFO(tr):
 def hold_tree(f):
     "A decorator that makes a substitution rule to hold the tree form."
     @wraps(f)
-    def _f(tr):
-        if any(is_tree(t) for t in tr):
-            return tr
-        else:
-            return f(tr)
+    def _f(tr): return tr if any(is_tree(t) for t in tr) else f(tr)
     return _f
 
 @hold_tree
-def SEQ(tr):
-    # stk = stack()
+def PHRASE(tr):
     ops = stack()
     vals = stack()
     
@@ -162,14 +156,14 @@ def SEQ(tr):
     return val
 
 @hold_tree
-def FIELD(tr):
+def VAR(tr):
     field = tr[1]
     for attr in tr[2:]:
         field = attr.getFrom(field)
     return field
 
 @hold_tree
-def VAL_LST(tr):
+def LIST(tr):
     lst = []
     for it in tr[1:]:
         if is_list(it) and it[0] == '(unpack)':
@@ -178,21 +172,24 @@ def VAL_LST(tr):
             lst.append(it)
     return tuple(lst)
 
-IDC_LST = VAL_LST
-
 @hold_tree
-def SYM_LST(tr): return tuple(tr[1:])
+def ARRAY(tr):
+    return Array(tr[1:])
 
-@hold_tree
-def SLICE(tr): return slice(*tr[1:])
+SUBARR = LIST
+
+# @hold_tree
+# def SYM_LST(tr): return tuple(tr[1:])
+
+# @hold_tree
+# def SLICE(tr): return slice(*tr[1:])
 
 
 ## eval rules which require environment
-
 special_names = {'super'}
 
 def NAME(tr, env):
-    name = tr[1]
+    name = format_string(tr[1], env)
     try:
         if name == 'super':
             if env is Global:
@@ -207,13 +204,11 @@ def NAME(tr, env):
         else:
             raise UnboundName(f"unbound symbol '{name}'")
         
-def SYM(tr, env):
-    s = format_string(tr[1], env, char=r'\w')
-    return Symbol(s)
+def STR(tr, env):
+    return format_string(tr[1], env)
 
-def PRINT(tr, env):
-    print(format_string(tr[1][2:-1], env))
-    return '(printed)'
+def QUOTE(tr, env):
+    return Symbol(format_string(tr[1], env))
 
 def format_string(s, env, char='.'):
     # TODO: use the builtin evaluation of f-string
@@ -232,13 +227,10 @@ def format_string(s, env, char='.'):
     brace_pattern = '{(%s+?)}' % char
     return re.sub(brace_pattern, subs, s)
 
-def BODY(tr, env):
-    return tr[2] if tr[1] == '(printed)' else tr[1]
-
-def IF_ELSE(tr, env):
-    _, t_case, pred, f_case = tr
-    case = t_case if eval_tree(pred, env) else f_case
-    return eval_tree(case, env)
+# def IF_ELSE(tr, env):
+#     _, t_case, pred, f_case = tr
+#     case = t_case if eval_tree(pred, env) else f_case
+#     return eval_tree(case, env)
 
 # def WHEN(tr, env):
 #     *cases, default = tr[1:]
@@ -247,7 +239,7 @@ def IF_ELSE(tr, env):
 #             return eval_tree(exp, env)
 #     return eval_tree(default, env)
 
-def GEN_LST(tr, env):
+def GENER(tr, env):
     def generate(exp, constraints):
         if constraints:
             constr = constraints[0]
@@ -255,7 +247,7 @@ def GEN_LST(tr, env):
             binds, cond = [], None
             if rest and tree_tag(rest[0]) == 'WITH':
                 binds = rest.pop(0)[1]
-                binds = binds[1:] if tree_tag(binds) == 'DICT' else [binds]
+                binds = binds[1:] if tree_tag(binds) == 'ENV' else [binds]
             if rest: cond = rest[0]
             for val in eval_tree(ran, local, False):
                 match(form, val, local)
@@ -268,7 +260,7 @@ def GEN_LST(tr, env):
     local = env.child()
     return tuple(generate(exp, constraints))
 
-def DICT(tr, env):
+def ENV(tr, env):
     local = env.child()
     for t in tr[1:]: BIND(t, local)
     return local
@@ -276,11 +268,11 @@ def DICT(tr, env):
 MAP = Map  # the MAP evaluation rule is the same as Map constructor
 Map.builtins = Builtins
 
-def CLOSURE(tr, env):
+def AT(tr, env):
     _, local, body = tr
     try:
         return eval_tree(body, env=local)
-    except UnboundName:  # should only happen when @ is used
+    except UnboundName:
         return eval_tree(body, env=env)
 
 def BIND(tr, env):
@@ -289,11 +281,11 @@ def BIND(tr, env):
     except: doc = None
     define(var, exp, env, doc)
     
-def MATCH(tr, env):
-    _, form, val = tr
-    local = env.child()
-    match(form, val, local)
-    return local
+# def MATCH(tr, env):
+#     _, form, val = tr
+#     local = env.child()
+#     match(form, val, local)
+#     return local
 
 def match(form, val, local: Env):
     try:
@@ -332,7 +324,9 @@ def match(form, val, local: Env):
 def define(var, exp, env, doc=None):
 
     def def_(name, val, env):
-        if name in special_names: # or name in builtins:
+        if name == '_':
+            return  # ignore assignments of '_'
+        if name in special_names:
             raise NameError('"%s" cannot be bound' % name)
 
         if isinstance(val, Map):
@@ -465,7 +459,7 @@ def CONF(tr):
     else:
         raise ValueError('no such field in the config')
     
-def EXIT(tr): exit()
+def EXIT(tr): raise KeyboardInterrupt
     
 
 def eval_tree(tree, env=None, mutable=True):
@@ -476,8 +470,11 @@ def eval_tree(tree, env=None, mutable=True):
     tag = tree_tag(tree)
     
     if tag not in dont_eval and env:
-        for i in range(1, len(tree)):
-            tree[i] = eval_tree(tree[i], env)
+        unb_flag = False
+        for i, t in enumerate(tree):
+            try: tree[i] = eval_tree(t, env)
+            except UnboundName: unb_flag = True
+        if unb_flag: raise UnboundName
         
     if tag in subs_rules:
         return subs_rules[tag](tree)
@@ -489,33 +486,31 @@ def eval_tree(tree, env=None, mutable=True):
         return tree
 
 
-# manage function attributes here
 NAME.force_symbol = False
-LOAD.run  = lambda path, test, start, verbose: NotImplemented
-# ASSIGN it in 'calc.py'
+# assign LOAD.run in 'calc.py'
+LOAD.run  = NotImplemented
 Map.match = match
 Map.eval  = eval_tree
 
 
 delay_types = {
-    'MAP',      'GEN_LST',  'BIND',     'CLOSURE' 
-    'IF_ELSE',  'DICT',     'INHERIT'
+    'MAP',      'GENER',    'BIND',     'AT' 
+    'ENV',      'PHRASE'
 }
 
 subs_types = {
-    'LINE',     'DIR',      'ANS',      'SEQ',
-    'FIELD',    'ATTR',     'REAL',     'COMPLEX',
-    'BIN',      'HEX',      'IDC_LST',  'SLICE',
-    'VAL_LST',  'SYM_LST',  'EMPTY',    'INFO'
+    'EXPS',     'EMPTY',    'DIR',      'ANS',
+    'REAL',     'COMPLEX',  'BIN',      'HEX',
+    'INFO',     'LIST',     'ARRAY'
 }
 subs_rules = {name: eval(name) for name in subs_types}
 subs_rules.update(OPERATORS)
 
 eval_types = {
-    'NAME',     'MAP',      'PRINT',    'DICT',
-    'MATCH',    'IF_ELSE',  'CLOSURE',  'SYM',
-    'BIND',     'GEN_LST',  'BODY',
-} 
+    'NAME',     'MAP',      'ENV',      'AT',
+    'QUOTE',    'BIND',     'GENER',    'PHRASE',
+    'STR'
+}
 eval_rules = {name: eval(name) for name in eval_types}
 
 exec_types = {

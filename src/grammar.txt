@@ -1,7 +1,9 @@
-LINE    := @SEQ ( CMD | EXP | EMPTY ) ;
+LINE    := CMD | EXPS | EMPTY
+
 EMPTY   := /\s*/
 
 CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | EXIT
+
 CONF    := config /\w+/ ( NUM | /on|off/ ) ?
 DIR     := dir VAR ?
 DEL     := del @SEQ VAR ,
@@ -10,31 +12,33 @@ IMPORT  := import /[\w\.]+/ /-[vw]/ *
 INFO    := info VAR ?
 EXIT    := exit
 
-EXP     := BIND | MAP | VAL
-BIND    := VAR ARGS:ITEMS ? = EXP DOC:STR ?         ## DELAY this
-MAP     := FORM:ITEMS -> EXP                        ## DELAY this
+EXPS    := @SEQ EXP ;
+EXP     := BIND | MAP | AT | PHRASE
 
+BIND    := VAR ARG ? = EXP DOC:STR ?                ## DELAY
 VAR     := NAME ATTR *
-NAME    := /[^\W\d][\w]*'*/
+ARG     := NAME | LIST
+NAME    := /[^\W\d][\w]*/
 ATTR    := . / ATTR:NAME
 
-VAL     := CLOSURE | IF_ELSE | ITEMS                ## DELAY this (to search for UNKNOWN)
-CLOSURE := @ ITEM EXP                               ## DELAY this
-IF_ELSE := ITEMS if SEQ else EXP                    ## DELAY this
-SEQ     := @SEQ EXP ,
-ITEMS   := ITEM +                                   ## sentence
+MAP     := ARG -> EXP                               ## DELAY
+AT      := @ ITEM EXP                               ## DELAY
+PHRASE  := ITEM +                                   ## DELAY
 
-ITEM    := GROUP | QUOTE | ATOM | LIST | PRINT
-GROUP   := @GRP SEQ
-QUOTE   := ' ITEM
-PRINT   := /f`.*?`/
-## UNQUOTE := $ ITEM                                ## TODO
-## MACRO   := & / NAME ITEM                         ## TODO
+ITEM    := ENV | GROUP | QUOTE | GENER | LIST | ARRAY | ATOM
+ENV     := @GRP @SEQ BIND ,
+GROUP   := @GRP EXP
+QUOTE   := /'.*?'/
 
-ATOM    := VAR | UNKNOWN | ANS | NUM | STR
+GENER   := [ EXP @ ( @SEQ EXP , ) ]                 ## DELAY
+LIST    := [ ( @SEQ EXP , ) ? ]
+ARRAY   := [ ( @SEQ SUBARR ; ) ]
+SUBARR  := @SEQ EXP \t
+
+ATOM    := VAR | OP | ANS | NUM | STR | UNKNOWN     ## define OP in grammar.py
+ANS     := /\$(\d+|\$*)/
+STR     := /[prm]?".*?"/
 UNKNOWN := /\?\w*/
-ANS     := /%(\d+|%*)/
-STR     := /".*?"/
 
 NUM     := BIN | HEX | COMPLEX | REAL
 COMPLEX := REAL /[+-]/ REAL I
@@ -42,14 +46,7 @@ REAL    := /-?\d+(\.\d+)?/ ( /[eE]/ - /-?\d+/ ) ?
 BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
-LIST    := [ SEQ ? ] | GEN_LST | MATRIX
-GEN_LST := [ EXP "|" - ( @SEQ CONSTR , ) ]          ## DELAY this
-CONSTR  := RANGE | BIND | VAL
-RANGE   := NAME in VAL
-MATRIX  := @LST SEQ ;
-
 
 ### MACROS ###
-@LST $ITM $SEP  := [ ( @SEQ $ITM $SEP ) ? ]
 @GRP $EXP       := "(" - $EXP ")" -
 @SEQ $ITM $SEP  := $ITM ( $SEP $ITM ) *

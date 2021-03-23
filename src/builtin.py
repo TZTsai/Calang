@@ -7,9 +7,9 @@ import symengine  # TODO: use this to do symbolic calculation
 from sympy import (
     S, E, pi, nan,
     Array, Matrix,
-    floor, ceiling, expand, factor, solve,
+    floor, ceiling, factorial, expand, factor, solve,
     sqrt, log, exp, gamma,
-    gcd, factorint, factorial, binomial,
+    gcd, factorint, binomial,
     sin, cos, tan, asin, acos, atan, cosh, sinh, tanh,
     limit, integrate, diff, 
 )
@@ -39,11 +39,12 @@ def ang(z): return atan(z.imag / z.real)
 
 binary_ops = {
     '+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '^': (pow_, 18),
-    '//': (floordiv, 8), '%': (mod, 8), '.': (dot, 10), '/\\': (and_, 8), '\\/': (or_, 7),
+    '//': (floordiv, 8), '%': (mod, 8), '÷': (divmod, 8), '.': (dot, 10),
+    '/\\': (and_, 8), '\\/': (or_, 7), 'xor': (xor, 3),
     '==': (eq_, 0), '~=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
-    'or': (lambda x, y: x or y, -6), 'in': (lambda x, y: x in y, -2), 'xor': (xor, 3),
-    ':': (range_, 4), '(adj)': (adjoin, 20), '(app)': (apply, 22)
-    #'is': (NotImplemented, -3)
+    'in': (lambda x, y: x in y, -2), ':': (range_, 4),
+    '(adj)': (adjoin, 20), '(app)': (apply, 22)
+    #'isa': (NotImplemented, -3)
 }
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10), '∠': (ang, 4)}
 unary_r_ops = {'!': (factorial, 22), '..': (unpack, 11), '°': (deg, 24)}

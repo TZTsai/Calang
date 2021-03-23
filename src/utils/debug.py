@@ -1,6 +1,5 @@
 from pprint import pformat, pprint
 import json
-import utils.io as stdio
 import config
 
 

@@ -20,8 +20,7 @@ except FileNotFoundError:
     symbols = json.loads(dict_text)
 
     # cleaning
-    pairs = tuple(symbols.items())
-    for k, v in pairs:
+    for k, v in tuple(symbols.items()):
         if k[0] != '\\' or len(v.encode('unicode_escape')) > 8:
             del symbols[k]
     

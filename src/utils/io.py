@@ -3,11 +3,10 @@ import os
 import re
 import msvcrt
 import time
-from utils.debug import log
+from .debug import log
 
 
 getch = msvcrt.getwch
-getche = msvcrt.getwche
 
 spaces = ' \t\r\n'        # invokes a substitution if possible
 cancel_signal = '\x1a'    # cancels the current input, here ^Z
@@ -28,7 +27,11 @@ def ins():  # insertion position from the beginning
 
 
 def write(s, track=False):
-    sys.stdout.write(s)
+    if s == '\t':
+        sp = 4 - ins() % 4
+        sys.stdout.write(sp * ' ')
+    else:
+        sys.stdout.write(s)
     sys.stdout.flush()
     
     if track:
@@ -83,6 +86,9 @@ def read(end='\r\n'):
             write(t, True)
             backslash = None
             
+        elif end_ch == '\t':
+            write(end_ch, True)
+            
         if end_ch == ' ':  # still print the last char
             write(end_ch, True)
         elif end_ch in '\r\n':
@@ -91,7 +97,8 @@ def read(end='\r\n'):
         if end_ch in end:
             return ''.join(buffer)
 
-read.subst = None
+# assign read.subst in 'unicode.py'
+read.subst = lambda s: s
 
 
 def _read():
@@ -105,6 +112,8 @@ def _read():
             c += '\n'
         elif c == '\\':
             backslash = ins()
+        elif c == '`':
+            c = '⋅'  # used in dot product
 
         if c in exit_signal:
             raise KeyboardInterrupt
@@ -187,3 +196,7 @@ class BracketTracker:
             elif c in self.close_pars:
                 self.pop(c)
         return self.stk[-1][1] + 1 if self.stk else 0
+
+
+if __name__ == '__main__':
+    while 1: write(repr(input('>> ')) + '\n')

@@ -52,12 +52,12 @@ MARK    := [^>|)\s]\S*
 GrammarStr = open('grammar.txt', 'r').read()
 GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
 Grammar = split(GrammarStr, '\n')
-# # add syntax for operations
-# bin_op, unl_op, unr_op = ['"' + '" | "'.join(sorted(ops, reverse=1, key=len)) + '"' 
-#                           for ops in (binary_ops, unary_l_ops, unary_r_ops)]
-# Grammar.append('BOP := ' + bin_op)
-# Grammar.append('LOP := ' + unl_op)
-# Grammar.append('ROP := ' + unr_op)
+
+
+# add syntax for operations
+ops = sorted(set(binary_ops) | set(unary_l_ops) | set(unary_r_ops),
+             reverse=1, key=len)
+Grammar.append('OP := "%s"' % '" | "'.join(ops))
 
 
 def simple_grammar(rules, whitespace=r'\s+'):
@@ -100,7 +100,7 @@ def parse_grammar(type_, text, grammar=metagrammar):
     return parse_atom(type_, ' '+text)
 
 
-def calc_grammar(rules, whitespace=r'\s*'):
+def calc_grammar(rules, whitespace=r' *'):
     G = {' ': whitespace}
     M = {}
     for rule in rules:

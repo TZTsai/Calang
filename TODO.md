@@ -1,27 +1,20 @@
 # TODO List
 
-* EXP with UNKNOWN converted to MAP
-* inverse the order of OBJ:NAME pair to NAME:OBJ
-* MACRO
-* function operations like f+g, f*g, f^3, etc.
-* maybe I should make a distinction between 'simplify' and 'evaluate'
-  * the former does not require env; the latter does
 * unify FORM and EXP; update matching
   * the only difference between FORM and EXP is whether it is evaluated
   * FORM will be simplified while EXP will be evaluated
   * when a FORM is matched with EXP, there could be
     * a match failure, like `2 :: 1`
     * a successful match, which defines names in the present env
-* rename MAP to RULE
-
-## TODO2
-
+* [ ] syntactic parsing and semantic parsing
 * [ ] index starts from 1
+* [ ] EXP with UNKNOWN converted to MAP
 * [ ] `_` has value 'none', it can be used in `_ = x` but its value does not change
 * [ ] use dot `.` to index lists: `l.1, l.2:-1, l.-2:1, l.-1:-2:1, l.[1:3, 2:-1]` (convert negative index to index from the end)
 * [ ] list comprehension: `[x*y for x in 1:5, y = x ^ 2, y < 20]`
 * [ ] generator: `(x in 1:5, y = x^2, y < 20)`
 * [ ] switch from sympy to symengine
+* [ ] function operations like f+g, f*g, f^3, etc.
 * [ ] conditional: `x; y; z` returns the first true value (short-circuit) or the last value; `x if y` returns the value of `x` if `y` is true or the value of `y` (also short-circuit); combining them together, we can write `x if y; z; w if v; u`. Besides, we support `a /\ b` and `a \/ b` for logical and/or (no short-circuit). `&` and `|` are used for binary and/or.
 * [ ] evaluate a sequence of the same priority from right to left: `double double 2` should be 4
 * [ ] str: `"abc"`, print: `p"abc"`, re: `r"abc"`, insert value: `"{a}bc"` (`a` is evaluated)
@@ -30,7 +23,7 @@
 * [ ] unpack: `[1, [2, 3]..] == [1, 2, 3]`, `f [x, y..] = x | y`
 * [ ] concat: `x | y`, if at least one of `x` and `y` is a list, then the operation becomes concat. `[1] | [2, 3] == [1, 2, 3]`, `1 | [[2], [3]] == [[1, 2], [1, 3]]`
 * [ ] auto broadcast of operations: `1 + [1, 0] == [2, 1]`
-* [ ] arrays: `[<1, 2, 3; 4, 5, 6>]`, `[<1, 2, 3>]`, `[<[1, 2], [3, 4]>]` (converted to sympy array)
+* [ ] arrays: `[1, 2, 3; 4, 5, 6]`, `[1, 2, 3;]` (converted to sympy array)
 * [ ] pattern matching: `max x y = x if x > y else y`, `max lst = ...`
 * [ ] type system: `add a::Int b::Int = a + b`, `add a::Complex b::Complex = ...`
 * [ ] type checking: `a in Int` or `a ∈ Int`

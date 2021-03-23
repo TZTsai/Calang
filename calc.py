@@ -48,7 +48,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             brackets = bracket_choices[my_brackets]
         else:
             arrow = arrows[1]
-            brackets = '% '
+            brackets = '$ '
         prompt = '%s%d%s%s ' % (brackets[0], count, brackets[1], arrow)
         return prompt
 
@@ -127,7 +127,7 @@ def run(filename=None, test=False, start=0, verbose=True):
         
 def load_mods():
     "Load modules, which can cost some time."
-    from utils.backslash import subst
+    from utils.unicode import subst
     from eval import calc_eval, LOAD
     from format import calc_format
     from funcs import eq_ as equal
