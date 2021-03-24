@@ -303,7 +303,15 @@ def unpack(lst):
 
 def index(lst, idx):
     def ind(lst, i):
-        return lst[i-1] if type(i) is int else lst[i]
+        if type(i) is int:
+            if i == 0:
+                raise IndexError('zero index')
+            elif i > 0:
+                return lst[i-1]
+            else:
+                return lst[i]
+        else:
+            return lst[i]
     
     try:
         id0 = idx[0]

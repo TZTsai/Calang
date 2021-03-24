@@ -88,6 +88,8 @@ def calc_format(val, linesep='\n', **opts):
                 return str(val) if depth == 1 else repr(val)
         elif isinstance(val, Range):
             return str(val)
+        elif type(val) is str:
+            return repr(val)
         else:
             return pretty(val, use_unicode=True)
 

@@ -369,8 +369,13 @@ Check "builtin.py" to see the available built-in operations and functions.
   * `fact[n] = 1 if n <= 1 else n*fact[n-1] "factorial of an integer"`
     `help[fact]`
 
+* Hotkeys
+  * `Ctrl-C`/`Ctrl-D`: exit
+  * `Ctrl-Z`: cancel current input
+  * `Ctrl-N`: 
+
 * Exit  
 
-  Ctrl+C or a single command `exit`
+  `Ctrl-C` or a single command `exit`
 
 You can find the detailed grammar of Calc in "grammar.txt". You can also find more examples in the "scripts/examples" folder.

@@ -1,6 +1,7 @@
 from functools import wraps
 from copy import deepcopy
 import re, json
+from my_utils.utils import interact
 
 from parse import calc_parse, is_name, is_tree, tree_tag
 from builtin import operators, builtins, shortcircuit_ops
@@ -310,19 +311,20 @@ def AND(tr, env):
 def STR(tr, env):
     s = tr[1]
     if s[0] != '"':
-        assert s[1] == s[-1] == '"'
-        mode, s = s[0], s[1:]
-        if mode == 'r':
-            s = s.replace('\\', '\\\\')
-        s = format_string(s, env)
-        if mode == 'p':
-            print(eval(s))
-        elif mode in 'rm':
-            return s
-        else:
-            raise SyntaxError('unknown string mode')
+        mode, s = s[0], s[2:-1]
     else:
-        return format_string(s, env)
+        mode, s = 's', s[1:-1]
+    
+    if mode == 'r':
+        s = s.replace('\\', '\\\\')
+        
+    s = format_string(s, env)
+    if mode == 'p':
+        print(s)
+    elif mode in 'rs':
+        return s
+    else:
+        raise SyntaxError('unknown string mode')
 
 def QUOTE(tr, env):
     s = eval(tr[1])
@@ -578,6 +580,8 @@ def CONF(tr):
         raise ValueError('no such field in the config')
     
 def EXIT(tr): raise KeyboardInterrupt
+
+def INNER(tr): interact()
     
 
 def eval_tree(tree, env=None, inplace=True):
@@ -587,7 +591,7 @@ def eval_tree(tree, env=None, inplace=True):
         tree = deepcopy(tree)
     tag = tree_tag(tree)
     
-    if tag not in dont_eval and env is not None:
+    if tag not in dont_eval:
         unb_flag = False
         for i, t in enumerate(tree):
             try: tree[i] = eval_tree(t, env)
@@ -634,7 +638,7 @@ eval_rules = {name: eval(name) for name in eval_types}
 
 exec_types = {
     'DEL',      'DEF',      'LOAD',     'IMPORT',
-    'CONF',     'EXIT'
+    'CONF',     'EXIT',     'INNER'
 }
 exec_rules = {name: eval(name) for name in exec_types}
 

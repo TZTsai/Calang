@@ -2,7 +2,7 @@ LINE    := CMD | EXPS | EMPTY
 
 EMPTY   := /\s*/
 
-CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | EXIT
+CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | INNER | EXIT
 
 CONF    := config /\w+/ ( NUM | /on|off/ ) ?
 DIR     := dir VAR ?
@@ -10,6 +10,7 @@ DEL     := del @SEQ VAR ,
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
 INFO    := info VAR ?
+INNER   := %%                                       ## start python REPL
 EXIT    := exit
 
 EXPS    := @SEQ EXP ;

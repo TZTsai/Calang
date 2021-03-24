@@ -67,7 +67,7 @@ def run(filename=None, test=False, start=0, verbose=True):
                 
             if interactive:  # get input
                 try:
-                    line = input()
+                    line = input(indent=len(prompt))
                 except IOError:
                     print()
                     continue  # abandon current input
@@ -81,8 +81,8 @@ def run(filename=None, test=False, start=0, verbose=True):
             if not line: continue
 
             indent = BracketTracker.next_insertion(prompt + line)
-            if line[-3:] == '...':
-                line = line[:-3]
+            if line[-1] == '\\':
+                line = line[:-1]
                 if not indent: indent = len(prompt)
 
             buffer.append(line)

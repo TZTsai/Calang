@@ -98,7 +98,7 @@ def parse_grammar(type_, text, grammar=metagrammar):
     return parse_atom(type_, ' '+text)
 
 
-def calc_grammar(rules, whitespace=r' *'):
+def calc_grammar(rules, whitespace=r'[ \n]*'):
     G = {' ': whitespace}
     M = {}
     for rule in rules:

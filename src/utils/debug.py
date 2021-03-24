@@ -7,7 +7,7 @@ def log(*messages, debug=True, end='\n', sep='',
         indent='default', file='default'):
     if not config.debug and debug:
         return
-    
+   
     if file == 'default':
         file = log.file
     if indent == 'default':
