@@ -28,16 +28,17 @@ PHRASE  := ITEM +                                   ## DELAY
 ITEM    := ENV | GROUP | QUOTE | GENER | LIST | ARRAY | ATOM
 ENV     := @GRP @SEQ BIND ,
 GROUP   := @GRP EXP
-QUOTE   := /'.*?'/
+QUOTE   := ' EXP '
 
 GENER   := [ EXP @ ( @SEQ EXP , ) ]                 ## DELAY
 LIST    := [ ( @SEQ EXP , ) ? ]
 ARRAY   := [ ( @SEQ SUBARR ; ) ]
-SUBARR  := @SEQ EXP \t
+SUBARR  := /\t*/ - ( @SEQ EXP ( /\t+/ - ) ) /\t*/ -
 
-ATOM    := VAR | OP | ANS | NUM | STR | UNKNOWN     ## define OP in grammar.py
+ATOM    := STR | OP | ANS | ATTR | NAME | NUM | UNKNOWN
 ANS     := /\$(\d+|\$*)/
 STR     := /[prm]?".*?"/
+OP      := <define-it-in-python-file>
 UNKNOWN := /\?\w*/
 
 NUM     := BIN | HEX | COMPLEX | REAL

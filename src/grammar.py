@@ -1,7 +1,7 @@
 from pprint import pprint
 import re
 import json
-from builtin import binary_ops, unary_l_ops, unary_r_ops
+from builtin import operators
 from utils.deco import memo, trace, disabled
 from utils.debug import check_record
 
@@ -49,13 +49,11 @@ MARK    := [^>|)\s]\S*
 # MACRO:    a macro will be substituted by its evaluated expression 
 
 
-GrammarStr = open('grammar.txt', 'r').read()
-GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
-Grammar = split(GrammarStr, '\n')
-
+Grammar = open('grammar.txt', 'r').read().split('#####', 1)[0].splitlines()
+Semantics = open('semantics.txt', 'r').read().splitlines()
 
 # add syntax for operations
-ops = sorted(set(binary_ops) | set(unary_l_ops) | set(unary_r_ops),
+ops = sorted(set.union(*map(set, operators.values())),
              reverse=1, key=len)
 Grammar.append('OP := "%s"' % '" | "'.join(ops))
 
@@ -189,8 +187,11 @@ def post_process(grammar, macros):
 
 
 grammar = calc_grammar(Grammar)
-json.dump(grammar, open('utils/grammar.json', 'w', 
-                        encoding='utf8'), indent=2)
+semantics = simple_grammar(Semantics)
+del semantics[' ']
+
+json.dump(grammar, open('utils/grammar.json', 'w'), indent=2)
+json.dump(semantics, open('utils/semantics.json', 'w'), indent=2)
 
 
 if __name__ == "__main__":

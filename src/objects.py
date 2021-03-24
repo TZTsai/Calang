@@ -35,21 +35,27 @@ class Op(Function):
         self.type = type
         self.symbol = symbol
         self.priority = priority
-        self.nested = True
+        self.broadcast = True
         
     def __call__(self, *args):
         try:
             return super().__call__(*args)
         except TypeError:
-            if not self.nested: raise
+            if not self.broadcast: raise
+            
         call = self.__call__
+        
         try: return tuple(map(call, *args))
         except TypeError: pass
+        
         try: return Function.broadcast(call)(*args)
         except TypeError: raise OperationError
 
     def __repr__(self):
         return f"{self.type}({self.symbol}, {self.priority})"
+    
+    def __eq__(self, other):
+        return isinstance(other, Op) and self.__dict__ == other.__dict__
 
     def __str__(self):
         return self.symbol
@@ -202,29 +208,26 @@ class Attr:
     def __repr__(self):
         return '.'+self.name
 
-    def getFrom(self, env):
-        if isinstance(env, Env):
-            return env[self.name]
-        else:
-            return getattr(env, self.name)
-        
 
 class Range:
     def __init__(self, first, last, step=None, second=None):
         self.first = first
+        self.second = second
         self.last = last
-        self.iterable = None
+        self._step = step
         
-        if second:
-            self.step = second - first
-        elif step is None:
-            self.step = 1 if first <= last else -1
-        else:
-            self.step = step
-            
         # some checks
-        if self.step == 0:
-            raise ValueError('range step is 0')
+        assert step is None or second is None
+        if self.step == 0: raise ValueError('range step is 0')
+        
+    @property
+    def step(self):
+        if self.second:
+            return self.second - self.first
+        elif self._step is None:
+            return 1 if self.first < self.last else -1
+        else:
+            return self._step
         
     def __new__(cls, first, last, step=None, second=None):
         obj = super().__new__(cls)
@@ -232,7 +235,6 @@ class Range:
         if (obj.last - obj.first) * obj.step <= 0:
             return ()  # empty range
         else:
-            obj.iterable = range(obj.first, obj.last + obj.step, obj.step)
             return obj
 
     def __repr__(self):
@@ -241,7 +243,12 @@ class Range:
         return ':'.join(map(str, items))
         
     def __iter__(self):
-        return iter(self.iterable)
+        step = self.step
+        first, stop = self.first, self.last + step
+        return iter(range(first, stop, step))
+    
+    def __getitem__(self, i):
+        return self.first + i * self.step
 
     def __eq__(self, other):
         if not isinstance(other, Range): return False

@@ -9,6 +9,7 @@ from .debug import log
 getch = msvcrt.getwch
 
 spaces = ' \t\r\n'        # invokes a substitution if possible
+esc = '\x1b'
 cancel_signal = '\x1a'    # cancels the current input, here ^Z
 exit_signal = '\x03\x04'  # exits the program, here ^C or ^D
 
@@ -18,7 +19,7 @@ arrow_dir = dict(zip('ABCD', 'UDRL'))  # corresponding directions
 
 buffer = []
 caret = 0           # position of insertion from the end of buffer
-backslash = None    # position of the last backslash from the end
+esc_pos = None      # position of the last esc_pos from the end
 newline = False
 
 
@@ -61,35 +62,33 @@ def resetbuffer():
 
 def read(end='\r\n'):
     """Reads the input; supports writing LaTeX symbols by typing a tab
-    at the end of a string beginning with a backslash.
+    at the end of a string beginning with a esc_pos.
     """
     assert end in spaces
-    global backslash
+    global esc_pos
     
     resetbuffer()
 
     while True:
         end_ch = _read()
-
-        i, j = backslash, ins()
+        i, j = esc_pos, ins()
             
         if i is not None:
-            # the part to be replaced
-            t = buffer[i:j]
+            # replace the expression with its latex symbol
+            s = read.subst(''.join(buffer[i+1:j]))
             
             # remove substituted chars from the input
             delete(j - i)
+            
+            if s[0] == 'x':
+                write(s[1:], True)
+                move_cursor('K')  # move left
+            else:
+                write(s, True)
 
-            # substitute the expression into its latex symbol
-            t = read.subst(''.join(t))
+            esc_pos = None
             
-            write(t, True)
-            backslash = None
-            
-        elif end_ch == '\t':
-            write(end_ch, True)
-            
-        if end_ch == ' ':  # still print the last char
+        if end_ch in ' \t':  # add the last char to the buffer
             write(end_ch, True)
         elif end_ch in '\r\n':
             write(end_ch)
@@ -97,12 +96,12 @@ def read(end='\r\n'):
         if end_ch in end:
             return ''.join(buffer)
 
-# assign read.subst in 'unicode.py'
+# assign read.subst in 'calc.py'
 read.subst = lambda s: s
 
 
 def _read():
-    global backslash
+    global esc_pos
     c = -1
     
     while c:
@@ -110,8 +109,12 @@ def _read():
 
         if c == '\r':
             c += '\n'
-        elif c == '\\':
-            backslash = ins()
+        elif c == esc:
+            if esc_pos is None:
+                esc_pos = ins()
+                c = '»'
+            else:
+                return esc
         elif c == '`':
             c = '⋅'  # used in dot product
 
@@ -153,20 +156,10 @@ def move_cursor(code):
             caret -= 1
             # write(cs, False)
 
-
-class StdIO:
-    write = write  
-    read = read
-
     
 def input(prompt=''):
     write(prompt)
     return read()
-
-
-def print(*msgs, end='\n', indent='default'):
-    "Overrides the builtin print."
-    log(*msgs, sep=' ', end=end, indent=indent, debug=False, file=StdIO)
 
 
 class BracketTracker:
@@ -174,28 +167,29 @@ class BracketTracker:
     parentheses = ')(', '][', '}{'
     close_pars, open_pars = zip(*parentheses)
     par_map = dict(parentheses)
+    stack = []
 
-    def __init__(self):
-        self.stk = []
+    @classmethod
+    def push(cls, par, pos):
+        cls.stack.append((par, pos))
 
-    def push(self, par, pos):
-        self.stk.append((par, pos))
-
-    def pop(self, par):
-        if self.stk and self.stk[-1][0] == self.par_map[par]:
-            self.stk.pop()
+    @classmethod
+    def pop(cls, par):
+        if cls.stack and cls.stack[-1][0] == cls.par_map[par]:
+            cls.stack.pop()
         else:
-            self.stk.clear()
+            cls.stack.clear()
             raise SyntaxError('bad parentheses')
 
-    def next_insertion(self, line):
+    @classmethod
+    def next_insertion(cls, line):
         "Track the brackets in the line and return the appropriate pooint of the nest insertion."
         for i, c in enumerate(line):
-            if c in self.open_pars:
-                self.push(c, i)
-            elif c in self.close_pars:
-                self.pop(c)
-        return self.stk[-1][1] + 1 if self.stk else 0
+            if c in cls.open_pars:
+                cls.push(c, i)
+            elif c in cls.close_pars:
+                cls.pop(c)
+        return cls.stack[-1][1] + 1 if cls.stack else 0
 
 
 if __name__ == '__main__':

@@ -10,12 +10,12 @@ import config, objects
 depth = 0  # recursion depth
 indent_width = 1
 indent_level = 0
-line_sep_space = '\n'
+line_sep = '\n'
 options = {}
 
 
 def calc_format(val, linesep='\n', **opts):
-    global options, depth, indent_level, line_sep_space
+    global options, depth, indent_level, line_sep
     
     if isinstance(val, str):
         return val
@@ -31,9 +31,9 @@ def calc_format(val, linesep='\n', **opts):
         return latex(Matrix(val) if is_matrix(val) else val)
     
     if linesep != '\n':
-        line_sep_space = linesep
+        line_sep = linesep
     else:
-        linesep = line_sep_space
+        linesep = line_sep
 
     def format_float(x):
         prec = config.precision
@@ -56,7 +56,7 @@ def calc_format(val, linesep='\n', **opts):
         mat = [[format(x) for x in row] for row in mat]
         space = max([max([len(s) for s in row]) for row in mat])
         col_num = len(mat[0])
-        return f'{linesep}{indent}'.join(
+        return '\n'.join(
             [row_str(['']*col_num, '╭', '╮')] +
             [row_str(row, ' ', ' ', ', ') for row in mat] +
             [row_str(['']*col_num, '╰', '╯')])
@@ -97,8 +97,8 @@ def calc_format(val, linesep='\n', **opts):
     if type(val) is tuple:
         if any(map(is_matrix, val)):
             indent_level += 1
-            items = f',{linesep}'.join(map(calc_format, val))
-            s += '[{0}{1}{0}{2}]'.format(linesep, items, indent)
+            items = f',\n'.join(map(calc_format, val))
+            s += f'[\n{items}\n]'
             indent_level -= 1
         elif is_matrix(val):
             s += format_matrix(val)
@@ -106,6 +106,7 @@ def calc_format(val, linesep='\n', **opts):
             s += '[%s]' % ', '.join(map(calc_format, val))
     else:
         s += format_atom(val)
+    s = s.replace('\n', linesep + indent)
     depth -= 1
     return s
 

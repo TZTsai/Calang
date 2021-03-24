@@ -2,7 +2,8 @@ from operator import and_ as b_and, or_ as b_or, concat
 from functools import reduce, wraps
 from numbers import Number, Rational
 from fractions import Fraction
-from sympy import Expr, Integer, Float, Matrix, Array, Symbol, factor, simplify, factorial
+from sympy import (Expr, Integer, Float, Matrix, Array, Symbol, 
+                   factor, simplify, factorial, transpose)
 from objects import Range, Map, Attr, Env, Op, Function, Builtin, OperationError
 import config
 
@@ -69,8 +70,12 @@ def is_symbol(value):
     return isinstance(value, Symbol)
 
 
-def is_iter(value):
-    return hasattr(value, "__iter__")
+def iterable(value):
+    return hasattr(value, '__iter__')
+
+
+def indexable(value):
+    return hasattr(value, '__getitem__')
 
 
 def is_list(value):
@@ -199,11 +204,12 @@ def pow_(x, y):
         return reduce(dot, [x] * y, 1)
     else:
         return x ** y
-
-def fact_(x):
-    if type(x) is str:
-        print(x)
-
+    
+def in_(x, y):
+    if isinstance(y, type):
+        return isinstance(x, y)
+    else:
+        return x in y
 
 def and_(x, y):
     if all_([x, y], is_list):
@@ -283,23 +289,6 @@ def broadcast(f):
 Function.broadcast = broadcast
 
 
-def adjoin(x1, x2):
-    '''
-    >>> adjoin(abs, [-3])
-    3
-    >>> adjoin(3, 4)
-    12
-    >>> adjoin(abs, Attr('__class__'))
-    <class 'builtin_function_or_method'>
-    '''
-    if isinstance(x2, Attr):
-        return x2.getFrom(x1)
-    elif is_list(x1) and is_list(x2):
-        return subscript(x1, x2)
-    else:
-        raise OperationError('invalid types for adjoin')
-
-
 def compose(*funcs):
     def compose2(f, g):
         def h(*args): return f(g(*args))
@@ -312,21 +301,38 @@ def unpack(lst):
     return ['(unpack)', lst]
 
 
-def subscript(lst, subs):
-    if not subs: return lst
-    assert depth(subs) == 1
-    id0 = subs[0]
-    items = lst[id0]
-    if type(id0) is slice:
-        return tuple(subscript(item, subs[1:]) for item in items)
+def index(lst, idx):
+    def ind(lst, i):
+        return lst[i-1] if type(i) is int else lst[i]
+    
+    try:
+        id0 = idx[0]
+    except TypeError:
+        return ind(lst, idx)
+    except IndexError:
+        return lst
+    
+    if isinstance(id0, Range):
+        for attr in ['first', 'last']:
+            if (i := getattr(id0, attr)) < 0:
+                setattr(id0, attr, len(lst) + i + 1)
+        items = [ind(lst, i) for i in id0]
+        return tuple(index(item, idx[1:]) for item in items)
     else:
-        return subscript(items, subs[1:])
-
+        items = ind(lst, id0)
+        return index(items, idx[1:])
+    
+def getattr_(obj, attr: Attr):
+    if isinstance(obj, Env):
+        return obj[attr.name]
+    else:
+        return getattr(obj, attr.name)
+    
 
 def shape(x):
-    if not is_iter(x): return tuple()
+    if not iterable(x): return ()
     subshapes = [shape(a) for a in x]
-    return (len(x),) + tuple(map(min, *subshapes))
+    return (len(x), *map(min, *subshapes))
 
 
 def flatten(l):
@@ -339,7 +345,7 @@ def flatten(l):
     if depth(l) <= 1: return l
     fl = []
     for x in l: 
-        if not is_iter(x): fl.append(x)
+        if not iterable(x): fl.append(x)
         else: fl.extend(flatten(x))
     return fl
 
@@ -385,7 +391,7 @@ def range_(x, y):
 def substitute(exp, *bindings):
     if hasattr(exp, 'subs'):
         return exp.subs(bindings)
-    if is_iter(exp):
+    if iterable(exp):
         return tuple(substitute(x, *bindings) for x in exp)
     return exp
 

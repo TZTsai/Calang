@@ -250,6 +250,9 @@ Check "builtin.py" to see the available built-in operations and functions.
     `y = g[4]`  
     `[y.val, y.sq, y.double]` (return: [4, 16, 8])
 
+* String
+  
+
 * Parameter matching
 
   Instead of explicitly create an environment, you can also match a parameter (list) to a value.  

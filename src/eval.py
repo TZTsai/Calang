@@ -1,13 +1,17 @@
 from functools import wraps
 from copy import deepcopy
-import re
+import re, json
 
 from parse import calc_parse, is_name, is_tree, tree_tag
-from builtin import operators, builtins
-from funcs import Symbol, Array, is_list, is_function
+from builtin import operators, builtins, shortcircuit_ops
+from funcs import Symbol, Array, is_list, is_function, indexable, apply
 from objects import Env, stack, Op, Attr, Function, Map, UnboundName, OperationError
 from utils import debug
 import config
+
+
+with open('utils/semantics.json') as f:
+    semantics = json.load(f)
 
 
 def GlobalEnv():
@@ -52,13 +56,6 @@ def EMPTY(tr): return None
 
 def EXPS(tr): return tr[-1]
 
-def op_getter(op_type):
-    ops = operators[op_type]
-    return lambda tr: ops[tr[1]]
-
-OPERATORS = {op_type: op_getter(op_type)
-             for op_type, op_dict in operators.items()}
-
 def COMPLEX(tr):
     re, pm, im = tr[1:]
     return re + im*1j if pm == '+' else re - im*1j
@@ -70,6 +67,12 @@ def REAL(tr):
 def BIN(tr): return eval(tr[1])
 
 def HEX(tr): return eval(tr[1])
+
+# def VAR(tr):
+#     field = tr[1]
+#     for attr in tr[2:]:
+#         field = attr.getfrom(field)
+#     return field
 
 def ATTR(tr): return Attr(tr[1])
 
@@ -94,73 +97,151 @@ def DIR(tr):
 def INFO(tr):
     print(tr[1].__doc__)
         
+        
+LOP = operators['LOP']
+BOP = operators['BOP']
+ROP = operators['ROP']
 
-def hold_tree(f):
-    "A decorator that makes a substitution rule to hold the tree form."
-    @wraps(f)
-    def _f(tr): return tr if any(is_tree(t) for t in tr) else f(tr)
-    return _f
-
-@hold_tree
-def PHRASE(tr):
+def ITEMS(tr):
     ops = stack()
     vals = stack()
     
-    BOP = operators['BOP']
-    adjoin = BOP['(adj)']
-    apply = BOP['(app)']
-    dot = BOP['.']
+    backward_bops = [BOP['(app)']]
     
-    def reduce():
+    def squeeze():
         op = ops.pop()
-        if op.type == 'BOP':
-            args = vals.pop(-2), vals.pop(-1)
-        else:
-            args = vals.pop(),
         
-        try:
-            result = apply(op, args)
-        except OperationError:
-            if op is adjoin:  # adjoin failed, change to dot product
-                push.prev = None
-                push(args[0])
-                push(dot)
-                push(args[1])
-                return
-            else: raise
+        if op.type == 'BOP':
+            args = [vals.pop(), vals.pop()]
+            while ops.peek() == op:
+                args.append(vals.pop())
+                ops.pop()
             
-        vals.push(result)
+            backwards = op in backward_bops
+            x = args.pop(0 if backwards else -1)
+            while args:
+                y = args.pop(0 if backwards else -1)
+                x = [op, y, x] if backwards else [op, x, y]
+        else:
+            x = [op, vals.pop()]
+            
+        vals.push(['APPLY'] + x)
                 
     def push(x):
         if isinstance(x, Op):
             while ops:
                 op = ops.peek()
-                if x.priority <= op.priority:
-                    reduce()
+                if x.priority < op.priority:
+                    squeeze()
                 else: break
             ops.push(x)
         else:
-            if not (push.prev is None or isinstance(push.prev, Op)):
-                if is_function(push.prev):
-                    ops.push(apply)
-                else:
-                    push(adjoin)
             vals.push(x)
         push.prev = x
 
     push.prev = None
-    for x in tr[1:]: push(x)
-    while ops: reduce()
-    val = vals.pop()
-    assert not vals, 'sequence evaluation failed'
-    return val
+    phrase = parse_phrase(tr[1:])
+    
+    for x in phrase: push(x)
+    while ops: squeeze()
+    
+    tree = vals.pop()
+    assert not vals
+    print(tree)
+    return eval_tree(tree)
+
+def parse_phrase(phrase):
+    failed = None, None
+    
+    tests = {
+        'ATTR': lambda x: isinstance(x, Attr),
+        'FUNC': is_function,
+        'LIST': is_list,
+        'SEQ': indexable,
+        'ITEM': lambda x: type(x) is not list
+    }
+    
+    def parse_seq(seq, phrase):
+        result = []
+        for atom in seq:
+            tree, phrase = parse_atom(atom, phrase)
+            if tree is None:
+                return failed
+            result.append(tree)
+        return result, phrase
+
+    def parse_atom(atom, phrase):
+        if atom in semantics:
+            for alt in semantics[atom]:
+                tree, rest = parse_seq(alt, phrase)
+                if tree is not None:
+                    return [atom]+tree, rest
+            return failed
+        elif not phrase:
+            return failed
+        elif atom in ['LOP', 'BOP', 'ROP']:
+            try:
+                op = phrase[0]
+                assert op[0] == 'OP' and len(op) == 2
+                sym = op[1]
+                ops = operators[atom]
+                assert sym in ops
+                return ops[sym], phrase[1:]
+            except:
+                return failed
+        elif atom in tests:
+            if tests[atom](phrase[0]):
+                return phrase[0], phrase[1:]
+            else:
+                return failed
+            
+    get = BOP['(get)']
+    app = BOP['(app)']
+    ind = BOP['.']
+    mul = BOP['⋅']
+    
+    def flatten(tree):
+        if is_tree(tree):
+            if len(tree) == 2:
+                return flatten(tree[1])
+            
+            tag = tree_tag(tree)
+            args = map(flatten, tree[1:])
+            
+            if tag in ['OL', 'OB', 'OR']:
+                return cat(*args)
+            else:
+                nonlocal get, app, ind, mul
+                lv, rv = args
+                return cat(lv, eval(tag.lower()), rv)
+        else:
+            return tree
+        
+    def cat(*args):
+        l = []
+        for arg in args:
+            if type(arg) is list:
+                l.extend(arg)
+            else:
+                l.append(arg)
+        return l
+
+    tree, rest = parse_atom('VAL', phrase)
+    assert not rest
+    return flatten(tree)
+
+
+def hold_tree(f):
+    "A decorator that makes a substitution rule to hold the tree form."
+    @wraps(f)
+    def _f(tr, env=None):
+        return tr if any(is_tree(t) for t in tr) else f(tr)
+    return _f
 
 @hold_tree
-def VAR(tr):
-    field = tr[1]
-    for attr in tr[2:]:
-        field = attr.getFrom(field)
-    return field
+def APPLY(tr):
+    _, f, *args = tr
+    return f(*args)
 
 @hold_tree
 def LIST(tr):
@@ -178,15 +259,8 @@ def ARRAY(tr):
 
 SUBARR = LIST
 
-# @hold_tree
-# def SYM_LST(tr): return tuple(tr[1:])
-
-# @hold_tree
-# def SLICE(tr): return slice(*tr[1:])
-
 
 ## eval rules which require environment
-special_names = {'super'}
 
 def NAME(tr, env):
     name = format_string(tr[1], env)
@@ -204,13 +278,57 @@ def NAME(tr, env):
         else:
             raise UnboundName(f"unbound symbol '{name}'")
         
+def PHRASE(tr, env):
+    def split_shortcircuit(phrase):
+        for op in shortcircuit_ops:
+            opt = ['OP', op]
+            if opt in phrase:
+                i = phrase.index(opt)
+                lt = split_shortcircuit(phrase[:i])
+                rt = split_shortcircuit(phrase[i+1:])
+                return [op.upper(), lt, rt]
+        return ['ITEMS'] + phrase
+        
+    phrase = split_shortcircuit(tr[1:])
+    return eval_tree(phrase, env)
+
+def OR(tr, env):
+    _, a, b = tr
+    a = eval_tree(a, env)
+    return a if a else eval_tree(b, env)
+
+def IF(tr, env):
+    _, a, b = tr
+    b = eval_tree(b, env)
+    return eval_tree(a, env) if b else b
+
+def AND(tr, env):
+    _, a, b = tr
+    a = eval_tree(a, env)
+    return eval_tree(b, env) if a else a
+
 def STR(tr, env):
-    return format_string(tr[1], env)
+    s = tr[1]
+    if s[0] != '"':
+        assert s[1] == s[-1] == '"'
+        mode, s = s[0], s[1:]
+        if mode == 'r':
+            s = s.replace('\\', '\\\\')
+        s = format_string(s, env)
+        if mode == 'p':
+            print(eval(s))
+        elif mode in 'rm':
+            return s
+        else:
+            raise SyntaxError('unknown string mode')
+    else:
+        return format_string(s, env)
 
 def QUOTE(tr, env):
-    return Symbol(format_string(tr[1], env))
+    s = eval(tr[1])
+    return Symbol(format_string(s, env))
 
-def format_string(s, env, char='.'):
+def format_string(s, env):
     # TODO: use the builtin evaluation of f-string
     def subs(match):
         s = match[1].strip()
@@ -224,7 +342,7 @@ def format_string(s, env, char='.'):
         if eq: ss = '%s = %s' % (s, ss)
         return ss
 
-    brace_pattern = '{(%s+?)}' % char
+    brace_pattern = '{(.+?)}'
     return re.sub(brace_pattern, subs, s)
 
 # def IF_ELSE(tr, env):
@@ -326,7 +444,7 @@ def define(var, exp, env, doc=None):
     def def_(name, val, env):
         if name == '_':
             return  # ignore assignments of '_'
-        if name in special_names:
+        if name in special_words:
             raise NameError('"%s" cannot be bound' % name)
 
         if isinstance(val, Map):
@@ -462,14 +580,14 @@ def CONF(tr):
 def EXIT(tr): raise KeyboardInterrupt
     
 
-def eval_tree(tree, env=None, mutable=True):
+def eval_tree(tree, env=None, inplace=True):
     if not is_tree(tree):
         return tree
-    if not mutable:
+    if not inplace:
         tree = deepcopy(tree)
     tag = tree_tag(tree)
     
-    if tag not in dont_eval and env:
+    if tag not in dont_eval and env is not None:
         unb_flag = False
         for i, t in enumerate(tree):
             try: tree[i] = eval_tree(t, env)
@@ -493,23 +611,24 @@ Map.match = match
 Map.eval  = eval_tree
 
 
-delay_types = {
-    'MAP',      'GENER',    'BIND',     'AT' 
-    'ENV',      'PHRASE'
-}
+special_words = {'super', *shortcircuit_ops}
 
 subs_types = {
     'EXPS',     'EMPTY',    'DIR',      'ANS',
     'REAL',     'COMPLEX',  'BIN',      'HEX',
-    'INFO',     'LIST',     'ARRAY'
+    'INFO',     'LIST',     'ARRAY',    'SUBARR',
+    'ITEMS',    'APPLY'
 }
 subs_rules = {name: eval(name) for name in subs_types}
-subs_rules.update(OPERATORS)
 
-eval_types = {
-    'NAME',     'MAP',      'ENV',      'AT',
-    'QUOTE',    'BIND',     'GENER',    'PHRASE',
-    'STR'
+delay_types = {
+    'MAP',      'GENER',    'BIND',     'AT',
+    'ENV',      'PHRASE',
+    *map(str.upper, shortcircuit_ops)
+}
+
+eval_types = delay_types | {
+    'NAME',     'QUOTE',    'STR',
 }
 eval_rules = {name: eval(name) for name in eval_types}
 

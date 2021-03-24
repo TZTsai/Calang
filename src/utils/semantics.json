@@ -1,0 +1,100 @@
+{
+  "VAL": [
+    [
+      "COMB"
+    ],
+    [
+      "PAIR"
+    ],
+    [
+      "ITEM"
+    ]
+  ],
+  "COMB": [
+    [
+      "OL"
+    ],
+    [
+      "OB"
+    ],
+    [
+      "OR"
+    ]
+  ],
+  "OL": [
+    [
+      "LOP",
+      "VAL"
+    ]
+  ],
+  "OB": [
+    [
+      "NOB",
+      "BOP",
+      "VAL"
+    ]
+  ],
+  "OR": [
+    [
+      "NOR",
+      "ROP"
+    ]
+  ],
+  "NOB": [
+    [
+      "OR"
+    ],
+    [
+      "PAIR"
+    ],
+    [
+      "ITEM"
+    ]
+  ],
+  "NOR": [
+    [
+      "PAIR"
+    ],
+    [
+      "ITEM"
+    ]
+  ],
+  "PAIR": [
+    [
+      "APP"
+    ],
+    [
+      "GET"
+    ],
+    [
+      "IND"
+    ],
+    [
+      "MUL"
+    ]
+  ],
+  "APP": [
+    [
+      "FUNC",
+      "VAL"
+    ]
+  ],
+  "GET": [
+    [
+      "ITEM",
+      "ATTR"
+    ]
+  ],
+  "IND": [
+    [
+      "SEQ",
+      "LIST"
+    ]
+  ],
+  "MUL": [
+    [
+      "ITEM",
+      "VAL"
+    ]
+  ]
+}

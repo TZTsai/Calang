@@ -2,7 +2,8 @@ import threading
 import sys
 import src
 import config
-from utils.io import *
+import utils.io as io
+from utils.io import BracketTracker, input
 
 
 # read program arguments
@@ -12,9 +13,6 @@ config.debug = debug
 
 # directory of scripts to load
 scripts_dir = 'scripts/'
-
-# track bracket inputs
-bktracker = BracketTracker()
 
     
 def run(filename=None, test=False, start=0, verbose=True):
@@ -71,10 +69,10 @@ def run(filename=None, test=False, start=0, verbose=True):
                 try:
                     line = input()
                 except IOError:
-                    print(indent=0)
+                    print()
                     continue  # abandon current input
             elif verbose:  # print content in the loaded script
-                print(line, indent=0)
+                print(line)
                 
             if loading_thread.is_alive():
                 loading_thread.join()
@@ -82,7 +80,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             line, comment = split_comment(line)
             if not line: continue
 
-            indent = bktracker.next_insertion(prompt + line)
+            indent = BracketTracker.next_insertion(prompt + line)
             if line[-3:] == '...':
                 line = line[:-3]
                 if not indent: indent = len(prompt)
@@ -128,11 +126,13 @@ def run(filename=None, test=False, start=0, verbose=True):
 def load_mods():
     "Load modules, which can cost some time."
     from utils.unicode import subst
+    from utils.debug import log
     from eval import calc_eval, LOAD
     from format import calc_format
     from funcs import eq_ as equal
     
-    read.subst = subst
+    io.read.subst = subst
+    log.file = io
     LOAD.run = run
     
     globals().update((obj.__name__, obj) for obj in
@@ -145,8 +145,6 @@ loading_thread.start()
 
 if debug:
     sys.argv.remove('-d')
-    from src.grammar import grammar
-    parse.grammar = grammar  # reload grammar only when debugging
     
 if test:
     sys.argv.remove('-t')

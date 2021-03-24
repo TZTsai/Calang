@@ -7,7 +7,8 @@ from utils.debug import check, check_record, pprint
 
 try:
     assert not config.debug
-    grammar = json.load(open('src/utils/grammar.json', 'r'))
+    with open('src/utils/grammar.json') as f:
+        grammar = json.load(f)
     trace = disabled
 except:
     from grammar import grammar

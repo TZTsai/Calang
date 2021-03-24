@@ -11,16 +11,11 @@ from sympy import (
     sqrt, log, exp, gamma,
     gcd, factorint, binomial,
     sin, cos, tan, asin, acos, atan, cosh, sinh, tanh,
-    limit, integrate, diff, 
+    limit, integrate, diff
 )
-
 import config
 from objects import Op, Env, Range, Builtin, Enum
-from funcs import (
-    is_iter, is_function, is_matrix, is_number, is_vector, is_symbol, is_list, is_env,
-    add_, sub_, mul_, div_, pow_, and_, or_, not_, eq_, ne_, adjoin, unpack, dot, all_, any_,
-    first, findall, range_, compose, apply, transpose, depth, shape, substitute, flatten
-)
+from funcs import *
 
 
 def construct_ops(op_dict, type):
@@ -39,21 +34,23 @@ def ang(z): return atan(z.imag / z.real)
 
 binary_ops = {
     '+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '^': (pow_, 18),
-    '//': (floordiv, 8), '%': (mod, 8), '÷': (divmod, 8), '.': (dot, 10),
+    '//': (floordiv, 8), '%': (mod, 8), '÷': (divmod, 8), '⋅': (dot, 10),
     '/\\': (and_, 8), '\\/': (or_, 7), 'xor': (xor, 3),
     '==': (eq_, 0), '~=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
-    'in': (lambda x, y: x in y, -2), ':': (range_, 4),
-    '(adj)': (adjoin, 20), '(app)': (apply, 22)
-    #'isa': (NotImplemented, -3)
+    'in': (lambda x, y: x in y, -2), ':': (range_, 4), '.': (index, 16),
+    '(get)': (getattr_, 20), '(app)': (apply, 22)
 }
 unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10), '∠': (ang, 4)}
-unary_r_ops = {'!': (factorial, 22), '..': (unpack, 11), '°': (deg, 24)}
+unary_r_ops = {'!': (factorial, 22), '..': (unpack, 11), '°': (deg, 24), "'": (transpose, 15)}
+
 operators = {'BOP': binary_ops, 'LOP': unary_l_ops, 'ROP': unary_r_ops}
 
 for op_type, op_dict in operators.items():
     construct_ops(op_dict, op_type)
 
-binary_ops['(app)'].nested = False
+shortcircuit_ops = operators['SOP'] = ['or', 'if', 'and']
+
+binary_ops['(app)'].broadcast = False
 
 
 builtins = {
