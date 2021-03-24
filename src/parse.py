@@ -33,7 +33,7 @@ def is_tree(t):
     return type(t) is list and t and is_tag(t[0])
 
 def tree_tag(t):
-    return t[0].split(':')[0] if is_tree(t) else None
+    return t[0] if is_tree(t) else None
 
 
 def calc_parse(text, tag='LINE', grammar=grammar):
@@ -286,8 +286,6 @@ def rev_parse(tree):
             optpars = [f'{rec(optpar)}: {default}' for optpar, default in optpars[1:]]
             extpar = [extpar+'..'] if extpar else []
             return "[%s]" % ', '.join(pars + optpars + extpar)
-        elif tag == 'IF_ELSE':
-            return group("%s if %s else %s" % tuple(map(rec, tr[1:])))
         elif tag[-3:] == 'LST':
             return '[%s]' % ', '.join(map(rec, tr[1:]))
         elif tag == 'MAP':
@@ -302,9 +300,6 @@ def rev_parse(tree):
                 return '%s %s = %s' % tup
             else:
                 return '%s = %s' % tup
-        elif tag == 'MATCH':
-            _, form, exp = tr
-            return group('%s::%s' % (rec(form), rec(exp)))
         elif tag == 'CLOSURE':
             _, local, exp = tr
             return '%s %s' % (rec(local), rec(exp))
@@ -313,8 +308,6 @@ def rev_parse(tree):
             return '%s%s' % (rec(name), rec(form))
         elif tag == 'AT':
             return '@' + rec(tr[1])
-        elif tag == 'DELAY':
-            return rec(tr[1], in_seq)
         elif tag in ('PRINT', 'DOC'):
             return ''
         else:

@@ -30,7 +30,7 @@ def run(filename=None, test=False, start=0, verbose=True):
         return exp.rstrip(), comment.strip()
 
     def verify_answer(exp, result, answer):
-        if equal(result, eval(answer)):
+        if eq(result, eval(answer)):
             if verbose: print('--- OK! ---')
         else:
             raise Warning('--- Fail! Expected answer of %s is %s, but actual result is %s ---'
@@ -129,14 +129,14 @@ def load_mods():
     from utils.debug import log
     from eval import calc_eval, LOAD
     from format import calc_format
-    from funcs import eq_ as equal
+    from funcs import eq
     
     io.read.subst = subst
     log.file = io
     LOAD.run = run
     
     globals().update((obj.__name__, obj) for obj in
-                     [calc_eval, calc_format, equal])
+                     [calc_eval, calc_format, eq])
 
 # start another thread to speed up the startup
 loading_thread = threading.Thread(target=load_mods)

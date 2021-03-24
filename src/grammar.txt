@@ -38,7 +38,7 @@ SUBARR  := /\t*/ - ( @SEQ EXP ( /\t+/ - ) ) /\t*/ -
 
 ATOM    := STR | OP | ANS | ATTR | NAME | NUM | UNKNOWN
 ANS     := /\$(\d+|\$*)/
-STR     := /[prm]?".*?"/
+STR     := /[a-zA-Z]?".*?"/
 OP      := <define-it-in-python-file>
 UNKNOWN := /\?\w*/
 

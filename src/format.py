@@ -2,7 +2,7 @@ from sympy import latex, pretty
 from re import sub as translate
 from builtin import Rational, Fraction, Matrix, is_number, is_function, is_env, is_matrix, floor, inf, log
 from objects import Range, Env, Function
-from parse import rev_parse
+from parse import rev_parse, is_tree
 from utils.debug import log
 import config, objects
 
@@ -17,7 +17,7 @@ options = {}
 def calc_format(val, linesep='\n', **opts):
     global options, depth, indent_level, line_sep
     
-    if isinstance(val, str):
+    if is_tree(val):  # not fully evaluated
         return val
     
     if opts:
@@ -88,8 +88,8 @@ def calc_format(val, linesep='\n', **opts):
                 return str(val) if depth == 1 else repr(val)
         elif isinstance(val, Range):
             return str(val)
-        elif type(val) is str:
-            return repr(val)
+        elif isinstance(val, str):
+            return f'"{val}"'
         else:
             return pretty(val, use_unicode=True)
 

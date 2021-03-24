@@ -1,4 +1,4 @@
-from operator import and_ as b_and, or_ as b_or, concat
+from operator import and_ as b_and, or_ as b_or, concat, sub, mul
 from functools import reduce, wraps
 from numbers import Number, Rational
 from fractions import Fraction
@@ -15,7 +15,7 @@ def apply(func, args):
         "convert a number into python number type"
         if isinstance(val, (int, float, complex, Fraction)):
             if isinstance(val, complex):
-                return val.real if eq_(val.imag, 0) else val
+                return val.real if eq(val.imag, 0) else val
             else:
                 return val
         elif isinstance(val, Integer):
@@ -24,7 +24,7 @@ def apply(func, args):
             return float(val)
         else:
             val = complex(val)
-            return val.real if eq_(val.imag, 0) else val
+            return val.real if eq(val.imag, 0) else val
 
     def standardize(val):
         "standardize the result"
@@ -154,21 +154,15 @@ def same(lst):
         return same(tuple(lst))
     except IndexError:
         return True
-    return all(eq_(x, y) for y in lst[1:])
+    return all(eq(x, y) for y in lst[1:])
 
 
-def add_(x, y):
-    if is_list(x) or is_list(y):
-        raise TypeError
+def add(x, y):
+    if is_list(x) and is_list(y):
+        raise TypeError  # avoid concat
     return x + y
 
-def sub_(x, y):
-    return x - y
-
-def mul_(x, y):
-    return x * y
-
-def div_(x, y):
+def div(x, y):
     if all(isinstance(w, Rational) for w in (x, y)):
         return Fraction(x, y)
     else:
@@ -184,14 +178,14 @@ def dot(x1, x2):
     if is_function(x1) and is_list(x2):
         return broadcast(x1)(x2)
     if not (is_list(x1) or is_list(x2)):
-        return mul_(x1, x2)
+        return mul(x1, x2)
     d1, d2 = depth(x1), depth(x2)
     if 0 in [d1, d2]:
         raise TypeError  # for broadcast
     if d1 == d2 == 1:
         if len(x1) != len(x2):
             raise ValueError('dim mismatch for dot product')
-        return sum(map(mul_, x1, x2))
+        return sum(map(mul, x1, x2))
     elif d1 == 1:
         return dot([x1], x2)
     elif d2 == 1:
@@ -199,7 +193,7 @@ def dot(x1, x2):
     else:
         return tuple(tuple(dot(r, c) for c in transpose(x2)) for r in x1)
 
-def pow_(x, y):
+def pow(x, y):
     if isinstance(y, int):
         return reduce(dot, [x] * y, 1)
     else:
@@ -239,12 +233,12 @@ def or_(x, y):
 def not_(x):
     return 0 if x else 1
 
-def eq_(x, y):
+def eq(x, y):
     if is_list(x):
         if not is_list(y) or len(x) != len(y):
             return False
         else:
-            return all(map(eq_, x, y))
+            return all(map(eq, x, y))
     if is_number(x):
         if not is_number(y):
             return False
@@ -252,8 +246,8 @@ def eq_(x, y):
             return abs(x - y) <= config.tolerance
     return x == y
 
-def ne_(x, y):
-    return not eq_(x, y)
+def neq(x, y):
+    return not eq(x, y)
 
 
 def depth(value, key=max):
@@ -298,7 +292,7 @@ def compose(*funcs):
 
 
 def unpack(lst):
-    return ['(unpack)', lst]
+    return ['UNPACK', lst]
 
 
 def index(lst, idx):
@@ -386,7 +380,7 @@ def findall(cond, lst):
     if is_function(cond):
         return [i for i, x in enumerate(lst) if cond(x)]
     else:
-        return [i for i, x in enumerate(lst) if eq_(x, cond)]
+        return [i for i, x in enumerate(lst) if eq(x, cond)]
 
 
 def range_(x, y):

@@ -245,7 +245,7 @@ def APPLY(tr):
 def LIST(tr):
     lst = []
     for it in tr[1:]:
-        if is_list(it) and it[0] == '(unpack)':
+        if tree_tag(it) == 'UNPACK':
             lst.extend(it[1])
         else:
             lst.append(it)
@@ -307,10 +307,10 @@ def AND(tr, env):
 
 def STR(tr, env):
     s = tr[1]
-    if s[0] != '"':
-        mode, s = s[0], s[2:-1]
-    else:
+    if s[0] == '"':
         mode, s = 's', s[1:-1]
+    else:
+        mode, s = s[0], s[2:-1]
     
     if mode == 'r':
         s = s.replace('\\', '\\\\')
@@ -382,7 +382,7 @@ def ENV(tr, env):
     for t in tr[1:]: BIND(t, local)
     return local
 
-MAP = Map  # the MAP evaluation rule is the same as Map constructor
+MAP = Map  # the MAP evaluation rule is the same as Map's constructor
 Map.builtins = Builtins
 
 def AT(tr, env):
@@ -393,7 +393,7 @@ def AT(tr, env):
         return eval_tree(body, env=env)
 
 def BIND(tr, env):
-    var, exp = tr[1:3]
+    _, *var, exp = tr[1:3]
     try: doc = tr[3][1][1:-1]
     except: doc = None
     define(var, exp, env, doc)
@@ -495,16 +495,6 @@ def split_field(tr, env):
 
 
 # these rules are commands in the calc
-
-def DEF(tr):
-    _, field, body = tr
-    upper, field_name = split_field(field, Global)
-    field = upper[field_name]
-    if not isinstance(field, Env):
-        # if field is not Env instance, convert it into one
-        field = upper.child(field, field_name)
-        upper[field_name] = field
-    BIND(body, field)
     
 def DEL(tr):
     for t in tr[1:]:
@@ -589,11 +579,21 @@ def eval_tree(tree, env=None, inplace=True):
     tag = tree_tag(tree)
     
     if tag not in dont_eval:
-        unb_flag = False
+        part_flag = False
+        error = None
         for i, t in enumerate(tree):
-            try: tree[i] = eval_tree(t, env)
-            except UnboundName: unb_flag = True
-        if unb_flag: raise UnboundName
+            try:
+                tree[i] = eval_tree(t, env)
+            except UnboundName as e:
+                part_flag = True
+                error = e
+            if is_tree(tree[i]):
+                part_flag = True
+        if part_flag:  # partially evaluated
+            if env is not None and error:
+                raise UnboundName
+            else:
+                return tree
         
     if tag in subs_rules:
         return subs_rules[tag](tree)
@@ -634,8 +634,8 @@ eval_types = delay_types | {
 eval_rules = {name: eval(name) for name in eval_types}
 
 exec_types = {
-    'DEL',      'DEF',      'LOAD',     'IMPORT',
-    'CONF',     'EXIT',     'INNER'
+    'DEL',      'LOAD',     'IMPORT',       'CONF',
+    'EXIT',     'INNER'
 }
 exec_rules = {name: eval(name) for name in exec_types}
 

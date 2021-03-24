@@ -2,7 +2,7 @@ from functools import reduce
 from numbers import Number, Rational
 from fractions import Fraction
 from math import inf
-from operator import floordiv, mod, neg, lt, gt, le, ge, xor, inv
+from operator import floordiv, truediv, mod, neg, lt, gt, le, ge, xor, inv
 import symengine  # TODO: use this to do symbolic calculation
 from sympy import (
     S, E, pi, nan,
@@ -26,17 +26,17 @@ def construct_ops(op_dict, type):
         
 def log2(x): return log(x) / log(2)
 def log10(x): return log(x) / log(10)
-def sum(*x): return reduce(add_, x, initial=0)
+def sum(*x): return reduce(add, x, initial=0)
 def prod(*x): return reduce(dot, x, initial=1)
 def deg(x): return x / 180 * pi
 def ang(z): return atan(z.imag / z.real)
 
 
 binary_ops = {
-    '+': (add_, 6), '-': (sub_, 6), '*': (mul_, 8), '/': (div_, 8), '^': (pow_, 18),
-    '//': (floordiv, 8), '%': (mod, 8), '÷': (divmod, 8), '⋅': (dot, 10),
+    '+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (div, 8), '^': (pow, 18),
+    './': (truediv, 8), '%': (mod, 8), '÷': (divmod, 8), '⋅': (dot, 10),
     '/\\': (and_, 8), '\\/': (or_, 7), 'xor': (xor, 3),
-    '==': (eq_, 0), '~=': (ne_, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
+    '==': (eq, 0), '~=': (neq, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
     'in': (lambda x, y: x in y, -2), ':': (range_, 4), '.': (index, 16),
     '(get)': (getattr_, 20), '(app)': (apply, 22)
 }
