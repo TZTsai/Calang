@@ -1,10 +1,9 @@
 VAL  := COMB | PAIR | ITEM
 COMB := OB | OL | OR
 OB   := NOB BOP VAL
+NOB  := OR | ITEM
 OL   := LOP VAL
-OR   := NOR ROP
-NOB  := OR | PAIR | ITEM
-NOR  := PAIR | ITEM
+OR   := ITEM ROP
 PAIR := APP | GET | IND | MUL
 APP  := FUNC VAL
 GET  := ITEM ATTR

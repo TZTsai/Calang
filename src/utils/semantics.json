@@ -36,24 +36,13 @@
   ],
   "OR": [
     [
-      "NOR",
+      "ITEM",
       "ROP"
     ]
   ],
   "NOB": [
     [
       "OR"
-    ],
-    [
-      "PAIR"
-    ],
-    [
-      "ITEM"
-    ]
-  ],
-  "NOR": [
-    [
-      "PAIR"
     ],
     [
       "ITEM"

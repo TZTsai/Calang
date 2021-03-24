@@ -9,15 +9,16 @@ try:
     assert not config.debug
     with open('src/utils/grammar.json') as f:
         grammar = json.load(f)
-    trace = disabled
+    with open('utils/semantics.json') as f:
+        semantics = json.load(f)
 except:
-    from grammar import grammar
+    from grammar import grammar, semantics
 
 
 keywords = {'or', 'in', 'dir', 'load', 'config', 
             'import', 'del', 'info', 'exit'}
 
-trace = disabled
+trace = disabled  # for logging
 
 
 # functions dealing with tags
@@ -36,7 +37,6 @@ def tree_tag(t):
 
 
 def calc_parse(text, tag='LINE', grammar=grammar):
-
     whitespace = grammar[' ']
     no_space = False
 
@@ -186,8 +186,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     def process_tag(tag, tree):
         if tag[0] == '_':
             tag = '(merge)'
-        if tag == 'BIND':  # special syntax for inheritance
-            convert_if_inherit(tree)
+        # if tag == 'BIND':  # special syntax for inheritance
+        #     convert_if_inherit(tree)
 
         if not tree:
             return [tag]
@@ -196,8 +196,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         elif is_tree(tree):
             if kept_tags(tag):
                 tree = [tag, tree]  # keep the list tag
-            elif tag == 'FORM':  # special case: split the pars
-                tree = split_pars(tree)
+            # elif tag == 'FORM':  # special case: split the pars
+            #     tree = split_pars(tree)
             return tree
         elif len(tree) == 1:
             return process_tag(tag, tree[0])
@@ -209,45 +209,45 @@ def calc_parse(text, tag='LINE', grammar=grammar):
     return parse_tag(tag, text)
 
 
-def split_pars(form):
-    "Split a FORM syntax tree into 4 parts: pars, opt-pars, ext-par, all-pars."
+# def split_pars(form):
+#     "Split a FORM syntax tree into 4 parts: pars, opt-pars, ext-par, all-pars."
 
-    def check_par(par):
-        if par in all_pars:
-            raise NameError('duplicate variable name')
-        else:
-            all_pars.add(par)
+#     def check_par(par):
+#         if par in all_pars:
+#             raise NameError('duplicate variable name')
+#         else:
+#             all_pars.add(par)
             
-    if tree_tag(form) == 'PAR':
-        return form
-    else:
-        pars, opt_pars = ['PARS'], ['OPTPARS']
-        ext_par = None
-        all_pars = set()
-        for t in form[1:]:
-            if t[0] == 'PAR':
-                check_par(t[1])
-                pars.append(t[1])
-            elif t[0] == 'PAR_LST':
-                pars.append(split_pars(t))
-            elif t[0] == 'OPTPAR':
-                check_par(t[1][1])
-                opt_pars.append(t[1:])
-            else:
-                check_par(t[1])
-                ext_par = t[1]
-    return ['FORM', pars, opt_pars, ext_par]
+#     if tree_tag(form) == 'PAR':
+#         return form
+#     else:
+#         pars, opt_pars = ['PARS'], ['OPTPARS']
+#         ext_par = None
+#         all_pars = set()
+#         for t in form[1:]:
+#             if t[0] == 'PAR':
+#                 check_par(t[1])
+#                 pars.append(t[1])
+#             elif t[0] == 'PAR_LST':
+#                 pars.append(split_pars(t))
+#             elif t[0] == 'OPTPAR':
+#                 check_par(t[1][1])
+#                 opt_pars.append(t[1:])
+#             else:
+#                 check_par(t[1])
+#                 ext_par = t[1]
+#     return ['FORM', pars, opt_pars, ext_par]
 
 
-def convert_if_inherit(bind):
-    "Transform the BIND tree if it contains an inheritance from PARENT."
-    if tree_tag(bind[1]) == 'PARENT':
-        parent = bind.pop(1)[1]
-        body = bind[1]
-        tag = 'INHERIT' if tree_tag(bind[0]) == 'FUNC' else 'CLOSURE'
-        bind[1] = [tag, parent, body]
-    
+# def convert_if_inherit(bind):
+#     "Transform the BIND tree if it contains an inheritance from PARENT."
+#     if tree_tag(bind[1]) == 'PARENT':
+#         parent = bind.pop(1)[1]
+#         body = bind[1]
+#         tag = 'INHERIT' if tree_tag(bind[0]) == 'FUNC' else 'CLOSURE'
+#         bind[1] = [tag, parent, body]
 
+        
 def rev_parse(tree):
     "Reconstruct a readable string from the syntax tree."
     

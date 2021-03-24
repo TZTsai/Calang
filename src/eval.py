@@ -3,16 +3,12 @@ from copy import deepcopy
 import re, json
 from my_utils.utils import interact
 
-from parse import calc_parse, is_name, is_tree, tree_tag
+from parse import calc_parse, is_name, is_tree, tree_tag, semantics
 from builtin import operators, builtins, shortcircuit_ops
 from funcs import Symbol, Array, is_list, is_function, indexable, apply
 from objects import Env, stack, Op, Attr, Function, Map, UnboundName, OperationError
 from utils import debug
 import config
-
-
-with open('utils/semantics.json') as f:
-    semantics = json.load(f)
 
 
 def GlobalEnv():
@@ -141,9 +137,9 @@ def ITEMS(tr):
         push.prev = x
 
     push.prev = None
-    phrase = parse_phrase(tr[1:])
+    seq = match_ops_in_seq(tr[1:])
     
-    for x in phrase: push(x)
+    for x in seq: push(x)
     while ops: squeeze()
     
     tree = vals.pop()
@@ -151,9 +147,10 @@ def ITEMS(tr):
     print(tree)
     return eval_tree(tree)
 
-def parse_phrase(phrase):
+
+def match_ops_in_seq(seq):
     failed = None, None
-    
+
     tests = {
         'ATTR': lambda x: isinstance(x, Attr),
         'FUNC': is_function,
@@ -161,7 +158,7 @@ def parse_phrase(phrase):
         'SEQ': indexable,
         'ITEM': lambda x: type(x) is not list
     }
-    
+
     def parse_seq(seq, phrase):
         result = []
         for atom in seq:
@@ -195,20 +192,20 @@ def parse_phrase(phrase):
                 return phrase[0], phrase[1:]
             else:
                 return failed
-            
+
     get = BOP['(get)']
     app = BOP['(app)']
     ind = BOP['.']
     mul = BOP['⋅']
-    
+
     def flatten(tree):
         if is_tree(tree):
             if len(tree) == 2:
                 return flatten(tree[1])
-            
+
             tag = tree_tag(tree)
             args = map(flatten, tree[1:])
-            
+
             if tag in ['OL', 'OB', 'OR']:
                 return cat(*args)
             else:
@@ -217,7 +214,7 @@ def parse_phrase(phrase):
                 return cat(lv, eval(tag.lower()), rv)
         else:
             return tree
-        
+
     def cat(*args):
         l = []
         for arg in args:
@@ -227,7 +224,7 @@ def parse_phrase(phrase):
                 l.append(arg)
         return l
 
-    tree, rest = parse_atom('VAL', phrase)
+    tree, rest = parse_atom('VAL', seq)
     assert not rest
     return flatten(tree)
 
