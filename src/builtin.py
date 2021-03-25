@@ -65,7 +65,7 @@ builtins = {
     'sinh': sinh, 'cosh': cosh, 'tanh': tanh,
     # symbolic functions
     'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute,
-    'expand': expand, 'factor': factor,
+    'expand': expand, 'factor': factor, 'simplify': simplify,
     # integral number functions
     'gcd': gcd, 'factorial': factorial, 'binomial': binomial, 'factors': factorint
 }

@@ -287,7 +287,7 @@ def deparse(tree):
             return ''.join(map(rec, tr[1:]))
         elif tag == 'ATTR':
             return '.' + tr[1]
-        elif tag == 'PHRASE':
+        elif tag in ['PHRASE', 'ITEMS']:
             return ''.join(map(rec, tr[1:]))
         elif tag == 'OP':
             op = tr[1]

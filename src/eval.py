@@ -174,7 +174,7 @@ def match_ops_in_seq(seq):
         'FUNC': callable,
         'LIST': is_list,
         'SEQ': indexable,
-        'ITEM': lambda x: True
+        'ITEM': lambda x: not callable(x)
     }
 
     def parse_seq(seq, phrase):
@@ -310,11 +310,11 @@ def AT(tr, env=None):
     local = eval_tree(local, env)
     if not isinstance(local, Env):
         raise TypeError("'@' not followed by an Env")
-    try:
-        return eval_tree(body, env=local)
-    except NameError:
-        if env is None: raise
-        return eval_tree(body, env=env)
+    # try:
+    return eval_tree(body, env=local)
+    # except NameError:
+    #     if env is None: raise
+    #     return eval_tree(body, env=env)
 
 def STR(tr, env=None):
     s = tr[1]
@@ -506,7 +506,7 @@ def bind(form: Form, value, env: Env):
             unpack_len = len(items) - max(min_items, form.unpack_pos)
         
         i = 0  # variable index
-        iu = len(forms)
+        im = len(forms)
         unpack = []
         
         for item in items:
@@ -514,7 +514,8 @@ def bind(form: Form, value, env: Env):
                 _, [_, var], val = item
                 assert var in form.vars, f'keyword "{var}" does not exist in the form"'
                 bd(var, val)
-                iu -= 1
+                unpack_len -= 1
+                im -= 1
                 
             else:  # the item is a value
                 try: tr = forms[i]
@@ -537,7 +538,7 @@ def bind(form: Form, value, env: Env):
                 i += 1
         
         # bind the remaining variables
-        for i in range(i, iu):
+        for i in range(i, im):
             tr = forms[i]
             tag = tree_tag(tr)
             if tag == 'UNPACK':
