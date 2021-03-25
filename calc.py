@@ -2,7 +2,6 @@ import threading
 import sys
 import src
 import config
-import utils.io as io
 from utils.io import BracketTracker, input
 
 
@@ -23,11 +22,6 @@ def run(filename=None, test=False, start=0, verbose=True):
             path = scripts_dir + filename
             file = open(path, 'r')
             return file.readlines()[start:]
-
-    def split_comment(line):
-        try: exp, comment = line.rsplit('#', 1)
-        except: exp, comment = line, ''
-        return exp.rstrip(), comment.strip()
 
     def verify_answer(exp, result, answer):
         if eq(result, eval(answer)):
@@ -76,9 +70,6 @@ def run(filename=None, test=False, start=0, verbose=True):
                 
             if loading_thread.is_alive():
                 loading_thread.join()
-                
-            line, comment = split_comment(line)
-            if not line: continue
 
             indent = BracketTracker.next_insertion(prompt + line)
             if line[-1] == '\\':
@@ -88,12 +79,17 @@ def run(filename=None, test=False, start=0, verbose=True):
             buffer.append(line)
             if indent: continue
 
-            line = ''.join(buffer)
+            line = ''.join(buffer).strip()
             buffer, indent = [], 0
 
             result = calc_eval(line)
-            if result is None: continue
+            comment = LINE.comment
+            
+            if test and comment:
+                verify_answer(line, result, comment)
 
+            if result is None: continue
+            
             if verbose:  # print output
                 prompt = make_prompt('out')
                 print(prompt, end='')
@@ -102,10 +98,7 @@ def run(filename=None, test=False, start=0, verbose=True):
                 linesep = '\n' + ' ' * len(prompt)
                 output = calc_format(result, linesep=linesep, **opts)
                 print(output)
-
-            if test and comment:
-                verify_answer(line, result, comment)
-
+            
             count += 1
 
         except KeyboardInterrupt:
@@ -125,9 +118,10 @@ def run(filename=None, test=False, start=0, verbose=True):
         
 def load_mods():
     "Load modules, which can cost some time."
-    from utils.unicode import subst
+    import utils.io as io
     from utils.debug import log
-    from eval import calc_eval, LOAD
+    from utils.unicode import subst
+    from eval import calc_eval, LOAD, LINE
     from format import calc_format
     from funcs import eq
     
@@ -136,7 +130,7 @@ def load_mods():
     LOAD.run = run
     
     globals().update((obj.__name__, obj) for obj in
-                     [calc_eval, calc_format, eq])
+                     [calc_eval, calc_format, eq, log, LINE])
 
 # start another thread to speed up the startup
 loading_thread = threading.Thread(target=load_mods)
@@ -160,5 +154,7 @@ if len(sys.argv) > 1 or test:
         raise FileNotFoundError('script "%s" not found' % filename)
     except Exception:
         if config.debug: raise
+    finally:
+        log.file.close()
 else:
     run()

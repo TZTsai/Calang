@@ -1,20 +1,3 @@
-from functools import reduce
-from numbers import Number, Rational
-from fractions import Fraction
-from math import inf
-from operator import floordiv, truediv, mod, neg, lt, gt, le, ge, xor, inv
-import symengine  # TODO: use this to do symbolic calculation
-from sympy import (
-    S, E, pi, nan,
-    Array, Matrix,
-    floor, ceiling, factorial, expand, factor, solve,
-    sqrt, log, exp, gamma,
-    gcd, factorint, binomial,
-    sin, cos, tan, asin, acos, atan, cosh, sinh, tanh,
-    limit, integrate, diff
-)
-import config
-from objects import Op, Env, Range, Builtin, Enum
 from funcs import *
 
 
@@ -23,39 +6,54 @@ def construct_ops(op_dict, type):
         fun, pri = op_dict[op]
         op_dict[op] = Op(type, op, fun, pri)
         
-        
-def log2(x): return log(x) / log(2)
-def log10(x): return log(x) / log(10)
-def sum(*x): return reduce(add, x, initial=0)
-def prod(*x): return reduce(dot, x, initial=1)
-def deg(x): return x / 180 * pi
-def ang(z): return atan(z.imag / z.real)
-
 
 binary_ops = {
     '+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (div, 8), '^': (pow, 18),
-    './': (truediv, 8), '%': (mod, 8), '÷': (divmod, 8), '⋅': (dot, 10),
-    '/\\': (and_, 8), '\\/': (or_, 7), 'xor': (xor, 3),
+    '//': (floordiv, 8), './': (truediv, 8), '%': (mod, 8), '/%': (divmod, 8), '⋅': (dot, 10),
+    '&': (and_, 8), '|': (or_, 7), '⊗': (xor, 3), '∧': (land, 3), '∨': (lor, 2),
     '==': (eq, 0), '~=': (neq, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
-    'in': (lambda x, y: x in y, -2), ':': (range_, 4), '.': (index, 16),
-    '(get)': (getattr_, 20), '(app)': (apply, 22)
+    '∈': (in_, -2), ':': (range_, 4), '.': (index, 16), '<-': (substitute, 22),
+    '(get)': (get_attr, 25), '(app)': (apply, 30)
 }
-unary_l_ops = {'-': (neg, 10), 'not': (not_, -4), '~': (inv, 10), '∠': (ang, 4)}
-unary_r_ops = {'!': (factorial, 22), '..': (unpack, 11), '°': (deg, 24), "'": (transpose, 15)}
+
+unary_l_ops = {
+    '-': (neg, 10), '¬': (not_, -4), '~': (inv, 10), '∠': (ang, 4)
+}
+
+unary_r_ops = {
+    '!': (factorial, 22), '..': (unpack, 11), '°': (deg, 24), "ᵀ": (transpose, 15)
+}
 
 operators = {'BOP': binary_ops, 'LOP': unary_l_ops, 'ROP': unary_r_ops}
 
 for op_type, op_dict in operators.items():
     construct_ops(op_dict, op_type)
 
+binary_ops['(app)'].broadcast = False
+
 shortcircuit_ops = operators['SOP'] = ['or', 'if', 'and']
 
-binary_ops['(app)'].broadcast = False
+synonym_ops = {
+    '×':    '*',
+    '÷':    '/',
+    'in':   '∈',
+    'not':  '¬',
+    '\\/':  '∨',
+    '/\\':  '∧',
+    'xor':  '⊗',
+}
+
+op_symbols = set.union(*map(set, operators.values())) | set(synonym_ops)
 
 
 builtins = {
     # constants
-    'euler': E, 'ℯ': E, 'pi': pi, 'π': pi, 'φ': S.GoldenRatio, 'im': 1j, 'ⅈ': 1j, '∞': inf,
+    'euler': E, 'ℯ': E, 'pi': pi, 'π': pi, 'φ': S.GoldenRatio, 'im': 1j, 'ⅈ': 1j, '∞': oo,
+    # types
+    'Number': Number, 'Integer': Integral, 'Rational': Rational, 
+    'Real': Real, 'Complex': Complex, 'Fraction': Fraction,
+    'Symbol': Symbol, 'Matrix': Matrix, 'Array': Array, 'List': tuple, 
+    'Env': Env, 'Range': Range, 'Enum': Enum,
     # common functions
     'abs': abs, 'sqrt': sqrt, 'floor': floor, 'ceil': ceiling, 
     # list functions
@@ -78,6 +76,18 @@ builtins = {
     'gcd': gcd, 'factorial': factorial, 'binomial': binomial, 'factors': factorint
 }
 
+synonym_builtins = {
+    '∃': 'any',
+    '∀': 'all',
+    'ℤ': 'Integer',
+    'ℚ': 'Rational',
+    'ℝ': 'Real',
+    'ℂ': 'Complex',
+}
+
 for name, val in builtins.items():
-    if callable(val):
+    if callable(val) and not isinstance(val, type):
         builtins[name] = Builtin(val, name)
+
+for name1, name2 in synonym_builtins.items():
+    builtins[name1] = builtins[name2]

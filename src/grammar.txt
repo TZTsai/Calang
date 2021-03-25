@@ -1,8 +1,9 @@
-LINE    := CMD | EXPS | EMPTY
+LINE    := ( CMD | EVAL | EMPTY ) COMMENT ?
 
 EMPTY   := /\s*/
+COMMENT := # /.*/
 
-CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | INNER | EXIT
+CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | PYTHON | EXIT
 
 CONF    := config /\w+/ ( NUM | /on|off/ ) ?
 DIR     := dir VAR ?
@@ -10,36 +11,40 @@ DEL     := del @SEQ VAR ,
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
 INFO    := info VAR ?
-INNER   := %%                                       ## start python REPL
+PYTHON  := %%    ## starts a python REPL session
 EXIT    := exit
 
-EXPS    := @SEQ EXP ;
-EXP     := BIND | MAP | AT | PHRASE
-
-BIND    := VAR ARG ? = EXP DOC:STR ?                ## DELAY
+EVAL    := @SEQ EXPR ;
+EXPR    := BIND | EXP
+BIND    := NS ? FORM = EXPR DOC:COMMENT ?
+NS      := @ ITEM    ## namespace
+FORM    := VAR ITEM | PHRASE
 VAR     := NAME ATTR *
-ARG     := NAME | LIST
 NAME    := /[^\W\d][\w]*/
 ATTR    := . / ATTR:NAME
+EXP     := MAP | AT | PHRASE
 
-MAP     := ARG -> EXP                               ## DELAY
-AT      := @ ITEM EXP                               ## DELAY
-PHRASE  := ITEM +                                   ## DELAY
+MAP     := FORM:ITEM -> EXP
+AT      := @ ITEM EXP
+PHRASE  := ITEM +
 
-ITEM    := ENV | GROUP | QUOTE | GENER | LIST | ARRAY | ATOM
+ITEM    := ENV | GROUP | QUOTE | UNQUOTE | GENER | LIST | ARRAY | ATOM
 ENV     := @GRP @SEQ BIND ,
 GROUP   := @GRP EXP
 QUOTE   := ' EXP '
+UNQUOTE := { EXP }
 
-GENER   := [ EXP @ ( @SEQ EXP , ) ]                 ## DELAY
-LIST    := [ ( @SEQ EXP , ) ? ]
+GENER   := [ EXP @ ( @SEQ EXP , ) ]
+LIST    := [ ( @SEQ LSITEM , ) ? ]
+LSITEM  := KWD | EXP
+KWD     := NAME = EXP
 ARRAY   := [ ( @SEQ SUBARR ; ) ]
 SUBARR  := /\t*/ - ( @SEQ EXP ( /\t+/ - ) ) /\t*/ -
 
-ATOM    := STR | OP | ANS | ATTR | NAME | NUM | UNKNOWN
+ATOM    := STR | OP | ANS | ATTR | VAR | NUM | UNKNOWN
 ANS     := /\$(\d+|\$*)/
-STR     := /[a-zA-Z]?".*?"/
-OP      := <define-it-in-python-file>
+STR     := /[a-z]?".*?"/
+OP      := ???    ## define it in 'grammar.py'
 UNKNOWN := /\?\w*/
 
 NUM     := BIN | HEX | COMPLEX | REAL
@@ -49,6 +54,6 @@ BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
 
-### MACROS ###
+## MACROS ##
 @GRP $EXP       := "(" - $EXP ")" -
 @SEQ $ITM $SEP  := $ITM ( $SEP $ITM ) *

@@ -80,11 +80,11 @@ def read(end='\r\n', indent=0):
             # remove substituted chars from the input
             delete(j - i)
             
-            if s[0] == 'x':  # a decorator, 'x' is a placeholder
-                write(s[1:])
-                move_cursor('K')  # move to the left of the decorator
-            else:
-                write(s)
+            # if s[0] == 'x':  # a decorator, 'x' is a placeholder
+            #     write(s[1:])
+            #     move_cursor('K')  # move to the left of the decorator
+            # else:
+            write(s)
 
             esc_pos = None
             
@@ -94,7 +94,7 @@ def read(end='\r\n', indent=0):
             line = ''.join(buffer[:-1])
             text += line
             indent = BracketTracker.next_insertion(' '*indent + line)
-            if indent or line[-1] == '\\':  # incomplete line
+            if indent or line and line[-1] == '\\':  # incomplete line
                 resetbuffer()
                 write(' ' * indent, 0)
             else:
@@ -177,6 +177,9 @@ def input(prompt='', indent=0):
     write(prompt)
     return read(indent=indent)
 
+def close(): exit()
+    
+    
 class BracketTracker:
     parentheses = ')(', '][', '}{'
     close_pars, open_pars = zip(*parentheses)

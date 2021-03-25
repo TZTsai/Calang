@@ -4,16 +4,17 @@ import re, json
 from my_utils.utils import interact
 
 from parse import calc_parse, is_name, is_tree, tree_tag, semantics
-from builtin import operators, builtins, shortcircuit_ops
-from funcs import Symbol, Array, is_list, is_function, indexable, apply
-from objects import Env, stack, Op, Attr, Function, Map, UnboundName, OperationError
+from builtin import operators, synonym_ops, builtins, shortcircuit_ops
+from funcs import is_list, iterable, indexable, apply, Fraction, eq, get_attr
+from sympy import Expr, Symbol, Array, Integer, Float, Eq, factor, simplify, solve
+from objects import Env, stack, Op, Attr, Function, Map, Form, UnboundName
 from utils import debug
 import config
 
 
 def GlobalEnv():
     Global = Env(name='_global_', parent=Builtins)
-    Global._ans = []
+    Global.ans = []
     return Global
 
 Builtins = Env(name='_builtins_', binds=builtins)
@@ -30,20 +31,20 @@ def calc_eval(exp, env=None):
     if rest: raise SyntaxError(f'syntax error in "{rest}"')
     
     if env is None: env = Global 
-    
-    try:  # evaluate the syntax tree
-        result = eval_tree(tree, Global)
-    except UnboundName:  # there is an unbound name in exp
-        if config.symbolic:
-            # force unbound names to be evaluated to symbols
-            NAME.force_symbol = True
-            result = eval_tree(tree, Global)  # retry
-            NAME.force_symbol = False
-        else: raise
+    result = eval_tree(tree, env)
+    # try:  # evaluate the syntax tree
+    #     result = eval_tree(tree, Global)
+    # except UnboundName:  # there is an unbound name in exp
+    #     if config.symbolic:
+    #         # force unbound names to be evaluated to symbols
+    #         NAME.force_symbol = True
+    #         result = eval_tree(tree, Global)  # retry
+    #         NAME.force_symbol = False
+    #     else: raise
     
     if result is not None and not suppress:
         # record and return the result
-        Global._ans.append(result)
+        Global.ans.append(result)
         return result
 
 
@@ -51,7 +52,7 @@ def calc_eval(exp, env=None):
 
 def EMPTY(tr): return None
 
-def EXPS(tr): return tr[-1]
+def EVAL(tr): return tr[-1]
 
 def COMPLEX(tr):
     re, pm, im = tr[1:]
@@ -65,11 +66,11 @@ def BIN(tr): return eval(tr[1])
 
 def HEX(tr): return eval(tr[1])
 
-# def VAR(tr):
-#     field = tr[1]
-#     for attr in tr[2:]:
-#         field = attr.getfrom(field)
-#     return field
+def VAR(tr):
+    field = tr[1]
+    for attr in tr[2:]:
+        field = get_attr(field, attr)
+    return field
 
 def ATTR(tr): return Attr(tr[1])
 
@@ -80,7 +81,7 @@ def ANS(tr):
     else:
         try: id = int(s[1:])
         except: raise SyntaxError('invalid history index!')
-    return Global._ans[id]
+    return Global.ans[id]
 
 def DIR(tr):
     if len(tr) == 1:
@@ -93,7 +94,13 @@ def DIR(tr):
         
 def INFO(tr):
     print(tr[1].__doc__)
-        
+    
+def LINE(tr):
+    LINE.comment = tr[2][1]
+    return tr[1]
+
+LINE.comment = None
+
         
 LOP = operators['LOP']
 BOP = operators['BOP']
@@ -153,7 +160,7 @@ def match_ops_in_seq(seq):
 
     tests = {
         'ATTR': lambda x: isinstance(x, Attr),
-        'FUNC': is_function,
+        'FUNC': callable,
         'LIST': is_list,
         'SEQ': indexable,
         'ITEM': lambda x: type(x) is not list
@@ -180,7 +187,7 @@ def match_ops_in_seq(seq):
         elif atom in ['LOP', 'BOP', 'ROP']:
             try:
                 op = phrase[0]
-                assert op[0] == 'OP' and len(op) == 2
+                assert tree_tag(op) == 'OP'
                 sym = op[1]
                 ops = operators[atom]
                 assert sym in ops
@@ -229,19 +236,20 @@ def match_ops_in_seq(seq):
     return flatten(tree)
 
 
-def hold_tree(f):
-    "A decorator that makes a substitution rule to hold the tree form."
-    @wraps(f)
-    def _f(tr, env=None):
-        return tr if any(is_tree(t) for t in tr) else f(tr)
-    return _f
+# def hold_tree(f):
+#     "A decorator that makes a substitution rule to hold the tree form."
+#     @wraps(f)
+#     def _f(tr, env=None):
+#         return tr if any(is_tree(t) for t in tr) else f(tr)
+#     return _f
 
-@hold_tree
+# @hold_tree
 def APPLY(tr):
     _, f, *args = tr
-    return f(*args)
+    ret = f(*args)
+    return convert_type(ret)
 
-@hold_tree
+# @hold_tree
 def LIST(tr):
     lst = []
     for it in tr[1:]:
@@ -251,7 +259,7 @@ def LIST(tr):
             lst.append(it)
     return tuple(lst)
 
-@hold_tree
+# @hold_tree
 def ARRAY(tr):
     return Array(tr[1:])
 
@@ -263,20 +271,15 @@ SUBARR = LIST
 def NAME(tr, env):
     name = format_string(tr[1], env)
     try:
-        if name == 'super':
-            if env is Global:
-                raise EnvironmentError('no parent environment')
-            else:
-                return env.parent
-        else:
-            return env[name]
+        return env[name]
     except KeyError:
-        if NAME.force_symbol:
+        # if NAME.force_symbol:
+        if config.symbolic:
             return Symbol(name)
         else:
             raise UnboundName(f"unbound symbol '{name}'")
         
-def PHRASE(tr, env):
+def PHRASE(tr, env=None):
     def split_shortcircuit(phrase):
         for op in shortcircuit_ops:
             opt = ['OP', op]
@@ -287,6 +290,25 @@ def PHRASE(tr, env):
                 return [op.upper(), lt, rt]
         return ['ITEMS'] + phrase
         
+    unknowns = set()
+    for i, t in enumerate(tr):
+        if tree_tag(t) == 'UNKNOWN':
+            unknown = t[1][1:]
+            if unknown == '':
+                unknown = '?'
+            else:  # '?' must be the only unknown
+                assert '?' not in unknowns
+            unknowns.add(unknown)
+            tr[i] = ['NAME', unknown]
+    if unknowns:
+        if '?' in unknowns:
+            form = ['NAME', '?']
+        else:
+            ids = [int(x) for x in unknowns if x.isdigit()]
+            assert not ids or min(ids) == 1 and max(ids) == len(ids)
+            form = ['LIST'] + [['NAME', x] for x in sorted(unknowns)]
+        return Map(['MAP', form, tr], env)
+            
     phrase = split_shortcircuit(tr[1:])
     return eval_tree(phrase, env)
 
@@ -324,11 +346,21 @@ def STR(tr, env):
         raise SyntaxError('unknown string mode')
 
 def QUOTE(tr, env):
-    s = eval(tr[1])
-    return Symbol(format_string(s, env))
+    def traverse(tr):
+        if is_tree(tr):
+            tag = tree_tag(tr)
+            if tag == 'UNQUOTE':
+                return eval_tree(tr[1], env)
+            elif tag == 'NAME':
+                s = format_string(tr[1], env)
+                return Symbol(s)
+            else:
+                for i in range(1, len(tr)):
+                    tr[i] = traverse(tr[i])
+        return eval_tree(tr)
+    return traverse(tr)[1]
 
 def format_string(s, env):
-    # TODO: use the builtin evaluation of f-string
     def subs(match):
         s = match[1].strip()
         if s[-1] == '=':
@@ -340,21 +372,8 @@ def format_string(s, env):
         ss = debug.log.format(val)
         if eq: ss = '%s = %s' % (s, ss)
         return ss
-
     brace_pattern = '{(.+?)}'
     return re.sub(brace_pattern, subs, s)
-
-# def IF_ELSE(tr, env):
-#     _, t_case, pred, f_case = tr
-#     case = t_case if eval_tree(pred, env) else f_case
-#     return eval_tree(case, env)
-
-# def WHEN(tr, env):
-#     *cases, default = tr[1:]
-#     for _, cond, exp in cases:
-#         if eval_tree(cond, env):
-#             return eval_tree(exp, env)
-#     return eval_tree(default, env)
 
 def GENER(tr, env):
     def generate(exp, constraints):
@@ -367,7 +386,7 @@ def GENER(tr, env):
                 binds = binds[1:] if tree_tag(binds) == 'ENV' else [binds]
             if rest: cond = rest[0]
             for val in eval_tree(ran, local, False):
-                match(form, val, local)
+                bind(form, val, local)
                 for bind in binds: BIND(deepcopy(bind), local)
                 if not cond or eval_tree(cond, local, False):
                     yield from generate(exp, constraints[1:])
@@ -393,99 +412,143 @@ def AT(tr, env):
         return eval_tree(body, env=env)
 
 def BIND(tr, env):
-    _, *var, exp = tr[1:3]
-    try: doc = tr[3][1][1:-1]
-    except: doc = None
-    define(var, exp, env, doc)
+    tr.pop(0)  # remove tag
     
-# def MATCH(tr, env):
-#     _, form, val = tr
-#     local = env.child()
-#     match(form, val, local)
-#     return local
+    if tree_tag(tr[0]) == 'NS':
+        env = eval_tree(tr[0][1], env)
+        if not isinstance(env, Env):
+            raise ValueError('namespace is not an Env')
+        tr.pop(0)
+        
+    if tree_tag(tr[-1]) == 'DOC':
+        doc = tr[-1][1]
+        tr.pop()
+    else:
+        doc = None
+        
+    form, exp = tr
+        
+    if len(form) > 2:  # defining a map
+        exp = ['MAP', form[2], exp]
 
-def match(form, val, local: Env):
-    try:
-        _, pars, opt_pars, ext_par = form
-        pars, opt_pars = pars[1:], opt_pars[1:]
-        # remove the tags & make copies
-        vals = list(val) if is_list(val) else [val]
-    except:  # a single parameter
-        if tree_tag(form) == 'PAR':
-            par = form[1]
-            local[par] = val
-            return
-        else: raise
+    form = form[1]
+    val = eval_tree(exp, env)
     
-    if len(pars) > len(vals):
-        raise TypeError(f'not enough arguments in {vals}')
-    
-    for par in pars:
-        val = vals.pop(0)
-        if is_name(par): 
-            local[par] = val
-        else:
-            match(par, val, local)
+    if tree_tag(form) == 'VAR':
+        parent_tree, name = form[:-1], form[-1][1]
+        grandparent, parent_name = field_attr(parent_tree, env)
+        env = grandparent[parent_name]
+        if not isinstance(env, Env):
+            env = grandparent.child(val=env, name=parent_name)
+        form = ['NAME', name]
             
-    while opt_pars and vals:
-        define(opt_pars.pop(0)[0], vals.pop(0), local)
-    for opt_par, default in opt_pars:
-        define(opt_par, default, local)
+    if doc and tree_tag(form) == 'NAME':
+        if not isinstance(val, Env):
+            val = Env(name=form[1], val=val)
+        if not val.__doc__:
+            val.__doc__ = doc
+        else:
+            val.__doc__ += '\n' + doc
+            
+    form = Form(form, env)
+    return bind(form, val, env)
+
+
+def bind(form: Form, value, env: Env):
+    def bd(name, val):
+        if name in binds:
+            raise TypeError(f'multiple bindings of var {name} in the form')
         
-    if ext_par is not None:
-        local[ext_par] = tuple(vals)
-    elif vals:
-        raise TypeError(f'too many arguments in {vals}')
-        
-
-def define(var, exp, env, doc=None):
-
-    def def_(name, val, env):
-        if name == '_':
-            return  # ignore assignments of '_'
-        if name in special_words:
-            raise NameError('"%s" cannot be bound' % name)
-
+        if isinstance(val, Env) and val.val is not None:
+            val = val.val
+            
         if isinstance(val, Map):
             val.__name__ = name
         elif isinstance(val, Env):
-            val.name = name
+            if val.name == Env.default_name:
+                val.parent = env
+                val.name = name
+            elif env is not Global:
+                val = env.child(name=name, binds=val)
                 
-        if doc:  # add __doc__
-            if not isinstance(val, Env):
-                val = Env(val, name=name)
-            try: val.__doc__ += '\n' + doc
-            except: val.__doc__ = doc
+        binds[name] = val
             
-        env[name] = val
+    binds = {}
+    eqs = []
+    tag = tree_tag(form)
 
-    def def_all(vars, val, env):
-        t, vars = vars[0], vars[1:]
-        if t == 'VARS':
-            assert is_list(val), 'vars assigned to non-list'
-            assert len(vars) == len(val), 'list lengths mismatch'
-            for var, item in zip(vars, val):
-                def_all(var, item, env)
-        else:
-            def_(vars[0], val, env)
-    
-    var_tag = tree_tag(var)
-
-    # evaluate the exp
-    if var_tag == 'FUNC':
-        form = eval_tree(var[2], env)  # eval the opt_pars
-        val = Map(['MAP', form, exp], env)
-    else:
-        val = eval_tree(exp, env)
-
-    # bind the variable(s)
-    if var_tag == 'VARS':
-        def_all(var, val, env)
-    else:
-        name = var[1] if var_tag == 'VAR' else var[1][1]
-        def_(name, val, env)
+    if tag == 'NAME':
+        bd(form[1], value)
         
-def split_field(tr, env):
+    elif tag == 'LIST':
+        if not iterable(value):
+            raise TypeError('the value bound to a list form is not iterable')
+        
+        items = list(value)
+        forms = form[1:]
+        
+        if form.kwd_start is None:
+            min_items = len(forms)
+        else:
+            min_items = form.kwd_start
+        
+        if form.unpack_pos is not None:
+            min_items -= 1
+            if (unpack_len := len(items) - min_items) < 0:
+                raise ValueError('not enough items to be bound')
+        
+        i = 0; unpack = []
+        for item in items:
+            if tree_tag(item) == 'KWD':
+                _, var, val = item
+                assert var in form.vars, f'keyword "{var}" does not exist in the form"'
+                bd(var, val)
+                
+            else:  # the item is a value
+                try: tr = forms[i]
+                except: raise ValueError('too many items to be bound')
+                
+                if i == form.unpack_pos:
+                    if len(unpack) < unpack_len:
+                        unpack.append(item)
+                        continue
+                    else:
+                        var = tr[1]
+                        bd(var, unpack)
+                elif isinstance(tr, list):
+                    bind(tr, item, binds)
+                else:
+                    eqs.append(Eq(var, item))
+                i += 1
+                
+    elif tag is None:
+        eqs.append(Eq(form, value))
+                
+    else:
+        raise SyntaxError('invalid form')
+    
+    if eqs:
+        sol = solve(eqs, dict=True)
+        if sol:
+            if len(sol) > 1:
+                debug.log('Warning: the equation has multiple solutions')
+            sol = sol[0]
+            binds.update(sol)
+            return sol
+            
+    env.update(binds)
+    return value
+
+def is_unpack(tr):
+    return tree_tag(tr) == 'PHRASE' and len(tr) == 3 \
+        and tr[-1] == ['OP', '..']
+        
+def is_domain(tr):
+    return tree_tag(tr) == 'PHRASE' and len(tr) == 4 \
+        and tr[2] == ['OP', 'in'] and tree_tag(tr[1]) == 'NAME'
+        
+        
+def field_attr(tr, env):
     if is_name(tr[1]):
         parent, attr = env, tr[1]
     else:
@@ -494,11 +557,59 @@ def split_field(tr, env):
     return parent, attr
 
 
+def form_vars(form, env):
+    has_keyword = False
+    has_unpack = False
+        
+    def item_vars(t, i):
+        nonlocal has_keyword, has_unpack
+        
+        item = t[i]
+        tag = tree_tag(item)
+        
+        if tag == 'KWD':
+            has_keyword = True
+            _, var, val = item
+            var, val = var[1], eval_tree(val, env)
+            t[i] = ['KWD', var, val]
+            yield var
+
+        elif is_unpack(item):
+            if has_unpack:
+                raise SyntaxError('multiple unpacks in the form')
+            elif tree_tag(var := item[1]) != 'NAME':
+                raise SyntaxError('invalid unpack in the form')
+            else:
+                has_unpack = True
+                t[i] = ['UNPACK', var[1]]
+                yield var[1]
+        
+        else:
+            if has_keyword:
+                raise SyntaxError('positional var follows keyword var')
+                    
+            if tag == 'NAME':
+                yield item[1]
+            elif tag == 'LIST':
+                vars = form_vars(t[i], env)
+                t[i] = Form(t[i])
+                t[i].set_vars(vars)
+                yield from vars
+            else:
+                t[i] = eval_tree(item, env)
+    
+    if tree_tag(form) in ['FORM', 'LIST']:
+        for i in range(1, len(form)):
+            yield from item_vars(form, i)
+    elif tree_tag(form) == 'NAME':
+        yield form[1]
+
+
 # these rules are commands in the calc
     
 def DEL(tr):
     for t in tr[1:]:
-        field, attr = split_field(t, Global)
+        field, attr = field_attr(t, Global)
         field.delete(attr)
 
 def LOAD(tr):
@@ -568,7 +679,7 @@ def CONF(tr):
     
 def EXIT(tr): raise KeyboardInterrupt
 
-def INNER(tr): interact()
+def PYTHON(tr): interact()
     
 
 def eval_tree(tree, env=None, inplace=True):
@@ -578,69 +689,97 @@ def eval_tree(tree, env=None, inplace=True):
         tree = deepcopy(tree)
     tag = tree_tag(tree)
     
-    if tag not in dont_eval:
-        part_flag = False
-        error = None
+    if tag in subs_types:
+        partial_flag = False
+        _env = None if tag in eval_types else env
         for i, t in enumerate(tree):
-            try:
-                tree[i] = eval_tree(t, env)
-            except UnboundName as e:
-                part_flag = True
-                error = e
-            if is_tree(tree[i]):
-                part_flag = True
-        if part_flag:  # partially evaluated
-            if env is not None and error:
-                raise UnboundName
-            else:
-                return tree
+            t = tree[i] = eval_tree(t, _env)
+            if is_tree(t) and tree_tag(t) not in delay_types:
+                partial_flag = True
+        if partial_flag:
+            return tree
         
-    if tag in subs_rules:
-        return subs_rules[tag](tree)
-    elif tag in eval_rules and env:
+    if tag in eval_rules and env:
         return eval_rules[tag](tree, env)
+    elif tag in subs_rules:
+        return subs_rules[tag](tree)
     elif tag in exec_rules:
         return exec_rules[tag](tree)
     else:
         return tree
+    
+
+def convert_type(val):
+    "Convert the result to the standard types."
+
+    def proc_num(val):
+        "convert a number into python number type"
+        if isinstance(val, (int, float, complex, Fraction)):
+            if isinstance(val, complex):
+                return val.real if eq(val.imag, 0) else val
+            else:
+                return val
+        elif isinstance(val, Integer):
+            return int(val)
+        elif isinstance(val, Float):
+            return float(val)
+        else:
+            val = complex(val)
+            return val.real if eq(val.imag, 0) else val
+
+    if type(val) is bool:
+        return 1 if val else 0
+    elif is_tree(val):
+        return val
+    elif type(val) in [list, tuple]:
+        return tuple(convert_type(a) for a in val)
+    elif type(val) is dict:
+        return Env(binds=val)
+    elif callable(val) and not isinstance(val, Function):
+        return Function(val)
+    else:
+        try:
+            return proc_num(val)
+        except (ValueError, TypeError):
+            if isinstance(val, Expr):
+                return factor(simplify(val))
+            else:
+                return val
 
 
 NAME.force_symbol = False
 # assign LOAD.run in 'calc.py'
 LOAD.run  = NotImplemented
-Map.match = match
+Map.bind = bind
 Map.eval  = eval_tree
+Form.getvars = form_vars
 
 
-special_words = {'super', *shortcircuit_ops}
-
-subs_types = {
-    'EXPS',     'EMPTY',    'DIR',      'ANS',
+subs_types = {  # types that do not require an env to eval
+    'EVAL',     'EMPTY',    'DIR',      'ANS',
     'REAL',     'COMPLEX',  'BIN',      'HEX',
     'INFO',     'LIST',     'ARRAY',    'SUBARR',
-    'ITEMS',    'APPLY'
+    'ITEMS',    'PHRASE',   'APPLY',    'LINE',
+    'VAR',      'ATTR'
 }
 subs_rules = {name: eval(name) for name in subs_types}
 
-delay_types = {
-    'MAP',      'GENER',    'BIND',     'AT',
-    'ENV',      'PHRASE',
-    *map(str.upper, shortcircuit_ops)
-}
+# types that will temporarily keep its tree form
+delay_types = {'UNPACK', 'OP', 'KWD'}
 
-eval_types = delay_types | {
-    'NAME',     'QUOTE',    'STR',
+eval_types = {  # types that require an env to eval
+    'MAP',      'GENER',    'BIND',     'AT',
+    'ENV',      'PHRASE',   'NAME',     'QUOTE',
+    'STR',
+    *map(str.upper, shortcircuit_ops)
 }
 eval_rules = {name: eval(name) for name in eval_types}
 
-exec_types = {
-    'DEL',      'LOAD',     'IMPORT',       'CONF',
-    'EXIT',     'INNER'
+exec_types = {  # types that are special commands
+    'DEL',      'LOAD',     'IMPORT',   'CONF',
+    'EXIT',     'PYTHON'
 }
 exec_rules = {name: eval(name) for name in exec_types}
-
-dont_eval = delay_types | exec_types
-# trees of these types are not recursively evaluated
 
 
 if __name__ == "__main__":

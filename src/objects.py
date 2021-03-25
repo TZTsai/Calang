@@ -49,7 +49,7 @@ class Op(Function):
         except TypeError: pass
         
         try: return Function.broadcast(call)(*args)
-        except TypeError: raise OperationError
+        except TypeError: raise
 
     def __repr__(self):
         return f"{self.type}({self.symbol}, {self.priority})"
@@ -75,23 +75,20 @@ tree2str = NotImplemented
 # ASSIGN it in format.py
 
 class Map(Function):
-    match = lambda val, form, parent: NotImplemented
-    eval = lambda tree, parent, mutable: NotImplemented
+    bind = lambda form, val, env: NotImplemented
+    eval = lambda tree, env, mutable: NotImplemented
     builtins = None
 
     def __init__(self, tree, env):
         _, form, body = tree
-        form = Map.eval(form, env)      # eval opt-pars
-        body = Map.eval(body, None)
         # if body[0] == 'INHERIT':
         #     self.inherit = body[1]
         #     body = ['CLOSURE', ..., body[2]]
         # else:
         #     self.inherit = None
         #     body = Map.eval(body, None)  # simplify the body
-            
-        self.form = form
-        self.body = body
+        self.form = Form(form, env)
+        self.body = Map.eval(body, None)
         self.parent = env
         self._pars = form[-1]
         self._repr = tree2str(tree)
@@ -114,7 +111,7 @@ class Map(Function):
                     self._memo = None
         
         local = self.parent.child()
-        Map.match(self.form, val, local)
+        Map.bind(self.form, val, local)
                 
         if self.inherit:
             upper = Map.eval(self.inherit, local, mutable=False)
@@ -125,9 +122,9 @@ class Map(Function):
             env = local
             
         result = Map.eval(self.body, env, mutable=False)
-        if self.inherit and isinstance(result, Env):
-            result.parent = upper
-            result.cls = str(self)
+        # if self.inherit and isinstance(result, Env):
+        #     result.parent = upper
+        #     result.cls = str(self)
             
         # try to memoize result
         try: self._memo[val] = result
@@ -138,13 +135,13 @@ class Map(Function):
         "Try to apply on $val to test if self does not depend on outside variables."
         local = Map.builtins.child()
         local[self.__name__] = self
-        Map.match(self.form, val, local)
-        if self.inherit: self.body[1] = local
+        Map.bind(self.form, val, local)
+        # if self.inherit: self.body[1] = local
         return Map.eval(self.body, local, False)
     
     def __str__(self):
         path = self.parent.dir()
-        if path[0] == '_':  # hidden
+        if not path or path[0] == '_':  # hidden
             where = ''
         else:
             where = ' in %s' % path
@@ -159,47 +156,102 @@ class Map(Function):
     def compose(self, func):
         "Enable arithmetic ops on Map."
         return Map(self.form, ['SEQ', func, self.body])
+    
+    
+class Form(list):
+    getvars = lambda form, env: NotImplemented
+    
+    def __init__(self, form, env=None):
+        if form[0] == 'FORM':
+            assert len(form) == 2
+        else:
+            form = ['FORM', form]
+            
+        self[:] = form[1]
+        
+        if env is not None:
+            self.set_vars(Form.getvars(form, env))
 
+        self.unpack_pos = self.find_first_tag('UNPACK')
+        self.kwd_start = self.find_first_tag('KWD')
+        
+    def set_vars(self, vars):
+        vars = list(vars)
+        self.vars = set(vars)
+        if len(vars) > len(self.vars):
+            raise SyntaxError('duplicate variables in the form')
+        
+    def find_first_tag(self, tag):
+        if self[0] == 'LIST':
+            for i, item in enumerate(self):
+                if type(item) is list and item[0] == tag:
+                    return i
+        return None
+    
 
 class Env(dict):
+    default_name = '(loc)'
+    
     def __init__(self, val=None, parent=None, name=None, binds=None):
-        if val is not None:
-            self.val = val
-        self.parent = parent
-        self.name = name
-        if binds: self.update(binds)
-        self.cls = 'env'
+        self.val = val
+        if parent:
+            if name is not None:
+                parent[name] = self
+            if parent.name[0] != '_':
+                self.parent = parent
+            else:
+                self.parent = None
+        if name is None:
+            self.name = self.default_name
+        else:
+            self.name = name
+        if binds:
+            self.update(binds)
+        # self.cls = 'env'
     
     def __getitem__(self, name):
         if name in self:
             return super().__getitem__(name)
+        if name == 'upper':
+            return self.parent
         if self.parent:
             return self.parent[name]
         raise KeyError('unbound name: ' + name)
-
+    
+    def __iter__(self):
+        raise TypeError('Env is not iterable')
+    
     def dir(self):
-        prefix = '' if not self.parent or not self.parent.name \
-            else self.parent.dir() + '.'
-        suffix = self.name if self.name else '(%s)' % ', '.join(
-            f'{log.format(k)} = {log.format(v)}' for k, v in self.items())
-        return prefix + suffix
+        return (self.parent.dir() + '.' if self.parent else '') + self.name
+    
+    def dict_str(self):
+        return '(%s)' % ', '.join(f'{k} = {log.format(v)}'
+                                  for k, v in self.items())
 
     def delete(self, name):
         try: self.pop(name)
         except: print('%s is unbound' % name)
 
     def child(self, val=None, name=None, binds=None):
-        env = Env(val, self, name, binds)
-        return env
+        return Env(val, self, name, binds)
 
     def __str__(self):
-        return '<%s: %s>' % (self.cls, self.dir())
+        # return '<%s: %s>' % (self.cls, self.dir())
+        if self.name == self.default_name:
+            return self.dir()[:-len(self.default_name)] + self.dict_str()
+        else:
+            return self.dir() + ':' + self.dict_str()
     
     def __repr__(self):
-        return self.dir().rsplit('.', 1)[-1]
+        return self.dict_str()
     
     def __bool__(self):
         return True
+    
+    
+class Type(type):
+    def __init__(self, object_or_name, bases, dict):
+        super().__init__(object_or_name, bases, dict)
     
 
 class Attr:
@@ -271,8 +323,8 @@ class Enum:
 class UnboundName(NameError):
     "An error to indicate that a name is not bound in the environment."
     
-class OperationError(RuntimeError):
-    "An error to indicate that the interpreted operation cannot be applied."
+# class OperationError(RuntimeError):
+#     "An error to indicate that the interpreted operation cannot be applied."
         
         
 

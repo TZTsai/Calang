@@ -1,6 +1,6 @@
 import re, json, ast
 import config
-from builtin import operators
+from builtin import operators, synonym_ops
 from utils.deco import memo, trace, disabled
 from utils.debug import check, check_record, pprint
 
@@ -15,8 +15,7 @@ except:
     from grammar import grammar, semantics
 
 
-keywords = {'or', 'in', 'dir', 'load', 'config', 
-            'import', 'del', 'info', 'exit'}
+keywords = {'dir', 'load', 'config', 'import', 'del', 'info', 'exit'}
 
 trace = disabled  # for logging
 
@@ -30,7 +29,7 @@ def is_tag(s):
     return is_name(s) and tag_pattern.match(s)
 
 def is_tree(t):
-    return type(t) is list and t and is_tag(t[0])
+    return isinstance(t, list) and t and is_tag(t[0])
 
 def tree_tag(t):
     return t[0] if is_tree(t) else None
@@ -165,22 +164,24 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             return None, None
         if tag in must_have and must_have[tag] not in text:
             return None, None
-        if tag[-2:] == 'OP':
-            text = lstrip(text)
+        # if tag == 'OP':
+        #     text = lstrip(text)
 
         tree, rem = parse_tree(grammar[tag], text)
         if rem is None:
             return None, None
         if tag == 'NAME' and tree in keywords:
             return None, None
+        if tag == 'OP' and tree in synonym_ops:
+            tree = synonym_ops[tree]
         if tree and tree[0] == '(merge)':
             tree = tree[1:]
         tree = process_tag(alttag if alttag else tag, tree)
         return tree, rem
 
     kept_tags = lambda tag: tag in {
-        'DIR', 'DEL', 'ARG', 'QUOTE', 'INFO', 'ENV',
-        'LIST', 'ARRAY'
+        'DIR', 'DEL', 'ARG', 'QUOTE', 'UNQUOTE', 'INFO',
+        'ENV', 'LIST', 'ARRAY', 'FORM', 'NS'
     }
     # @trace
     def process_tag(tag, tree):
@@ -266,18 +267,16 @@ def rev_parse(tree):
         tag = tree_tag(tr)
         if tag in ('NAME', 'SYM', 'PAR', 'VAR'):
             return tr[1]
-        elif tag == 'FIELD':
+        elif tag == 'VAR':
             return ''.join(map(rec, tr[1:]))
         elif tag == 'ATTR':
             return '.' + tr[1]
-        elif tag == 'SEQ':
+        elif tag == 'PHRASE':
             return ''.join(rec(t, True) for t in tr[1:])
-        elif tag[-2:] == 'OP':
+        elif tag == 'OP':
             op = tr[1]
-            if type(op) is str:
-                op = operators[tag][op]
-            template = ' %s ' if op.priority < 4 else '%s'
-            return template % str(tr[1])
+            format = ' %s ' if op in operators['BOP'] else '%s'
+            return format % op
         elif tag == 'NUM':
             return str(tr[1])
         elif tag == 'FORM':

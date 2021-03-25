@@ -1,7 +1,7 @@
 from pprint import pprint
 import re
 import json
-from builtin import operators
+from builtin import op_symbols
 from utils.deco import memo, trace, disabled
 from utils.debug import check_record
 
@@ -49,12 +49,11 @@ MARK    := [^>|)\s]\S*
 # MACRO:    a macro will be substituted by its evaluated expression 
 
 
-Grammar = open('grammar.txt', 'r').read().split('#####', 1)[0].splitlines()
+Grammar = open('grammar.txt', 'r').read().splitlines()
 Semantics = open('semantics.txt', 'r').read().splitlines()
 
-# add syntax for operations
-ops = sorted(set.union(*map(set, operators.values())),
-             reverse=1, key=len)
+# add the grammar rule of operators
+ops = sorted(op_symbols, reverse=1, key=len)
 Grammar.append('OP := "%s"' % '" | "'.join(ops))
 
 
@@ -174,7 +173,7 @@ def post_process(grammar, macros):
         elif tree[0] == 'MACRO':
             return apply_macro(tree)
         elif tree[0] in ('OBJ', 'PAR'):
-            tag = tree[1].split(':')[0]
+            tag = tree[1].split(':')[-1]
             if tag not in grammar:
                 return 'MARK', tree[1]
             else:

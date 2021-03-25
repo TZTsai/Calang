@@ -1,6 +1,6 @@
 from sympy import latex, pretty
 from re import sub as translate
-from builtin import Rational, Fraction, Matrix, is_number, is_function, is_env, is_matrix, floor, inf, log
+from builtin import Rational, Fraction, Matrix, is_number, is_matrix, floor, oo, log
 from objects import Range, Env, Function
 from parse import rev_parse, is_tree
 from utils.debug import log
@@ -18,7 +18,7 @@ def calc_format(val, linesep='\n', **opts):
     global options, depth, indent_level, line_sep
     
     if is_tree(val):  # not fully evaluated
-        return val
+        return str(val)
     
     if opts:
         options = opts
@@ -67,7 +67,7 @@ def calc_format(val, linesep='\n', **opts):
             if type(val) is complex:
                 re, im = format_float(val.real), format_float(val.imag)
                 return f"{re} {'-' if im<0 else '+'} {abs(im)}ⅈ"
-            elif mag == inf:
+            elif mag == oo:
                 return '∞'
             elif isinstance(val, Rational) and not opts['sci']:
                 if type(val) is Fraction:
@@ -79,10 +79,10 @@ def calc_format(val, linesep='\n', **opts):
                 return format_scinum(val)
             else: 
                 return str(format_float(val))
-        elif is_function(val):
+        elif callable(val):
             return str(val) if depth == 1 else repr(val)
-        elif is_env(val):
-            if hasattr(val, 'val'):
+        elif type(val) is Env:
+            if val.val is not None:
                 return calc_format(val.val)
             else:
                 return str(val) if depth == 1 else repr(val)
