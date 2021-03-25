@@ -73,3 +73,4 @@
 ### Bugs
 
 * fix this bug: `[x, y.., z=1] = [1, 2, 3, z=4]` ==> `(x = 1, z = 4, y = [])`
+* fix broadcast

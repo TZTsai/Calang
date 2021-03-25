@@ -42,7 +42,7 @@ import config
 
 
 def InitGlobal():
-    Global = Env(name='global', parent=Builtins)
+    Global = Env(name='_global_', parent=Builtins)
     Global.ans = []
     return Global
 
@@ -123,10 +123,13 @@ LINE.comment = None
 
 
 def ITEMS(tr):
+    if any(is_tree(t) and tree_tag(t) != 'OP'
+           for t in tr[1:]): return tr
+
     ops = stack()
     vals = stack()
     
-    backward_bops = [binary_ops['(app)']]
+    backward_bops = ['(app)']
     
     def squeeze():
         op = ops.pop()
@@ -142,10 +145,11 @@ def ITEMS(tr):
         if isinstance(x, Op):
             while ops:
                 op = ops.peek()
-                if x.priority <= op.priority and \
-                    not (x == op and op in backward_bops):
-                        squeeze()
-                else: break
+                if (x.priority > op.priority or
+                    x == op and op.symbol in backward_bops or
+                    push.prev is op and op.type in ['BOP', 'LOP']):
+                        break
+                else: squeeze()
             ops.push(x)
         else:
             vals.push(x)
@@ -170,27 +174,25 @@ def match_ops_in_seq(seq):
         'FUNC': callable,
         'LIST': is_list,
         'SEQ': indexable,
-        'ITEM': lambda x: tree_tag(x) not in semantics
+        'ITEM': lambda x: True
     }
 
     def parse_seq(seq, phrase):
         result = []
         for atom in seq:
             tree, phrase = parse_atom(atom, phrase)
-            if tree is None:
-                return failed
+            if tree is None: return failed
             result.append(tree)
         return result, phrase
 
-    # @trace
     def parse_atom(atom, phrase):
-        if atom in semantics:
+        if not phrase:
+            return failed
+        elif atom in semantics:
             for alt in semantics[atom]:
                 tree, rest = parse_seq(alt, phrase)
                 if tree is not None:
                     return [atom]+tree, rest
-            return failed
-        elif not phrase:
             return failed
         elif atom in ['LOP', 'BOP', 'ROP']:
             try:
@@ -207,6 +209,8 @@ def match_ops_in_seq(seq):
                 return phrase[0], phrase[1:]
             else:
                 return failed
+        else:
+            raise SyntaxError
 
     get = binary_ops['(get)']
     app = binary_ops['(app)']

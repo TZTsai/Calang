@@ -12,7 +12,7 @@ from sympy import (
     factorial, expand, factor, solve, summation, product,
     gcd, factorint, binomial,
     sin, cos, tan, asin, acos, atan, cosh, sinh, tanh,
-    limit, integrate, diff
+    limit, integrate, diff, simplify
 )
 # import symengine  # TODO: this may boost the speed of symbolic calculation
 from objects import Range, Map, Attr, Env, Op, Enum, Function, Builtin
@@ -193,7 +193,7 @@ def pow(x, y):
         
 def log2(x): return log(x) / log(2)
 def log10(x): return log(x) / log(10)
-def sum(*x): return reduce(add, x, 0)
+def sum_(*x): return reduce(add, x, 0)
 def prod(*x): return reduce(dot, x, 1)
 def deg(x): return x / 180 * pi
 def ang(z): return atan(z.imag / z.real)

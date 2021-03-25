@@ -1,7 +1,8 @@
-double = x -> 2x
+double x = 2x
 double 3 #6
-twice = f -> x -> f[f[x]]
-twice double 3 #12
+double double 3 #12
+twice f = x -> f f x
+(twice double) 3 #12
 g = []->x
 x = 12321
 g[] #12321

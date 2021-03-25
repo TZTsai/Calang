@@ -171,8 +171,8 @@ class Env(dict):
     def __init__(self, val=None, parent=None, name=None,
                  binds=None, hide_parent=True):
         self.val = val
-        if parent and name:
-            parent[name] = self
+        if parent:
+            if name: parent[name] = self
             self.parent = parent
         else:
             self.parent = None
@@ -203,7 +203,11 @@ class Env(dict):
             yield from self.parent.all_items()
     
     def dir(self):
-        return (self.parent.dir() + '.' if self.parent else '') + self.name
+        try:
+            assert self.parent.name[0] != '_'
+            return self.parent.dir() + '.' + self.name
+        except:
+            return self.name
     
     def delete(self, name):
         try: self.pop(name)

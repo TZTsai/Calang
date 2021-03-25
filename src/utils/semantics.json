@@ -7,44 +7,52 @@
       "PAIR"
     ],
     [
+      "ATOM"
+    ]
+  ],
+  "ATOM": [
+    [
+      "FUNC"
+    ],
+    [
       "ITEM"
     ]
   ],
   "COMB": [
     [
-      "OB"
+      "BO"
     ],
     [
-      "OL"
+      "LO"
     ],
     [
-      "OR"
+      "RO"
     ]
   ],
-  "OB": [
+  "BO": [
     [
-      "NOB",
+      "BOL",
       "BOP",
       "VAL"
     ]
   ],
-  "NOB": [
+  "BOL": [
     [
-      "OR"
+      "RO"
     ],
     [
       "ITEM"
     ]
   ],
-  "OL": [
+  "LO": [
     [
       "LOP",
       "VAL"
     ]
   ],
-  "OR": [
+  "RO": [
     [
-      "ITEM",
+      "ATOM",
       "ROP"
     ]
   ],

@@ -17,7 +17,7 @@ def log(*messages, debug=True, end='\n', sep='',
     file.write(indent * ' ' + message + end)
 
 
-logfile = open('utils/calc.log', 'w')
+logfile = open('utils/calc.log', 'w', encoding='utf8')
 log.indent = 0
 log.format = str
 log.file = logfile

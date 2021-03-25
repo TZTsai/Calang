@@ -35,6 +35,9 @@ shortcircuit_ops = operators['SOP'] = ['or', 'if', 'and']
 
 op_symbols = set.union(*map(set, operators.values()))
 
+amb_ops = {op for op in op_symbols
+           if sum(op in ops for ops in operators.values()) > 1}
+
 
 builtins = {
     # constants
@@ -49,7 +52,7 @@ builtins = {
     # list functions
     'list': tuple, 'len': len, 'max': max, 'min': min, 'all': all_, 'any': any_,
     'enum': enumerate, 'zip': zip, 'sort': sorted,
-    'sum': sum, 'prod': prod, 'Σ': summation, 'Π': product,
+    'sum': sum_, 'prod': prod, 'Σ': summation, 'Π': product,
     'find': findall, 'next': next,
     # array functions
     'matrix': Matrix, 'shape': shape, 'depth': depth, 'transp': transpose, 'flatten': flatten,
