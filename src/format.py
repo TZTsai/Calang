@@ -85,7 +85,7 @@ def calc_format(val, linesep='\n', **opts):
             if val.val is not None:
                 return calc_format(val.val)
             else:
-                return str(val) if depth == 1 else repr(val)
+                return str(val)  # if depth == 1 else repr(val)
         elif isinstance(val, Range):
             return str(val)
         elif isinstance(val, str):

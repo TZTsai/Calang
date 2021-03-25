@@ -19,9 +19,9 @@ except:
 keywords = {'dir', 'load', 'config', 'import', 'del', 'info', 'exit'}
 
 synonyms = {
-    '×': ['*'],         '÷': ['/'],         '∈': ['in'],
-    '¬': ['not'],       '∨': ['/\\'],       '∧':   ['\\/'],
-    '⊗':   ['xor'],
+    '×': ['*'],         '÷': ['/'],         'in': ['∈'],
+    '∨': ['/\\'],      '∧': ['\\/'],       '⊗': ['xor'],
+    '->': ['→'],        '<-': ['←']
 }
 
 trace = disabled  # for logging
@@ -200,8 +200,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         return tree, rem
 
     kept_tags = lambda tag: tag in {
-        'DIR', 'DEL', 'ARG', 'QUOTE', 'UNQUOTE', 'INFO',
-        'ENV', 'LIST', 'ARRAY', 'FORM', 'NS'
+        'DIR', 'DEL', 'QUOTE', 'UNQUOTE', 'INFO',
+        'ENV', 'LIST', 'ARRAY', 'FORM', 'NS', 'UNPACK'
     }
     # @trace
     def process_tag(tag, tree):
@@ -290,10 +290,11 @@ def deparse(tree):
         elif tag == 'PHRASE':
             return ''.join(map(rec, tr[1:]))
         elif tag == 'OP':
-            raise TypeError
-        #     op = tr[1]
-        #     format = ' %s ' if op in operators['BOP'] else '%s'
-        #     return format % op
+            op = tr[1]
+            if op in operators['BOP']:
+                if op in '×*': return ' '
+                else: return ' %s ' % op
+            else: return op
         elif tag == 'APP':
             _, f, *args = tr
             args = map(rec, args)
@@ -309,6 +310,11 @@ def deparse(tree):
                 x, = args
                 s = '%s%s' if x[0] in '([{' else '%s %s'
                 return s % (f, x)
+        elif tag == 'GENER':
+            _, exp, *cs = tr
+            return '[%s @ %s]' % (rec(exp), ', '.join(map(rec, cs)))
+        elif tag == 'DOM':
+            return '%s ∈ %s' % tuple(map(rec, tr[1:]))
         elif tag == 'NUM':
             return str(tr[1])
         elif tag == 'LIST':
@@ -317,8 +323,9 @@ def deparse(tree):
             _, form, exp = tr
             return '%s -> %s' % (rec(form), rec(exp))
         elif tag in ['BIND', 'KWD']:
-            if tree_tag(tr[-1]) == 'DOC': tr = tr[1:]
-            tup = tuple(rec(t) for t in tr[1:])
+            if tree_tag(tr[-1]) == 'DOC':
+                tr = tr[1:]
+            tup = tuple(map(rec, tr[1:]))
             if tree_tag(tr[2]) == 'SP':
                 return '%s %s = %s' % tup
             else:

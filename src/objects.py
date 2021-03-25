@@ -168,22 +168,20 @@ class Form(list):
 class Env(dict):
     default_name = '(loc)'
     
-    def __init__(self, val=None, parent=None, name=None, binds=None):
+    def __init__(self, val=None, parent=None, name=None,
+                 binds=None, hide_parent=True):
         self.val = val
-        try:
-            if name is not None:
-                parent[name] = self
-            assert parent.name[0] != '_' or name[0] == '_'
+        if parent and name:
+            parent[name] = self
             self.parent = parent
-        except:
-            self.parent = None
-        if name is None:
-            self.name = self.default_name
         else:
+            self.parent = None
+        if name:
             self.name = name
+        else:
+            self.name = self.default_name
         if binds:
             self.update(binds)
-        # self.cls = 'env'
     
     def __getitem__(self, name):
         if isinstance(name, Symbol):
@@ -215,10 +213,6 @@ class Env(dict):
         return Env(val, self, name, binds)
 
     def __str__(self):
-        # if self.name == self.default_name:
-        #     return self.dir()[:-len(self.default_name)] + self.dict_str()
-        # else:
-        #     return self.dir() + ' = ' + self.dict_str()
         return '(%s)' % ', '.join(f'{k} = {log.format(v)}'
                                   for k, v in self.items())
     
@@ -282,6 +276,15 @@ class Range:
     
     def __getitem__(self, i):
         return self.first + i * self.step
+    
+    def __hasitem__(self, x):
+        if self.step > 0:
+            if x < self.first or x > self.last:
+                return False
+        else:
+            if x > self.first or x < self.last:
+                return False
+        return (x - self.first) % self.step == 0
 
     def __eq__(self, other):
         if not isinstance(other, Range): return False

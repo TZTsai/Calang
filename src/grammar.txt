@@ -18,9 +18,9 @@ EVAL    := @SEQ EXPR ;
 EXPR    := BIND | EXP
 BIND    := NS ? FORM = EXPR DOC:COMMENT ?
 NS      := @ ITEM    ## namespace
-FORM    := VAR ARG | PHRASE
+FORM    := VAR _ARG | PHRASE
 VAR     := NAME ATTR *
-ARG     := NAME | LIST
+_ARG    := NAME | LIST
 NAME    := /[^\W\d][\w]*/
 ATTR    := . / ATTR:NAME
 EXP     := MAP | AT | PHRASE
@@ -35,10 +35,14 @@ GROUP   := @GRP EXP
 QUOTE   := ' EXP '
 UNQUOTE := { EXP }
 
-GENER   := [ EXP @ ( @SEQ EXP , ) ]
+GENER   := [ EXP @ _CSTS ]
+_CSTS   := @SEQ CST ,    ## constraints
+CST     := DOM | EXPR
+DOM     := NAME in EXP    ## domain
 LIST    := [ ( @SEQ LSITEM , ) ? ]
-LSITEM  := KWD | EXP
+LSITEM  := KWD | UNPACK | EXP
 KWD     := NAME = EXP
+UNPACK  := ITEM ..
 ARRAY   := [ ( @SEQ SUBARR ; ) ]
 SUBARR  := /\t*/ - ( @SEQ EXP ( /\t+/ - ) ) /\t*/ -
 

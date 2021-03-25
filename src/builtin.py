@@ -12,12 +12,12 @@ binary_ops = {
     '//': (floordiv, 8), './': (truediv, 8), '%': (mod, 8), '/%': (divmod, 8), '⋅': (dot, 10),
     '&': (and_, 8), '|': (or_, 7), '⊗': (xor, 3), '∧': (land, 3), '∨': (lor, 2),
     '==': (eq, 0), '~=': (neq, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
-    '∈': (in_, -2), ':': (range_, 4), '.': (index, 16), '<-': (substitute, 22),
+    'in': (in_, -2), ':': (range_, 4), '.': (index, 16), '<-': (substitute, 22),
     '(get)': (get_attr, 25), '(app)': (apply, 30)
 }
 
 unary_l_ops = {
-    '-': (neg, 10), '¬': (not_, -4), '~': (inv, 10), '∠': (ang, 4)
+    '-': (neg, 10), 'not': (not_, -4), '¬': (not_, 9), '~': (inv, 10), '∠': (ang, 4)
 }
 
 unary_r_ops = {
@@ -43,7 +43,7 @@ builtins = {
     'Number': Number, 'Integer': Integral, 'Rational': Rational, 
     'Real': Real, 'Complex': Complex, 'Fraction': Fraction,
     'Symbol': Symbol, 'Matrix': Matrix, 'Array': Array, 'List': tuple, 
-    'Env': Env, 'Range': Range, 'Enum': Enum,
+    'String': str, 'Env': Env, 'Range': Range, 'Enum': Enum,
     # common functions
     'abs': abs, 'sqrt': sqrt, 'floor': floor, 'ceil': ceiling, 
     # list functions
@@ -63,7 +63,7 @@ builtins = {
     # symbolic functions
     'solve': solve, 'lim': limit, 'diff': diff, 'int': integrate, 'subs': substitute,
     'expand': expand, 'factor': factor,
-    # whole number functions
+    # integral number functions
     'gcd': gcd, 'factorial': factorial, 'binomial': binomial, 'factors': factorint
 }
 

@@ -42,8 +42,7 @@ import config
 
 
 def InitGlobal():
-    Global = Env(name='_global_')
-    Global.parent = Builtins
+    Global = Env(name='global', parent=Builtins)
     Global.ans = []
     return Global
 
@@ -134,14 +133,6 @@ def ITEMS(tr):
         
         if op.type == 'BOP':
             x = ['APP', op, vals.pop(-2), vals.pop(-1)]
-            # while ops.peek() == op:
-            #     args.append(vals.pop())
-            #     ops.pop()
-            # backwards = op in backward_bops
-            # x = args.pop()
-            # while args:
-            #     y = args.pop(0 if backwards else -1)
-            #     x = ['APP', op, y, x] if backwards else ['APP', op, x, y]
         else:
             x = ['APP', op, vals.pop()]
             
@@ -353,8 +344,8 @@ def QUOTE(tr, env=None):
             else:
                 for i in range(1, len(tr)):
                     tr[i] = traverse(tr[i])
-        return eval_tree(tr)
-    return traverse(tr)[1]
+        return tr
+    return eval_tree(traverse(tr)[1])
 
 def format_string(s, env):
     def subs(match):
@@ -373,26 +364,45 @@ def format_string(s, env):
     brace_pattern = '{(.+?)}'
     return re.sub(brace_pattern, subs, s)
 
+
 def GENER(tr, env):
     def generate(exp, constraints):
         if constraints:
             constr = constraints[0]
-            _, form, ran, *rest = constr
-            binds, cond = [], None
-            if rest and tree_tag(rest[0]) == 'WITH':
-                binds = rest.pop(0)[1]
-                binds = binds[1:] if tree_tag(binds) == 'ENV' else [binds]
-            if rest: cond = rest[0]
-            for val in eval_tree(ran, local, False):
-                bind(form, val, local)
-                for bind in binds: BIND(deepcopy(bind), local)
-                if not cond or eval_tree(cond, local, False):
+            tag = tree_tag(constr)
+            
+            if tag == 'DOM':
+                _, var, domain = constr
+                domain = eval_tree(domain, local, inplace=False)
+                
+                if var[1] in local:
+                    # already bound, check if it's in the domain
+                    val = local[var[1]]
+                    if val in domain:
+                        yield from generate(exp, constraints[1:])
+                        
+                else:  # free variable, traverse all possible values
+                    for val in domain:
+                        bind(var, val, local)
+                        yield from generate(exp, constraints[1:])
+            else:
+                # actually two cases: BIND and others
+                # if BIND, a new variable will be defined, since
+                # its return value is an Env, which is True in boolean
+                # value, the search will always go deeper;
+                # otherwise, simply check the boolean value of the
+                # constraint and go deeper only when it's True
+                if eval_tree(constr, local, inplace=False):
                     yield from generate(exp, constraints[1:])
         else:
-            yield eval_tree(exp, local, False)
+            yield eval_tree(exp, local, inplace=False)
+            
     _, exp, *constraints = tr
+    # place all domain constraints in the front
+    # constraints.sort(key=lambda tr: tree_tag(tr) == 'DOM', reverse=True)
     local = env.child()
     return tuple(generate(exp, constraints))
+
 
 def ENV(tr, env):
     local = env.child()
@@ -400,6 +410,7 @@ def ENV(tr, env):
     return local
 
 MAP = Map  # the MAP evaluation rule is the same as Map's constructor
+
 
 def BIND(tr, env):
     tr.pop(0)  # remove tag
@@ -538,8 +549,8 @@ def bind(form: Form, value, env: Env):
         eqs.append(Eq(form[1], value))
     else:
         raise SyntaxError('invalid form')
-    
-    if eqs:
+
+    if eqs:  # solve equations and bind the results
         sols = solve(eqs, dict=True)
         if sols:
             if len(sols) > 1:
@@ -574,7 +585,7 @@ def FORM(tr, env, _nested=False):
             t[i] = ['KWD', var, val]
             yield var
 
-        elif is_unpack(item):
+        elif tree_tag(item) == 'UNPACK':
             if has_unpack:
                 raise SyntaxError('multiple unpacks in the form')
             elif tree_tag(var := item[1]) != 'NAME':
@@ -611,15 +622,6 @@ def FORM(tr, env, _nested=False):
     form = tr[1] if tree_tag(tr) == 'FORM' else tr
     return Form(form, vars)
 
-
-def is_unpack(tr):
-    return tree_tag(tr) == 'PHRASE' and len(tr) == 3 \
-        and tr[-1] == ['OP', '..']
-        
-def is_domain(tr):
-    return tree_tag(tr) == 'PHRASE' and len(tr) == 4 \
-        and tr[2] == ['OP', 'in'] and tree_tag(tr[1]) == 'NAME'
-        
         
 def field_attr(tr, env):
     if is_name(tr[1]):
