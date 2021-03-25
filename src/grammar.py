@@ -26,7 +26,7 @@ OP      := [*?!/+-](?=\s|$)
 ITEM    := GROUP | MACRO | ATOM
 ITEMS   := ITEM ITEMS | ITEM
 GROUP   := [(] EXP [)]
-ATOM    := PAR | OBJ | STR | RE | CHARS | VAR | MARK
+ATOM    := PAR | OBJ | STR | RE | VAR | MARK
 STR     := ".*?"
 RE      := /.*?/
 MARK    := [^>|)\s]\S*
@@ -121,6 +121,8 @@ def prune(tree):
             tree[:] = tree[2]
         if tree[0] == 'EXP' and len(tree) > 2:  # pop '|'
             tree.pop(2)
+        elif tree[0] in ('STR', 'RE'):
+            tree[1] = tree[1][1:-1]
         for t in tree: prune(t)
 
 def flatten_nested(tree):

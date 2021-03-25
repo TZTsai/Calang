@@ -124,9 +124,7 @@ class Map(Function):
         return vars.issubset(self.form.vars)
     
     def __str__(self):
-        infix = '=' if self.__name__ else '→'
-        return '%s%s %s %s' % (self._path_repr(), self._form_repr,
-                               infix, self._body_repr)
+        return '%s → %s' % (self._form_repr, self._body_repr)
 
     def __repr__(self):
         if self.__name__:
@@ -149,7 +147,8 @@ class Map(Function):
     
 class Form(list):
     def __init__(self, form, vars):
-        self[:] = form
+        try: self[:] = form
+        except: self[:] = ['EXP', form]
         self.vars = vars
         self.unpack_pos = self.find_first_tag('UNPACK')
         self.kwd_start = self.find_first_tag('KWD')
@@ -157,7 +156,7 @@ class Form(list):
         
     def find_first_tag(self, tag):
         if self[0] == 'LIST':
-            for i, item in enumerate(self):
+            for i, item in enumerate(self[1:]):
                 if type(item) is list and item[0] == tag:
                     return i
         return None
@@ -187,6 +186,8 @@ class Env(dict):
         # self.cls = 'env'
     
     def __getitem__(self, name):
+        if isinstance(name, Symbol):
+            name = str(name)
         if name in self:
             return super().__getitem__(name)
         if name == 'upper':

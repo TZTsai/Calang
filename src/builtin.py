@@ -8,7 +8,7 @@ def construct_ops(op_dict, type):
         
 
 binary_ops = {
-    '+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (div, 8), '^': (pow, 18),
+    '+': (add, 6), '-': (sub, 6), '×': (mul, 8), '÷': (div, 8), '^': (pow, 18),
     '//': (floordiv, 8), './': (truediv, 8), '%': (mod, 8), '/%': (divmod, 8), '⋅': (dot, 10),
     '&': (and_, 8), '|': (or_, 7), '⊗': (xor, 3), '∧': (land, 3), '∨': (lor, 2),
     '==': (eq, 0), '~=': (neq, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
@@ -33,17 +33,7 @@ binary_ops['(app)'].broadcast = False
 
 shortcircuit_ops = operators['SOP'] = ['or', 'if', 'and']
 
-synonym_ops = {
-    '×':    '*',
-    '÷':    '/',
-    'in':   '∈',
-    'not':  '¬',
-    '\\/':  '∨',
-    '/\\':  '∧',
-    'xor':  '⊗',
-}
-
-op_symbols = set.union(*map(set, operators.values())) | set(synonym_ops)
+op_symbols = set.union(*map(set, operators.values()))
 
 
 builtins = {

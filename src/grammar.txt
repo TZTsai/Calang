@@ -18,8 +18,9 @@ EVAL    := @SEQ EXPR ;
 EXPR    := BIND | EXP
 BIND    := NS ? FORM = EXPR DOC:COMMENT ?
 NS      := @ ITEM    ## namespace
-FORM    := VAR ITEM | PHRASE
+FORM    := VAR ARG | PHRASE
 VAR     := NAME ATTR *
+ARG     := NAME | LIST
 NAME    := /[^\W\d][\w]*/
 ATTR    := . / ATTR:NAME
 EXP     := MAP | AT | PHRASE
@@ -41,7 +42,7 @@ KWD     := NAME = EXP
 ARRAY   := [ ( @SEQ SUBARR ; ) ]
 SUBARR  := /\t*/ - ( @SEQ EXP ( /\t+/ - ) ) /\t*/ -
 
-ATOM    := STR | OP | ANS | ATTR | VAR | NUM | UNKNOWN
+ATOM    := STR | ANS | ATTR | OP | VAR | NUM | UNKNOWN
 ANS     := /\$(\d+|\$*)/
 STR     := /[a-z]?".*?"/
 OP      := ???    ## define it in 'grammar.py'

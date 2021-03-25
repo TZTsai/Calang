@@ -261,8 +261,11 @@ def LIST(tr):
     lst = []
     for it in tr[1:]:
         if is_tree(it):
-            if tree_tag(it) == 'UNPACK':
+            tag = tree_tag(it)
+            if tag == 'UNPACK':
                 lst.extend(it[1])
+            elif tag == 'KWD':
+                lst.append(it)
             else:
                 raise NameError
         else:
@@ -303,9 +306,13 @@ def AND(tr, env):
     a = eval_tree(a, env)
     return eval_tree(b, env) if a else a
 
+def KWD(tr, env):
+    tr[2] = eval_tree(tr[2], env)
+    return tr
+
 def AT(tr, env=None):
     _, local, body = tr
-    local = eval_tree(local, env, inplace=False)
+    local = eval_tree(local, env)
     if not isinstance(local, Env):
         raise TypeError("'@' not followed by an Env")
     try:
@@ -475,53 +482,79 @@ def bind(form: Form, value, env: Env):
             min_items = len(forms)
         else:
             min_items = form.kwd_start
+            
+        if min_items > len(items):
+            raise ValueError('not enough items to be bound')
         
         if form.unpack_pos is not None:
             min_items -= 1
-            if (unpack_len := len(items) - min_items) < 0:
-                raise ValueError('not enough items to be bound')
+            unpack_len = len(items) - max(min_items, form.unpack_pos)
         
-        i = 0; unpack = []
+        i = 0  # variable index
+        iu = len(forms)
+        unpack = []
+        
         for item in items:
             if tree_tag(item) == 'KWD':
-                _, var, val = item
+                _, [_, var], val = item
                 assert var in form.vars, f'keyword "{var}" does not exist in the form"'
                 bd(var, val)
+                iu -= 1
                 
             else:  # the item is a value
                 try: tr = forms[i]
                 except: raise ValueError('too many items to be bound')
                 
-                if i == form.unpack_pos:
+                tag = tree_tag(tr)
+                if tag == 'UNPACK':
+                    assert i == form.unpack_pos
                     if len(unpack) < unpack_len:
                         unpack.append(item)
-                        continue
-                    else:
-                        var = tr[1]
-                        bd(var, unpack)
-                elif isinstance(tr, list):
+                    if len(unpack) == unpack_len:
+                        bd(tr[1], unpack)
+                    else: continue
+                elif tag == 'KWD':
+                    bd(tr[1], item)
+                elif tag is not None:
                     bind(tr, item, binds)
                 else:
                     eqs.append(Eq(var, item))
                 i += 1
+        
+        # bind the remaining variables
+        for i in range(i, iu):
+            tr = forms[i]
+            tag = tree_tag(tr)
+            if tag == 'UNPACK':
+                assert i == form.unpack_pos
+                bd(tr[1], ())
+            elif tag == 'KWD':  # keyword var
+                _, var, val = tr
+                bd(var, val)
+            else:
+                raise TypeError
                 
-    elif tag is None:
-        eqs.append(Eq(form, value))
-                
+    elif tag == 'EXP':
+        eqs.append(Eq(form[1], value))
     else:
         raise SyntaxError('invalid form')
     
     if eqs:
-        sol = solve(eqs, dict=True)
-        if sol:
-            if len(sol) > 1:
-                debug.log('Warning: the equation has multiple solutions')
-            sol = sol[0]
-            binds.update(sol)
-            return sol
+        sols = solve(eqs, dict=True)
+        if sols:
+            if len(sols) > 1:
+                debug.log('Info: the equation has %d solutions' % len(sols))
+                sol_dict = {}
+                for sol in sols:
+                    for sym, val in sol.items():
+                        sol_dict.setdefault(sym, []).append(val)
+            else:
+                sol_dict = sols[0]
+            for sym, val in sol_dict.items():
+                bd(str(sym), val)
             
     env.update(binds)
-    return value
+    return Env(binds=binds)
 
 
 def FORM(tr, env, _nested=False):
@@ -727,7 +760,18 @@ def EXIT(tr): raise KeyboardInterrupt
 
 def PYTHON(tr): interact()
     
+    
+def hold_tree(eval):
+    @wraps(eval)
+    def wrapped(tree, env=None, *args, **kwds):
+        try:
+            return eval(tree, env, *args, **kwds)
+        except NameError:
+            if env is None: return tree
+            else: raise
+    return wrapped
 
+@hold_tree
 def eval_tree(tree, env=None, inplace=True):
     if not is_tree(tree):
         return tree
@@ -738,17 +782,12 @@ def eval_tree(tree, env=None, inplace=True):
     
     if tag in macro_rules:
         tree = macro_rules[tag](tree)
-        return eval_tree(tree, env, inplace)
+        return eval_tree(tree, env)
     
     if tag not in eval_rules:
         partial_flag = False
         for i, t in enumerate(tree):
-            try:
-                tree[i] = eval_tree(t, env)
-            except NameError:
-                if env is None:
-                    partial_flag = True
-                else: raise
+            tree[i] = eval_tree(t, env)
             if is_tree(tree[i]) and tag not in delayed_rules:
                 partial_flag = True
         if partial_flag:

@@ -20,3 +20,6 @@ root_newton[sin, 3] == 3.141593  #1
 sin_series[n] = [x] -> sum[(-1)^(i//2)*x^i/i! for i in 1..n if i%2]
 sin_ = sin_series[10]
 sin[PI/3] == sin_[PI/3]  #1
+
+# test binding
+@([w, [a, c..], [b=2, u..], t=3] = [1, [2,3], []])[w,a,c,b,u,t] #(1, 2, (3,), 2, (), 3)

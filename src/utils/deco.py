@@ -1,6 +1,6 @@
 import sys
 from functools import wraps
-from .debug import log
+from .debug import log, logfile
 import config
 
 
@@ -24,6 +24,9 @@ def trace(f):
     "Print info before and after the call of a function."
     @wraps(f)
     def _f(*args):
+        cur_logfile = log.file
+        log.file = logfile
+        
         signature = format_call(f, args)
         log('%s:' % signature)
         log.indent += 2
@@ -35,6 +38,8 @@ def trace(f):
             log.indent -= 2
             raise
         log(f'{signature} ==> {result}')
+        
+        log.file = cur_logfile
         return result
     return _f
 

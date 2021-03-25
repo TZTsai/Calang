@@ -16,9 +16,11 @@ def log(*messages, debug=True, end='\n', sep='',
     message = sep.join(map(log.format, messages))
     file.write(indent * ' ' + message + end)
 
+
+logfile = open('utils/calc.log', 'w')
 log.indent = 0
 log.format = str
-log.file = open('utils/calc.log', 'w')
+log.file = logfile
 
 def check(f, args, expected, record=None):
     args = freeze(args)

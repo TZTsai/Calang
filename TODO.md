@@ -69,3 +69,8 @@
   * a rule to be applied
   * MAP VAL:EXP
     apply MAP on EXP - this is equivalent to `@(FORM = VAL) BODY`
+
+### Bugs
+
+* Fix QUOTE
+* 

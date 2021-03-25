@@ -26,7 +26,7 @@ def ins():  # insertion position from the beginning
     return len(buffer) - caret
 
 
-def write(s, track=1):
+def write(s, track=0):
     if type(s) is not str:
         s = ''.join(s)
 
@@ -95,7 +95,7 @@ def read(end='\r\n', indent=0):
             #     write(s[1:])
             #     move_cursor('K')  # move to the left of the decorator
             # else:
-            write(s)
+            write(s, 1)
 
             esc_pos = None
             
@@ -112,16 +112,16 @@ def read(end='\r\n', indent=0):
                 
             if indent:  # incomplete line
                 resetbuffer()
-                write(' ' * indent, 0)
+                write(' ' * indent)
             else:
                 for _ in range(caret):
                     move_cursor('M')  # move to the end of line
-                write(end_ch, 0)
+                write(end_ch)
                 read.history[-1] = text
                 return text
         
         if end_ch in spaces:
-            write(end_ch)
+            write(end_ch, 1)
 
 # assign read.subst in 'calc.py'
 read.subst = lambda s: s
@@ -167,9 +167,9 @@ def _read():
                 move_cursor(d)
                 continue
             else:
-                write(c + d)
+                write(c + d, 1)
         else:
-            write(c)
+            write(c, 1)
             
         edited = 1
     

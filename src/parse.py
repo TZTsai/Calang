@@ -1,6 +1,6 @@
 import re, json, ast
 import config
-from builtin import operators, synonym_ops
+from builtin import operators
 from objects import Form, Op
 from utils.deco import memo, trace, disabled
 from utils.debug import check, check_record, pprint
@@ -17,6 +17,12 @@ except:
 
 
 keywords = {'dir', 'load', 'config', 'import', 'del', 'info', 'exit'}
+
+synonyms = {
+    '×': ['*'],         '÷': ['/'],         '∈': ['in'],
+    '¬': ['not'],       '∨': ['/\\'],       '∧':   ['\\/'],
+    '⊗':   ['xor'],
+}
 
 trace = disabled  # for logging
 
@@ -106,12 +112,25 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             for t in tr: add_to_seq(seq, t)
         else: 
             seq.append(tr)
+            
+    def try_synonyms(parse):
+        def wrapped(tag, pattern, text):
+            tr, rem = parse(tag, pattern, text)
+            if tr is None:
+                if tag in ('STR', 'MARK') and pattern in synonyms:
+                    for altpat in synonyms[pattern]:
+                        tr, rem = parse(tag, altpat, text)
+                        if tr is not None:
+                            return pattern if tag == 'STR' else [], rem
+            return tr, rem
+        return wrapped
 
+    @try_synonyms
     def parse_atom(tag, pattern, text):
         text = lstrip(text)
-        if tag in ('STR', 'RE'):
-            pattern = pattern[1:-1]
-        if tag in ('RE', 'CHARS'):
+        # if tag in ('STR', 'RE'):
+        #     pattern = pattern[1:-1]
+        if tag == 'RE':
             m = re.match(pattern, text)
             if not m: return None, None
             else: return m[0], text[m.end():]
@@ -173,8 +192,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             return None, None
         if tag == 'NAME' and tree in keywords:
             return None, None
-        if tag == 'OP' and tree in synonym_ops:
-            tree = synonym_ops[tree]
+        # if tag == 'OP' and tree in synonym_ops:
+        #     tree = synonym_ops[tree]
         if tree and tree[0] == '(merge)':
             tree = tree[1:]
         tree = process_tag(alttag if alttag else tag, tree)
