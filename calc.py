@@ -72,7 +72,7 @@ def run(filename=None, test=False, start=0, verbose=True):
                 loading_thread.join()
 
             indent = BracketTracker.next_insertion(prompt + line)
-            if line[-1] == '\\':
+            if line and line[-1] == '\\':
                 line = line[:-1]
                 if not indent: indent = len(prompt)
 

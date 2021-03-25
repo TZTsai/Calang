@@ -57,9 +57,10 @@ builtins = {
     # common functions
     'abs': abs, 'sqrt': sqrt, 'floor': floor, 'ceil': ceiling, 
     # list functions
-    'list': tuple, 'len': len, 'sort': sorted, 'max': max, 'min': min,
-    'enum': enumerate, 'zip': zip, 'sum': sum, 'prod': prod,
-    'all': all_, 'any': any_, 'find': findall, 'next': next,
+    'list': tuple, 'len': len, 'max': max, 'min': min, 'all': all_, 'any': any_,
+    'enum': enumerate, 'zip': zip, 'sort': sorted,
+    'sum': sum, 'prod': prod, 'Σ': summation, 'Π': product,
+    'find': findall, 'next': next,
     # array functions
     'matrix': Matrix, 'shape': shape, 'depth': depth, 'transp': transpose, 'flatten': flatten,
     # real valued functions

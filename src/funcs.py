@@ -7,9 +7,9 @@ from numbers import *
 from fractions import Fraction
 from sympy import (
     S, E, pi, nan, oo,
-    Symbol, Array, Matrix, Eq,
-    floor, ceiling, factorial, expand, factor, solve,
-    sqrt, log, exp, gamma,
+    Symbol, Array, Matrix, Eq, Integer, Float, Expr,
+    floor, ceiling, sqrt, log, exp, gamma,
+    factorial, expand, factor, solve, summation, product,
     gcd, factorint, binomial,
     sin, cos, tan, asin, acos, atan, cosh, sinh, tanh,
     limit, integrate, diff
@@ -20,8 +20,7 @@ import config
 
 
 def apply(func, args):
-    "Apply $func on $val with pre-processing and post-processing."
-                
+
     def convert(arg):
         if type(arg) in (list, tuple):
             return tuple(map(convert, arg))
@@ -31,11 +30,49 @@ def apply(func, args):
             return arg
         
     args = convert(args)
-    if isinstance(func, Map):
-        result = func(args)
+    result = func(args)
+    # if isinstance(func, Map):
+    # else:
+    #     result = func(*args)
+    return convert_type(result)
+
+
+def convert_type(val):
+    "Convert the result to the standard types."
+
+    def proc_num(val):
+        "convert a number into python number type"
+        if isinstance(val, (int, float, complex, Fraction)):
+            if isinstance(val, complex):
+                return val.real if eq(val.imag, 0) else val
+            else:
+                return val
+        elif isinstance(val, Integer):
+            return int(val)
+        elif isinstance(val, Float):
+            return float(val)
+        else:
+            val = complex(val)
+            return val.real if eq(val.imag, 0) else val
+
+    if type(val) is bool:
+        return 1 if val else 0
+    # elif isinstance(val, list) and val and type(val[0]) is str:
+    #     return val
+    elif type(val) in [list, tuple]:
+        return tuple(convert_type(a) for a in val)
+    elif type(val) is dict:
+        return Env(binds=val)
+    elif callable(val) and not isinstance(val, Function):
+        return Function(val)
     else:
-        result = func(*args)
-    return result
+        try:
+            return proc_num(val)
+        except (ValueError, TypeError):
+            if isinstance(val, Expr):
+                return factor(simplify(val))
+            else:
+                return val
 
 
 def is_number(value):
@@ -156,8 +193,8 @@ def pow(x, y):
         
 def log2(x): return log(x) / log(2)
 def log10(x): return log(x) / log(10)
-def sum(*x): return reduce(add, x, initial=0)
-def prod(*x): return reduce(dot, x, initial=1)
+def sum(*x): return reduce(add, x, 0)
+def prod(*x): return reduce(dot, x, 1)
 def deg(x): return x / 180 * pi
 def ang(z): return atan(z.imag / z.real)
 

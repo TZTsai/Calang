@@ -1,6 +1,7 @@
 import re, json, ast
 import config
 from builtin import operators, synonym_ops
+from objects import Form, Op
 from utils.deco import memo, trace, disabled
 from utils.debug import check, check_record, pprint
 
@@ -164,8 +165,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             return None, None
         if tag in must_have and must_have[tag] not in text:
             return None, None
-        # if tag == 'OP':
-        #     text = lstrip(text)
+        if tag == 'OP':
+            text = lstrip(text)
 
         tree, rem = parse_tree(grammar[tag], text)
         if rem is None:
@@ -249,66 +250,65 @@ def calc_parse(text, tag='LINE', grammar=grammar):
 #         bind[1] = [tag, parent, body]
 
         
-def rev_parse(tree):
-    "Reconstruct a readable string from the syntax tree."
+def deparse(tree):
+    "Reconstruct the expression from the syntax tree."
     
-    def rec(tr, in_seq=False):
-        "$in_seq: whether it is in a sequence"
+    def rec(tr):
+        tag = tree_tag(tr)
         
-        if not is_tree(tr):
+        if tag is None:
             if type(tr) is tuple:
                  tr = list(map(rec, tr))
-            return str(tr)
+            else:
+                return str(tr)
         
-        def group(s): return '(%s)' if in_seq else s
-        # if in an operation sequence, add a pair of parentheses
-        
-        tr = tr.copy()
-        tag = tree_tag(tr)
-        if tag in ('NAME', 'SYM', 'PAR', 'VAR'):
+        if tag == 'NAME':
             return tr[1]
         elif tag == 'VAR':
             return ''.join(map(rec, tr[1:]))
         elif tag == 'ATTR':
             return '.' + tr[1]
         elif tag == 'PHRASE':
-            return ''.join(rec(t, True) for t in tr[1:])
+            return ''.join(map(rec, tr[1:]))
         elif tag == 'OP':
-            op = tr[1]
-            format = ' %s ' if op in operators['BOP'] else '%s'
-            return format % op
+            raise TypeError
+        #     op = tr[1]
+        #     format = ' %s ' if op in operators['BOP'] else '%s'
+        #     return format % op
+        elif tag == 'APP':
+            _, f, *args = tr
+            args = map(rec, args)
+            if isinstance(f, Op):
+                if f.type == 'BOP':
+                    x, y = args
+                    return '%s %s %s' % (x, f, y)
+                else:
+                    x, = args
+                    pair = (f, x) if f.type == 'LOP' else (x, f)
+                    return '%s%s' % pair
+            else:
+                x, = args
+                s = '%s%s' if x[0] in '([{' else '%s %s'
+                return s % (f, x)
         elif tag == 'NUM':
             return str(tr[1])
-        elif tag == 'FORM':
-            _, pars, optpars, extpar = tr
-            pars = [rec(par) for par in pars[1:]]
-            optpars = [f'{rec(optpar)}: {default}' for optpar, default in optpars[1:]]
-            extpar = [extpar+'..'] if extpar else []
-            return "[%s]" % ', '.join(pars + optpars + extpar)
-        elif tag[-3:] == 'LST':
+        elif tag == 'LIST':
             return '[%s]' % ', '.join(map(rec, tr[1:]))
         elif tag == 'MAP':
             _, form, exp = tr
-            return group('%s -> %s' % (rec(form), rec(exp)))
-        elif tag == 'DICT':
-            return '(%s)' % ', '.join(map(rec, tr[1:]))
-        elif tag == 'BIND':
+            return '%s -> %s' % (rec(form), rec(exp))
+        elif tag in ['BIND', 'KWD']:
             if tree_tag(tr[-1]) == 'DOC': tr = tr[1:]
             tup = tuple(rec(t) for t in tr[1:])
-            if tree_tag(tr[2]) == 'AT':
+            if tree_tag(tr[2]) == 'SP':
                 return '%s %s = %s' % tup
             else:
                 return '%s = %s' % tup
-        elif tag == 'CLOSURE':
+        elif tag == 'UNPACK':
+            return '%s..' % rec(tr[1])
+        elif tag == 'AT':
             _, local, exp = tr
             return '%s %s' % (rec(local), rec(exp))
-        elif tag == 'FUNC':
-            _, name, form = tr
-            return '%s%s' % (rec(name), rec(form))
-        elif tag == 'AT':
-            return '@' + rec(tr[1])
-        elif tag in ('PRINT', 'DOC'):
-            return ''
         else:
             return str(list(map(rec, tr)))
     return rec(tree)

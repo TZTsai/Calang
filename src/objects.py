@@ -24,9 +24,7 @@ class Function:
         return self.__name__
     
     def __call__(self, *args):
-        try: return self._func(*args)
-        except TypeError: return self._func(args)
-        
+        return self._func(*args)
     
     
 class Op(Function):
@@ -65,121 +63,97 @@ class Builtin(Function):
     def __init__(self, func, name):
         super().__init__(func)
         self.__name__ = name
-
-    def __repr__(self):
-        return f'<builtin: {self.__name__}>'
-
+        
+    def __call__(self, args):
+        try:
+            return self._func(*args)
+        except TypeError:
+            return self._func(args)
+        
     
-tree2str = NotImplemented
-# a function to restore syntax tree to an expression
-# ASSIGN it in format.py
+deparse = lambda tree: NotImplemented
+# assign it in format.py
 
 class Map(Function):
     bind = lambda form, val, env: NotImplemented
-    eval = lambda tree, env, mutable: NotImplemented
-    builtins = None
+    eval = lambda tree, env, inplace: NotImplemented
 
     def __init__(self, tree, env):
         _, form, body = tree
-        # if body[0] == 'INHERIT':
-        #     self.inherit = body[1]
-        #     body = ['CLOSURE', ..., body[2]]
-        # else:
-        #     self.inherit = None
-        #     body = Map.eval(body, None)  # simplify the body
-        self.form = Form(form, env)
+        if form[0] != 'FORM':  # ensure it is evaluated as a form
+            form = ['FORM', form]
+            
+        self.form = Map.eval(form, env)
         self.body = Map.eval(body, None)
-        self.parent = env
+        self.env = env
         self._pars = form[-1]
-        self._repr = tree2str(tree)
+        self._memo = {} if self.check_local() else None
         self.__name__ = None
-        self.__doc__ = self._repr
-        self._memo = NotImplemented
-
+        self.__doc__ = None
+        
+        if self.form[0] not in ['LIST', 'NAME']:
+            self._form_repr = f'({repr(self.form)})'
+        else:
+            self._form_repr = repr(self.form)
+        self._body_repr = deparse(self.body)
+        
     @trace
     def _func(self, val):
-        try:  # try to return the memoized result
-            return self._memo[val]
-        except:
-            if self._memo is NotImplemented:
-                try:
-                    self._memo = {}
-                    result = self.check_local(val)
-                    assert type(result) not in [Env, Map]
-                    return result
-                except (UnboundName, AssertionError):
-                    self._memo = None
+        try: return self._memo[val]
+        except: pass
         
-        local = self.parent.child()
+        local = self.env.child()
         Map.bind(self.form, val, local)
-                
-        if self.inherit:
-            upper = Map.eval(self.inherit, local, mutable=False)
-            assert isinstance(upper, Env), "@ not applied to an Env"
-            self.body[1] = local
-            env = upper
-        else:
-            env = local
+        result = Map.eval(self.body, local, inplace=False)
             
-        result = Map.eval(self.body, env, mutable=False)
-        # if self.inherit and isinstance(result, Env):
-        #     result.parent = upper
-        #     result.cls = str(self)
-            
-        # try to memoize result
         try: self._memo[val] = result
         except: pass
         return result
     
-    def check_local(self, val):
-        "Try to apply on $val to test if self does not depend on outside variables."
-        local = Map.builtins.child()
-        local[self.__name__] = self
-        Map.bind(self.form, val, local)
-        # if self.inherit: self.body[1] = local
-        return Map.eval(self.body, local, False)
+    def check_local(self):
+        "Check whether the map depends on outside variables."
+        def collect_vars(tr):
+            if type(tr) is list and tr:
+                if tr[0] == 'NAME':
+                    vars.add(tr[1])
+                else:
+                    for it in tr[1:]:
+                        collect_vars(it)
+        vars = set()
+        collect_vars(self.body)
+        return vars.issubset(self.form.vars)
     
     def __str__(self):
-        path = self.parent.dir()
-        if not path or path[0] == '_':  # hidden
-            where = ''
-        else:
-            where = ' in %s' % path
-        return '<map%s: %s>' % (where, self._repr)
-    
+        infix = '=' if self.__name__ else '→'
+        return '%s%s %s %s' % (self._path_repr(), self._form_repr,
+                               infix, self._body_repr)
+
     def __repr__(self):
         if self.__name__:
-            return self.__name__
+            return self._path_repr()
         else:
-            return '(%s)' % self._repr
+            return f'({self})'
     
-    def compose(self, func):
-        "Enable arithmetic ops on Map."
-        return Map(self.form, ['SEQ', func, self.body])
+    def _path_repr(self):
+        if self.env.name[0] == '_':
+            path = ''
+        else:
+            path = self.env.dir()
+        if self.__name__:
+            if path: path += '.'
+            path += self.__name__
+        elif path:
+            path = '@' + path
+        return path
     
     
 class Form(list):
-    getvars = lambda form, env: NotImplemented
-    
-    def __init__(self, form, env=None):
-        if form[0] == 'FORM':
-            assert len(form) == 2
-        else:
-            form = ['FORM', form]
-            
-        self[:] = form[1]
-        
-        if env is not None:
-            self.set_vars(Form.getvars(form, env))
-
+    def __init__(self, form, vars):
+        self[:] = form
+        self.vars = vars
         self.unpack_pos = self.find_first_tag('UNPACK')
         self.kwd_start = self.find_first_tag('KWD')
-        
-    def set_vars(self, vars):
-        vars = list(vars)
-        self.vars = set(vars)
-        if len(vars) > len(self.vars):
-            raise SyntaxError('duplicate variables in the form')
+        self._repr = None
         
     def find_first_tag(self, tag):
         if self[0] == 'LIST':
@@ -188,19 +162,22 @@ class Form(list):
                     return i
         return None
     
+    def __repr__(self):
+        return deparse(self) if self._repr is None else self._repr
+    
 
 class Env(dict):
     default_name = '(loc)'
     
     def __init__(self, val=None, parent=None, name=None, binds=None):
         self.val = val
-        if parent:
+        try:
             if name is not None:
                 parent[name] = self
-            if parent.name[0] != '_':
-                self.parent = parent
-            else:
-                self.parent = None
+            assert parent.name[0] != '_' or name[0] == '_'
+            self.parent = parent
+        except:
+            self.parent = None
         if name is None:
             self.name = self.default_name
         else:
@@ -221,13 +198,14 @@ class Env(dict):
     def __iter__(self):
         raise TypeError('Env is not iterable')
     
+    def all_items(self):
+        yield from self.items()
+        if self.parent:
+            yield from self.parent.all_items()
+    
     def dir(self):
         return (self.parent.dir() + '.' if self.parent else '') + self.name
     
-    def dict_str(self):
-        return '(%s)' % ', '.join(f'{k} = {log.format(v)}'
-                                  for k, v in self.items())
-
     def delete(self, name):
         try: self.pop(name)
         except: print('%s is unbound' % name)
@@ -236,14 +214,15 @@ class Env(dict):
         return Env(val, self, name, binds)
 
     def __str__(self):
-        # return '<%s: %s>' % (self.cls, self.dir())
-        if self.name == self.default_name:
-            return self.dir()[:-len(self.default_name)] + self.dict_str()
-        else:
-            return self.dir() + ':' + self.dict_str()
+        # if self.name == self.default_name:
+        #     return self.dir()[:-len(self.default_name)] + self.dict_str()
+        # else:
+        #     return self.dir() + ' = ' + self.dict_str()
+        return '(%s)' % ', '.join(f'{k} = {log.format(v)}'
+                                  for k, v in self.items())
     
     def __repr__(self):
-        return self.dict_str()
+        return self.dir()
     
     def __bool__(self):
         return True
@@ -319,13 +298,6 @@ class Enum:
     def __repr__(self):
         return '<enum: %s>' % self.it
 
-
-class UnboundName(NameError):
-    "An error to indicate that a name is not bound in the environment."
-    
-# class OperationError(RuntimeError):
-#     "An error to indicate that the interpreted operation cannot be applied."
-        
         
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ COMMENT := # /.*/
 CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | PYTHON | EXIT
 
 CONF    := config /\w+/ ( NUM | /on|off/ ) ?
-DIR     := dir VAR ?
+DIR     := dir VAR ? "*" ?
 DEL     := del @SEQ VAR ,
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *

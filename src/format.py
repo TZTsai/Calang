@@ -2,7 +2,7 @@ from sympy import latex, pretty
 from re import sub as translate
 from builtin import Rational, Fraction, Matrix, is_number, is_matrix, floor, oo, log
 from objects import Range, Env, Function
-from parse import rev_parse, is_tree
+from parse import deparse, is_tree
 from utils.debug import log
 import config, objects
 
@@ -114,4 +114,4 @@ def calc_format(val, linesep='\n', **opts):
 
 
 log.format = calc_format
-objects.tree2str = rev_parse
+objects.deparse = deparse

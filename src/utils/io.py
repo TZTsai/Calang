@@ -9,7 +9,7 @@ from .debug import log
 getch = msvcrt.getwch
 
 spaces = ' \t\r\n'        # invokes a substitution if possible
-esc = '\x1b'
+esc = '\x1b'              # also invokes a substitution
 cancel_signal = '\x1a'    # cancels the current input, here ^Z
 exit_signal = '\x03\x04'  # exits the program, here ^C or ^D
 
@@ -27,34 +27,45 @@ def ins():  # insertion position from the beginning
 
 
 def write(s, track=1):
+    if type(s) is not str:
+        s = ''.join(s)
+
     if s == '\t':
         sp = 4 - ins() % 4
         sys.stdout.write(sp * ' ')
     else:
         sys.stdout.write(s)
-    sys.stdout.flush()
+    
+    bl = 0  # length of backspace
     
     if track:
         for ch in s:
-            buffer.insert(ins(), ch)
-        if tail := ''.join(buffer[ins():]):
-            sys.stdout.write(tail)
-            sys.stdout.write('\b' * caret)  # move back the caret
-            sys.stdout.flush()
+            if ch == '\b':
+                try: buffer.pop(-caret-1)
+                except: break
+                bl += 1
+            else:
+                buffer.insert(ins(), ch)
+                
+    tail = ''.join(buffer[ins():])
+    if bl + len(tail) > 0:
+        sys.stdout.write(tail)
+        sys.stdout.write(bl * ' ')
+        bl += len(tail)
+        sys.stdout.write('\b' * bl)  # move back the caret
+            
+    sys.stdout.flush()
         
         
 def delete(n=1):
-    write('\b' * n, 0)
-    write(' ' * n, 0)
-    write('\b' * n, 0)
-    for _ in range(n):
-        buffer.pop(-caret-1)
+    write('\b' * n, 1)
         
 
 def resetbuffer():
-    global caret
-    caret = 0
+    global caret, esc_pos
     buffer.clear()
+    caret = 0
+    esc_pos = None
 
 
 def read(end='\r\n', indent=0):
@@ -88,18 +99,29 @@ def read(end='\r\n', indent=0):
 
             esc_pos = None
             
-        write(end_ch)
-            
         if end_ch in end:
-            line = ''.join(buffer[:-1])
+            line = ''.join(buffer)
+            
+            next_indent = BracketTracker.next_insertion(' '*indent + line)
+            if line and line[-1] == '\\':
+                line = line[:-1]
+                indent += 2
+            else:
+                indent = next_indent
             text += line
-            indent = BracketTracker.next_insertion(' '*indent + line)
-            if indent or line and line[-1] == '\\':  # incomplete line
+                
+            if indent:  # incomplete line
                 resetbuffer()
                 write(' ' * indent, 0)
             else:
+                for _ in range(caret):
+                    move_cursor('M')  # move to the end of line
+                write(end_ch, 0)
                 read.history[-1] = text
                 return text
+        
+        if end_ch in spaces:
+            write(end_ch)
 
 # assign read.subst in 'calc.py'
 read.subst = lambda s: s
@@ -110,6 +132,7 @@ read.index = 0
 def _read():
     global esc_pos
     c = -1
+    edited = 0
     
     while c:
         c = getch()
@@ -134,18 +157,21 @@ def _read():
         elif c == '\b':  # backspace
             if caret < len(buffer):
                 delete()
-        elif c in '\x00\xe0':  # arrow key
-            if (d := getch()) in 'KHMP':
+        elif c in '\x00\xe0':
+            if (d := getch()) in 'KHMP':  # arrow key
+                if edited and d in 'HP':
+                    # set the last history to the current buffer
+                    read.history[-1] = list(buffer)
+                    read.index = len(read.history) - 1
+                    edited = 0
                 move_cursor(d)
                 continue
             else:
-                write(c + d, 1)
+                write(c + d)
         else:
-            write(c, 1)
+            write(c)
             
-        # set the latest history to the current buffer
-        read.history[-1] = list(buffer)
-        read.index = len(read.history) - 1
+        edited = 1
     
     raise IOError("failed to read input")
 
@@ -163,21 +189,24 @@ def move_cursor(code):
             read.index = i
             caret = 0
             delete(len(buffer))
-            write(''.join(read.history[i]), 1)
+            write(read.history[i], 1)
     else:
         if d == 'L' and caret < len(buffer):
             caret += 1
-            write(cs)
+            write(cs, 0)
         elif d == 'R' and caret > 0:
             caret -= 1
-            write(cs)
+            write(cs, 0)
+        # buf = list(buffer)
+        # buf.insert(ins(), '^')
+        # print(buf)
 
     
 def input(prompt='', indent=0):
     write(prompt)
     return read(indent=indent)
 
-def close(): exit()
+def close(): return
     
     
 class BracketTracker:

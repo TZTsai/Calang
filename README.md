@@ -199,7 +199,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   An environment is a collection of name-value bindings. Actually normally we are evaluating in the *Global* environment. When you create an environment yourself, it will set its parent to the current environment it is being evaluated.
 
-  The evaluation rule within an environment: when a name is evaluated in an environment, Calc will first check whether it is bound in this environment; if not, Calc will go up to look up its value in its parent environment; this procedure will continue recursively until it reaches the *Global* environment - if it is still unbound, it will be evaluated as a Symbol or an UnboundName error will be raised dependent on the user config.
+  The evaluation rule within an environment: when a name is evaluated in an environment, Calc will first check whether it is bound in this environment; if not, Calc will go up to look up its value in its parent environment; this procedure will continue recursively until it reaches the *Global* environment - if it is still unbound, it will be evaluated as a Symbol or an NameError will be raised dependent on the user config.
 
   **Syntax**:  
   * To create an environment:  
