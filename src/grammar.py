@@ -4,6 +4,7 @@ import json
 from builtin import op_symbols
 from utils.deco import memo, trace, disabled
 from utils.debug import check_record
+import config
 
 trace = disabled
 
@@ -97,7 +98,7 @@ def parse_grammar(type_, text, grammar=metagrammar):
     return parse_atom(type_, ' '+text)
 
 
-def calc_grammar(rules, whitespace=r'[ \n]*'):
+def calc_grammar(rules, whitespace=config.whitespace):
     G = {' ': whitespace}
     M = {}
     for rule in rules:

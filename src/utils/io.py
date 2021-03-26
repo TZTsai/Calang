@@ -33,6 +33,9 @@ def write(s, track=0):
     if s == '\t':
         sp = 4 - ins() % 4
         sys.stdout.write(sp * ' ')
+    elif s == '\n':
+        sys.stdout.write(' ' * caret + '\b' * caret)
+        sys.stdout.write(s)
     else:
         sys.stdout.write(s)
     
@@ -46,7 +49,7 @@ def write(s, track=0):
                 bl += 1
             else:
                 buffer.insert(ins(), ch)
-                
+
     tail = ''.join(buffer[ins():])
     if bl + len(tail) > 0:
         sys.stdout.write(tail)
@@ -101,26 +104,27 @@ def read(end='\r\n', indent=0):
             
         if end_ch in end:
             line = ''.join(buffer)
-            
             next_indent = BracketTracker.next_insertion(' '*indent + line)
+            
             if line and line[-1] == '\\':
-                line = line[:-1]
-                indent += 2
+                delete()
             else:
                 indent = next_indent
-            text += line
                 
             if indent:  # incomplete line
-                resetbuffer()
+                write(end_ch, 1)
                 write(' ' * indent)
+                text += ''.join(buffer[:ins()])
+                buffer[:] = buffer[ins():]
             else:
                 for _ in range(caret):
                     move_cursor('M')  # move to the end of line
                 write(end_ch)
+                text += line
                 read.history[-1] = text
                 return text
         
-        if end_ch in spaces:
+        elif end_ch in spaces:
             write(end_ch, 1)
 
 # assign read.subst in 'calc.py'
