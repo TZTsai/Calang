@@ -1,0 +1,70 @@
+### Zebra 1 ###
+# reference: https://www.brainzilla.com/logic/zebra/basic-1/
+
+"
+The Spanish lives directly to the right of the Red house.
+The Norwegian lives in the Blue house.
+The Italian lives in house two.
+"
+
+n = 3;
+orders = list perms (1:n);
+
+zebra1 = [
+    (color = (blue=b, white=w, red=r),
+     nation = (Italian=it, Norwegian=nw, Spanish=sp))
+    @
+    [it, nw, sp] in orders,
+    it == 2,
+    [b, w, r] in orders,
+    sp == r + 1, nw == b
+]
+
+
+### Zebra 2 ###
+# reference: https://www.brainzilla.com/logic/zebra/movies-night/
+
+"
+Joshua is at one of the ends.
+The boy wearing the Black shirt is somewhere to the left of the youngest boy.
+Joshua likes Horror movies.
+The 14-year-old boy is at the third position.
+The boy wearing the Red shirt is somewhere between the 13-year-old boy and the one who likes Action movies, in that order.
+Daniel likes Thriller movies.
+The boy who is going to eat Cookies is at one of the ends.
+The boy wearing the Black shirt is exactly to the left of the one who likes Thriller movies.
+The boy who is going to eat Crackers is exactly to the right of the boy who likes Comedy movies.
+The boy wearing the Red shirt is somewhere between the boy who is going to eat Popcorn and Nicholas, in that order.
+At one of the ends is the boy who likes Thriller movies.
+Nicholas is somewhere between Joshua and Daniel, in that order.
+At the first position is the boy wearing the Green shirt.
+"
+
+n = 4;
+orders = list perms (1:n);
+between [a, b, c] = a < b and b < c;
+at_end a = a in [1, n];
+
+zebra2 = [
+    (name  = (Joshua=J, Daniel=D, Nicholas=N, Ryan=R),
+     shirt = (black=black, red=red, green=green, blue=blue),
+     movie = (action=Act, comedy=Com, thriller=Thr, horror=Hor),
+     snack = (chips=ch, cookies=co, crackers=cr, popcorn=po),
+     age   = (y11=y11, y12=y12, y13=y13, y14=y14))
+    @
+    [J, D, N, R] in orders,
+    at_end J, between [J, N, D],
+
+    [Act, Com, Thr, Hor] in orders,
+    J == Hor, D == Thr, at_end Thr,
+
+    [black, red, green, blue] in orders,
+    black == Thr - 1, green == 1,
+    
+    [y11, y12, y13, y14] in orders,
+    youngest = y11, black < youngest,
+    y14 == 3, between [y13, red, Act],
+
+    [ch, co, cr, po] in orders,
+    at_end co, cr == Com + 1, between [po, red, N]
+]

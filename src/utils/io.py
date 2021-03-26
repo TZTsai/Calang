@@ -3,7 +3,7 @@ import os
 import re
 import msvcrt
 import time
-from .debug import log
+from .unicode import subst, map_2chars
 
 
 getch = msvcrt.getwch
@@ -30,10 +30,10 @@ def write(s, track=0):
     if type(s) is not str:
         s = ''.join(s)
 
-    if s == '\t':
-        sp = 4 - ins() % 4
-        sys.stdout.write(sp * ' ')
-    elif s == '\n':
+    # if s == '\t':
+    #     sp = 4 - ins() % 4
+    #     sys.stdout.write(sp * ' ')
+    if s == '\n':
         sys.stdout.write(' ' * caret + '\b' * caret)
         sys.stdout.write(s)
     else:
@@ -125,7 +125,10 @@ def read(end='\r\n', indent=0):
                 return text
         
         elif end_ch in spaces:
-            write(end_ch, 1)
+            if end_ch == '\t':  # TODO: auto-complete
+                pass
+            else:
+                write(end_ch, 1)
 
 # assign read.subst in 'calc.py'
 read.subst = lambda s: s
@@ -175,6 +178,11 @@ def _read():
         else:
             write(c, 1)
             
+        if (chs := ''.join(buffer[-2:])) in map_2chars:
+            s = map_2chars[chs]
+            delete(2)
+            write(s, 1)
+            
         edited = 1
     
     raise IOError("failed to read input")
@@ -214,14 +222,17 @@ def close(): return
     
     
 class BracketTracker:
-    parentheses = ')(', '][', '}{'
+    parentheses = ')(', '][', '}{', '""'
     close_pars, open_pars = zip(*parentheses)
     par_map = dict(parentheses)
     stack = []
 
     @classmethod
     def push(cls, par, pos):
-        cls.stack.append((par, pos))
+        if par in cls.open_pars:
+            cls.stack.append((par, pos))
+        else:
+            raise SyntaxError('not an open bracket')
 
     @classmethod
     def pop(cls, par):
@@ -229,17 +240,18 @@ class BracketTracker:
             cls.stack.pop()
         else:
             cls.stack.clear()
-            raise SyntaxError('bad parentheses')
+            raise SyntaxError('bad brackets')
 
     @classmethod
     def next_insertion(cls, text):
         "Track the brackets in the line and return the appropriate pooint of the nest insertion."
         for line in text.splitlines():
             for i, c in enumerate(line):
-                if c in cls.open_pars:
-                    cls.push(c, i)
-                elif c in cls.close_pars:
+                try:
                     cls.pop(c)
+                except:
+                    if c in cls.open_pars: cls.push(c, i)
+                    elif c in cls.close_pars: raise
         return cls.stack[-1][1] + 1 if cls.stack else 0
 
 

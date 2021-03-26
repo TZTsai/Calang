@@ -31,13 +31,13 @@ from copy import deepcopy
 import re, json, inspect
 from my_utils.utils import interact
 
-from parse import calc_parse, is_name, is_tree, tree_tag, semantics
+from parse import calc_parse, semantics
 from builtin import operators, binary_ops, builtins, shortcircuit_ops
 from funcs import is_list, iterable, indexable, apply, Fraction, eq, get_attr
-from sympy import Expr, Symbol, Array, Eq, solve
+from sympy import Expr, Symbol, Array, Matrix, Eq, solve
 from objects import Env, stack, Op, Attr, Function, Map, Form
-from utils import debug
-from utils.deco import trace
+from utils.debug import log, trace
+from utils.funcs import *
 import config
 
 
@@ -51,27 +51,14 @@ Global = InitGlobal()
 
 
 def calc_eval(exp, env=None):
-    # suppress output (and recording) if the last character is ';'
-    suppress = exp and exp[-1] == ';'
-    if suppress: exp = exp[:-1]
-    
     # parse the expression into a syntax tree
     tree, rest = calc_parse(exp)
     if rest: raise SyntaxError(f'syntax error in "{rest}"')
     
     if env is None: env = Global 
     result = eval_tree(tree, env)
-    # try:  # evaluate the syntax tree
-    #     result = eval_tree(tree, Global)
-    # except NameError:  # there is an unbound name in exp
-    #     if config.symbolic:
-    #         # force unbound names to be evaluated to symbols
-    #         NAME.force_symbol = True
-    #         result = eval_tree(tree, Global)  # retry
-    #         NAME.force_symbol = False
-    #     else: raise
     
-    if result is not None and not suppress:
+    if result is not None:
         # record and return the result
         Global.ans.append(result)
         return result
@@ -79,9 +66,9 @@ def calc_eval(exp, env=None):
 
 # substitution rules
 
-def EMPTY(tr): return None
-
-def EVAL(tr): return tr[-1]
+def EVAL(tr):
+    if tr[-1] != ';':
+        return tr[-1]
 
 def COMPLEX(tr):
     re, pm, im = tr[1:]
@@ -116,9 +103,13 @@ def INFO(tr):
     print(tr[1].__doc__)
     
 def LINE(tr):
-    LINE.comment = tr[2][1]
-    return tr[1]
-
+    if type(tr[-1]) is str:
+        LINE.comment = tr[-1]
+        if len(tr) > 2:
+            return tr[1]
+    elif len(tr) > 1:
+        return tr[1]
+    
 LINE.comment = None
 
 
@@ -268,9 +259,7 @@ def LIST(tr):
     return tuple(lst)
 
 def ARRAY(tr):
-    return Array(tr[1:])
-
-SUBARR = LIST
+    return Array(tr[1]) if len(tr) == 2 else Matrix(tr[1:])
 
 
 ## these are eval rules which require environment
@@ -302,8 +291,11 @@ def AND(tr, env):
     return eval_tree(b, env) if a else a
 
 def KWD(tr, env):
-    tr[2] = eval_tree(tr[2], env)
-    return tr
+    if is_tree(tr[2]):
+        tr[2] = eval_tree(tr[2], env)
+        return tr
+    else:
+        return tr[2]
 
 def AT(tr, env=None):
     _, local, body = tr
@@ -350,6 +342,7 @@ def QUOTE(tr, env=None):
                     tr[i] = traverse(tr[i])
         return tr
     return eval_tree(traverse(tr)[1])
+    
 
 def format_string(s, env):
     def subs(match):
@@ -362,7 +355,7 @@ def format_string(s, env):
         else:
             eq = 0
         val = calc_eval(s, env)
-        ss = debug.log.format(val)
+        ss = log.format(val)
         if eq: ss = '%s = %s' % (s, ss)
         return ss
     brace_pattern = '{(.+?)}'
@@ -370,6 +363,8 @@ def format_string(s, env):
 
 
 def GENER(tr, env):
+    bound_vars = set()
+
     def generate(exp, constraints):
         if constraints:
             constr = constraints[0]
@@ -377,17 +372,20 @@ def GENER(tr, env):
             
             if tag == 'DOM':
                 _, var, domain = constr
+                form = FORM(var, local)
                 domain = eval_tree(domain, local, inplace=False)
                 
-                if var[1] in local:
-                    # already bound, check if it's in the domain
-                    val = local[var[1]]
-                    if val in domain:
-                        yield from generate(exp, constraints[1:])
-                        
-                else:  # free variable, traverse all possible values
+                if form.vars & bound_vars:
+                    if form.vars.issubset(bound_vars):
+                        val = eval_tree(form, local)
+                        if val in domain:
+                            yield from generate(exp, constraints[1:])
+                    else:
+                        raise KeyError('form not fully bound in the constraint')
+                else:
+                    bound_vars.update(form.vars)
                     for val in domain:
-                        bind(var, val, local)
+                        bind(form, val, local)
                         yield from generate(exp, constraints[1:])
             else:
                 # actually two cases: BIND and others
@@ -402,10 +400,11 @@ def GENER(tr, env):
             yield eval_tree(exp, local, inplace=False)
             
     _, exp, *constraints = tr
-    # place all domain constraints in the front
-    # constraints.sort(key=lambda tr: tree_tag(tr) == 'DOM', reverse=True)
     local = env.child()
-    return tuple(generate(exp, constraints))
+    return generate(exp, constraints)
+
+def GENLS(tr, env):
+    return tuple(GENER(tr, env))
 
 
 def ENV(tr, env):
@@ -459,14 +458,13 @@ def BIND(tr, env):
     return bind(form, val, env)
 
 
-def bind(form: Form, value, env: Env):
+def bind(form, value, env: Env, overwrite=True):
     def bd(name, val):
         if name in binds:
             raise TypeError(f'multiple bindings of var {name} in the form')
         
-        if isinstance(val, Env) and val.val is not None:
-            val = val.val
-            
+        # if isinstance(val, Env) and val.val is not None:
+        #     val = val.val
         if isinstance(val, Map):
             if val.__name__ is None:
                 val.__name__ = name
@@ -479,7 +477,7 @@ def bind(form: Form, value, env: Env):
                 
         binds[name] = val
             
-    binds = {}
+    binds = {}  # used to keep track of the new bindings
     eqs = []
     tag = tree_tag(form)
 
@@ -493,49 +491,55 @@ def bind(form: Form, value, env: Env):
         items = list(value)
         forms = form[1:]
         
+        if not isinstance(form, Form):
+            form = FORM(form, env)
+        
         if form.kwd_start is None:
             min_items = len(forms)
         else:
             min_items = form.kwd_start
-            
-        if min_items > len(items):
-            raise ValueError('not enough items to be bound')
         
         if form.unpack_pos is not None:
             min_items -= 1
             unpack_len = len(items) - max(min_items, form.unpack_pos)
+        else:
+            unpack_len = 0
+            
+        if min_items > len(items):
+            raise ValueError('not enough items to be bound')
         
-        i = 0  # variable index
         im = len(forms)
-        unpack = []
         
         for item in items:
             if tree_tag(item) == 'KWD':
                 _, [_, var], val = item
                 assert var in form.vars, f'keyword "{var}" does not exist in the form"'
                 bd(var, val)
-                unpack_len -= 1
+                unpack_len = max(0, unpack_len - 1)
                 im -= 1
-                
-            else:  # the item is a value
-                try: tr = forms[i]
-                except: raise ValueError('too many items to be bound')
-                
-                tag = tree_tag(tr)
-                if tag == 'UNPACK':
-                    assert i == form.unpack_pos
-                    if len(unpack) < unpack_len:
-                        unpack.append(item)
-                    if len(unpack) == unpack_len:
-                        bd(tr[1], unpack)
-                    else: continue
-                elif tag == 'KWD':
-                    bd(tr[1], item)
-                elif tag is not None:
-                    bind(tr, item, binds)
-                else:
-                    eqs.append(Eq(var, item))
-                i += 1
+        
+        i = 0  # variable index
+        unpack = []
+        
+        for item in filter(lambda t: tree_tag(t) != 'KWD', items):
+            try: tr = forms[i]
+            except: raise ValueError('too many items to be bound')
+            
+            tag = tree_tag(tr)
+            if tag == 'UNPACK':
+                assert i == form.unpack_pos
+                if len(unpack) < unpack_len:
+                    unpack.append(item)
+                if len(unpack) == unpack_len:
+                    bd(tr[1], unpack)
+                else: continue
+            elif tag == 'KWD':
+                bd(tr[1], item)
+            elif tag is not None:
+                bind(tr, item, binds)
+            else:
+                eqs.append(Eq(tr, item))
+            i += 1
         
         # bind the remaining variables
         for i in range(i, im):
@@ -559,7 +563,7 @@ def bind(form: Form, value, env: Env):
         sols = solve(eqs, dict=True)
         if sols:
             if len(sols) > 1:
-                debug.log('Info: the equation has %d solutions' % len(sols))
+                log('Info: the equation has %d solutions' % len(sols))
                 sol_dict = {}
                 for sol in sols:
                     for sym, val in sol.items():
@@ -568,9 +572,12 @@ def bind(form: Form, value, env: Env):
                 sol_dict = sols[0]
             for sym, val in sol_dict.items():
                 bd(str(sym), val)
+    
+    for name, val in binds.items():
+        if name not in env or overwrite:
+            env[name] = val
             
-    env.update(binds)
-    return Env(binds=binds)
+    return Env(val=eval_tree(form, env), binds=binds)
 
 
 def FORM(tr, env, _nested=False):
@@ -697,7 +704,7 @@ def DIR(tr):
         print(f"(dir): {field.dir()}")
 
     for name, val in getattr(field, items)():
-        print(f"{name}: {debug.log.format(val)}")
+        print(f"{name}: {log.format(val)}")
 
 def LOAD(tr):
     test = '-t' in tr
@@ -708,18 +715,15 @@ def LOAD(tr):
     global Global
     current_global = Global
     Global = InitGlobal()  # a new global env
-    debug.log.indent += 2
+    log.indent += 2
     LOAD.run(path, test, start=0, verbose=verbose)
-    debug.log.indent -= 2
+    log.indent -= 2
     
-    if overwrite:
-        current_global.update(Global)
-    else:
-        for name in Global:
-            if name not in current_global:
-                current_global[name] = Global[name]
-            else:
-                print(f'name "{name}" not loaded because it is already bound')
+    for name, val in Global.items():
+        if name not in current_global or overwrite:
+            current_global[name] = val
+        else:
+            print(f'name "{name}" not loaded because it is already bound')
     Global = current_global
 
 def IMPORT(tr):
@@ -792,11 +796,11 @@ def eval_tree(tree, env=None, inplace=True):
         return eval_tree(tree, env)
     
     if tag not in eval_rules:
-        partial_flag = False
+        partial_flag = 0
         for i, t in enumerate(tree):
             tree[i] = eval_tree(t, env)
             if is_tree(tree[i]) and tag not in delayed_rules:
-                partial_flag = True
+                partial_flag = 1
         if partial_flag:
             return tree
         
@@ -827,7 +831,7 @@ macro_rules = {name: eval(name) for name in [
 ]}
 
 # subs rules that allow application when there is partial evaluation
-delayed_rules = {'LIST', 'ITEMS'}
+delayed_rules = {'LIST', 'ITEMS', 'LINE'}
 
 all_rules = {name: rule for name, rule in
              globals().items() if name.isupper()}

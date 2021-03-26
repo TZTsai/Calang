@@ -78,6 +78,10 @@ extra_mappings = {
     # 'black': '⬛'
 }
 
+map_2chars = {
+    '/\\': '∧', '\\/': '∨', '/_': '∠', '+-': '±',
+    '<<': '⟨', '>>': '⟩', #'->': '→', '<-': '←'
+}
 
 def subst(s):
     """Substitute escaped characters."""

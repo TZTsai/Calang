@@ -2,8 +2,8 @@ from pprint import pprint
 import re
 import json
 from builtin import op_symbols
-from utils.deco import memo, trace, disabled
-from utils.debug import check_record
+from utils.funcs import memo, disabled
+from utils.debug import check_record, trace
 import config
 
 trace = disabled
@@ -50,11 +50,15 @@ MARK    := [^>|)\s]\S*
 # MACRO:    a macro will be substituted by its evaluated expression 
 
 
-Grammar = open('grammar.txt', 'r').read().splitlines()
+Grammar = open('grammar.txt', 'r', encoding='utf8').read().splitlines()
 Semantics = open('semantics.txt', 'r').read().splitlines()
 
 # add the grammar rule of operators
 ops = sorted(op_symbols, reverse=1, key=len)
+
+for i, op in enumerate(ops):  # prevent ambiguity with other names
+    if op.isalpha(): ops[i] += ' '
+    
 Grammar.append('OP := "%s"' % '" | "'.join(ops))
 
 
@@ -192,7 +196,7 @@ grammar = calc_grammar(Grammar)
 semantics = simple_grammar(Semantics)
 del semantics[' ']
 
-json.dump(grammar, open('utils/grammar.json', 'w'), indent=2)
+json.dump(grammar, open('utils/grammar.json', 'w', encoding='utf8'), indent=2)
 json.dump(semantics, open('utils/semantics.json', 'w'), indent=2)
 
 

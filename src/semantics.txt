@@ -1,3 +1,4 @@
+SEQ     := LOP * ITEM ( BOP)
 VAL     := COMB | PAIR | ATOM
 ATOM    := FUNC | ITEM
 COMB    := BO | LO | RO

@@ -1,17 +1,18 @@
 import threading
-import sys
-import src
-import config
-from utils.io import BracketTracker, input
-
+import sys, os
 
 # read program arguments
 debug = '-d' in sys.argv
 test = '-t' in sys.argv
-config.debug = debug
 
 # directory of scripts to load
-scripts_dir = 'scripts/'
+scripts_dir = os.path.join(os.getcwd(), 'scripts/')
+
+import src
+from utils.io import BracketTracker, input
+import config
+
+config.debug = debug
 
     
 def run(filename=None, test=False, start=0, verbose=True):
@@ -20,8 +21,8 @@ def run(filename=None, test=False, start=0, verbose=True):
             return iter(lambda: '', 1)  # infinite loop
         else:
             path = scripts_dir + filename
-            file = open(path, 'r')
-            return file.readlines()[start:]
+            with open(path, 'r', encoding='utf8') as f:
+                return f.read().splitlines()[start:]
 
     def verify_answer(exp, result, answer):
         if eq(result, eval(answer)):
@@ -63,23 +64,21 @@ def run(filename=None, test=False, start=0, verbose=True):
                 try:
                     line = input(indent=len(prompt))
                 except IOError:
-                    print()
-                    continue  # abandon current input
-            elif verbose:  # print content in the loaded script
-                print(line)
+                    print(); continue  # abandon current input
+            else:  # print content in the loaded script
+                if verbose: print(line)
+                indent = BracketTracker.next_insertion(line)
+                if line and line[-1] == '\\':
+                    line = line[:-1]
+                    if not indent: indent = len(prompt)
                 
             if loading_thread.is_alive():
                 loading_thread.join()
 
-            indent = BracketTracker.next_insertion(prompt + line)
-            if line and line[-1] == '\\':
-                line = line[:-1]
-                if not indent: indent = len(prompt)
-
             buffer.append(line)
             if indent: continue
 
-            line = ''.join(buffer).strip()
+            line = ''.join(buffer)
             buffer, indent = [], 0
 
             result = calc_eval(line)
@@ -91,13 +90,12 @@ def run(filename=None, test=False, start=0, verbose=True):
             if result is None: continue
             
             if verbose:  # print output
-                prompt = make_prompt('out')
-                print(prompt, end='')
+                prefix = make_prompt('out')
                 opts = {opt: comment == opt.upper()
                         for opt in ['sci', 'tex', 'bin', 'hex']}
-                linesep = '\n' + ' ' * len(prompt)
+                linesep = '\n' + ' ' * len(prefix)
                 output = calc_format(result, linesep=linesep, **opts)
-                print(output)
+                print(prefix + output)
             
             count += 1
 
@@ -106,7 +104,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             return
         except Warning as w:
             print(w)
-            if test and config.debug: raise Warning
+            if test and config.debug: raise #Warning
         except Exception as e:
             if str(e): print('Error:', e)
             else: print('Exiting due to an exception...')
@@ -120,12 +118,12 @@ def load_mods():
     "Load modules, which can cost some time."
     import utils.io as io
     from utils.debug import log
-    from utils.unicode import subst
+    # from utils.unicode import subst
     from eval import calc_eval, LOAD, LINE
     from format import calc_format
     from funcs import eq
     
-    io.read.subst = subst
+    # io.read.subst = subst
     log.file = io
     LOAD.run = run
     

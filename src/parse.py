@@ -2,13 +2,13 @@ import re, json, ast
 import config
 from builtin import operators
 from objects import Form, Op
-from utils.deco import memo, trace, disabled
-from utils.debug import check, check_record, pprint
+from utils.funcs import *
+from utils.debug import trace, check, check_record, pprint
 
 
 try:
     assert not config.debug
-    with open('src/utils/grammar.json') as f:
+    with open('src/utils/grammar.json', encoding='utf8') as f:
         grammar = json.load(f)
     with open('utils/semantics.json') as f:
         semantics = json.load(f)
@@ -25,21 +25,6 @@ synonyms = {
 }
 
 trace = disabled  # for logging
-
-
-# functions dealing with tags
-def is_name(s):
-    return type(s) is str and s
-
-tag_pattern = re.compile('[A-Z_:]+')
-def is_tag(s):
-    return is_name(s) and tag_pattern.match(s)
-
-def is_tree(t):
-    return isinstance(t, list) and t and is_tag(t[0])
-
-def tree_tag(t):
-    return t[0] if is_tree(t) else None
 
 
 def calc_parse(text, tag='LINE', grammar=grammar):
@@ -171,7 +156,8 @@ def calc_parse(text, tag='LINE', grammar=grammar):
             tree = ['(nospace)'] + tree
         return tree, rem
 
-    must_have = {'BIND': '=', 'MAP': '->', 'GENER': '@', 'AT': '@'}
+    must_have = {'BIND': '=', 'MAP': '->', 'AT': '@',
+                 'GENER': '@', 'GENLS': '@'}
     @trace
     @memo
     def parse_tag(tag, text):
@@ -180,7 +166,7 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         if ':' in tag: alttag, tag = tag.split(':')
 
         # prechecks to speed up parsing
-        if not text and tag not in ('LINE', 'EMPTY'):
+        if not text and tag != 'LINE':
             return None, None
         if tag in must_have and must_have[tag] not in text:
             return None, None
@@ -225,8 +211,6 @@ def calc_parse(text, tag='LINE', grammar=grammar):
         else:
             return [tag] + tree
 
-    text = lstrip(text)
-    if not text: return ['EMPTY'], ''
     return parse_tag(tag, text)
 
 
@@ -310,9 +294,10 @@ def deparse(tree):
                 x, = args
                 s = '%s%s' if x[0] in '([{' else '%s %s'
                 return s % (f, x)
-        elif tag == 'GENER':
+        elif tag[:3] == 'GEN':
             _, exp, *cs = tr
-            return '[%s @ %s]' % (rec(exp), ', '.join(map(rec, cs)))
+            s = '(%s @ %s)' if tag == 'GENER' else '[%s @ %s]'
+            return s % (rec(exp), ', '.join(map(rec, cs)))
         elif tag == 'DOM':
             return '%s ∈ %s' % tuple(map(rec, tr[1:]))
         elif tag == 'NUM':

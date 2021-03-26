@@ -3,4 +3,4 @@ precision = 6
 latex = False
 symbolic = 1
 debug = 1
-whitespace = r'[ \n]*'  # in parsing
+whitespace = r'\s*'  # used in parsing

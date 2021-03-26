@@ -1,4 +1,5 @@
 from pprint import pformat, pprint
+from functools import wraps
 import json
 import config
 
@@ -7,7 +8,6 @@ def log(*messages, debug=True, end='\n', sep='',
         indent='default', file='default'):
     if not config.debug and debug:
         return
-   
     if file == 'default':
         file = log.file
     if indent == 'default':
@@ -21,6 +21,37 @@ logfile = open('utils/calc.log', 'w', encoding='utf8')
 log.indent = 0
 log.format = str
 log.file = logfile
+
+
+def trace(f):
+    "Print info before and after the call of a function."
+    @wraps(f)
+    def _f(*args):
+        cur_logfile = log.file
+        log.file = logfile
+
+        signature = format_call(f, args)
+        log('%s:' % signature)
+        log.indent += 2
+        try:
+            result = f(*args)
+            log.indent -= 2
+        except Exception as e:
+            log(signature, ' exited due to %s' % (str(e) or 'an exception'))
+            log.indent -= 2
+            raise
+        log(f'{signature} ==> {result}')
+
+        log.file = cur_logfile
+        return result
+    return _f
+
+
+def format_call(f, args):
+    if f.__name__ == '_func':
+        f, args = args
+    return '%s%s' % (repr(f), log.format(args))
+
 
 def check(f, args, expected, record=None):
     args = freeze(args)
@@ -50,7 +81,7 @@ def deep_compare(l1, l2):
         return all(deep_compare(i1, i2) for i1, i2 in zip(l1, l2))
     
 def freeze(l):
-    "recursively convert list $l to a tuple"
+    "recursively convert the list to a tuple"
     if type(l) is list:
         return tuple(freeze(x) for x in l)
     else:

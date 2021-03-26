@@ -1,5 +1,6 @@
 from sympy import Symbol
-from utils.deco import log, trace
+from utils.debug import log, trace
+from utils.funcs import *
 import config
 
 
@@ -80,7 +81,7 @@ class Map(Function):
 
     def __init__(self, tree, env):
         _, form, body = tree
-        if form[0] != 'FORM':  # ensure it is evaluated as a form
+        if tree_tag(form) != 'FORM':  # ensure it is evaluated as a form
             form = ['FORM', form]
             
         self.form = Map.eval(form, env)
@@ -113,7 +114,7 @@ class Map(Function):
     def check_local(self):
         "Check whether the map depends on outside variables."
         def collect_vars(tr):
-            if type(tr) is list and tr:
+            if is_tree(tr):
                 if tr[0] == 'NAME':
                     vars.add(tr[1])
                 else:
@@ -157,7 +158,7 @@ class Form(list):
     def find_first_tag(self, tag):
         if self[0] == 'LIST':
             for i, item in enumerate(self[1:]):
-                if type(item) is list and item[0] == tag:
+                if tree_tag(item) == tag:
                     return i
         return None
     
@@ -294,19 +295,7 @@ class Range:
         if not isinstance(other, Range): return False
         return all(getattr(self, a) == getattr(other, a)
                    for a in ['first', 'last', 'step'])
-        
 
-class Enum:
-    def __init__(self, iterable):
-        self.it = iterable
-        
-    def __iter__(self):
-        return enumerate(self.it)
-    
-    def __repr__(self):
-        return '<enum: %s>' % self.it
-
-        
 
 if __name__ == "__main__":
     # interact()

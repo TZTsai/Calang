@@ -3,8 +3,10 @@ from operator import (
     floordiv, truediv, mod, neg, lt, gt, le, ge, inv, xor
 )
 from functools import reduce, wraps
+from itertools import product as itprod, permutations, combinations
 from numbers import *
 from fractions import Fraction
+from copy import deepcopy
 from sympy import (
     S, E, pi, nan, oo,
     Symbol, Array, Matrix, Eq, Integer, Float, Expr,
@@ -15,7 +17,8 @@ from sympy import (
     limit, integrate, diff, simplify
 )
 # import symengine  # TODO: this may boost the speed of symbolic calculation
-from objects import Range, Map, Attr, Env, Op, Enum, Function, Builtin
+from objects import Range, Map, Attr, Env, Op, Function, Builtin
+import inspect
 import config
 
 
@@ -57,10 +60,10 @@ def convert_type(val):
 
     if type(val) is bool:
         return 1 if val else 0
-    # elif isinstance(val, list) and val and type(val[0]) is str:
-    #     return val
     elif type(val) in [list, tuple]:
         return tuple(convert_type(a) for a in val)
+        # if likematrix(val): return Matrix(val)
+        # else: return val
     elif type(val) is dict:
         return Env(binds=val)
     elif callable(val) and not isinstance(val, Function):
@@ -98,21 +101,17 @@ def is_vector(value):
     return depth(value) == 1
 
 
-def is_matrix(value):
-    '''
-    >>> is_matrix([[1,2],[3,4]])
-    True
-    >>> is_matrix([[1,2,3],[1,2]])
-    False
-    >>> is_matrix([1])
-    False
-    '''
-    return (depth(value) == depth(value, min) == 2 and
-            same(map(len, value)) and len(value[0]) > 0)
-        
+def is_array(value):
+    return isinstance(value, (Array, Matrix))
+            
 
 def is_env(value):
     return isinstance(value, Env)
+
+
+def likematrix(value):
+    return (depth(value, max) == depth(value, min) == 2 and
+            same(map(len, value)) and len(value[0]) > 0)
 
 
 def_template_1 = '''
@@ -130,16 +129,6 @@ for f in ['all', 'any']:
 
 
 def same(lst):
-    '''
-    >>> same(1, 1.0, 2/2)
-    True
-    >>> same()
-    True
-    >>> same(*map(len, [[1,2],[3,4]]))
-    True
-    >>> same(1, 2, 1)
-    False
-    '''
     try: x = lst[0]
     except TypeError:
         return same(tuple(lst))
@@ -189,6 +178,18 @@ def pow(x, y):
         return reduce(dot, [x] * y, 1)
     else:
         return x ** y
+    
+def exclaim(x):
+    if callable(x):
+        args = inspect.signature(x).parameters
+        if not args:
+            return x()
+        else:
+            x2 = deepcopy(x)
+            x2.broadcast = True
+            return x2
+    else:
+        return factorial(x)
 
         
 def log2(x): return log(x) / log(2)

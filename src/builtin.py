@@ -21,7 +21,7 @@ unary_l_ops = {
 }
 
 unary_r_ops = {
-    '!': (factorial, 22), '..': (unpack, 11), '°': (deg, 24), "ᵀ": (transpose, 15)
+    '!': (exclaim, 22), '..': (unpack, 11), '°': (deg, 24), "ᵀ": (transpose, 15)
 }
 
 operators = {'BOP': binary_ops, 'LOP': unary_l_ops, 'ROP': unary_r_ops}
@@ -46,14 +46,15 @@ builtins = {
     'Number': Number, 'Integer': Integral, 'Rational': Rational, 
     'Real': Real, 'Complex': Complex, 'Fraction': Fraction,
     'Symbol': Symbol, 'Matrix': Matrix, 'Array': Array, 'List': tuple, 
-    'String': str, 'Env': Env, 'Range': Range, 'Enum': Enum,
+    'String': str, 'Env': Env, 'Range': Range, 'type': type,
     # common functions
     'abs': abs, 'sqrt': sqrt, 'floor': floor, 'ceil': ceiling, 
     # list functions
     'list': tuple, 'len': len, 'max': max, 'min': min, 'all': all_, 'any': any_,
-    'enum': enumerate, 'zip': zip, 'sort': sorted,
+    'enum': enumerate, 'zip': zip, 'sort': sorted, 'find': findall,
     'sum': sum_, 'prod': prod, 'Σ': summation, 'Π': product,
-    'find': findall, 'next': next,
+    # iter functions
+    'next': next, 'itprod': itprod, 'perms': permutations, 'combs': combinations,
     # array functions
     'matrix': Matrix, 'shape': shape, 'depth': depth, 'transp': transpose, 'flatten': flatten,
     # real valued functions
