@@ -1,8 +1,4 @@
-SEQ     := TS ( BOP TS ) *
-TS      := APP | MUL | TERM
+SEQ     := TERM ( MID TERM ) *
+MID     := BOP | EMP
+EMP     := //
 TERM    := LOP * ITEM ROP *
-ITEM    := GET | IDX | UNIT
-GET     := UNIT ATTR +
-IDX     := UNIT LIST +
-APP     := FUNC TS
-MUL     := TERM TS

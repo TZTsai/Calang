@@ -1,4 +1,5 @@
-LINE    := ( CMD | EVAL ) ? ( # /.*/ ) ?
+LINE    := ( CMD | EVAL ) ? COMMENT ?
+COMMENT := # /.*/
 
 CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | PYTHON | EXIT
 
@@ -22,7 +23,7 @@ NAME    := /[^\W\d]\w*/  ## /([^\W\d]|[\u0080-\U00100000])[\w\u0080-\U00100000]*
 ATTR    := . / ATTR:NAME
 EXP     := MAP | AT | PHRASE
 
-MAP     := FORM:ITEM → EXP
+MAP     := FORM:ITEM -> EXP
 AT      := @ ITEM EXP
 PHRASE  := ITEM +
 
@@ -44,7 +45,7 @@ UNPACK  := ITEM ..
 ARRAY   := ⟨ ( @SEQ LIST:SEQ ; ) ⟩
 SEQ     :=  @SEQ EXP ,
 
-ATOM    := STR | ANS | ATTR | OP | VAR | NUM | UNKNOWN
+ATOM    := ATTR | ANS | STR | OP | NUM | UNKNOWN | VAR
 ANS     := /\$(\d+|\$*)/
 STR     := /[a-z]?"(?:[^"\\]|\\.)*"/
 OP      := ???    ## define it in 'grammar.py'

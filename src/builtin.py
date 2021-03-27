@@ -8,12 +8,12 @@ def construct_ops(op_dict, type):
         
 
 binary_ops = {
-    '+': (add, 6), '-': (sub, 6), '×': (mul, 8), '÷': (div, 8), '^': (pow, 18),
+    '+': (add, 6), '-': (sub, 6), '*': (mul, 8), '/': (div, 8), '^': (pow, 20),
     '//': (floordiv, 8), './': (truediv, 8), '%': (mod, 8), '/%': (divmod, 8), '⋅': (dot, 10),
-    '&': (and_, 8), '|': (or_, 7), '⊗': (xor, 3), '∧': (land, 3), '∨': (lor, 2),
+    '&': (and_, 8), '|': (or_, 7), 'xor': (xor, 3), '/\\': (land, 3), '\\/': (lor, 2),
     '==': (eq, 0), '~=': (neq, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
-    'in': (in_, -2), ':': (range_, 4), '.': (index, 16), '<-': (substitute, 22),
-    '(get)': (get_attr, 25), '(app)': (apply, 30)
+    'in': (in_, -2), ':': (range_, 4), '.': (index, 16), '<-': (substitute, 7.5),
+    '(get)': (get_attr, 30), '(app)': (apply, 28), '': (empty, -99)
 }
 
 unary_l_ops = {

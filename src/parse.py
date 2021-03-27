@@ -15,6 +15,20 @@ try:
 except:
     from grammar import grammar, semantics
 
+    
+def compile_grammar(grammar):
+    def compile(tree):
+        if type(tree) in [list, tuple]:
+            if tree[0] == 'RE':
+                return ('RE', re.compile(tree[1]))
+            else:
+                return tuple(compile(t) for t in tree)
+        else:
+            return tree
+    for tag, tree in grammar.items():
+        grammar[tag] = compile(tree)
+    return grammar
+
 
 class Parser:
     failed = None, None
@@ -68,17 +82,15 @@ class Parser:
     
     def add_to_seq(self, seq, tr):
         if not tr: return
-        # if tr[0] == '(merge)':  # (merge) is a special tag to merge into seq
-        #     tr.pop(0)
-        if tr in self.to_merge:
-            for t in tr: self.add_to_seq(seq, t)
+        elif tr in self.to_merge:
             self.to_merge.remove(tr)
+            for t in tr: self.add_to_seq(seq, t)
         else:
             seq.append(tr)
     
     def parse_atom(self, tag, pattern, text):
         if tag == 'RE':
-            m = re.match(pattern, text)
+            m = pattern.match(text)
             if not m: return self.failed
             else: return m[0], text[m.end():]
         else:  # STR or MARK
@@ -111,10 +123,9 @@ class Parser:
             else: return [], text 
         elif op == '-':
             seq = []
-            
+
         self.to_merge.append(seq)
         return seq, rem
-        # tree = ['(merge)'] + seq
     
     @trace
     @memo
@@ -130,30 +141,28 @@ class Parser:
         return tree, rem
 
     def process_tag(self, tag, tree):
-        # if tag[0] == '_':
-        #     tag = '(merge)'
-        # if tree and tree[0] == '(merge)':
-        #     tree = tree[1:]
-
         if not tree:
             return [tag]
-        elif is_name(tree):
-            return [tag, tree]
-        elif is_tree(tree):
+        elif type(tree) is list:
             if tag in self.held_tags:
-                tree = [tag, tree]
-            if tag[0] == '_':
-                tree = tree[1:]
-                self.to_merge.append(tree)
+                if is_tree(tree):
+                    tree = [tag, tree]
+                else:
+                    tree = [tag] + tree
+            elif not is_tree(tree):
+                if len(tree) == 1:
+                    tree = tree[0]
+                elif tag[0] == '_':
+                    self.to_merge.append(tree)
+                else:
+                    tree = [tag] + tree
             return tree
-        elif len(tree) == 1:
-            return self.process_tag(tag, tree[0])
         else:
-            return [tag] + tree
+            return [tag, tree]
 
 
 class CalcParser(Parser):
-    grammar = grammar
+    grammar = compile_grammar(grammar)
 
     held_tags = {
         'DIR', 'DEL', 'QUOTE', 'UNQUOTE', 'INFO',
@@ -163,33 +172,16 @@ class CalcParser(Parser):
     keywords = {'dir', 'load', 'config', 'import', 'del',
                 'info', 'exit', 'if', 'and', 'or'}
 
-    synonyms = {
-        '×': ['*'],         '÷': ['/'],         'in': ['∈'],
-        '∨': ['/\\'],      '∧': ['\\/'],      '⊗': ['xor'],
-        '→': ['->'],        '←': ['<-']
-    }
-
-    @classmethod
-    def try_synonyms(cls, parse):
-        synonyms = cls.synonyms
-        
-        def wrapped(tag, pattern, text):
-            tr, rem = parse(tag, pattern, text)
-            if tr is None:
-                if tag in ('STR', 'MARK') and pattern in synonyms:
-                    for altpat in synonyms[pattern]:
-                        tr, rem = parse(tag, altpat, text)
-                        if tr is not None:
-                            return pattern if tag == 'STR' else [], rem
-            return tr, rem
-        
-        return wrapped
+    synonyms = str.maketrans({
+        '×': '*',         '÷': '/',         '∈': 'in',
+        '∨': '/\\',      '∧': '\\/',      '⊗': 'xor',
+        '→': '->',        '←': '<-'
+    })
 
     def __init__(self):
         super().__init__()
         self.catstr = None
         self.whitespace = self.grammar[' ']
-        self.parse_atom = CalcParser.try_synonyms(self.parse_atom)
         
     def add_to_seq(self, seq, tr):
         if not tr: return
@@ -228,13 +220,13 @@ class CalcParser(Parser):
             text = self.lstrip(text)
             
         tree, rem = super().parse_tag(tag, text)
-        
         return tree, rem
     
 
 calc_parser = CalcParser()
 
 def calc_parse(text):
+    text = text.translate(CalcParser.synonyms)
     return calc_parser.parse_tag('LINE', text)
 
         

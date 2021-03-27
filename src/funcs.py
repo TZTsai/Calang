@@ -76,32 +76,33 @@ def convert_type(val):
                 return val
 
 
-def is_number(value):
-    return isinstance(value, Number)
-
-
 def iterable(value):
-    try:
-        iter(value); return True
-    except:
-        return False
+    return hasattr(value, '__iter__')
 
 
 def indexable(value):
     return hasattr(value, '__getitem__')
 
 
+def is_number(value):
+    return isinstance(value, Number)
+
+
+def is_attr(value):
+    return isinstance(value, Attr)
+
+
 def is_list(value):
     return isinstance(value, tuple)
 
 
-def is_vector(value):
-    return depth(value) == 1
-
-
 def is_array(value):
     return isinstance(value, (Array, Matrix))
-            
+
+
+def is_matrix(value):
+    return isinstance(value, Matrix)
+
 
 def is_env(value):
     return isinstance(value, Env)
@@ -177,6 +178,9 @@ def pow(x, y):
         return reduce(dot, [x] * y, 1)
     else:
         return x ** y
+    
+def empty(x, y):
+    raise RuntimeError  # should not be applied
     
 def exclaim(x):
     if callable(x):
@@ -344,11 +348,15 @@ def index(lst, idx):
         items = ind(lst, id0)
         return index(items, idx[1:])
     
-def get_attr(obj, attr: Attr):
-    if isinstance(obj, Env):
-        return obj[attr.name]
+def get_attr(obj, attr):
+    if isinstance(attr, Attr):
+        attr = attr.name
     else:
-        return getattr(obj, attr.name)
+        raise TypeError
+    if isinstance(obj, Env):
+        return obj[attr]
+    else:
+        return getattr(obj, attr)
     
 
 def shape(x):

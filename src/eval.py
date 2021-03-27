@@ -33,9 +33,9 @@ from my_utils.utils import interact
 
 from parse import calc_parse, semantics, Parser
 from builtin import operators, binary_ops, builtins, shortcircuit_ops, amb_ops
-from funcs import is_list, iterable, indexable, apply, Fraction, eq, get_attr
+from funcs import is_list, is_attr, iterable, indexable, apply, Fraction, eq, get_attr
 from sympy import Expr, Symbol, Array, Matrix, Eq, solve
-from objects import Env, stack, Op, Attr, Function, Map, Form
+from objects import Env, Op, Attr, Function, Map, Form
 from utils.debug import log, trace
 from utils.funcs import *
 import config
@@ -67,8 +67,7 @@ def calc_eval(exp, env=None):
 # substitution rules
 
 def EVAL(tr):
-    if tr[-1] != ';':
-        return tr[-1]
+    if tr[-1] != ';': return tr[-1]
 
 def COMPLEX(tr):
     re, pm, im = tr[1:]
@@ -103,68 +102,123 @@ def INFO(tr):
     print(tr[1].__doc__)
     
 def LINE(tr):
-    if type(tr[-1]) is str:
-        LINE.comment = tr[-1]
-        if len(tr) > 2:
-            return tr[1]
+    if tree_tag(tr[-1]) == 'COMMENT':
+        LINE.comment = tr[-1][1]
+        if len(tr) > 2: return tr[1]
     elif len(tr) > 1:
         return tr[1]
+    
+def COMMENT(tr):
+    return tr
     
 LINE.comment = None
 
 
-def ITEMS(tr):
-    # if any(is_tree(t) and tree_tag(t) != 'OP' for t in tr):
-    #     return tr  # only ambiguous OPs can remain tree form
-    seq = match_ops_in_seq(tr[1:])
+class ItemStack(list):
+    class substack(ItemStack):
+        def __init__(self, parent):
+            self.parent = parent
 
-    ops = stack()
-    vals = stack()
+        def pop(self, i=-1):
+            x = self.parent.pop(i)
+            y = self.pop(i)
+            assert type(x) == type(y)
+            return x
+        
+        def append(self, x):
+            self.parent.append(x)
+            self.append(x)
+
+    def __init__(self):
+        self.ops = ItemStack.substack(self)
+        self.vls = ItemStack.substack(self)
+        
+    def peek(self):
+        return self[-1] if self else None
+
     
-    backward_bops = ['(app)']  # combine in the reverse order
+def ITEMS(tr):
+    # these are binary ops that can be represented by a space
+    get = binary_ops['(get)']
+    app = binary_ops['(app)']
+    idx = binary_ops['.']
+    mul = binary_ops['⋅']
+
+    # binary ops that combine in the reverse order
+    backward_bops = [app]
+
+    seq = match_ops_in_seq(tr[1:])
+    stk = ItemStack()
     
     def squeeze():
-        op = ops.pop()
+        "Applies the previous operator."
+        op = stk.ops.pop()
         if op.type == 'BOP':
-            x = ['APP', op, vals.pop(-2), vals.pop(-1)]
+            x = ['APP', op, stk.vls.pop(-2), stk.vls.pop(-1)]
         else:
-            x = ['APP', op, vals.pop()]
-        vals.push(x)
-                
+            x = ['APP', op, stk.vls.pop()]
+        stk.vls.append(x)
+
     def push(x):
         if isinstance(x, Op):
-            while ops:
-                op = ops.peek()
+            if x.symbol == '':  # a hidden op given by a space
+                push.wait = True
+                stk.ops.append(x); return
+                
+            while stk.ops:
+                op = stk.ops.peek()
                 if (x.priority > op.priority or
-                    x == op and op.symbol in backward_bops or
+                    x == op and op in backward_bops or
                     push.prev is op and op.type in ['BOP', 'LOP']):
                         break
                 else: squeeze()
-            ops.push(x)
+            stk.ops.append(x)
         else:
-            vals.push(x)
+            while stk.ops and stk.ops.peek().type == 'ROP':
+                squeeze()  # apply previous right-unary ops
+            
+            if push.wait:  # waiting for the interpretation of ''
+                stk.vls.append(x)
+                while stk.ops and stk.ops.peek().type == 'LOP':
+                    squeeze()  # apply previous left-unary ops
+                assert stk.ops.pop().symbol == ''
+                push.wait = False
+                
+                x2, x1 = stk.vls.pop(), stk.vls.peek()
+                if is_attr(x2):
+                    push(get)
+                elif callable(x1):
+                    push(app)
+                else:
+                    try:
+                        y = apply(idx, [x1, x2])
+                        stk.vls.pop(); push(y)
+                    except:
+                        push(mul)
+            stk.vls.append(x)
         push.prev = x
 
     push.prev = None
+    push.wait = False
     
-    for x in seq: push(x)
-    while ops: squeeze()
+    for x in seq:
+        push(x)
+    while stk.ops:
+        squeeze()
     
-    tree = vals.pop()
-    assert not vals
-    return eval_tree(tree)
+    val = stk.vls.pop()
+    assert not stk.vls
+    return val
 
 
 class PhraseParser(Parser):
     grammar = semantics
     tests = {
-        'ATTR': lambda x: isinstance(x, Attr),
-        'FUNC': callable,
-        'LIST': is_list,
-        'UNIT': lambda x: not isinstance(x, (list, Op))
+        # 'ATTR': lambda x: isinstance(x, Attr),
+        # 'FUNC': callable,
+        # 'LIST': is_list,
+        'ITEM': lambda x: not isinstance(x, (list, Op))
     }
-    # _cache = {}
-    # def parse_tag(self, )
 
     def parse_atom(self, _, tag, phrase):
         if tag in ['LOP', 'BOP', 'ROP']:
@@ -187,31 +241,27 @@ class PhraseParser(Parser):
         else:
             raise SyntaxError('unknown atom %s' % tag)
         
-    
 phrase_parser = PhraseParser()
 
-    
+
 def match_ops_in_seq(seq):
-
-    get = binary_ops['(get)']
-    app = binary_ops['(app)']
-    idx = binary_ops['.']
-    mul = binary_ops['⋅']
-
+    """
+    Check if the seq is in correct syntax, disambiguate operators and add
+    hidden binary operators if necessary (representing multiplication etc.).
+    """
     def flatten(tree):
         if is_tree(tree):
             if len(tree) == 2:
                 return flatten(tree[1])
-
             tag = tree_tag(tree)
-            args = map(flatten, tree[1:])
-
             if tag in ['SEQ', 'TERM']:
-                return cat(*args)
-            elif tag in ['GET', 'APP', 'IDX', 'MUL']:
-                nonlocal get, app, idx, mul
-                lv, rv = args
-                return cat(lv, eval(tag.lower()), rv)
+                return cat(*map(flatten, tree[1:]))
+            # elif tag in ['GET', 'APP', 'IDX', 'MUL']:
+            #     nonlocal get, app, idx, mul
+            #     lv, rv = args
+            #     return cat(lv, eval(tag.lower()), rv)
+            elif tag == 'EMP':
+                return [binary_ops['']]
             else:
                 raise SyntaxError
         else:

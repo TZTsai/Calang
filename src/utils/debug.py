@@ -100,7 +100,7 @@ def deep_compare(l1, l2):
     
 def freeze(l):
     "recursively convert the list to a tuple"
-    if type(l) is list:
+    if type(l) in [list, tuple]:
         return tuple(freeze(x) for x in l)
     else:
         return l

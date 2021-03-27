@@ -128,13 +128,14 @@ def prune(tree):
             tree.pop(2)
         elif tree[0] in ('STR', 'RE'):
             tree[1] = tree[1][1:-1]
+            # if tree[0] == 'RE':
+            #     tree[1] = re.compile(tree[1])
         for t in tree: prune(t)
 
 def flatten_nested(tree):
     if type(tree) is list:
-        while tree[-1][0] == tree[0]:
-            last = tree.pop(-1)
-            tree.extend(last[1:])
+        while type(tree[-1]) is list and tree[-1][0] == tree[0]:
+            tree.extend(tree.pop(-1)[1:])
         for t in tree: flatten_nested(t)            
 
 # @trace

@@ -3,19 +3,19 @@
     "ALT",
     [
       "OBJ",
-      "TS"
+      "TERM"
     ],
     [
       "ITEM_OP",
       [
         "ALT",
         [
-          "MARK",
-          "BOP"
+          "OBJ",
+          "MID"
         ],
         [
           "OBJ",
-          "TS"
+          "TERM"
         ]
       ],
       [
@@ -24,20 +24,20 @@
       ]
     ]
   ],
-  "TS": [
+  "MID": [
     "EXP",
     [
-      "OBJ",
-      "APP"
+      "MARK",
+      "BOP"
     ],
     [
       "OBJ",
-      "MUL"
-    ],
-    [
-      "OBJ",
-      "TERM"
+      "EMP"
     ]
+  ],
+  "EMP": [
+    "RE",
+    ""
   ],
   "TERM": [
     "ALT",
@@ -53,7 +53,7 @@
       ]
     ],
     [
-      "OBJ",
+      "MARK",
       "ITEM"
     ],
     [
@@ -66,79 +66,6 @@
         "OP",
         "*"
       ]
-    ]
-  ],
-  "ITEM": [
-    "EXP",
-    [
-      "OBJ",
-      "GET"
-    ],
-    [
-      "OBJ",
-      "IDX"
-    ],
-    [
-      "MARK",
-      "UNIT"
-    ]
-  ],
-  "GET": [
-    "ALT",
-    [
-      "MARK",
-      "UNIT"
-    ],
-    [
-      "ITEM_OP",
-      [
-        "MARK",
-        "ATTR"
-      ],
-      [
-        "OP",
-        "+"
-      ]
-    ]
-  ],
-  "IDX": [
-    "ALT",
-    [
-      "MARK",
-      "UNIT"
-    ],
-    [
-      "ITEM_OP",
-      [
-        "MARK",
-        "LIST"
-      ],
-      [
-        "OP",
-        "+"
-      ]
-    ]
-  ],
-  "APP": [
-    "ALT",
-    [
-      "MARK",
-      "FUNC"
-    ],
-    [
-      "OBJ",
-      "TS"
-    ]
-  ],
-  "MUL": [
-    "ALT",
-    [
-      "OBJ",
-      "TERM"
-    ],
-    [
-      "OBJ",
-      "TS"
     ]
   ]
 }
