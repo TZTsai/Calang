@@ -22,7 +22,7 @@ NAME    := /[^\W\d]\w*/  ## /([^\W\d]|[\u0080-\U00100000])[\w\u0080-\U00100000]*
 ATTR    := . / ATTR:NAME
 EXP     := MAP | AT | PHRASE
 
-MAP     := FORM:ITEM -> EXP
+MAP     := FORM:ITEM → EXP
 AT      := @ ITEM EXP
 PHRASE  := ITEM +
 

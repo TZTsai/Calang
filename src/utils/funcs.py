@@ -43,6 +43,3 @@ def memo(f):
             return f(*args)
     return _f
 
-
-def disabled(f, *ignore): return f  # used to disable a decorator
-

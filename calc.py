@@ -1,4 +1,5 @@
 import threading
+import traceback
 import sys, os
 
 # read program arguments
@@ -9,12 +10,15 @@ test = '-t' in sys.argv
 scripts_dir = os.path.join(os.getcwd(), 'scripts/')
 
 import src
-from utils.io import BracketTracker, input
 import config
+import utils.io as io
+from utils.debug import log
+from utils.io import BracketTracker, input, print
 
 config.debug = debug
+log.file = io
 
-    
+
 def run(filename=None, test=False, start=0, verbose=True):
     def get_lines(filename):
         if interactive:
@@ -31,18 +35,15 @@ def run(filename=None, test=False, start=0, verbose=True):
             raise Warning('--- Fail! Expected answer of %s is %s, but actual result is %s ---'
                           % (exp, answer, str(result)))
             
-    arrow_choices = ['»=«', '▶=◀', '➤=', '▷=◁']
-    bracket_choices = ['()', '[]', '⟦⟧', '﴾﴿']
-    my_arrows, my_brackets = 2, 1
+    left_arrow_choices  = '❮◀👈🤛'
+    right_arrow_choices = '=👉🤜'
+    left_arrow  = left_arrow_choices[0]
+    right_arrow = right_arrow_choices[0]
+    error_sign = '👎'
+    
     def make_prompt(in_out='in'):
-        arrows = arrow_choices[my_arrows]
-        if in_out == 'in':
-            arrow = arrows[0]
-            brackets = bracket_choices[my_brackets]
-        else:
-            arrow = arrows[1]
-            brackets = '$ '
-        prompt = '%s%d%s%s ' % (brackets[0], count, brackets[1], arrow)
+        arrow = left_arrow if in_out == 'in' else right_arrow
+        prompt = '$%d %s ' % (count, arrow)
         return prompt
 
     interactive = filename is None
@@ -58,6 +59,7 @@ def run(filename=None, test=False, start=0, verbose=True):
                     prompt = ' ' * indent
                 else:
                     prompt = make_prompt()
+                    error_prompt = ' ' * (len(prompt) - 3) + error_sign
                 print(prompt, end='')
                 
             if interactive:  # get input
@@ -100,15 +102,20 @@ def run(filename=None, test=False, start=0, verbose=True):
             count += 1
 
         except KeyboardInterrupt:
-            print('\nByebye!')
+            print('\nSee you! 👋')
             return
         except Warning as w:
             print(w)
             if test and config.debug: raise #Warning
         except Exception as e:
-            if str(e): print('Error:', e)
-            else: print('Exiting due to an exception...')
-            if test or config.debug: raise
+            if str(e):
+                print(error_prompt, e) # print('Error:', e)
+            else:
+                print('Aborted due to an exception.')
+            if config.debug:
+                traceback.print_exc()
+                raise
+            if test: raise
             
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
@@ -116,19 +123,12 @@ def run(filename=None, test=False, start=0, verbose=True):
         
 def load_mods():
     "Load modules, which can cost some time."
-    import utils.io as io
-    from utils.debug import log
-    # from utils.unicode import subst
     from eval import calc_eval, LOAD, LINE
     from format import calc_format
     from funcs import eq
     
-    # io.read.subst = subst
-    log.file = io
     LOAD.run = run
-    
-    globals().update((obj.__name__, obj) for obj in
-                     [calc_eval, calc_format, eq, log, LINE])
+    globals().update(locals())
 
 # start another thread to speed up the startup
 loading_thread = threading.Thread(target=load_mods)
@@ -150,8 +150,6 @@ if len(sys.argv) > 1 or test:
         run(filename, test)
     except FileNotFoundError:
         raise FileNotFoundError('script "%s" not found' % filename)
-    except Exception:
-        if config.debug: raise
     finally:
         log.file.close()
 else:

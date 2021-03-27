@@ -1,5 +1,6 @@
 from pprint import pformat, pprint
 from functools import wraps
+import traceback
 import json
 import config
 
@@ -47,12 +48,29 @@ def trace(f):
     return _f
 
 
+def disabled(f, *ignore): return f  # used to disable a decorator
+
+if not config.debug: trace = disabled
+
+
 def format_call(f, args):
     if f.__name__ == '_func':
         f, args = args
     return '%s%s' % (repr(f), log.format(args))
 
 
+def interact(func):
+    print('interactive testing of calc_parse:')
+    record = {}
+    while True:
+        exp = input('>>> ')
+        if exp in 'qQ':
+            return record
+        else:
+            result = func(exp)
+            pprint(result)
+            record[exp,] = None  # for writing to testfile
+            
 def check(f, args, expected, record=None):
     args = freeze(args)
     actual = f(*args)

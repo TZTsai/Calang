@@ -3,12 +3,12 @@ import config
 from builtin import operators
 from objects import Form, Op
 from utils.funcs import *
-from utils.debug import trace, check, check_record, pprint
+from utils.debug import trace, interact, check, check_record, pprint
 
 
 try:
     assert not config.debug
-    with open('src/utils/grammar.json', encoding='utf8') as f:
+    with open('utils/grammar.json', encoding='utf8') as f:
         grammar = json.load(f)
     with open('utils/semantics.json') as f:
         semantics = json.load(f)
@@ -16,89 +16,163 @@ except:
     from grammar import grammar, semantics
 
 
-keywords = {'dir', 'load', 'config', 'import', 'del', 'info', 'exit'}
+class Parser:
+    failed = None, None
+    grammar = None
+    held_tags = set()
+    
+    def __init__(self):
+        self.to_merge = []
+    
+    def parse_tree(self, rule, text):
+        tag, body = rule[0], rule[1:]
 
-synonyms = {
-    '×': ['*'],         '÷': ['/'],         'in': ['∈'],
-    '∨': ['/\\'],      '∧': ['\\/'],       '⊗': ['xor'],
-    '->': ['→'],        '<-': ['←']
-}
-
-trace = disabled  # for logging
-
-
-def calc_parse(text, tag='LINE', grammar=grammar):
-    whitespace = grammar[' ']
-    no_space = False
-
-    def lstrip(text):
-        if no_space: return text
-        sp = re.match(whitespace, text)
-        return text[sp.end():]
-
-    # @memo
-    def parse_tree(syntax, text):
-        tag, body = syntax[0], syntax[1:]
-
-        if text == '' and tag not in ('ITEM_OP', 'RE'):
-            return None, None
+        if not text and tag not in ('ITEM_OP', 'RE'):
+            return self.failed
 
         if tag == 'EXP':
-            return parse_alts(body, text)
+            return self.parse_alts(body, text)
         elif tag in ('ALT', 'ITEMS', 'VARS'):
-            return parse_seq(body, text)
+            return self.parse_seq(body, text)
         elif tag in ('OBJ', 'PAR'):
-            return parse_tag(body[0], text)
+            return self.parse_tag(body[0], text)
         elif tag == 'ITEM_OP':
             item, [_, op] = body
-            return parse_op(item, op, text)
+            return self.parse_op(item, op, text)
         else:
-            return parse_atom(tag, body[0], text)
-
-    # @trace
-    def parse_alts(alts, text):
+            return self.parse_atom(tag, body[0], text)
+        
+    def parse_alts(self, alts, text):
         for alt in alts:
-            tree, rem = parse_tree(alt, text)
+            tree, rem = self.parse_tree(alt, text)
             if rem is not None:
                 return tree, rem
-        return None, None
+        return self.failed
 
-    # @trace
-    def parse_seq(seq, text):
+    def parse_seq(self, seq, text):
         tree, rem = [], text
 
         # precheck if the keywords are in the text
         for item in seq:
-            if item[0] == 'STR' and item[1][1:-1] not in text:
-                return None, None
-
-        nonlocal no_space
+            if type(text) is not str: break
+            if item[0] in ['STR', 'MARK'] and item[1] not in text:
+                return self.failed
+            
         for item in seq:
-            tr, rem = parse_tree(item, rem)
-            if rem is None: return None, None
-            if tr:
-                if tr[0] == '(nospace)':
-                    no_space = True
-                    tr.pop(0)
-                elif no_space:
-                    no_space = False
-                    if is_name(tr):
-                        try: tree[-1] += tr; continue
-                        except: pass
-                add_to_seq(tree, tr)
-
+            tr, rem = self.parse_tree(item, rem)
+            if tr is None: return self.failed
+            self.add_to_seq(tree, tr)
+            
         if len(tree) == 1: tree = tree[0]
         return tree, rem
-
-    def add_to_seq(seq, tr):
+    
+    def add_to_seq(self, seq, tr):
         if not tr: return
-        if tr[0] == '(merge)':  # (merge) is a special tag to merge into seq
-            tr.pop(0)
-            for t in tr: add_to_seq(seq, t)
-        else: 
+        # if tr[0] == '(merge)':  # (merge) is a special tag to merge into seq
+        #     tr.pop(0)
+        if tr in self.to_merge:
+            for t in tr: self.add_to_seq(seq, t)
+            self.to_merge.remove(tr)
+        else:
             seq.append(tr)
+    
+    def parse_atom(self, tag, pattern, text):
+        if tag == 'RE':
+            m = re.match(pattern, text)
+            if not m: return self.failed
+            else: return m[0], text[m.end():]
+        else:  # STR or MARK
+            try:
+                pre, rem = text.split(pattern, 1)
+                assert not pre
+                mat = pattern if tag == 'STR' else []
+                return mat, rem
+            except:
+                return self.failed
+           
+    # Caution: must not add @memo decorator!
+    def parse_op(self, item, op, text):
+        seq, rem = [], text
+        rep, maxrep = 0, (-1 if op in '+*' else 1)
+
+        while maxrep < 0 or rep < maxrep:
+            tr, _rem = self.parse_tree(item, rem)
+            if _rem is None: break
+            if tr:
+                if type(tr[0]) is list: seq.extend(tr)
+                else: seq.append(tr)
+            rem = _rem
+            rep += 1
+
+        if op in '+/-' and rep == 0:
+            return self.failed
+        elif op == '!':
+            if rep: return self.failed
+            else: return [], text 
+        elif op == '-':
+            seq = []
             
-    def try_synonyms(parse):
+        self.to_merge.append(seq)
+        return seq, rem
+        # tree = ['(merge)'] + seq
+    
+    @trace
+    @memo
+    def parse_tag(self, tag, text):
+        alttag = None
+        if ':' in tag:  # ALTTAG:TAG
+            alttag, tag = tag.split(':')
+
+        tree, rem = self.parse_tree(self.grammar[tag], text)
+        if tree is None: return self.failed
+        if alttag: tag = alttag
+        tree = self.process_tag(tag, tree)
+        return tree, rem
+
+    def process_tag(self, tag, tree):
+        # if tag[0] == '_':
+        #     tag = '(merge)'
+        # if tree and tree[0] == '(merge)':
+        #     tree = tree[1:]
+
+        if not tree:
+            return [tag]
+        elif is_name(tree):
+            return [tag, tree]
+        elif is_tree(tree):
+            if tag in self.held_tags:
+                tree = [tag, tree]
+            if tag[0] == '_':
+                tree = tree[1:]
+                self.to_merge.append(tree)
+            return tree
+        elif len(tree) == 1:
+            return self.process_tag(tag, tree[0])
+        else:
+            return [tag] + tree
+
+
+class CalcParser(Parser):
+    grammar = grammar
+
+    held_tags = {
+        'DIR', 'DEL', 'QUOTE', 'UNQUOTE', 'INFO',
+        'ENV', 'LIST', 'ARRAY', 'FORM', 'NS', 'UNPACK'
+    }
+
+    keywords = {'dir', 'load', 'config', 'import', 'del',
+                'info', 'exit', 'if', 'and', 'or'}
+
+    synonyms = {
+        '×': ['*'],         '÷': ['/'],         'in': ['∈'],
+        '∨': ['/\\'],      '∧': ['\\/'],      '⊗': ['xor'],
+        '→': ['->'],        '←': ['<-']
+    }
+
+    @classmethod
+    def try_synonyms(cls, parse):
+        synonyms = cls.synonyms
+        
         def wrapped(tag, pattern, text):
             tr, rem = parse(tag, pattern, text)
             if tr is None:
@@ -108,149 +182,60 @@ def calc_parse(text, tag='LINE', grammar=grammar):
                         if tr is not None:
                             return pattern if tag == 'STR' else [], rem
             return tr, rem
+        
         return wrapped
 
-    @try_synonyms
-    def parse_atom(tag, pattern, text):
-        text = lstrip(text)
-        # if tag in ('STR', 'RE'):
-        #     pattern = pattern[1:-1]
-        if tag == 'RE':
-            m = re.match(pattern, text)
-            if not m: return None, None
-            else: return m[0], text[m.end():]
-        else:  # STR or MARK
-            if tag == 'MARK':
-                pattern = ast.literal_eval('"%s"' % pattern)
-            try:
-                pre, rem = text.split(pattern, 1)
-                assert not pre
-                return pattern if tag == 'STR' else [], rem
-            except:
-                return None, None
-           
-    # @trace
-    # Caution: must not add @memo decorator!
-    def parse_op(item, op, text):
-        seq, rem = [], text
-        rep, maxrep = 0, (-1 if op in '+*' else 1)
-
-        while maxrep < 0 or rep < maxrep:
-            tr, _rem = parse_tree(item, rem)
-            if _rem is None: break
-            if tr:
-                if type(tr[0]) is list: seq.extend(tr)
-                else: seq.append(tr)
-            rem = _rem
-            rep += 1
-
-        if op in '+/-' and rep == 0:
-            return None, None
-        elif op == '!':
-            if rep: return None, None
-            else: return [], text 
-        elif op == '-':
-            seq = []
-        tree = ['(merge)'] + seq
-        if op == '/':
-            tree = ['(nospace)'] + tree
+    def __init__(self):
+        super().__init__()
+        self.catstr = None
+        self.whitespace = self.grammar[' ']
+        self.parse_atom = CalcParser.try_synonyms(self.parse_atom)
+        
+    def add_to_seq(self, seq, tr):
+        if not tr: return
+        if self.catstr:
+            assert tr == self.catstr
+            seq[-1] += tr
+            self.catstr = None
+        else:
+            super().add_to_seq(seq, tr)
+        
+    def lstrip(self, text):
+        if self.catstr: return text
+        sp = re.match(self.whitespace, text)
+        return text[sp.end():]
+        
+    def parse_atom(self, tag, pattern, text):
+        text = self.lstrip(text)
+        tree, rem = super().parse_atom(tag, pattern, text)
+        if is_name(tree) and tree in self.keywords:
+            return self.failed
+        else:
+            return tree, rem
+        
+    def parse_op(self, item, op, text):
+        tree, rem = super().parse_op(item, op, text)
+        if tree and op == '/':
+            assert type(tree) is str
+            self.no_space.append(tree)
         return tree, rem
-
-    must_have = {'BIND': '=', 'MAP': '->', 'AT': '@',
-                 'GENER': '@', 'GENLS': '@'}
-    @trace
-    @memo
-    def parse_tag(tag, text):
-        # allow OBJ:ALTNAME; changes the tag to ALTNAME
-        alttag = None
-        if ':' in tag: alttag, tag = tag.split(':')
-
+    
+    def parse_tag(self, tag, text):
         # prechecks to speed up parsing
         if not text and tag != 'LINE':
-            return None, None
-        if tag in must_have and must_have[tag] not in text:
-            return None, None
+            return self.failed
         if tag == 'OP':
-            text = lstrip(text)
-
-        tree, rem = parse_tree(grammar[tag], text)
-        if rem is None:
-            return None, None
-        if tag == 'NAME' and tree in keywords:
-            return None, None
-        # if tag == 'OP' and tree in synonym_ops:
-        #     tree = synonym_ops[tree]
-        if tree and tree[0] == '(merge)':
-            tree = tree[1:]
-        tree = process_tag(alttag if alttag else tag, tree)
-        return tree, rem
-
-    kept_tags = lambda tag: tag in {
-        'DIR', 'DEL', 'QUOTE', 'UNQUOTE', 'INFO',
-        'ENV', 'LIST', 'ARRAY', 'FORM', 'NS', 'UNPACK'
-    }
-    # @trace
-    def process_tag(tag, tree):
-        if tag[0] == '_':
-            tag = '(merge)'
-        # if tag == 'BIND':  # special syntax for inheritance
-        #     convert_if_inherit(tree)
-
-        if not tree:
-            return [tag]
-        elif is_name(tree):
-            return [tag, tree]
-        elif is_tree(tree):
-            if kept_tags(tag):
-                tree = [tag, tree]  # keep the list tag
-            # elif tag == 'FORM':  # special case: split the pars
-            #     tree = split_pars(tree)
-            return tree
-        elif len(tree) == 1:
-            return process_tag(tag, tree[0])
-        else:
-            return [tag] + tree
-
-    return parse_tag(tag, text)
-
-
-# def split_pars(form):
-#     "Split a FORM syntax tree into 4 parts: pars, opt-pars, ext-par, all-pars."
-
-#     def check_par(par):
-#         if par in all_pars:
-#             raise NameError('duplicate variable name')
-#         else:
-#             all_pars.add(par)
+            text = self.lstrip(text)
             
-#     if tree_tag(form) == 'PAR':
-#         return form
-#     else:
-#         pars, opt_pars = ['PARS'], ['OPTPARS']
-#         ext_par = None
-#         all_pars = set()
-#         for t in form[1:]:
-#             if t[0] == 'PAR':
-#                 check_par(t[1])
-#                 pars.append(t[1])
-#             elif t[0] == 'PAR_LST':
-#                 pars.append(split_pars(t))
-#             elif t[0] == 'OPTPAR':
-#                 check_par(t[1][1])
-#                 opt_pars.append(t[1:])
-#             else:
-#                 check_par(t[1])
-#                 ext_par = t[1]
-#     return ['FORM', pars, opt_pars, ext_par]
+        tree, rem = super().parse_tag(tag, text)
+        
+        return tree, rem
+    
 
+calc_parser = CalcParser()
 
-# def convert_if_inherit(bind):
-#     "Transform the BIND tree if it contains an inheritance from PARENT."
-#     if tree_tag(bind[1]) == 'PARENT':
-#         parent = bind.pop(1)[1]
-#         body = bind[1]
-#         tag = 'INHERIT' if tree_tag(bind[0]) == 'FUNC' else 'CLOSURE'
-#         bind[1] = [tag, parent, body]
+def calc_parse(text):
+    return calc_parser.parse_tag('LINE', text)
 
         
 def deparse(tree):
@@ -323,20 +308,6 @@ def deparse(tree):
         else:
             return str(list(map(rec, tr)))
     return rec(tree)
-
-
-# for testing
-def interact(func):
-    print('interactive testing of calc_parse:')
-    record = {}
-    while True:
-        exp = input('>>> ')
-        if exp in 'qQ':
-            return record
-        else:
-            result = func(exp)
-            pprint(result)
-            record[exp,] = None  # for writing to testfile
 
 
 if __name__ == "__main__":

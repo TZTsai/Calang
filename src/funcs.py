@@ -62,8 +62,6 @@ def convert_type(val):
         return 1 if val else 0
     elif type(val) in [list, tuple]:
         return tuple(convert_type(a) for a in val)
-        # if likematrix(val): return Matrix(val)
-        # else: return val
     elif type(val) is dict:
         return Env(binds=val)
     elif callable(val) and not isinstance(val, Function):
@@ -110,6 +108,7 @@ def is_env(value):
 
 
 def likematrix(value):
+    if isinstance(value, Matrix): return True
     return (depth(value, max) == depth(value, min) == 2 and
             same(map(len, value)) and len(value[0]) > 0)
 
@@ -207,13 +206,36 @@ def in_(x, y):
         return x in y
 
 def and_(x, y):
-    if all_(is_list, [x, y]):
-        return [i for i in x if i in y]
-    else:
+    """
+    >>> and_([1, 2], [2, 3])
+    [2]
+    >>> and_(lambda x: x%2, [1, 2, 3])
+    [1, 3]
+    >>> and_((x*2 for x in range(4)), lambda x: )
+    >>> and_(0b1011, 0b1101)
+    9
+    """
+    if all_(iterable, [x, y]):
+        if indexable(x):
+            return [i for i in y if i in x]
+        elif indexable(y):
+            return [i for i in x if i in y]
+        else:
+            return (i for i in x if i in y)
+    elif any_(callable, [x, y]):
+        if not callable(x):
+            x, y = y, x
+        if not iterable(y):
+            raise TypeError("invalid types for operator '&'")
+        g = (i for i in y if x(i))
+        return tuple(g) if indexable(y) else g
+    elif isinstance(x, Integral) and isinstance(y, Integral):
         return band(x, y)
+    else:
+        raise TypeError("invalid types for operator '&'")
 
 def or_(x, y):
-    if any_(is_list, [x, y]):
+    if any_(iterable, [x, y]):
         dx, dy = depth(x), depth(y)
         if abs(dx - dy) <= 1:
             if max(dx, dy) == 2 and len(x) == len(y):  # matrix augmentation
@@ -225,9 +247,9 @@ def or_(x, y):
             raise TypeError('dimension mismatch')
     elif all_(is_env, [x, y]):
         assert x.parent is y.parent, \
-            'two objects do not have the same parent'
-        e = Env(parent=x.parent)
-        e.update(x); e.update(y)
+            "operator '|' applied to Envs having different parents"
+        e = Env(parent=x.parent, binds=x)
+        e.update(y)
         return e
     else:
         return bor(x, y)

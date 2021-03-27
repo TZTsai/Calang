@@ -2,14 +2,171 @@
   "calc_parse": [
     [
       [
+        "x -> 4"
+      ],
+      [
+        [
+          "PHRASE",
+          [
+            "NAME",
+            "x"
+          ],
+          [
+            "OP",
+            "-"
+          ],
+          [
+            "OP",
+            ">"
+          ],
+          [
+            "REAL",
+            "4"
+          ]
+        ],
+        ""
+      ]
+    ],
+    [
+      [
+        "y = 1 if 0 or 4"
+      ],
+      [
+        [
+          "BIND",
+          [
+            "FORM",
+            [
+              "NAME",
+              "y"
+            ]
+          ],
+          [
+            "PHRASE",
+            [
+              "REAL",
+              "1"
+            ],
+            [
+              "OP",
+              "if "
+            ],
+            [
+              "REAL",
+              "0"
+            ],
+            [
+              "OP",
+              "or "
+            ],
+            [
+              "REAL",
+              "4"
+            ]
+          ]
+        ],
+        ""
+      ]
+    ],
+    [
+      [
+        "[x, y.., z=2, w..] = [1,[2],[3,4],5,z=3]"
+      ],
+      [
+        [
+          "BIND",
+          [
+            "FORM",
+            [
+              "LIST",
+              [
+                "NAME",
+                "x"
+              ],
+              [
+                "UNPACK",
+                [
+                  "NAME",
+                  "y"
+                ]
+              ],
+              [
+                "KWD",
+                [
+                  "NAME",
+                  "z"
+                ],
+                [
+                  "REAL",
+                  "2"
+                ]
+              ],
+              [
+                "UNPACK",
+                [
+                  "NAME",
+                  "w"
+                ]
+              ]
+            ]
+          ],
+          [
+            "LIST",
+            [
+              "REAL",
+              "1"
+            ],
+            [
+              "LIST",
+              [
+                "REAL",
+                "2"
+              ]
+            ],
+            [
+              "LIST",
+              [
+                "REAL",
+                "3"
+              ],
+              [
+                "REAL",
+                "4"
+              ]
+            ],
+            [
+              "REAL",
+              "5"
+            ],
+            [
+              "KWD",
+              [
+                "NAME",
+                "z"
+              ],
+              [
+                "REAL",
+                "3"
+              ]
+            ]
+          ]
+        ],
+        ""
+      ]
+    ],
+    [
+      [
         "x = 9"
       ],
       [
         [
           "BIND",
           [
-            "VAR",
-            "x"
+            "FORM",
+            [
+              "NAME",
+              "x"
+            ]
           ],
           [
             "REAL",
@@ -27,21 +184,17 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "FORM",
+              "LIST",
               [
-                "PARS",
+                "NAME",
                 "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              ]
             ]
           ],
           [
@@ -60,13 +213,13 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "PAR",
+              "NAME",
               "x"
             ]
           ],
@@ -84,51 +237,20 @@
       ],
       [
         [
-          "BIND",
+          "PHRASE",
           [
-            "FUNC",
-            [
-              "VAR",
-              "f"
-            ],
-            [
-              "FORM",
-              [
-                "PARS",
-                "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
-            ]
+            "NAME",
+            "f"
           ],
           [
-            "INHERIT",
+            "LIST",
             [
-              "SEQ",
-              [
-                "NAME",
-                "g"
-              ],
-              [
-                "VAL_LST",
-                [
-                  "NAME",
-                  "x"
-                ]
-              ]
-            ],
-            [
-              "DELAY",
-              [
-                "NAME",
-                "x"
-              ]
+              "NAME",
+              "x"
             ]
           ]
         ],
-        ""
+        " @g[x] = x"
       ]
     ],
     [
@@ -137,27 +259,10 @@
       ],
       [
         [
-          "BIND",
-          [
-            "VAR",
-            "x"
-          ],
-          [
-            "CLOSURE",
-            [
-              "NAME",
-              "e"
-            ],
-            [
-              "DELAY",
-              [
-                "NAME",
-                "s"
-              ]
-            ]
-          ]
+          "NAME",
+          "x"
         ],
-        ""
+        " @e = s"
       ]
     ],
     [
@@ -166,69 +271,10 @@
       ],
       [
         [
-          "LINE",
-          [
-            "IMPORT",
-            "Matrix"
-          ],
-          [
-            "BIND",
-            [
-              "VAR",
-              "m"
-            ],
-            [
-              "SEQ",
-              [
-                "NAME",
-                "Matrix"
-              ],
-              [
-                "VAL_LST",
-                [
-                  "VAL_LST",
-                  [
-                    "REAL",
-                    "1"
-                  ],
-                  [
-                    "REAL",
-                    "2"
-                  ]
-                ],
-                [
-                  "VAL_LST",
-                  [
-                    "REAL",
-                    "3"
-                  ],
-                  [
-                    "REAL",
-                    "4"
-                  ]
-                ]
-              ]
-            ]
-          ],
-          [
-            "SEQ",
-            [
-              "FIELD",
-              [
-                "NAME",
-                "m"
-              ],
-              [
-                "ATTR",
-                "inv"
-              ]
-            ],
-            [
-              "VAL_LST"
-            ]
-          ]
+          "IMPORT",
+          "Matrix"
         ],
-        ""
+        "; m = Matrix[[1,2],[3,4]]; m.inv[]"
       ]
     ],
     [
@@ -237,31 +283,9 @@
       ],
       [
         [
-          "VAL_LST",
-          [
-            "VAL_LST",
-            [
-              "REAL",
-              "1"
-            ],
-            [
-              "REAL",
-              "2"
-            ]
-          ],
-          [
-            "VAL_LST",
-            [
-              "REAL",
-              "3"
-            ],
-            [
-              "REAL",
-              "4"
-            ]
-          ]
+          "LINE"
         ],
-        ""
+        "[1, 2; 3, 4]"
       ]
     ],
     [
@@ -270,30 +294,9 @@
       ],
       [
         [
-          "VAL_LST",
-          [
-            "VAL_LST",
-            [
-              "REAL",
-              "1"
-            ]
-          ],
-          [
-            "VAL_LST",
-            [
-              "REAL",
-              "3"
-            ]
-          ],
-          [
-            "VAL_LST",
-            [
-              "REAL",
-              "5"
-            ]
-          ]
+          "LINE"
         ],
-        ""
+        "[1;3;5]"
       ]
     ],
     [
@@ -302,13 +305,13 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "REAL",
             "2"
           ],
           [
-            "BOP",
+            "OP",
             "+"
           ],
           [
@@ -321,97 +324,24 @@
     ],
     [
       [
-        "a::8"
-      ],
-      [
-        [
-          "MATCH",
-          [
-            "PAR",
-            "a"
-          ],
-          [
-            "REAL",
-            "8"
-          ]
-        ],
-        ""
-      ]
-    ],
-    [
-      [
-        "x::8"
-      ],
-      [
-        [
-          "MATCH",
-          [
-            "PAR",
-            "x"
-          ],
-          [
-            "REAL",
-            "8"
-          ]
-        ],
-        ""
-      ]
-    ],
-    [
-      [
         "f[x] @g[x,x] = this"
       ],
       [
         [
-          "BIND",
+          "PHRASE",
           [
-            "FUNC",
-            [
-              "VAR",
-              "f"
-            ],
-            [
-              "FORM",
-              [
-                "PARS",
-                "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
-            ]
+            "NAME",
+            "f"
           ],
           [
-            "INHERIT",
+            "LIST",
             [
-              "SEQ",
-              [
-                "NAME",
-                "g"
-              ],
-              [
-                "VAL_LST",
-                [
-                  "NAME",
-                  "x"
-                ],
-                [
-                  "NAME",
-                  "x"
-                ]
-              ]
-            ],
-            [
-              "DELAY",
-              [
-                "NAME",
-                "this"
-              ]
+              "NAME",
+              "x"
             ]
           ]
         ],
-        ""
+        " @g[x,x] = this"
       ]
     ],
     [
@@ -420,12 +350,15 @@
       ],
       [
         [
-          "LINE",
+          "EVAL",
           [
             "BIND",
             [
-              "VAR",
-              "a"
+              "FORM",
+              [
+                "NAME",
+                "a"
+              ]
             ],
             [
               "REAL",
@@ -446,12 +379,15 @@
       ],
       [
         [
-          "LINE",
+          "EVAL",
           [
             "BIND",
             [
-              "VAR",
-              "a"
+              "FORM",
+              [
+                "NAME",
+                "a"
+              ]
             ],
             [
               "REAL",
@@ -472,20 +408,26 @@
       ],
       [
         [
-          "LINE",
+          "EVAL",
           [
             "BIND",
             [
-              "VAR",
-              "a"
+              "FORM",
+              [
+                "NAME",
+                "a"
+              ]
             ],
             [
-              "DICT",
+              "ENV",
               [
                 "BIND",
                 [
-                  "VAR",
-                  "x"
+                  "FORM",
+                  [
+                    "NAME",
+                    "x"
+                  ]
                 ],
                 [
                   "REAL",
@@ -495,8 +437,11 @@
               [
                 "BIND",
                 [
-                  "VAR",
-                  "y"
+                  "FORM",
+                  [
+                    "NAME",
+                    "y"
+                  ]
                 ],
                 [
                   "REAL",
@@ -508,57 +453,50 @@
           [
             "BIND",
             [
-              "FUNC",
+              "FORM",
               [
-                "VAR",
+                "NAME",
                 "f"
               ],
               [
-                "FORM",
+                "LIST",
                 [
-                  "PARS",
+                  "NAME",
                   "x"
-                ],
-                [
-                  "OPTPARS"
-                ],
-                null
+                ]
               ]
             ],
             [
-              "CLOSURE",
+              "AT",
               [
                 "NAME",
                 "a"
               ],
               [
-                "DELAY",
+                "PHRASE",
                 [
-                  "SEQ",
-                  [
-                    "NAME",
-                    "x"
-                  ],
-                  [
-                    "BOP",
-                    "+"
-                  ],
-                  [
-                    "NAME",
-                    "y"
-                  ]
+                  "NAME",
+                  "x"
+                ],
+                [
+                  "OP",
+                  "+"
+                ],
+                [
+                  "NAME",
+                  "y"
                 ]
               ]
             ]
           ],
           [
-            "SEQ",
+            "PHRASE",
             [
               "NAME",
               "f"
             ],
             [
-              "VAL_LST",
+              "LIST",
               [
                 "REAL",
                 "9"
@@ -575,27 +513,10 @@
       ],
       [
         [
-          "BIND",
-          [
-            "VAR",
-            "f"
-          ],
-          [
-            "CLOSURE",
-            [
-              "NAME",
-              "e"
-            ],
-            [
-              "DELAY",
-              [
-                "REAL",
-                "10"
-              ]
-            ]
-          ]
+          "NAME",
+          "f"
         ],
-        ""
+        "@e=10"
       ]
     ],
     [
@@ -604,13 +525,13 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "NAME",
             "f"
           ],
           [
-            "VAL_LST",
+            "LIST",
             [
               "NAME",
               "x"
@@ -630,17 +551,13 @@
       ],
       [
         [
-          "SEQ",
+          "VAR",
           [
             "NAME",
             "x"
           ],
           [
-            "BOP",
-            "."
-          ],
-          [
-            "NAME",
+            "ATTR",
             "y"
           ]
         ],
@@ -677,10 +594,25 @@
       ],
       [
         [
-          "REAL",
-          "2"
+          "PHRASE",
+          [
+            "REAL",
+            "2"
+          ],
+          [
+            "OP",
+            "."
+          ],
+          [
+            "OP",
+            "\u00d7"
+          ],
+          [
+            "REAL",
+            "4"
+          ]
         ],
-        ".*4"
+        ""
       ]
     ],
     [
@@ -723,13 +655,13 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "REAL",
             "1"
           ],
           [
-            "BOP",
+            "OP",
             "+"
           ],
           [
@@ -737,8 +669,8 @@
             "2"
           ],
           [
-            "BOP",
-            "*"
+            "OP",
+            "\u00d7"
           ],
           [
             "REAL",
@@ -754,17 +686,17 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "REAL",
             "3"
           ],
           [
-            "ROP",
+            "OP",
             "!"
           ],
           [
-            "BOP",
+            "OP",
             "+"
           ],
           [
@@ -781,7 +713,7 @@
       ],
       [
         [
-          "VAL_LST"
+          "LIST"
         ],
         ""
       ]
@@ -792,7 +724,7 @@
       ],
       [
         [
-          "VAL_LST",
+          "LIST",
           [
             "REAL",
             "2"
@@ -807,7 +739,7 @@
       ],
       [
         [
-          "VAL_LST",
+          "LIST",
           [
             "REAL",
             "3"
@@ -830,13 +762,13 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "NAME",
             "f"
           ],
           [
-            "VAL_LST"
+            "LIST"
           ]
         ],
         ""
@@ -850,8 +782,11 @@
         [
           "BIND",
           [
-            "VAR",
-            "x"
+            "FORM",
+            [
+              "NAME",
+              "x"
+            ]
           ],
           [
             "REAL",
@@ -869,25 +804,28 @@
         [
           "BIND",
           [
-            "VAR",
-            "x"
+            "FORM",
+            [
+              "NAME",
+              "x"
+            ]
           ],
           [
-            "SEQ",
+            "PHRASE",
             [
               "REAL",
               "3"
             ],
             [
-              "BOP",
-              "*"
+              "OP",
+              "\u00d7"
             ],
             [
               "NAME",
               "f"
             ],
             [
-              "VAL_LST",
+              "LIST",
               [
                 "REAL",
                 "3"
@@ -914,32 +852,28 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "FORM",
+              "LIST",
               [
-                "PARS",
+                "NAME",
                 "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              ]
             ]
           ],
           [
-            "SEQ",
+            "PHRASE",
             [
               "REAL",
               "1"
             ],
             [
-              "BOP",
-              "/"
+              "OP",
+              "\u00f7"
             ],
             [
               "NAME",
@@ -958,20 +892,13 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "FORM",
-              [
-                "PARS"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              "LIST"
             ]
           ],
           [
@@ -990,33 +917,32 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "FORM",
+              "LIST",
               [
-                "PARS",
-                "x",
+                "NAME",
+                "x"
+              ],
+              [
+                "NAME",
                 "y"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              ]
             ]
           ],
           [
-            "SEQ",
+            "PHRASE",
             [
               "NAME",
               "x"
             ],
             [
-              "BOP",
-              "*"
+              "OP",
+              "\u00d7"
             ],
             [
               "NAME",
@@ -1033,31 +959,9 @@
       ],
       [
         [
-          "VAL_LST",
-          [
-            "VAL_LST",
-            [
-              "REAL",
-              "1"
-            ],
-            [
-              "REAL",
-              "2"
-            ]
-          ],
-          [
-            "VAL_LST",
-            [
-              "REAL",
-              "3"
-            ],
-            [
-              "REAL",
-              "4"
-            ]
-          ]
+          "LINE"
         ],
-        ""
+        "[1,2;3,4]"
       ]
     ],
     [
@@ -1066,36 +970,37 @@
       ],
       [
         [
-          "MAP",
+          "PHRASE",
           [
-            "FORM",
+            "LIST",
             [
-              "PARS",
-              "x",
+              "NAME",
+              "x"
+            ],
+            [
+              "NAME",
               "y"
-            ],
-            [
-              "OPTPARS"
-            ],
-            null
+            ]
           ],
           [
-            "DELAY",
-            [
-              "SEQ",
-              [
-                "NAME",
-                "x"
-              ],
-              [
-                "BOP",
-                "+"
-              ],
-              [
-                "NAME",
-                "y"
-              ]
-            ]
+            "OP",
+            "-"
+          ],
+          [
+            "OP",
+            ">"
+          ],
+          [
+            "NAME",
+            "x"
+          ],
+          [
+            "OP",
+            "+"
+          ],
+          [
+            "NAME",
+            "y"
           ]
         ],
         ""
@@ -1107,23 +1012,21 @@
       ],
       [
         [
-          "MAP",
+          "PHRASE",
           [
-            "FORM",
-            [
-              "PARS"
-            ],
-            [
-              "OPTPARS"
-            ],
-            null
+            "LIST"
           ],
           [
-            "DELAY",
-            [
-              "REAL",
-              "1"
-            ]
+            "OP",
+            "-"
+          ],
+          [
+            "OP",
+            ">"
+          ],
+          [
+            "REAL",
+            "1"
           ]
         ],
         ""
@@ -1135,36 +1038,40 @@
       ],
       [
         [
-          "MAP",
+          "PHRASE",
           [
-            "FORM",
+            "LIST",
             [
-              "PARS",
+              "NAME",
               "a"
             ],
             [
-              "OPTPARS"
-            ],
-            "r"
-          ],
-          [
-            "DELAY",
-            [
-              "VAL_LST",
+              "UNPACK",
               [
                 "NAME",
-                "a"
-              ],
+                "r"
+              ]
+            ]
+          ],
+          [
+            "OP",
+            "-"
+          ],
+          [
+            "OP",
+            ">"
+          ],
+          [
+            "LIST",
+            [
+              "NAME",
+              "a"
+            ],
+            [
+              "UNPACK",
               [
-                "SEQ",
-                [
-                  "NAME",
-                  "r"
-                ],
-                [
-                  "ROP",
-                  ".."
-                ]
+                "NAME",
+                "r"
               ]
             ]
           ]
@@ -1178,12 +1085,15 @@
       ],
       [
         [
-          "DICT",
+          "ENV",
           [
             "BIND",
             [
-              "VAR",
-              "x"
+              "FORM",
+              [
+                "NAME",
+                "x"
+              ]
             ],
             [
               "REAL",
@@ -1200,14 +1110,17 @@
       ],
       [
         [
-          "CLOSURE",
+          "PHRASE",
           [
-            "DICT",
+            "ENV",
             [
               "BIND",
               [
-                "VAR",
-                "x"
+                "FORM",
+                [
+                  "NAME",
+                  "x"
+                ]
               ],
               [
                 "REAL",
@@ -1217,8 +1130,11 @@
             [
               "BIND",
               [
-                "VAR",
-                "y"
+                "FORM",
+                [
+                  "NAME",
+                  "y"
+                ]
               ],
               [
                 "REAL",
@@ -1227,22 +1143,16 @@
             ]
           ],
           [
-            "DELAY",
-            [
-              "SEQ",
-              [
-                "NAME",
-                "x"
-              ],
-              [
-                "BOP",
-                "+"
-              ],
-              [
-                "NAME",
-                "y"
-              ]
-            ]
+            "NAME",
+            "x"
+          ],
+          [
+            "OP",
+            "+"
+          ],
+          [
+            "NAME",
+            "y"
           ]
         ],
         ""
@@ -1254,18 +1164,22 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "NAME",
             "l"
           ],
           [
-            "IDC_LST",
+            "LIST",
             [
-              "SLICE",
+              "PHRASE",
               [
                 "NAME",
                 "x"
+              ],
+              [
+                "OP",
+                ":"
               ],
               [
                 "REAL",
@@ -1283,19 +1197,27 @@
       ],
       [
         [
-          "GEN_LST",
+          "LIST",
           [
-            "NAME",
-            "x"
-          ],
-          [
-            "CONSTR",
+            "PHRASE",
             [
-              "PAR",
+              "NAME",
               "x"
             ],
             [
-              "VAL_LST",
+              "NAME",
+              "for"
+            ],
+            [
+              "NAME",
+              "x"
+            ],
+            [
+              "OP",
+              "in "
+            ],
+            [
+              "LIST",
               [
                 "REAL",
                 "1"
@@ -1320,21 +1242,22 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "NAME",
             "f"
           ],
           [
-            "IDC_LST",
+            "LIST",
             [
-              "SLICE",
+              "PHRASE",
               [
                 "REAL",
                 "1"
               ],
               [
-                "EMPTY"
+                "OP",
+                ":"
               ]
             ]
           ]
@@ -1348,38 +1271,37 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "NAME",
             "m"
           ],
           [
-            "IDC_LST",
+            "LIST",
             [
-              "SLICE",
+              "PHRASE",
               [
                 "REAL",
                 "1"
               ],
               [
-                "EMPTY"
+                "OP",
+                ":"
               ]
             ],
             [
-              "SLICE",
+              "PHRASE",
               [
-                "EMPTY"
+                "OP",
+                ":"
               ],
               [
-                "SEQ",
-                [
-                  "LOP",
-                  "-"
-                ],
-                [
-                  "REAL",
-                  "1"
-                ]
+                "OP",
+                "-"
+              ],
+              [
+                "REAL",
+                "1"
               ]
             ]
           ]
@@ -1453,35 +1375,33 @@
         [
           "LINE",
           [
-            "BIND",
+            "EVAL",
             [
-              "FUNC",
-              [
-                "VAR",
-                "f"
-              ],
+              "BIND",
               [
                 "FORM",
                 [
-                  "PARS",
-                  "x"
+                  "NAME",
+                  "f"
                 ],
                 [
-                  "OPTPARS"
-                ],
-                null
+                  "LIST",
+                  [
+                    "NAME",
+                    "x"
+                  ]
+                ]
+              ],
+              [
+                "NAME",
+                "x"
               ]
             ],
-            [
-              "NAME",
-              "x"
-            ]
+            ";"
           ],
-          [
-            "EMPTY"
-          ]
+          "the semicolon hides the output"
         ],
-        "# the semicolon hides the output"
+        ""
       ]
     ],
     [
@@ -1490,17 +1410,17 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "REAL",
             "2"
           ],
           [
-            "BOP",
+            "OP",
             ":"
           ],
           [
-            "LOP",
+            "OP",
             "-"
           ],
           [
@@ -1513,48 +1433,11 @@
     ],
     [
       [
-        "[a,b..]::[1,2,3]"
-      ],
-      [
-        [
-          "MATCH",
-          [
-            "FORM",
-            [
-              "PARS",
-              "a"
-            ],
-            [
-              "OPTPARS"
-            ],
-            "b"
-          ],
-          [
-            "VAL_LST",
-            [
-              "REAL",
-              "1"
-            ],
-            [
-              "REAL",
-              "2"
-            ],
-            [
-              "REAL",
-              "3"
-            ]
-          ]
-        ],
-        ""
-      ]
-    ],
-    [
-      [
         "x .f"
       ],
       [
         [
-          "FIELD",
+          "VAR",
           [
             "NAME",
             "x"
@@ -1573,50 +1456,43 @@
       ],
       [
         [
-          "DEF",
+          "BIND",
           [
-            "SUPER",
+            "FORM",
             [
-              "NAME",
-              "f"
-            ],
-            [
-              "NAME",
-              "a"
-            ]
-          ],
-          [
-            "BIND",
-            [
-              "FUNC",
-              [
-                "VAR",
-                "b"
-              ],
-              [
-                "FORM",
-                [
-                  "PARS",
-                  "x"
-                ],
-                [
-                  "OPTPARS"
-                ],
-                null
-              ]
-            ],
-            [
-              "SEQ",
+              "VAR",
               [
                 "NAME",
                 "f"
               ],
               [
-                "VAL_LST",
-                [
-                  "NAME",
-                  "x"
-                ]
+                "ATTR",
+                "a"
+              ],
+              [
+                "ATTR",
+                "b"
+              ]
+            ],
+            [
+              "LIST",
+              [
+                "NAME",
+                "x"
+              ]
+            ]
+          ],
+          [
+            "PHRASE",
+            [
+              "NAME",
+              "f"
+            ],
+            [
+              "LIST",
+              [
+                "NAME",
+                "x"
               ]
             ]
           ]
@@ -1632,32 +1508,39 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "FORM",
+              "LIST",
               [
-                "PARS",
-                "x",
+                "NAME",
+                "x"
+              ],
+              [
+                "NAME",
                 "y"
               ],
               [
-                "OPTPARS",
+                "KWD",
                 [
-                  [
-                    "VAR",
-                    "z"
-                  ],
-                  [
-                    "REAL",
-                    "0"
-                  ]
+                  "NAME",
+                  "z"
+                ],
+                [
+                  "REAL",
+                  "0"
                 ]
               ],
-              "w"
+              [
+                "UNPACK",
+                [
+                  "NAME",
+                  "w"
+                ]
+              ]
             ]
           ],
           [
@@ -1674,9 +1557,9 @@
       ],
       [
         [
-          "IF_ELSE",
+          "PHRASE",
           [
-            "VAL_LST",
+            "LIST",
             [
               "REAL",
               "3"
@@ -1687,65 +1570,67 @@
             ]
           ],
           [
-            "SEQ",
-            [
-              "NAME",
-              "x"
-            ],
-            [
-              "BOP",
-              "=="
-            ],
-            [
-              "REAL",
-              "3"
-            ]
+            "OP",
+            "if "
           ],
           [
-            "CLOSURE",
+            "NAME",
+            "x"
+          ],
+          [
+            "OP",
+            "=="
+          ],
+          [
+            "REAL",
+            "3"
+          ],
+          [
+            "NAME",
+            "else"
+          ],
+          [
+            "ENV",
             [
-              "DICT",
+              "BIND",
               [
-                "BIND",
+                "FORM",
                 [
-                  "VAR",
+                  "NAME",
                   "x"
-                ],
-                [
-                  "REAL",
-                  "2"
                 ]
               ],
               [
-                "BIND",
-                [
-                  "VAR",
-                  "y"
-                ],
-                [
-                  "REAL",
-                  "3"
-                ]
+                "REAL",
+                "2"
               ]
             ],
             [
-              "DELAY",
+              "BIND",
               [
-                "SEQ",
-                [
-                  "NAME",
-                  "x"
-                ],
-                [
-                  "BOP",
-                  "+"
-                ],
+                "FORM",
                 [
                   "NAME",
                   "y"
                 ]
+              ],
+              [
+                "REAL",
+                "3"
               ]
             ]
+          ],
+          [
+            "NAME",
+            "x"
+          ],
+          [
+            "OP",
+            "+"
+          ],
+          [
+            "NAME",
+            "y"
           ]
         ],
         ""
@@ -1757,15 +1642,15 @@
       ],
       [
         [
-          "VAL_LST",
+          "LIST",
           [
-            "SEQ",
+            "PHRASE",
             [
               "NAME",
               "x"
             ],
             [
-              "BOP",
+              "OP",
               "+"
             ],
             [
@@ -1773,24 +1658,24 @@
               "f"
             ],
             [
-              "VAL_LST",
+              "LIST",
               [
-                "SEQ",
+                "PHRASE",
                 [
                   "NAME",
                   "f"
                 ],
                 [
-                  "VAL_LST",
+                  "LIST",
                   [
-                    "SEQ",
+                    "PHRASE",
                     [
                       "REAL",
                       "3"
                     ],
                     [
-                      "BOP",
-                      "*"
+                      "OP",
+                      "\u00d7"
                     ],
                     [
                       "REAL",
@@ -1799,7 +1684,7 @@
                   ]
                 ],
                 [
-                  "BOP",
+                  "OP",
                   "^"
                 ],
                 [
@@ -1810,7 +1695,7 @@
             ]
           ],
           [
-            "VAL_LST",
+            "LIST",
             [
               "REAL",
               "2"
@@ -1821,13 +1706,13 @@
             ]
           ],
           [
-            "SEQ",
+            "PHRASE",
             [
               "NAME",
               "g"
             ],
             [
-              "VAL_LST",
+              "LIST",
               [
                 "REAL",
                 "3"
@@ -1848,60 +1733,71 @@
       ],
       [
         [
-          "MAP",
+          "PHRASE",
           [
-            "FORM",
+            "LIST",
             [
-              "PARS",
-              "x",
-              [
-                "FORM",
-                [
-                  "PARS",
-                  "y"
-                ],
-                [
-                  "OPTPARS"
-                ],
-                "z"
-              ]
+              "NAME",
+              "x"
             ],
             [
-              "OPTPARS"
-            ],
-            "w"
-          ],
-          [
-            "DELAY",
-            [
-              "VAL_LST",
+              "LIST",
               [
-                "SEQ",
-                [
-                  "NAME",
-                  "x"
-                ],
-                [
-                  "BOP",
-                  "+"
-                ],
-                [
-                  "NAME",
-                  "y"
-                ],
-                [
-                  "BOP",
-                  "+"
-                ],
+                "NAME",
+                "y"
+              ],
+              [
+                "UNPACK",
                 [
                   "NAME",
                   "z"
                 ]
-              ],
+              ]
+            ],
+            [
+              "UNPACK",
               [
                 "NAME",
                 "w"
               ]
+            ]
+          ],
+          [
+            "OP",
+            "-"
+          ],
+          [
+            "OP",
+            ">"
+          ],
+          [
+            "LIST",
+            [
+              "PHRASE",
+              [
+                "NAME",
+                "x"
+              ],
+              [
+                "OP",
+                "+"
+              ],
+              [
+                "NAME",
+                "y"
+              ],
+              [
+                "OP",
+                "+"
+              ],
+              [
+                "NAME",
+                "z"
+              ]
+            ],
+            [
+              "NAME",
+              "w"
             ]
           ]
         ],
@@ -1914,43 +1810,9 @@
       ],
       [
         [
-          "SEQ",
-          [
-            "SEQ",
-            [
-              "NAME",
-              "x"
-            ],
-            [
-              "BOP",
-              "*"
-            ],
-            [
-              "SEQ",
-              [
-                "SYM",
-                "y"
-              ],
-              [
-                "BOP",
-                "+"
-              ],
-              [
-                "REAL",
-                "2"
-              ]
-            ]
-          ],
-          [
-            "BOP",
-            "/"
-          ],
-          [
-            "REAL",
-            "3"
-          ]
+          "LINE"
         ],
-        ""
+        "(x*('y+2))/3"
       ]
     ],
     [
@@ -1959,109 +1821,84 @@
       ],
       [
         [
-          "GEN_LST",
+          "LIST",
           [
-            "SEQ",
+            "PHRASE",
             [
               "NAME",
               "x"
             ],
             [
-              "BOP",
+              "OP",
               "+"
             ],
             [
               "NAME",
               "y"
-            ]
-          ],
-          [
-            "CONSTR",
+            ],
             [
-              "PAR",
+              "NAME",
+              "for"
+            ],
+            [
+              "NAME",
               "x"
             ],
             [
-              "SEQ",
-              [
-                "REAL",
-                "1"
-              ],
-              [
-                "BOP",
-                ":"
-              ],
-              [
-                "REAL",
-                "10"
-              ]
+              "OP",
+              "in "
             ],
             [
-              "SEQ",
-              [
-                "NAME",
-                "x"
-              ],
-              [
-                "BOP",
-                "%"
-              ],
-              [
-                "REAL",
-                "2"
-              ]
-            ]
-          ],
-          [
-            "CONSTR",
-            [
-              "PAR",
-              "y"
+              "REAL",
+              "1"
             ],
             [
-              "SEQ",
-              [
-                "NAME",
-                "range"
-              ],
-              [
-                "VAL_LST",
-                [
-                  "NAME",
-                  "x"
-                ]
-              ]
-            ]
-          ]
-        ],
-        ""
-      ]
-    ],
-    [
-      [
-        "'[a,[x, $y],$b]"
-      ],
-      [
-        [
-          "SYM_LST",
-          [
-            "SYM",
-            "a"
-          ],
-          [
-            "SYM_LST",
+              "OP",
+              ":"
+            ],
             [
-              "SYM",
+              "REAL",
+              "10"
+            ],
+            [
+              "OP",
+              "if "
+            ],
+            [
+              "NAME",
               "x"
+            ],
+            [
+              "OP",
+              "%"
+            ],
+            [
+              "REAL",
+              "2"
+            ],
+            [
+              "NAME",
+              "for"
             ],
             [
               "NAME",
               "y"
+            ],
+            [
+              "OP",
+              "in "
+            ],
+            [
+              "NAME",
+              "range"
+            ],
+            [
+              "LIST",
+              [
+                "NAME",
+                "x"
+              ]
             ]
-          ],
-          [
-            "NAME",
-            "b"
           ]
         ],
         ""
@@ -2073,17 +1910,13 @@
       ],
       [
         [
-          "SEQ",
+          "VAR",
           [
             "NAME",
             "a"
           ],
           [
-            "BOP",
-            "."
-          ],
-          [
-            "NAME",
+            "ATTR",
             "b"
           ]
         ],
@@ -2096,10 +1929,21 @@
       ],
       [
         [
-          "NAME",
-          "x"
+          "PHRASE",
+          [
+            "NAME",
+            "x"
+          ],
+          [
+            "OP",
+            ":"
+          ],
+          [
+            "REAL",
+            "2"
+          ]
         ],
-        " : 2"
+        ""
       ]
     ],
     [
@@ -2108,7 +1952,7 @@
       ],
       [
         [
-          "EMPTY"
+          "LINE"
         ],
         "(3"
       ]
@@ -2119,7 +1963,7 @@
       ],
       [
         [
-          "EMPTY"
+          "LINE"
         ],
         "[3, f(4])"
       ]
@@ -2142,17 +1986,24 @@
       ],
       [
         [
-          "VAL_LST",
+          "PHRASE",
           [
-            "REAL",
-            "2"
+            "LIST",
+            [
+              "REAL",
+              "2"
+            ],
+            [
+              "REAL",
+              "4"
+            ]
           ],
           [
-            "REAL",
-            "4"
+            "OP",
+            "+"
           ]
         ],
-        " + [6, 7"
+        " [6, 7"
       ]
     ],
     [
@@ -2161,31 +2012,34 @@
       ],
       [
         [
-          "VAL_LST",
+          "PHRASE",
           [
-            "SEQ",
+            "LIST",
             [
-              "NAME",
-              "a"
+              "UNPACK",
+              [
+                "NAME",
+                "a"
+              ]
             ],
             [
-              "ROP",
-              ".."
+              "UNPACK",
+              [
+                "NAME",
+                "b"
+              ]
             ]
           ],
           [
-            "SEQ",
-            [
-              "NAME",
-              "b"
-            ],
-            [
-              "ROP",
-              ".."
-            ]
+            "OP",
+            "-"
+          ],
+          [
+            "OP",
+            ">"
           ]
         ],
-        " -> [a; b]"
+        " [a; b]"
       ]
     ],
     [
@@ -2194,86 +2048,19 @@
       ],
       [
         [
-          "VAL_LST",
+          "LIST",
           [
             "REAL",
             "1"
           ],
           [
-            "SEQ",
+            "UNPACK",
             [
-              "VAL_LST",
+              "LIST",
               [
                 "REAL",
                 "1"
               ]
-            ],
-            [
-              "ROP",
-              ".."
-            ]
-          ]
-        ],
-        ""
-      ]
-    ],
-    [
-      [
-        "'[a,$[b,c]]"
-      ],
-      [
-        [
-          "SYM_LST",
-          [
-            "SYM",
-            "a"
-          ],
-          [
-            "VAL_LST",
-            [
-              "NAME",
-              "b"
-            ],
-            [
-              "NAME",
-              "c"
-            ]
-          ]
-        ],
-        ""
-      ]
-    ],
-    [
-      [
-        "'[a,$[b,'[c,$d],d]]"
-      ],
-      [
-        [
-          "SYM_LST",
-          [
-            "SYM",
-            "a"
-          ],
-          [
-            "VAL_LST",
-            [
-              "NAME",
-              "b"
-            ],
-            [
-              "SYM_LST",
-              [
-                "SYM",
-                "c"
-              ],
-              [
-                "NAME",
-                "d"
-              ]
-            ],
-            [
-              "NAME",
-              "d"
             ]
           ]
         ],
@@ -2288,13 +2075,13 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "PAR",
+              "NAME",
               "x"
             ]
           ],
@@ -2314,21 +2101,17 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "FORM",
+              "LIST",
               [
-                "PARS",
+                "NAME",
                 "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              ]
             ]
           ],
           [
@@ -2345,92 +2128,9 @@
       ],
       [
         [
-          "VAL_LST",
+          "LIST",
           [
-            "VAL_LST"
-          ]
-        ],
-        ""
-      ]
-    ],
-    [
-      [
-        "x::([a,b]::[2,3] a+b) 2*x"
-      ],
-      [
-        [
-          "CLOSURE",
-          [
-            "MATCH",
-            [
-              "PAR",
-              "x"
-            ],
-            [
-              "CLOSURE",
-              [
-                "MATCH",
-                [
-                  "FORM",
-                  [
-                    "PARS",
-                    "a",
-                    "b"
-                  ],
-                  [
-                    "OPTPARS"
-                  ],
-                  null
-                ],
-                [
-                  "VAL_LST",
-                  [
-                    "REAL",
-                    "2"
-                  ],
-                  [
-                    "REAL",
-                    "3"
-                  ]
-                ]
-              ],
-              [
-                "DELAY",
-                [
-                  "SEQ",
-                  [
-                    "NAME",
-                    "a"
-                  ],
-                  [
-                    "BOP",
-                    "+"
-                  ],
-                  [
-                    "NAME",
-                    "b"
-                  ]
-                ]
-              ]
-            ]
-          ],
-          [
-            "DELAY",
-            [
-              "SEQ",
-              [
-                "REAL",
-                "2"
-              ],
-              [
-                "BOP",
-                "*"
-              ],
-              [
-                "NAME",
-                "x"
-              ]
-            ]
+            "LIST"
           ]
         ],
         ""
@@ -2442,25 +2142,21 @@
       ],
       [
         [
-          "DICT",
+          "ENV",
           [
             "BIND",
             [
-              "FUNC",
+              "FORM",
               [
-                "VAR",
+                "NAME",
                 "f"
               ],
               [
-                "FORM",
+                "LIST",
                 [
-                  "PARS",
+                  "NAME",
                   "x"
-                ],
-                [
-                  "OPTPARS"
-                ],
-                null
+                ]
               ]
             ],
             [
@@ -2471,40 +2167,36 @@
           [
             "BIND",
             [
-              "FUNC",
+              "FORM",
               [
-                "VAR",
+                "NAME",
                 "g"
               ],
               [
-                "FORM",
+                "LIST",
                 [
-                  "PARS",
+                  "NAME",
                   "y"
-                ],
-                [
-                  "OPTPARS"
-                ],
-                null
+                ]
               ]
             ],
             [
-              "SEQ",
+              "PHRASE",
               [
                 "NAME",
                 "f"
               ],
               [
-                "VAL_LST",
+                "LIST",
                 [
-                  "SEQ",
+                  "PHRASE",
                   [
                     "REAL",
                     "2"
                   ],
                   [
-                    "BOP",
-                    "*"
+                    "OP",
+                    "\u00d7"
                   ],
                   [
                     "NAME",
@@ -2526,18 +2218,21 @@
         [
           "BIND",
           [
-            "VARS",
+            "FORM",
             [
-              "VAR",
-              "a"
-            ],
-            [
-              "VAR",
-              "b"
+              "LIST",
+              [
+                "NAME",
+                "a"
+              ],
+              [
+                "NAME",
+                "b"
+              ]
             ]
           ],
           [
-            "VAL_LST",
+            "LIST",
             [
               "REAL",
               "2"
@@ -2557,24 +2252,41 @@
       ],
       [
         [
-          "VAL_LST",
+          "BIND",
           [
-            "NAME",
-            "a"
+            "FORM",
+            [
+              "LIST",
+              [
+                "NAME",
+                "a"
+              ],
+              [
+                "VAR",
+                [
+                  "NAME",
+                  "b"
+                ],
+                [
+                  "ATTR",
+                  "c"
+                ]
+              ]
+            ]
           ],
           [
-            "FIELD",
+            "LIST",
             [
-              "NAME",
-              "b"
+              "REAL",
+              "3"
             ],
             [
-              "ATTR",
-              "c"
+              "REAL",
+              "5"
             ]
           ]
         ],
-        "=[3,5]"
+        ""
       ]
     ],
     [
@@ -2583,13 +2295,13 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "NAME",
             "a"
           ],
           [
-            "BOP",
+            "OP",
             "-"
           ],
           [
@@ -2606,21 +2318,21 @@
       ],
       [
         [
-          "SEQ",
+          "PHRASE",
           [
             "REAL",
             "0.5"
           ],
           [
-            "BOP",
-            "*"
+            "OP",
+            "\u00d7"
           ],
           [
             "REAL",
             "2"
           ],
           [
-            "BOP",
+            "OP",
             "^"
           ],
           [
@@ -2628,7 +2340,7 @@
             "2"
           ],
           [
-            "BOP",
+            "OP",
             "+"
           ],
           [
@@ -2636,13 +2348,13 @@
             "lg"
           ],
           [
-            "SEQ",
+            "PHRASE",
             [
               "REAL",
               "100"
             ],
             [
-              "BOP",
+              "OP",
               "+"
             ],
             [
@@ -2650,8 +2362,8 @@
               "10"
             ],
             [
-              "BOP",
-              "*"
+              "OP",
+              "\u00d7"
             ],
             [
               "REAL",
@@ -2670,30 +2382,24 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "FORM",
+              "LIST",
               [
-                "PARS"
-              ],
-              [
-                "OPTPARS",
+                "KWD",
                 [
-                  [
-                    "VAR",
-                    "a"
-                  ],
-                  [
-                    "REAL",
-                    "3"
-                  ]
+                  "NAME",
+                  "a"
+                ],
+                [
+                  "REAL",
+                  "3"
                 ]
-              ],
-              null
+              ]
             ]
           ],
           [
@@ -2710,27 +2416,24 @@
       ],
       [
         [
-          "CLOSURE",
+          "AT",
           [
             "NAME",
             "a"
           ],
           [
-            "DELAY",
+            "PHRASE",
             [
-              "SEQ",
-              [
-                "NAME",
-                "x"
-              ],
-              [
-                "BOP",
-                "+"
-              ],
-              [
-                "NAME",
-                "y"
-              ]
+              "NAME",
+              "x"
+            ],
+            [
+              "OP",
+              "+"
+            ],
+            [
+              "NAME",
+              "y"
             ]
           ]
         ],
@@ -2745,33 +2448,29 @@
         [
           "BIND",
           [
-            "FUNC",
+            "FORM",
             [
-              "VAR",
+              "NAME",
               "f"
             ],
             [
-              "FORM",
+              "LIST",
               [
-                "PARS",
+                "NAME",
                 "x"
-              ],
-              [
-                "OPTPARS"
-              ],
-              null
+              ]
             ]
           ],
           [
-            "CLOSURE",
+            "AT",
             [
-              "SEQ",
+              "NAME",
+              "g"
+            ],
+            [
+              "PHRASE",
               [
-                "NAME",
-                "g"
-              ],
-              [
-                "VAL_LST",
+                "LIST",
                 [
                   "NAME",
                   "x"
@@ -2780,20 +2479,14 @@
                   "REAL",
                   "0"
                 ]
-              ]
-            ],
-            [
-              "DELAY",
+              ],
               [
-                "SEQ",
-                [
-                  "REAL",
-                  "3"
-                ],
-                [
-                  "NAME",
-                  "a"
-                ]
+                "REAL",
+                "3"
+              ],
+              [
+                "NAME",
+                "a"
               ]
             ]
           ]

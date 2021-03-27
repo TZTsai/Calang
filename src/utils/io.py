@@ -9,47 +9,80 @@ from .unicode import subst, map_2chars
 getch = msvcrt.getwch
 
 spaces = ' \t\r\n'        # invokes a substitution if possible
+cancel_signal = '\x04'    # cancels the current input, here ^D
+redo_signal = '\x1a'      # redo the previous input, here ^Z
+exit_signal = '\x03'      # exits the program, here ^C
 esc = '\x1b'              # also invokes a substitution
-cancel_signal = '\x1a'    # cancels the current input, here ^Z
-exit_signal = '\x03\x04'  # exits the program, here ^C or ^D
+
+text_style = {
+    'default': 0,       'bold': 1,          'no-bold': 22,      
+    'red': 31,          'green': 32,        'blue': 34,
+    'yellow': 33,       'magenta': 45,      'cyan': 46,
+    'bright-blue': 94,      'bright-green': 92
+}
+for k, v in text_style.items():
+    text_style[k] = esc + '[%dm' % v
+
+sub_pre = text_style['green']          # the chars printed when a subst starts
+sub_suf = text_style['default']        # the chars printed when a subst ends
 
 arrow_map = dict(zip('HPMK', 'ABCD'))  # moves the cursor
 arrow_dir = dict(zip('ABCD', 'UDRL'))  # corresponding directions
 
 
-buffer = []
+buffer = []         # buffer of input chars
+record = []         # record of previous insertions and deletions
 caret = 0           # position of insertion from the end of buffer
-esc_pos = None      # position of the last esc_pos from the end
+substart = None     # position of the last sub_pos from the end
 
 
 def ins():  # insertion position from the beginning
     return len(buffer) - caret
 
 
-def write(s, track=0):
+def write(s, track=0, style=None):
     if type(s) is not str:
         s = ''.join(s)
 
-    # if s == '\t':
-    #     sp = 4 - ins() % 4
-    #     sys.stdout.write(sp * ' ')
-    if s == '\n':
+    if style and style in text_style:
+        style_ctrl_seq = text_style[style]
+        sys.stdout.write(style_ctrl_seq)
+    else:
+        style_ctrl_seq = None
+        
+    if s == '\n':  # new line
         sys.stdout.write(' ' * caret + '\b' * caret)
         sys.stdout.write(s)
     else:
         sys.stdout.write(s)
+        
+    if style_ctrl_seq:
+        sys.stdout.write(text_style['default'])
     
     bl = 0  # length of backspace
     
     if track:
+        if '\b' in s:
+            assert all(c == '\b' for c in s)
+            op = 'd'  # delete
+        else:
+            op = 'i'  # insert
+
+        buf = []
         for ch in s:
             if ch == '\b':
-                try: buffer.pop(-caret-1)
-                except: break
+                if buffer:
+                    buf.append(buffer.pop(-caret-1))
+                else:
+                    break
                 bl += 1
             else:
+                buf.append(ch)
                 buffer.insert(ins(), ch)
+                
+        record.append((op, ''.join(buf)))
 
+    # rewrite the tail after the caret
     tail = ''.join(buffer[ins():])
     if bl + len(tail) > 0:
         sys.stdout.write(tail)
@@ -59,24 +92,35 @@ def write(s, track=0):
             
     sys.stdout.flush()
         
-        
-def delete(n=1):
-    write('\b' * n, 1)
-        
+
+def delete(n=1, track=1):
+    write('\b' * n, track)
+    
+
+def redo(n=1):
+    for _ in range(n):
+        if not record: break
+        op, text = record.pop()
+        if op == 'i':
+            delete(len(text))
+        else:
+            write(text, 1)
+
 
 def resetbuffer():
-    global caret, esc_pos
+    global caret, substart
     buffer.clear()
+    record.clear()
     caret = 0
-    esc_pos = None
+    substart = None
 
 
 def read(end='\r\n', indent=0):
     """Reads the input; supports writing LaTeX symbols by typing a tab
-    at the end of a string beginning with a esc_pos.
+    at the end of a string beginning with a sub_pos.
     """
     assert end in spaces
-    global esc_pos
+    global substart
     
     resetbuffer()
     read.index = len(read.history)
@@ -85,14 +129,15 @@ def read(end='\r\n', indent=0):
     text = ''
     while True:
         end_ch = _read()
-        i, j = esc_pos, ins()
+        i, j = substart, ins()
             
         if i is not None:
             # replace the expression with its latex symbol
-            s = read.subst(''.join(buffer[i+1:j]))
+            s = subst(''.join(buffer[i:j]))
             
             # remove substituted chars from the input
             delete(j - i)
+            write(sub_suf)
             
             # if s[0] == 'x':  # a decorator, 'x' is a placeholder
             #     write(s[1:])
@@ -100,7 +145,7 @@ def read(end='\r\n', indent=0):
             # else:
             write(s, 1)
 
-            esc_pos = None
+            substart = None
             
         if end_ch in end:
             line = ''.join(buffer)
@@ -130,39 +175,41 @@ def read(end='\r\n', indent=0):
             else:
                 write(end_ch, 1)
 
-# assign read.subst in 'calc.py'
-read.subst = lambda s: s
-read.history = []
 read.index = 0
+read.history = []
+read.keywords = {}
+read.highlight = text_style['bright-blue']
 
 
 def _read():
-    global esc_pos
+    global substart
     c = -1
     edited = 0
+    auto_sub = False  # flag of auto substitution
     
     while c:
         c = getch()
 
-        if c == '\r':
-            c += '\n'
-        elif c == esc:
-            if esc_pos is None:
-                esc_pos = ins()
-                c = '»'
-            else:
-                return esc
-        elif c == '`':
-            c = '⋅'  # used in dot product
+        # convert char here
+        if c == '\r': c = '\n'
+        elif c == '`': c = '⋅'
 
         if c in exit_signal:
             raise KeyboardInterrupt
         elif c in cancel_signal:
             raise IOError("input cancelled")
+        elif c == esc:
+            if substart is None:
+                substart = ins()
+                write(sub_pre)
+            else:
+                return esc
         elif c in spaces:
             return c[-1]  # '[-1]' removes '\r' from '\r\n'
         elif c == '\b':  # backspace
-            if caret < len(buffer):
+            if auto_sub:
+                redo(2)
+            elif caret < len(buffer):
                 delete()
         elif c in '\x00\xe0':
             if (d := getch()) in 'KHMP':  # arrow key
@@ -177,11 +224,14 @@ def _read():
                 write(c + d, 1)
         else:
             write(c, 1)
-            
+        
         if (chs := ''.join(buffer[-2:])) in map_2chars:
             s = map_2chars[chs]
             delete(2)
             write(s, 1)
+            auto_sub = True
+        else:
+            auto_sub = False
             
         edited = 1
     
@@ -193,7 +243,7 @@ def move_cursor(code):
     
     c = arrow_map[code]
     d = arrow_dir[c]
-    cs = '\x1b[' + c
+    cs = f'{esc}[{c}'
     
     if d in 'UD':
         i = read.index + (1 if d == 'D' else -1)
@@ -218,9 +268,16 @@ def input(prompt='', indent=0):
     write(prompt)
     return read(indent=indent)
 
+
+print = print
+# def print(*s, sep=' ', end='\n'):
+#     s = sep.join(map(str, s)) + end
+#     write(s)
+
+
 def close(): return
     
-    
+
 class BracketTracker:
     parentheses = ')(', '][', '}{', '""'
     close_pars, open_pars = zip(*parentheses)

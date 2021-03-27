@@ -31,8 +31,8 @@ from copy import deepcopy
 import re, json, inspect
 from my_utils.utils import interact
 
-from parse import calc_parse, semantics
-from builtin import operators, binary_ops, builtins, shortcircuit_ops
+from parse import calc_parse, semantics, Parser
+from builtin import operators, binary_ops, builtins, shortcircuit_ops, amb_ops
 from funcs import is_list, iterable, indexable, apply, Fraction, eq, get_attr
 from sympy import Expr, Symbol, Array, Matrix, Eq, solve
 from objects import Env, stack, Op, Attr, Function, Map, Form
@@ -114,22 +114,21 @@ LINE.comment = None
 
 
 def ITEMS(tr):
-    if any(is_tree(t) and tree_tag(t) != 'OP'
-           for t in tr[1:]): return tr
+    # if any(is_tree(t) and tree_tag(t) != 'OP' for t in tr):
+    #     return tr  # only ambiguous OPs can remain tree form
+    seq = match_ops_in_seq(tr[1:])
 
     ops = stack()
     vals = stack()
     
-    backward_bops = ['(app)']
+    backward_bops = ['(app)']  # combine in the reverse order
     
     def squeeze():
         op = ops.pop()
-        
         if op.type == 'BOP':
             x = ['APP', op, vals.pop(-2), vals.pop(-1)]
         else:
             x = ['APP', op, vals.pop()]
-            
         vals.push(x)
                 
     def push(x):
@@ -147,7 +146,6 @@ def ITEMS(tr):
         push.prev = x
 
     push.prev = None
-    seq = match_ops_in_seq(tr[1:])
     
     for x in seq: push(x)
     while ops: squeeze()
@@ -157,69 +155,61 @@ def ITEMS(tr):
     return eval_tree(tree)
 
 
-def match_ops_in_seq(seq):
-    failed = None, None
-
+class PhraseParser(Parser):
+    grammar = semantics
     tests = {
         'ATTR': lambda x: isinstance(x, Attr),
         'FUNC': callable,
         'LIST': is_list,
-        'SEQ': indexable,
-        'ITEM': lambda x: not callable(x)
+        'UNIT': lambda x: not isinstance(x, (list, Op))
     }
+    # _cache = {}
+    # def parse_tag(self, )
 
-    def parse_seq(seq, phrase):
-        result = []
-        for atom in seq:
-            tree, phrase = parse_atom(atom, phrase)
-            if tree is None: return failed
-            result.append(tree)
-        return result, phrase
-
-    def parse_atom(atom, phrase):
-        if not phrase:
-            return failed
-        elif atom in semantics:
-            for alt in semantics[atom]:
-                tree, rest = parse_seq(alt, phrase)
-                if tree is not None:
-                    return [atom]+tree, rest
-            return failed
-        elif atom in ['LOP', 'BOP', 'ROP']:
+    def parse_atom(self, _, tag, phrase):
+        if tag in ['LOP', 'BOP', 'ROP']:
             try:
                 op = phrase[0]
-                assert tree_tag(op) == 'OP'
-                sym = op[1]
-                ops = operators[atom]
-                assert sym in ops
-                return ops[sym], phrase[1:]
+                if isinstance(op, Op):
+                    assert op.type == tag
+                else:
+                    assert tree_tag(op) == 'OP'
+                    op = operators[tag][op[1]]
+                return [tag, op], phrase[1:]
             except:
-                return failed
-        elif atom in tests:
-            if tests[atom](phrase[0]):
-                return phrase[0], phrase[1:]
+                return self.failed
+        elif tag in self.tests:
+            obj = phrase[0]
+            if self.tests[tag](obj):
+                return [tag, obj], phrase[1:]
             else:
-                return failed
+                return self.failed
         else:
-            raise SyntaxError
+            raise SyntaxError('unknown atom %s' % tag)
+        
+    
+phrase_parser = PhraseParser()
+
+    
+def match_ops_in_seq(seq):
 
     get = binary_ops['(get)']
     app = binary_ops['(app)']
-    ind = binary_ops['.']
+    idx = binary_ops['.']
     mul = binary_ops['⋅']
 
     def flatten(tree):
-        if tree_tag(tree) in semantics:
+        if is_tree(tree):
             if len(tree) == 2:
                 return flatten(tree[1])
 
             tag = tree_tag(tree)
             args = map(flatten, tree[1:])
 
-            if [tag] in semantics['COMB']:
+            if tag in ['SEQ', 'TERM']:
                 return cat(*args)
-            elif [tag] in semantics['PAIR']:
-                nonlocal get, app, ind, mul
+            elif tag in ['GET', 'APP', 'IDX', 'MUL']:
+                nonlocal get, app, idx, mul
                 lv, rv = args
                 return cat(lv, eval(tag.lower()), rv)
             else:
@@ -236,9 +226,18 @@ def match_ops_in_seq(seq):
                 l.append(arg)
         return l
 
-    tree, rest = parse_atom('VAL', seq)
-    assert not rest
+    tree, rem = phrase_parser.parse_tag('SEQ', seq)
+    if rem or not tree: raise ValueError
     return flatten(tree)
+
+def OP(tr):
+    sym = tr[1]
+    if sym not in amb_ops:
+        for ops in operators.values():
+            if sym in ops:
+                return ops[sym]
+    else:
+        return tr
 
 def APP(tr):  # apply a function
     return tr[1](*tr[2:])

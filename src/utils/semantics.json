@@ -1,97 +1,144 @@
 {
-  "VAL": [
+  "SEQ": [
+    "ALT",
     [
-      "COMB"
+      "OBJ",
+      "TS"
     ],
     [
-      "PAIR"
-    ],
-    [
-      "ATOM"
+      "ITEM_OP",
+      [
+        "ALT",
+        [
+          "MARK",
+          "BOP"
+        ],
+        [
+          "OBJ",
+          "TS"
+        ]
+      ],
+      [
+        "OP",
+        "*"
+      ]
     ]
   ],
-  "ATOM": [
+  "TS": [
+    "EXP",
     [
-      "FUNC"
-    ],
-    [
-      "ITEM"
-    ]
-  ],
-  "COMB": [
-    [
-      "BO"
-    ],
-    [
-      "LO"
-    ],
-    [
-      "RO"
-    ]
-  ],
-  "BO": [
-    [
-      "BOL",
-      "BOP",
-      "VAL"
-    ]
-  ],
-  "BOL": [
-    [
-      "RO"
-    ],
-    [
-      "ITEM"
-    ]
-  ],
-  "LO": [
-    [
-      "LOP",
-      "VAL"
-    ]
-  ],
-  "RO": [
-    [
-      "ATOM",
-      "ROP"
-    ]
-  ],
-  "PAIR": [
-    [
+      "OBJ",
       "APP"
     ],
     [
+      "OBJ",
+      "MUL"
+    ],
+    [
+      "OBJ",
+      "TERM"
+    ]
+  ],
+  "TERM": [
+    "ALT",
+    [
+      "ITEM_OP",
+      [
+        "MARK",
+        "LOP"
+      ],
+      [
+        "OP",
+        "*"
+      ]
+    ],
+    [
+      "OBJ",
+      "ITEM"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "MARK",
+        "ROP"
+      ],
+      [
+        "OP",
+        "*"
+      ]
+    ]
+  ],
+  "ITEM": [
+    "EXP",
+    [
+      "OBJ",
       "GET"
     ],
     [
-      "IND"
+      "OBJ",
+      "IDX"
     ],
     [
-      "MUL"
-    ]
-  ],
-  "APP": [
-    [
-      "FUNC",
-      "VAL"
+      "MARK",
+      "UNIT"
     ]
   ],
   "GET": [
+    "ALT",
     [
-      "ITEM",
-      "ATTR"
+      "MARK",
+      "UNIT"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "MARK",
+        "ATTR"
+      ],
+      [
+        "OP",
+        "+"
+      ]
     ]
   ],
-  "IND": [
+  "IDX": [
+    "ALT",
     [
-      "SEQ",
-      "LIST"
+      "MARK",
+      "UNIT"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "MARK",
+        "LIST"
+      ],
+      [
+        "OP",
+        "+"
+      ]
+    ]
+  ],
+  "APP": [
+    "ALT",
+    [
+      "MARK",
+      "FUNC"
+    ],
+    [
+      "OBJ",
+      "TS"
     ]
   ],
   "MUL": [
+    "ALT",
     [
-      "ITEM",
-      "VAL"
+      "OBJ",
+      "TERM"
+    ],
+    [
+      "OBJ",
+      "TS"
     ]
   ]
 }

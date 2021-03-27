@@ -1,12 +1,12 @@
+print('Grammar reloaded.')
+
 from pprint import pprint
 import re
 import json
 from builtin import op_symbols
-from utils.funcs import memo, disabled
+from utils.funcs import memo
 from utils.debug import check_record, trace
 import config
-
-trace = disabled
 
 
 def split(text: str, sep=None, maxsplit=-1):
@@ -193,7 +193,7 @@ def post_process(grammar, macros):
 
 
 grammar = calc_grammar(Grammar)
-semantics = simple_grammar(Semantics)
+semantics = calc_grammar(Semantics)
 del semantics[' ']
 
 json.dump(grammar, open('utils/grammar.json', 'w', encoding='utf8'), indent=2)
