@@ -17,8 +17,16 @@ class stack(list):
         
 class SyntaxTree(list):
     tag_pattern = re.compile('[A-Z_:]+')
+    
+    def __new__(cls, tree):
+        if isinstance(tree, cls):
+            return tree
+        else:
+            return list.__new__(cls)
 
     def __init__(self, tree):
+        if isinstance(tree, SyntaxTree):
+            return  # the same object
         assert type(tree) in [list, tuple]
         assert tree and type(tree[0]) is str
         assert self.tag_pattern.match(tree[0])
@@ -178,7 +186,7 @@ class Map(Function):
         "Check whether the map depends on outside variables."
         def collect_vars(tr):
             if is_tree(tr):
-                if tr[0] == 'NAME':
+                if tr.tag == 'NAME':
                     vars.add(tr[1])
                 else:
                     for t in tr[1:]:

@@ -1,7 +1,7 @@
 import re, json, ast
 import config
 from builtin import operators
-from objects import Form, Op, SyntaxTree, tree_tag
+from objects import Form, Op, SyntaxTree, tree_tag, is_tree
 from utils.funcs import *
 from utils.debug import trace, interact, check, check_record, pprint
 
@@ -37,7 +37,7 @@ class Parser:
     
     def __init__(self):
         self.to_merge = []
-    
+        
     def parse_tree(self, rule, text):
         tag, body = rule[0], rule[1:]
 
@@ -136,20 +136,25 @@ class Parser:
 
         tree, rem = self.parse_tree(self.grammar[tag], text)
         if tree is None: return self.failed
+        
         if alttag: tag = alttag
         tree = self.process_tag(tag, tree)
-        return tree, rem
+        
+        if type(tree[0]) is str:
+            return SyntaxTree(tree), rem
+        else:
+            return tree, rem
 
     def process_tag(self, tag, tree):
         if not tree:
             return [tag]
-        elif type(tree) is list:
+        elif isinstance(tree, list):
             if tag in self.held_tags:
-                if type(tree[0]) is str:
+                if is_tree(tree):
                     tree = [tag, tree]
                 else:
                     tree = [tag] + tree
-            elif not type(tree[0]) is str:
+            elif not is_tree(tree):
                 if len(tree) == 1:
                     tree = tree[0]
                 elif tag[0] == '_':
@@ -165,8 +170,8 @@ class CalcParser(Parser):
     grammar = compile_grammar(grammar)
 
     held_tags = {
-        'DIR', 'DEL', 'QUOTE', 'UNQUOTE', 'INFO', 'LINE',
-        'ENV', 'LIST', 'ARRAY', 'FORM', 'NS', 'UNPACK'
+        'DIR', 'DEL', 'QUOTE', 'UNQUOTE', 'INFO', 'ENV',
+        'LIST', 'ARRAY', 'FORM', 'NS', 'UNPACK'
     }
 
     keywords = {'dir', 'load', 'config', 'import', 'del',
@@ -227,8 +232,8 @@ calc_parser = CalcParser()
 
 def calc_parse(text):
     text = text.translate(CalcParser.synonyms)
-    tree = calc_parser.parse_tag('LINE', text)
-    return SyntaxTree(tree)
+    tree, rem = calc_parser.parse_tag('LINE', text)
+    return tree, rem
 
         
 def deparse(tree):

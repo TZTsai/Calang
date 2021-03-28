@@ -126,8 +126,6 @@ def prune(tree):
             tree.pop(2)
         elif tree[0] in ('STR', 'RE'):
             tree[1] = tree[1][1:-1]
-            # if tree[0] == 'RE':
-            #     tree[1] = re.compile(tree[1])
         for t in tree: prune(t)
 
 def flatten_nested(tree):

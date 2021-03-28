@@ -35,7 +35,7 @@ from parse import calc_parse, semantics, Parser
 from builtin import operators, binary_ops, builtins, shortcircuit_ops, amb_ops
 from funcs import Is, iterable, indexable, eq, get_attr
 from sympy import Expr, Symbol, Array, Matrix, Eq, solve
-from objects import Env, Op, Attr, Function, Map, Form, Args
+from objects import *
 from utils.debug import log, trace
 from utils.funcs import *
 import config
@@ -110,13 +110,18 @@ def INFO(tr):
     print(tr[1].__doc__)
     
 def LINE(tr):
-    if tree_tag(tr[-1]) == 'COMMENT':
-        LINE.comment = tr[-1][1]
-        if len(tr) > 2: return tr[1]
-    elif len(tr) > 1:
+    if len(tr) == 3:
+        if config.test:
+            LINE.comment = tr[2][1]
+        return tr[1]
+    elif len(tr) == 2:
         return tr[1]
         
 LINE.comment = None
+
+def COMMENT(tr):
+    if config.test:
+        return tr
 
 
 class ItemStack(list):

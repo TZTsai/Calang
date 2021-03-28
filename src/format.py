@@ -1,12 +1,12 @@
 from sympy import latex, pretty, init_printing
 from re import sub as translate
+from functools import wraps
 from funcs import Rational, Fraction, Array, Matrix, \
     is_number, is_array, floor, oo, log, likematrix
-from objects import Range, Env, Function
+from objects import *
 from parse import deparse
 from utils.debug import log
-from utils.funcs import is_tree, tree_tag, indexable
-from functools import wraps
+from utils.funcs import indexable
 import config, objects
 
 
