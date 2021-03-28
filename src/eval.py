@@ -33,7 +33,7 @@ from my_utils.utils import interact
 
 from parse import calc_parse, semantics, Parser
 from builtin import operators, binary_ops, builtins, shortcircuit_ops, amb_ops
-from funcs import Is, iterable, indexable, eq, get_attr
+from funcs import Is, iterable, indexable, eq, get_attr, partial
 from sympy import Expr, Symbol, Array, Matrix, Eq, solve
 from objects import *
 from utils.debug import log, trace
@@ -58,6 +58,9 @@ def calc_eval(exp, env=None):
     if env is None: env = Global 
     result = eval_tree(tree, env)
     
+    if is_tree(result) and result.tag == 'COMMENT':
+        result = None
+
     if result is not None:
         # record and return the result
         Global.ans.append(result)
@@ -116,12 +119,8 @@ def LINE(tr):
         return tr[1]
     elif len(tr) == 2:
         return tr[1]
-        
-LINE.comment = None
 
-def COMMENT(tr):
-    if config.test:
-        return tr
+LINE.comment = None
 
 
 class ItemStack(list):
@@ -154,7 +153,7 @@ def ITEMS(tr):
     # binary ops that combine in the reverse order
     backward_bops = [app]
     
-    seq = _match_ops_in_seq(tr[1:])
+    seq = tr[1:]
     stk = ItemStack()
     
     def squeeze():
@@ -228,78 +227,6 @@ def ITEMS(tr):
     assert not stk
     return value
 
-
-class PhraseParser(Parser):
-    grammar = semantics
-    tests = {
-        'ITEM': lambda x: not Is.Op(x) and \
-            tree_tag(x) not in semantics,
-    }
-    
-    def __init__(self):
-        super().__init__()
-        for op in ['LOP', 'BOP', 'ROP']:
-            self.tests[op] = partial(self.op_test, op)
-            
-    def op_test(self, tag, op):
-        return Is.Op(op) and op.type == tag or tree_tag(op) == 'OP'
-    
-    def parse_atom(self, _tag, tag, phrase):
-        if tag == '':
-            return ['BOP', binary_ops['']], phrase
-        elif tag in self.tests:
-            obj = phrase[0]
-            if self.tests[tag](obj):
-                if tree_tag(obj) == tag:  # [L/B/R]OP
-                    obj = operators[tag](obj[1])
-                return [tag, obj], phrase[1:]
-            else:
-                return self.failed
-        else:
-            raise SyntaxError('unknown atom %s' % tag)
-        
-phrase_parser = PhraseParser()
-
-
-def _match_ops_in_seq(seq):
-    """
-    Check if the seq is in correct syntax, disambiguate operators and add
-    hidden binary operators if necessary (representing multiplication etc.).
-    """
-    def flatten(tree):
-        if (tag := tree_tag(tree)) in semantics:
-            assert tag in ['SEQ', 'TERM']
-            return cat(*map(flatten, tree[1:]))
-        elif tag in PhraseParser.tests:
-            return tree[1]
-        elif tag == None:
-            return [tree]
-        else:
-            raise ValueError
-
-    def cat(*args):
-        l = []
-        for arg in args:
-            if type(arg) is list:
-                l.extend(arg)
-            else:
-                l.append(arg)
-        return l
-
-    tree, rem = phrase_parser.parse_tag('SEQ', seq)
-    if rem or not tree: raise ValueError
-    return flatten(tree)
-
-
-def OP(tr):
-    sym = tr[1]
-    if sym not in amb_ops:
-        for ops in operators.values():
-            if sym in ops:
-                return ops[sym]
-    else:
-        return tr
-        
 
 def LIST(tr):
     lst = []
@@ -672,16 +599,16 @@ def field_attr(tr, env):
 # macro rules
 
 def PHRASE(tr):
-    def convert_shortcirc(phrase):
+    def convert_seq(seq):
         "Converts the phrase into a tree based on its shortcircuit operations."
         for op in shortcircuit_ops:
             opt = ['OP', op]
-            if opt in phrase:
-                i = phrase.index(opt)
-                lt = convert_shortcirc(phrase[:i])
-                rt = convert_shortcirc(phrase[i+1:])
+            if opt in seq:
+                i = seq.index(opt)
+                lt = convert_seq(seq[:i])
+                rt = convert_seq(seq[i+1:])
                 return [op.upper(), lt, rt]
-        return ['ITEMS'] + phrase
+        return ['ITEMS'] + parse_op(seq)
     
     def match_unknowns():
         unknowns = set()
@@ -711,10 +638,65 @@ def PHRASE(tr):
     if unknowns:
         return convert_unknown()
     else:
-        return convert_shortcirc(tr[1:])
+        return convert_seq(tr[1:])
     
+
 def UNKNOWN(tr):
     return PHRASE(['PHRASE', tr])
+
+
+class OpParser(Parser):
+    grammar = semantics
+    tests = {'ITEM': lambda tr: tr.tag not in semantics and tr.tag != 'OP'}
+    
+    def __init__(self):
+        super().__init__()
+        for op in ['LOP', 'BOP', 'ROP']:
+            self.tests[op] = parital(self.op_test, op)
+            
+    def op_test(self, op, tr):
+        return tr.tag == 'OP' and tr[1] in operators[op]
+    
+    def parse_atom(self, _tag, tag, phrase):
+        if tag == '':
+            return ['BOP', binary_ops['']], phrase
+        elif tag in self.tests:
+            tr = phrase[0]
+            if self.tests[tag](tr):
+                if tr.tag == 'OP':
+                    op = operators[tag][tr[1]]
+                    return [tag, op], phrase[1:]
+                else:
+                    return tr, phrase[1:]
+            else:
+                return self.failed
+        else:
+            raise SyntaxError('unknown atom %s' % tag)
+        
+op_parser = OpParser()
+
+
+def parse_op(seq):
+    """
+    Check if the seq is in correct syntax, disambiguate operators and add
+    hidden binary operators if necessary (representing multiplication etc.).
+    """
+    def flatten(tree):
+        if tree.tag in semantics:
+            assert tag in ['SEQ', 'TERM']
+            return cat(*map(flatten, tree[1:]))
+        else:
+            return [tree]
+
+    def cat(*args):
+        l = []
+        for arg in args:
+            l.extend(arg) if type(arg) is list else l.append(arg)
+        return l
+
+    tree, rem = op_parser.parse_tag('SEQ', seq)
+    if rem or not tree: raise ValueError
+    return flatten(tree)
 
 
 # calc commands
@@ -819,22 +801,23 @@ def PYTHON(tr): interact()
 #     return wrapped
 
 # @hold_tree
-def eval_tree(tree, env=None, inplace=True):
+def eval_tree(tree: SyntaxTree, env=None, inplace=True):
     if not is_tree(tree):
         return tree
     if not inplace:
         tree = deepcopy(tree)
         
-    tag = tree_tag(tree)
+    tag = tree.tag
     
     if tag in macro_rules:
         tree = macro_rules[tag](tree)
-        return eval_tree(tree, env)
+        return eval_tree(SyntaxTree(tree), env)
     
     # simplify subtrees not containing unbound names
     if tag not in eval_rules:
         partial_flag = 0
         for i, t in enumerate(tree):
+            if i == 0: continue
             tree[i] = eval_tree(t, env)
             if is_tree(tree[i]) and tag not in delayed_rules:
                 partial_flag = 1

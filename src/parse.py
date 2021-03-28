@@ -127,7 +127,7 @@ class Parser:
         self.to_merge.append(seq)
         return seq, rem
     
-    @trace
+    # @trace
     @memo
     def parse_tag(self, tag, text):
         alttag = None

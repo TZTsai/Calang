@@ -1,7 +1,7 @@
 from operator import *
 from numbers import *
 import inspect
-from functools import reduce, wraps
+from functools import reduce, wraps, partial
 from itertools import product as itprod, permutations, combinations
 from fractions import Fraction
 from copy import deepcopy

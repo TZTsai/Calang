@@ -27,30 +27,27 @@ class SyntaxTree(list):
     def __init__(self, tree):
         if isinstance(tree, SyntaxTree):
             return  # the same object
+        
         assert type(tree) in [list, tuple]
         assert tree and type(tree[0]) is str
         assert self.tag_pattern.match(tree[0])
-        self[:] = tree
+        
+        self[:] = [tree[0]]
+        for i, t in enumerate(tree):
+            if i == 0: continue
+            self.append(SyntaxTree(t) if type(t) is list else t)
     
     @property
     def tag(self):
         return self[0]
-    
-    @property
-    def body(self):
-        return self[1:]
-
-    def __getitem__(self, index):
-        t = super().__getitem__(index)
-        if index > 0 and not is_tree(t):
-            t = SyntaxTree(t)
-            self[index] = t
-        return t
 
     def __setitem__(self, key, value):
         if key == 0:
             raise IndexError('cannot change the tag of a syntax tree')
         super().__setitem__(key, value)
+        
+    def __repr__(self):
+        return '%s[%s]' % (self.tag, ', '.join(map(str, self[1:])))
         
     
 def is_tree(obj):

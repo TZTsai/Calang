@@ -16,6 +16,8 @@ from utils.debug import log
 from utils.io import BracketTracker, input, print
 
 config.debug = debug
+config.test = test
+
 log.file = io
 
 
@@ -29,7 +31,9 @@ def run(filename=None, test=False, start=0, verbose=True):
                 return f.read().splitlines()[start:]
 
     def verify_answer(exp, result, answer):
-        if eq(result, eval(answer)):
+        if isinstance(result, list):
+            raise Warning('--- Incomplete evaluation ---')
+        elif eq(result, eval(answer)):
             if verbose: print('--- OK! ---')
         else:
             raise Warning('--- Fail! Expected answer of %s is %s, but actual result is %s ---'
@@ -88,9 +92,6 @@ def run(filename=None, test=False, start=0, verbose=True):
 
             if result is None: continue
             
-            if test and comment:
-                verify_answer(line, result, comment)
-            
             if verbose:  # print output
                 prefix = make_prompt('out')
                 opts = {opt: comment == opt.upper()
@@ -99,6 +100,9 @@ def run(filename=None, test=False, start=0, verbose=True):
                 output = calc_format(result, linesep=linesep, **opts)
                 print(prefix + output)
             
+            if test and comment:
+                verify_answer(line, result, comment)
+            
             count += 1
 
         except KeyboardInterrupt:
@@ -106,14 +110,15 @@ def run(filename=None, test=False, start=0, verbose=True):
             return
         except Warning as w:
             print(w)
-            if test and config.debug: raise #Warning
+            if config.test and config.debug:
+                raise #Warning
         except Exception as e:
             if str(e):
                 print(error_prompt, e) # print('Error:', e)
             else:
                 print('Aborted due to an exception.')
             if config.debug: traceback.print_exc()
-            if test: raise
+            if config.test: raise
             
     if test:
         print('\nCongratulations, tests all passed in "%s"!\n' % filename)
@@ -123,7 +128,7 @@ def load_mods():
     "Load modules, which can cost some time."
     from eval import calc_eval, LOAD, LINE
     from format import calc_format
-    from funcs import eq
+    from funcs import eq, SyntaxTree
     
     LOAD.run = run
     log.format = calc_format
