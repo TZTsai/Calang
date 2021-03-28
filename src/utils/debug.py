@@ -30,8 +30,10 @@ def trace(f):
     def _f(*args):
         cur_logfile = log.file
         log.file = logfile
-
-        signature = format_call(f, args)
+        
+        fmt = str if 'parse' in f.__name__ else log.format
+        signature = format_call(f, args, fmt)
+        
         log('%s:' % signature)
         log.indent += 2
         try:
@@ -53,10 +55,10 @@ def disabled(f, *ignore): return f  # used to disable a decorator
 if not config.debug: trace = disabled
 
 
-def format_call(f, args):
+def format_call(f, args, formatter):
     if f.__name__ == '_func':
         f, args = args
-    return '%s%s' % (repr(f), log.format(args))
+    return '%s%s' % (f.__name__, formatter(args))
 
 
 def interact(func):

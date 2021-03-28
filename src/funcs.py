@@ -1,12 +1,11 @@
-from operator import (
-    and_ as band, or_ as bor, concat, sub, mul, 
-    floordiv, truediv, mod, neg, lt, gt, le, ge, inv, xor
-)
+from operator import *
+from numbers import *
+import inspect
 from functools import reduce, wraps
 from itertools import product as itprod, permutations, combinations
-from numbers import *
 from fractions import Fraction
 from copy import deepcopy
+import numpy as np
 from sympy import (
     S, E, pi, nan, oo,
     Symbol, Array, Matrix, Eq, Integer, Float, Expr,
@@ -17,124 +16,120 @@ from sympy import (
     limit, integrate, diff, simplify
 )
 # import symengine  # TODO: this may boost the speed of symbolic calculation
-from objects import Range, Map, Attr, Env, Op, Function, Builtin
-import inspect
+
+from objects import *
+from utils.funcs import *
 import config
 
 
-def apply(func, args):
+class IsInstance:
+    """
+    >>> Is = IsInstance()
+    >>> Is.list([1, 2])
+    True
+    >>> Is(int, float)(2)
+    True
+    >>> Is(int, float)(1, 1.0)
+    True
+    >>> Is(int, float)(1, 'b')
+    False
+    >>> Is.re.error
+    """
+    
+    @staticmethod
+    def q(val, type):
+        if isinstance(val, Env) and val.val is not None:
+            val = val.val
+        return isinstance(val, type)
 
-    def convert(arg):
-        if type(arg) in (list, tuple):
-            return tuple(map(convert, arg))
-        elif isinstance(arg, Env) and arg.val is not None:
-            return arg.val
+    def __init__(self, ns=None):
+        if ns is None:
+            self.ns = globals()
         else:
-            return arg
-        
-    args = convert(args)
-    result = func(args)
-    # if isinstance(func, Map):
-    # else:
-    #     result = func(*args)
-    return convert_type(result)
+            self.ns = ns
+            
+    def __getattr__(self, type):
+        ns = super().__getattribute__('ns')
+        type = eval(type, ns)
+        if hasattr(type, '__package__'):
+            return IsInstance(type.__dict__)
+        else:
+            return lambda *args: all(IsInstance.q(arg, type)
+                                     for arg in args)
+
+    def __call__(self, *types):
+        return lambda *args: all(IsInstance.q(arg, types)
+                                 for arg in args)
+
+Is = IsInstance()
+
+is_array = Is(Array, Matrix)
+is_matrix = Is.Matrix
+is_attr = Is.Attr
+is_number = Is.Number
+is_list = Is.tuple
+
+def is_env(val):  # special case
+    return isinstance(val, Env)
 
 
-def convert_type(val):
+def call(fn, val):
+    return fn(val)
+
+
+def convert_input(arg):
+    if Is(list, tuple)(arg):
+        return tuple(map(convert_input, arg))
+    elif Is.Env(arg) and arg.val is not None:
+        return arg.val
+    elif Is.dict(arg):
+        return {k: convert_input(v) for k, v in arg.items()}
+    else:
+        return arg
+    
+
+def convert_output(val):
     "Convert the result to the standard types."
-
-    def proc_num(val):
+    
+    def convert_num(val):
         "convert a number into python number type"
-        if isinstance(val, (int, float, complex, Fraction)):
-            if isinstance(val, complex):
-                return val.real if eq(val.imag, 0) else val
+        if Is(int, float, complex, Fraction)(val):
+            if Is.complex(val):
+                return val.real if val.imag == 0 else val
             else:
                 return val
-        elif isinstance(val, Integer):
+        elif Is.Integer(val):
             return int(val)
-        elif isinstance(val, Float):
+        elif Is.Float(val):
             return float(val)
         else:
-            val = complex(val)
-            return val.real if eq(val.imag, 0) else val
+            return convert_num(complex(val))
 
-    if type(val) is bool:
+    if is_tree(val):
+        return val
+    elif type(val) is bool:
         return 1 if val else 0
     elif type(val) in [list, tuple]:
-        return tuple(convert_type(a) for a in val)
-    elif type(val) is dict:
+        return tuple(convert_output(a) for a in val)
+    elif Is.dict(val):
         return Env(binds=val)
-    elif callable(val) and not isinstance(val, Function):
+    elif callable(val) and not Is.Function(val):
         return Function(val)
     else:
-        try:
-            return proc_num(val)
-        except (ValueError, TypeError):
-            if isinstance(val, Expr):
-                return factor(simplify(val))
-            else:
-                return val
+        try: val = simplify(val)
+        except: pass
+        try: return convert_num(val)
+        except: return val
+        
 
-
-def iterable(value):
-    return hasattr(value, '__iter__')
-
-
-def indexable(value):
-    return hasattr(value, '__getitem__')
-
-
-def is_number(value):
-    return isinstance(value, Number)
-
-
-def is_attr(value):
-    return isinstance(value, Attr)
-
-
-def is_list(value):
-    return isinstance(value, tuple)
-
-
-def is_array(value):
-    return isinstance(value, (Array, Matrix))
-
-
-def is_matrix(value):
-    return isinstance(value, Matrix)
-
-
-def is_env(value):
-    return isinstance(value, Env)
+Function.proc_in = convert_input
+Function.proc_out = convert_output
 
 
 def likematrix(value):
     if isinstance(value, Matrix): return True
     return (depth(value, max) == depth(value, min) == 2 and
             same(map(len, value)) and len(value[0]) > 0)
-
-
-def_template_1 = '''
-def {f}_(arg1, arg2=None):
-    if arg2 is not None:
-        pred, seq = arg1, arg2
-        return {f}(map(pred, seq))
-    else:
-        seq = arg1
-        return {f}(seq)
-'''
-
-for f in ['all', 'any']:
-    exec(def_template_1.format(f=f))
-
-
-def same(lst):
-    try: x = lst[0]
-    except TypeError:
-        return same(tuple(lst))
-    except IndexError:
-        return True
-    return all(eq(x, y) for y in lst[1:])
 
 
 def add(x, y):
@@ -147,61 +142,12 @@ def div(x, y):
         return Fraction(x, y)
     else:
         return x / y
-
-def dot(x1, x2):
-    '''
-    >>> dot(3, [1,2,3])
-    (3, 6, 9)
-    >>> dot([1, 2], [2, 5])
-    12
-    '''
-    if callable(x1) and is_list(x2):
-        return broadcast(x1)(x2)
-    if not (is_list(x1) or is_list(x2)):
-        return mul(x1, x2)
-    d1, d2 = depth(x1), depth(x2)
-    if 0 in [d1, d2]:
-        raise TypeError  # for broadcast
-    if d1 == d2 == 1:
-        if len(x1) != len(x2):
-            raise ValueError('dim mismatch for dot product')
-        return sum(map(mul, x1, x2))
-    elif d1 == 1:
-        return dot([x1], x2)
-    elif d2 == 1:
-        return dot(x1, transpose(x2))
-    else:
-        return tuple(tuple(dot(r, c) for c in transpose(x2)) for r in x1)
-
+    
 def pow(x, y):
-    if isinstance(y, int):
-        return reduce(dot, [x] * y, 1)
+    if isinstance(y, int) and y > 0:
+        return reduce(dot, [x] * y)
     else:
         return x ** y
-    
-def empty(x, y):
-    raise RuntimeError  # should not be applied
-    
-def exclaim(x):
-    if callable(x):
-        args = inspect.signature(x).parameters
-        if not args:
-            return x()
-        else:
-            x2 = deepcopy(x)
-            x2.broadcast = True
-            return x2
-    else:
-        return factorial(x)
-
-        
-def log2(x): return log(x) / log(2)
-def log10(x): return log(x) / log(10)
-def sum_(*x): return reduce(add, x, 0)
-def prod(*x): return reduce(dot, x, 1)
-def deg(x): return x / 180 * pi
-def ang(z): return atan(z.imag / z.real)
-
     
 def in_(x, y):
     if isinstance(y, type):
@@ -239,25 +185,25 @@ def and_(x, y):
         raise TypeError("invalid types for operator '&'")
 
 def or_(x, y):
-    if any_(iterable, [x, y]):
-        dx, dy = depth(x), depth(y)
-        if abs(dx - dy) <= 1:
-            if max(dx, dy) == 2 and len(x) == len(y):  # matrix augmentation
-                return tuple(or_(xi, yi) for xi, yi in zip(x, y))
-            if dx < dy: x = (x,)
-            if dx > dy: y = (y,)
-            return concat(x, y)
-        else:
-            raise TypeError('dimension mismatch')
-    elif all_(is_env, [x, y]):
+    if all_(is_env, [x, y]):
         assert x.parent is y.parent, \
             "operator '|' applied to Envs having different parents"
         e = Env(parent=x.parent, binds=x)
         e.update(y)
         return e
+    elif any_(indexable, [x, y]):
+        dx, dy = depth(x), depth(y)
+        if abs(dx - dy) <= 1:
+            # if max(dx, dy) == 2 and len(x) == len(y):  # matrix augmentation
+            #     return tuple(or_(xi, yi) for xi, yi in zip(x, y))
+            if dx < dy: x = [x]
+            if dx > dy: y = [y]
+            return concat([x, y])
+        else:
+            raise TypeError('dimension mismatch')
     else:
         return bor(x, y)
-
+    
 def land(x, y):
     return 1 if x and y else 0
 
@@ -272,47 +218,103 @@ def eq(x, y):
 
 def neq(x, y):
     return not eq(x, y)
+    
+def empty(x, y):
+    raise Exception  # should not be called
+    
+def exclaim(x):
+    if callable(x):
+        args = inspect.signature(x).parameters
+        if not args:
+            return x()
+        else:
+            return broadcast(x)
+    else:
+        return factorial(x)
+
+def log2(x): return log(x, 2)
+def log10(x): return log(x, 10)
+def sum_(*x): return reduce(add, x, 0)
+def prod(*x): return reduce(dot, x, 1)
+def deg(x): return x / 180 * pi
+def polar(r, t): return complex(r*cos(t), r*sin(t))
 
 
-def depth(value, key=max):
-    '''
-    >>> depth([1])
-    1
-    >>> depth(abs)
-    0
-    >>> depth(-9)
-    0
-    >>> depth([1, [2]])
-    2
-    >>> depth([1, [2]], min)
-    1
-    >>> depth([1, [2, [3]]])
-    3
-    '''
-    if not is_list(value): return 0
-    if len(value) == 0: return 1
-    return 1 + key(map(depth, value))
+class FromNumpy:
+    
+    def __init__(self, module=np):
+        self.m = module
+    
+    @staticmethod
+    def convert(f):
+        @wraps(f)
+        def wrapped(*args, **kwds):
+            ret = f(*args, **kwds)
+            if any_(Is.np.ndarray, args):
+                return ret
+            elif isinstance(ret, np.ndarray):
+                return ret.tolist()
+            else:
+                return ret
+        return wrapped
+    
+    def __getattr__(self, name):
+        if name == 'random':
+            return FromNumpy(np.random)
+        return FromNumpy.convert(getattr(self.m, name))
+    
+# def extend(f):
+#     def deco(g):
+#         @wraps(g)
+#         def extended(*args, **kwds):
+#             it = g(*args, **kwds)
+#             args, kwds = next(it)
+#             try:
+#                 next(it)
+#             except StopIteration as e:
+#                 return e.value
+#         return extended
+#     return deco
+
+from_np = FromNumpy()
+
+_dot = from_np.dot
+transpose = from_np.transpose
+outer = from_np.outer
+ones = from_np.ones
+zeros = from_np.zeros
+diag = from_np.diag
+rand = from_np.random.rand
+reshape = from_np.reshape
+concat = from_np.hstack
+
+
+def dot(x1, x2):
+    if all_(callable, [x1, x2]):
+        return compose(x1, x2)
+    else:
+        return _dot(x1, x2)
 
 
 def broadcast(f):
     @wraps(f)
-    def wrapped(*args):
-        depths = [depth(l) for l in args]
-        if not same(depths):
-            i = depths.index(max(depths))
-            args = [[*args[:i], a, *args[i+1:]] for a in args[i]]
-        return tuple(f(*a) for a in args)
+    def wrapped(*args, **kwds):
+        bc = np.broadcast(*args)
+        ret = np.empty(bc.shape)
+        ret.flat = [f(*args) for args in bc]
+        return ret
+    wrapped.__name__ = '<broadcast: %s>' % repr(f)
     return wrapped
 
 Function.broadcast = broadcast
 
 
-def compose(*funcs):
-    def compose2(f, g):
-        def h(*args): return f(g(*args))
-        h.__name__ = f'<composed: {f.__name__} ⋅ {g.__name__}>'
-        return h
-    return reduce(compose2, funcs)
+def compose(f, g):
+    def h(*args, **kwds):
+        val = apply(g, args, kwds)
+        return apply(f, val)
+    h.__name__ = f'<compose: {repr(f)} ⋅ {repr(g)}>'
+    return h
 
 
 def unpack(lst):
@@ -342,7 +344,7 @@ def index(lst, idx):
         for attr in ['first', 'last']:
             if (i := getattr(id0, attr)) < 0:
                 setattr(id0, attr, len(lst) + i + 1)
-        items = [ind(lst, i) for i in id0]
+        items = [ind(lst, k) for k in id0]
         return tuple(index(item, idx[1:]) for item in items)
     else:
         items = ind(lst, id0)
@@ -360,7 +362,7 @@ def get_attr(obj, attr):
     
 
 def shape(x):
-    if not iterable(x): return ()
+    if not indexable(x): return ()
     subshapes = [shape(a) for a in x]
     return (len(x), *map(min, *subshapes))
 
@@ -372,30 +374,24 @@ def flatten(l):
     >>> flatten([[1,2,[3]],[4]])
     [1, 2, 3, 4]
     """
-    if depth(l) <= 1: return l
+    if not iterable(l):
+        return l
     fl = []
-    for x in l: 
+    for x in l:
         if not iterable(x): fl.append(x)
         else: fl.extend(flatten(x))
     return fl
 
 
-def transpose(value):
-    d = depth(value, min)
-    if d == 0:
-        return value
-    elif d == 1:
-        return transpose([value])
-    else:
-        rn, cn = rows(value), cols(value)
-        return [[value[r][c] for r in range(rn)] for c in range(cn)]
-
-
-# def canmap(f):
-#     @wraps(f)
-#     def _f(*lst, depth=1):
-#         return tuple(map(f, *lst))
-#     return _f
+# def transpose(value):
+#     d = depth(value, min)
+#     if d == 0:
+#         return value
+#     elif d == 1:
+#         return transpose([value])
+#     else:
+#         rn, cn = rows(value), cols(value)
+#         return [[value[r][c] for r in range(rn)] for c in range(cn)]
 
 
 def first(cond, lst):
@@ -422,7 +418,7 @@ def substitute(exp, bindings):
     if hasattr(exp, 'subs'):
         return exp.subs(bindings)
     if iterable(exp):
-        return tuple(substitute(x, *bindings) for x in exp)
+        return tuple(substitute(x, bindings) for x in exp)
     return exp
 
 

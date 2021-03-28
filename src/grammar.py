@@ -1,5 +1,3 @@
-print('Grammar reloaded.')
-
 from pprint import pprint
 import re
 import json

@@ -1,7 +1,7 @@
 import re, json, ast
 import config
 from builtin import operators
-from objects import Form, Op
+from objects import Form, Op, SyntaxTree, tree_tag
 from utils.funcs import *
 from utils.debug import trace, interact, check, check_record, pprint
 
@@ -145,11 +145,11 @@ class Parser:
             return [tag]
         elif type(tree) is list:
             if tag in self.held_tags:
-                if is_tree(tree):
+                if type(tree[0]) is str:
                     tree = [tag, tree]
                 else:
                     tree = [tag] + tree
-            elif not is_tree(tree):
+            elif not type(tree[0]) is str:
                 if len(tree) == 1:
                     tree = tree[0]
                 elif tag[0] == '_':
@@ -165,7 +165,7 @@ class CalcParser(Parser):
     grammar = compile_grammar(grammar)
 
     held_tags = {
-        'DIR', 'DEL', 'QUOTE', 'UNQUOTE', 'INFO',
+        'DIR', 'DEL', 'QUOTE', 'UNQUOTE', 'INFO', 'LINE',
         'ENV', 'LIST', 'ARRAY', 'FORM', 'NS', 'UNPACK'
     }
 
@@ -200,7 +200,7 @@ class CalcParser(Parser):
     def parse_atom(self, tag, pattern, text):
         text = self.lstrip(text)
         tree, rem = super().parse_atom(tag, pattern, text)
-        if is_name(tree) and tree in self.keywords:
+        if type(tree) is str and tree in self.keywords:
             return self.failed
         else:
             return tree, rem
@@ -227,7 +227,8 @@ calc_parser = CalcParser()
 
 def calc_parse(text):
     text = text.translate(CalcParser.synonyms)
-    return calc_parser.parse_tag('LINE', text)
+    tree = calc_parser.parse_tag('LINE', text)
+    return SyntaxTree(tree)
 
         
 def deparse(tree):
@@ -285,10 +286,10 @@ def deparse(tree):
             _, form, exp = tr
             return '%s -> %s' % (rec(form), rec(exp))
         elif tag in ['BIND', 'KWD']:
-            if tree_tag(tr[-1]) == 'DOC':
-                tr = tr[1:]
+            if tr[-1][0] == 'DOC':
+                tr = tr[:-1]
             tup = tuple(map(rec, tr[1:]))
-            if tree_tag(tr[2]) == 'SP':
+            if tr[2][0] == 'SP':
                 return '%s %s = %s' % tup
             else:
                 return '%s = %s' % tup

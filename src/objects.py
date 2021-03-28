@@ -1,3 +1,4 @@
+import re
 from sympy import Symbol
 from utils.debug import log, trace
 from utils.funcs import *
@@ -5,50 +6,112 @@ import config
 
 
 class stack(list):
+    
     def push(self, obj):
         self.append(obj)
+        
     def peek(self, i=-1):
         try: return self[i]
         except: return None
         
         
+class SyntaxTree(list):
+    tag_pattern = re.compile('[A-Z_:]+')
+
+    def __init__(self, tree):
+        assert type(tree) in [list, tuple]
+        assert tree and type(tree[0]) is str
+        assert self.tag_pattern.match(tree[0])
+        self[:] = tree
+    
+    @property
+    def tag(self):
+        return self[0]
+    
+    @property
+    def body(self):
+        return self[1:]
+
+    def __getitem__(self, index):
+        t = super().__getitem__(index)
+        if index > 0 and not is_tree(t):
+            t = SyntaxTree(t)
+            self[index] = t
+        return t
+
+    def __setitem__(self, key, value):
+        if key == 0:
+            raise IndexError('cannot change the tag of a syntax tree')
+        super().__setitem__(key, value)
+        
+    
+def is_tree(obj):
+    return isinstance(obj, SyntaxTree)
+
+def tree_tag(obj):
+    return obj.tag if is_tree(obj) else None
+
+
 class Function:
     broadcast = lambda f: NotImplemented
-    compose = lambda f, g: NotImplemented
+    proc_in = lambda x: NotImplemented
+    proc_out = lambda y: NotImplemented
 
     def __init__(self, func):
         self._func = func
+        self.broadcast = False
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
                 
     def __repr__(self):
         return self.__name__
     
+    def func(self, *args):
+        args = Function.proc_in(args)
+        ret = self._func(*args)
+        return Function.proc_out(ret)
+    
     def __call__(self, *args):
-        return self._func(*args)
+        try:
+            return self.func(*args)
+        except TypeError:
+            if not self.broadcast: raise
+        try:
+            return Function.broadcast(self.func)(*args)
+        except ValueError:
+            return deepmap(self.func, args)
     
     
 class Op(Function):
-    def __init__(self, type, symbol, function, priority):
+    bindings = {}
+    
+    def __new__(cls, *args, **kwds):
+        if len(args) == 1 and not kwds:
+            return cls.bindings[args[0]]
+        else:
+            return object.__new__(cls)
+    
+    def __init__(self, *args, amb=None):
+        if len(args) == 1: return
+        type, symbol, function, priority = args
         super().__init__(function)
         self.type = type
         self.symbol = symbol
         self.priority = priority
-        self.broadcast = True
+        self.amb = amb
         
     def __call__(self, *args):
         try:
-            return super().__call__(*args)
-        except TypeError:
-            if not self.broadcast: raise
-            
-        call = self.__call__
-        
-        try: return tuple(map(call, *args))
-        except TypeError: pass
-        
-        try: return Function.broadcast(call)(*args)
-        except TypeError: raise
+            if self.type == 'BOP':
+                assert len(args) == 2
+            else:
+                assert len(args) == 1
+        except:
+            if self.amb:
+                return Function.__call__(self.amb, *args)
+            else:
+                raise TypeError('incorrect number of arguments')
+        return super().__call__(*args)
 
     def __repr__(self):
         return f"{self.type}({self.symbol}, {self.priority})"
@@ -65,11 +128,11 @@ class Builtin(Function):
         super().__init__(func)
         self.__name__ = name
         
-    def __call__(self, args):
+    def __call__(self, val):
         try:
-            return self._func(*args)
-        except TypeError:
-            return self._func(args)
+            return super()(*val)
+        except:
+            return super()(val)
         
     
 deparse = lambda tree: NotImplemented
@@ -118,8 +181,8 @@ class Map(Function):
                 if tr[0] == 'NAME':
                     vars.add(tr[1])
                 else:
-                    for it in tr[1:]:
-                        collect_vars(it)
+                    for t in tr[1:]:
+                        collect_vars(t)
         vars = set()
         collect_vars(self.body)
         return vars.issubset(self.form.vars)
@@ -148,8 +211,7 @@ class Map(Function):
     
 class Form(list):
     def __init__(self, form, vars):
-        try: self[:] = form
-        except: self[:] = ['EXP', form]
+        self[:] = form
         self.vars = vars
         self.unpack_pos = self.find_first_tag('UNPACK')
         self.kwd_start = self.find_first_tag('KWD')
@@ -167,7 +229,7 @@ class Form(list):
     
 
 class Env(dict):
-    default_name = '(loc)'
+    default_name = '(env)'
     
     def __init__(self, val=None, parent=None, name=None,
                  binds=None, hide_parent=True):
@@ -228,6 +290,55 @@ class Env(dict):
         return True
     
     
+class Args(Env):
+    
+    def __init__(self, args, kwds=None):
+        if kwds is None: kwds = {}
+        self._vars = set()
+        super().__init__(val=args, binds=kwds)
+        
+    def match(self, form: Form):
+        vars = form[1:]
+        args = self.val
+        
+        kwd_start = form.kwd_start or len(vars)
+        min_items = kwd_start
+            
+        if (k := form.unpack_pos) is not None:
+            min_items -= 1
+            unpack_len = len(args) - max(min_items, k)
+        else: k = -1
+        
+        if min_items > len(args):
+            raise TypeError('not enough arguments')
+        
+        # remove the unbound vars in self._vars after each yield
+        self._vars.update(form.vars)
+        
+        i = j = 0  # index of the current var and current arg
+        
+        while j < len(args) or i <= k:
+            if i == k:  # UNPACK
+                j = i + unpack_len
+                yield vars[i][1], args[i:j]
+            else:  # NAME or LIST
+                yield vars[i], args[j]
+                j += 1
+            i += 1
+        
+        # bind default keywords if necessary
+        for kwd in vars[kwd_start:]:
+            _, var, defval = kwd  # not good: leaky abstraction
+            if var in self._vars:
+                yield kwd, defval
+                
+        if self._vars:
+            if len(self._vars) == 1:
+                raise NameError("unbound variable %s in the list form" % self._vars.pop())
+            else:
+                raise NameError("unbound variables %s in the list form" % self._vars)
+
+
 class Type(type):
     def __init__(self, object_or_name, bases, dict):
         super().__init__(object_or_name, bases, dict)

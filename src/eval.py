@@ -33,9 +33,9 @@ from my_utils.utils import interact
 
 from parse import calc_parse, semantics, Parser
 from builtin import operators, binary_ops, builtins, shortcircuit_ops, amb_ops
-from funcs import is_list, is_attr, iterable, indexable, apply, Fraction, eq, get_attr
+from funcs import Is, iterable, indexable, eq, get_attr
 from sympy import Expr, Symbol, Array, Matrix, Eq, solve
-from objects import Env, Op, Attr, Function, Map, Form
+from objects import Env, Op, Attr, Function, Map, Form, Args
 from utils.debug import log, trace
 from utils.funcs import *
 import config
@@ -69,6 +69,7 @@ def calc_eval(exp, env=None):
 def EVAL(tr):
     if tr[-1] != ';': return tr[-1]
 
+
 def COMPLEX(tr):
     re, pm, im = tr[1:]
     return re + im*1j if pm == '+' else re - im*1j
@@ -81,13 +82,16 @@ def BIN(tr): return eval(tr[1])
 
 def HEX(tr): return eval(tr[1])
 
+
 def VAR(tr):
     field = tr[1]
     for attr in tr[2:]:
         field = get_attr(field, attr)
     return field
 
-def ATTR(tr): return Attr(tr[1])
+def ATTR(tr):
+    return Attr(tr[1])
+
 
 def ANS(tr):
     s = tr[1]
@@ -97,7 +101,11 @@ def ANS(tr):
         try: id = int(s[1:])
         except: raise SyntaxError('invalid history index!')
     return Global.ans[id]
-        
+
+def NOT(tr):
+    return 0 if tr[1] else 1
+
+
 def INFO(tr):
     print(tr[1].__doc__)
     
@@ -107,36 +115,30 @@ def LINE(tr):
         if len(tr) > 2: return tr[1]
     elif len(tr) > 1:
         return tr[1]
-    
-def COMMENT(tr):
-    return tr
-    
+        
 LINE.comment = None
 
 
 class ItemStack(list):
-    class substack(ItemStack):
+    class substack(list):
         def __init__(self, parent):
             self.parent = parent
 
         def pop(self, i=-1):
             x = self.parent.pop(i)
-            y = self.pop(i)
+            y = super().pop(i)
             assert type(x) == type(y)
             return x
         
-        def append(self, x):
+        def push(self, x):
             self.parent.append(x)
             self.append(x)
-
+            
     def __init__(self):
         self.ops = ItemStack.substack(self)
         self.vls = ItemStack.substack(self)
         
-    def peek(self):
-        return self[-1] if self else None
 
-    
 def ITEMS(tr):
     # these are binary ops that can be represented by a space
     get = binary_ops['(get)']
@@ -146,95 +148,105 @@ def ITEMS(tr):
 
     # binary ops that combine in the reverse order
     backward_bops = [app]
-
-    seq = match_ops_in_seq(tr[1:])
+    
+    seq = _match_ops_in_seq(tr[1:])
     stk = ItemStack()
     
     def squeeze():
         "Applies the previous operator."
-        op = stk.ops.pop()
-        if op.type == 'BOP':
-            x = ['APP', op, stk.vls.pop(-2), stk.vls.pop(-1)]
+        if stk.ops[-1].type == 'BOP':
+            y, op, x = stk.vls.pop(), stk.ops.pop(), stk.vls.pop()
+            t = op(x, y)
         else:
-            x = ['APP', op, stk.vls.pop()]
-        stk.vls.append(x)
-
+            if stk.ops[-1].type == 'LOP':
+                x, op = stk.vls.pop(), stk.ops.pop()
+            else:
+                op, x = stk.ops.pop(), stk.vls.pop()
+            t = op(x)
+        stk.vls.push(t)
+        
+    def stk_top():
+        return stk[-1] if stk else None
+    
+    def top_is_op(*ops):
+        return Is.Op(top := stk_top()) and top.type in ops
+    
     def push(x):
         if isinstance(x, Op):
             if x.symbol == '':  # a hidden op given by a space
-                push.wait = True
-                stk.ops.append(x); return
-                
-            while stk.ops:
-                op = stk.ops.peek()
-                if (x.priority > op.priority or
-                    x == op and op in backward_bops or
-                    push.prev is op and op.type in ['BOP', 'LOP']):
-                        break
-                else: squeeze()
-            stk.ops.append(x)
-        else:
-            while stk.ops and stk.ops.peek().type == 'ROP':
-                squeeze()  # apply previous right-unary ops
+                push.unsure = True
             
-            if push.wait:  # waiting for the interpretation of ''
-                stk.vls.append(x)
-                while stk.ops and stk.ops.peek().type == 'LOP':
-                    squeeze()  # apply previous left-unary ops
+            elif not top_is_op('LOP', 'BOP'):
+                while stk.ops:
+                    op = stk.ops[-1]
+                    if (x.priority > op.priority or
+                        x == op and op in backward_bops):
+                        break
+                    else:
+                        squeeze()
+                    
+            stk.ops.push(x)
+            
+        else:
+            if push.unsure:
+                push.unsure = False
+                    
+                while top_is_op('LOP'):
+                    stk.vls.push(x)
+                    squeeze()
+                    x = stk.vls.pop()
+                    
                 assert stk.ops.pop().symbol == ''
-                push.wait = False
+                x2, x1 = x, stk[-1]
                 
-                x2, x1 = stk.vls.pop(), stk.vls.peek()
-                if is_attr(x2):
+                if Is.Attr(x2):
                     push(get)
                 elif callable(x1):
                     push(app)
                 else:
                     try:
-                        y = apply(idx, [x1, x2])
-                        stk.vls.pop(); push(y)
+                        idx(x1, x2)
+                        push(idx)
                     except:
                         push(mul)
-            stk.vls.append(x)
-        push.prev = x
+                        
+            stk.vls.push(x)
 
-    push.prev = None
-    push.wait = False
+    push.unsure = False
     
     for x in seq:
         push(x)
     while stk.ops:
         squeeze()
     
-    val = stk.vls.pop()
-    assert not stk.vls
-    return val
+    value = stk.vls.pop()
+    assert not stk
+    return value
 
 
 class PhraseParser(Parser):
     grammar = semantics
     tests = {
-        # 'ATTR': lambda x: isinstance(x, Attr),
-        # 'FUNC': callable,
-        # 'LIST': is_list,
-        'ITEM': lambda x: not isinstance(x, (list, Op))
+        'ITEM': lambda x: not Is.Op(x) and \
+            tree_tag(x) not in semantics,
     }
-
-    def parse_atom(self, _, tag, phrase):
-        if tag in ['LOP', 'BOP', 'ROP']:
-            try:
-                op = phrase[0]
-                if isinstance(op, Op):
-                    assert op.type == tag
-                else:
-                    assert tree_tag(op) == 'OP'
-                    op = operators[tag][op[1]]
-                return [tag, op], phrase[1:]
-            except:
-                return self.failed
+    
+    def __init__(self):
+        super().__init__()
+        for op in ['LOP', 'BOP', 'ROP']:
+            self.tests[op] = partial(self.op_test, op)
+            
+    def op_test(self, tag, op):
+        return Is.Op(op) and op.type == tag or tree_tag(op) == 'OP'
+    
+    def parse_atom(self, _tag, tag, phrase):
+        if tag == '':
+            return ['BOP', binary_ops['']], phrase
         elif tag in self.tests:
             obj = phrase[0]
             if self.tests[tag](obj):
+                if tree_tag(obj) == tag:  # [L/B/R]OP
+                    obj = operators[tag](obj[1])
                 return [tag, obj], phrase[1:]
             else:
                 return self.failed
@@ -244,28 +256,21 @@ class PhraseParser(Parser):
 phrase_parser = PhraseParser()
 
 
-def match_ops_in_seq(seq):
+def _match_ops_in_seq(seq):
     """
     Check if the seq is in correct syntax, disambiguate operators and add
     hidden binary operators if necessary (representing multiplication etc.).
     """
     def flatten(tree):
-        if is_tree(tree):
-            if len(tree) == 2:
-                return flatten(tree[1])
-            tag = tree_tag(tree)
-            if tag in ['SEQ', 'TERM']:
-                return cat(*map(flatten, tree[1:]))
-            # elif tag in ['GET', 'APP', 'IDX', 'MUL']:
-            #     nonlocal get, app, idx, mul
-            #     lv, rv = args
-            #     return cat(lv, eval(tag.lower()), rv)
-            elif tag == 'EMP':
-                return [binary_ops['']]
-            else:
-                raise SyntaxError
-        else:
+        if (tag := tree_tag(tree)) in semantics:
+            assert tag in ['SEQ', 'TERM']
+            return cat(*map(flatten, tree[1:]))
+        elif tag in PhraseParser.tests:
+            return tree[1]
+        elif tag == None:
             return [tree]
+        else:
+            raise ValueError
 
     def cat(*args):
         l = []
@@ -280,6 +285,7 @@ def match_ops_in_seq(seq):
     if rem or not tree: raise ValueError
     return flatten(tree)
 
+
 def OP(tr):
     sym = tr[1]
     if sym not in amb_ops:
@@ -288,24 +294,24 @@ def OP(tr):
                 return ops[sym]
     else:
         return tr
-
-def APP(tr):  # apply a function
-    return tr[1](*tr[2:])
+        
 
 def LIST(tr):
     lst = []
     for it in tr[1:]:
-        if is_tree(it):
-            tag = tree_tag(it)
-            if tag == 'UNPACK':
-                lst.extend(it[1])
-            elif tag == 'KWD':
-                lst.append(it)
-            else:
-                raise NameError
+        if tree_tag(it) == 'UNPACK':
+            lst.extend(it[1])
         else:
             lst.append(it)
-    return tuple(lst)
+    return _conv_lst_if_has_kwds(lst)
+
+def _conv_lst_if_has_kwds(lst):
+    kwds, items = fsplit(lambda t: tree_tag(t) == 'KWD', lst)
+    if kwds:
+        return Args(tuple(items), kwds)
+    else:
+        return tuple(items)
+
 
 def ARRAY(tr):
     return Array(tr[1]) if len(tr) == 2 else Matrix(tr[1:])
@@ -313,16 +319,21 @@ def ARRAY(tr):
 
 ## these are eval rules which require environment
 
-def NAME(tr, env):
+MAP = Map  # the MAP evaluation rule is the same as Map's constructor
+
+
+def NAME(tr, env=None):
+    if env is None:
+        return tr
     name = tr[1]
     try:
         return env[name]
     except KeyError:
-        # if NAME.force_symbol:
         if config.symbolic:
             return Symbol(name)
         else:
-            raise NameError(f"unbound symbol '{name}'")
+            raise NameError(f"unbound name '{name}'")
+
 
 def OR(tr, env):
     _, a, b = tr
@@ -339,12 +350,14 @@ def AND(tr, env):
     a = eval_tree(a, env)
     return eval_tree(b, env) if a else a
 
+
 def KWD(tr, env):
     if is_tree(tr[2]):
         tr[2] = eval_tree(tr[2], env)
         return tr
     else:
         return tr[2]
+
 
 def AT(tr, env=None):
     _, local, body = tr
@@ -356,6 +369,7 @@ def AT(tr, env=None):
     # except NameError:
     #     if env is None: raise
     #     return eval_tree(body, env=env)
+
 
 def STR(tr, env=None):
     s = tr[1]
@@ -374,6 +388,7 @@ def STR(tr, env=None):
         return s
     else:
         raise SyntaxError('unknown string mode')
+
 
 def QUOTE(tr, env=None):
     def traverse(tr):
@@ -461,8 +476,6 @@ def ENV(tr, env):
     for t in tr[1:]: BIND(t, local)
     return local
 
-MAP = Map  # the MAP evaluation rule is the same as Map's constructor
-
 
 def BIND(tr, env):
     tr.pop(0)  # remove tag
@@ -503,17 +516,24 @@ def BIND(tr, env):
         else:
             val.__doc__ += '\n' + doc
             
-    form = FORM(form, env)
-    return bind(form, val, env)
+    return bind(form, val, env, retval=True)
 
 
-def bind(form, value, env: Env, overwrite=True):
+def bind(form, value, env: Env, overwrite=True, retval=False):
+    """
+    Args:
+        overwrite: whether to overwrite existing bindings
+        ret: whether to return the value of the form
+    """
+    
     def bd(name, val):
         if name in binds:
             raise TypeError(f'multiple bindings of var {name} in the form')
         
-        # if isinstance(val, Env) and val.val is not None:
-        #     val = val.val
+        if isinstance(val, Env):
+            if val.val is not None and env is not Global:
+                val = val.val
+                
         if isinstance(val, Map):
             if val.__name__ is None:
                 val.__name__ = name
@@ -526,93 +546,41 @@ def bind(form, value, env: Env, overwrite=True):
                 
         binds[name] = val
             
-    binds = {}  # used to keep track of the new bindings
+    binds = {}  # to keep track of new bindings
     eqs = []
+    
     tag = tree_tag(form)
 
-    if tag == 'NAME':
+    if tag in ['NAME', 'KWD']:
         bd(form[1], value)
-        
+
     elif tag == 'LIST':
         if not iterable(value):
             raise TypeError('the value bound to a list form is not iterable')
         
-        items = list(value)
-        forms = form[1:]
-        
-        if not isinstance(form, Form):
+        if not Is.Form(form):
             form = FORM(form, env)
-        
-        if form.kwd_start is None:
-            min_items = len(forms)
-        else:
-            min_items = form.kwd_start
-        
-        if form.unpack_pos is not None:
-            min_items -= 1
-            unpack_len = len(items) - max(min_items, form.unpack_pos)
-        else:
-            unpack_len = 0
             
-        if min_items > len(items):
-            raise ValueError('not enough items to be bound')
-        
-        im = len(forms)
-        
-        for item in items:
-            if tree_tag(item) == 'KWD':
-                _, [_, var], val = item
-                assert var in form.vars, f'keyword "{var}" does not exist in the form"'
-                bd(var, val)
-                unpack_len = max(0, unpack_len - 1)
-                im -= 1
-        
-        i = 0  # variable index
-        unpack = []
-        
-        for item in filter(lambda t: tree_tag(t) != 'KWD', items):
-            try: tr = forms[i]
-            except: raise ValueError('too many items to be bound')
+        if not Is.Args(value):
+            value = Args(value)
             
-            tag = tree_tag(tr)
-            if tag == 'UNPACK':
-                assert i == form.unpack_pos
-                if len(unpack) < unpack_len:
-                    unpack.append(item)
-                if len(unpack) == unpack_len:
-                    bd(tr[1], unpack)
-                else: continue
-            elif tag == 'KWD':
-                bd(tr[1], item)
-            elif tag is not None:
-                bind(tr, item, binds)
+        for var, val in value.match(form):
+            if is_tree(var):
+                bind(var, val, binds, overwrite=0)
+                value._vars -= binds.keys()
             else:
-                eqs.append(Eq(tr, item))
-            i += 1
+                eqs.append(Eq(var, val))
         
-        # bind the remaining variables
-        for i in range(i, im):
-            tr = forms[i]
-            tag = tree_tag(tr)
-            if tag == 'UNPACK':
-                assert i == form.unpack_pos
-                bd(tr[1], ())
-            elif tag == 'KWD':  # keyword var
-                _, var, val = tr
-                bd(var, val)
-            else:
-                raise TypeError
-                
     elif tag == 'EXP':
         eqs.append(Eq(form[1], value))
+        
     else:
         raise SyntaxError('invalid form')
-
+    
     if eqs:  # solve equations and bind the results
-        sols = solve(eqs, dict=True)
-        if sols:
+        if sols := solve(eqs, dict=True):
             if len(sols) > 1:
-                log('Info: the equation has %d solutions' % len(sols))
+                log('Info: the equation has multiple solutions (%d)' % len(sols))
                 sol_dict = {}
                 for sol in sols:
                     for sym, val in sol.items():
@@ -621,12 +589,15 @@ def bind(form, value, env: Env, overwrite=True):
                 sol_dict = sols[0]
             for sym, val in sol_dict.items():
                 bd(str(sym), val)
-    
+
     for name, val in binds.items():
         if name not in env or overwrite:
             env[name] = val
-            
-    return Env(val=eval_tree(form, env), binds=binds)
+        else:
+            raise KeyError("Multiple bindings of '%s'" % name)
+
+    if retval: return eval_tree(form, env, inplace=False)
+    # return Env(val=eval_tree(form, env), binds=binds)
 
 
 def FORM(tr, env, _nested=False):
@@ -653,7 +624,7 @@ def FORM(tr, env, _nested=False):
                 raise SyntaxError('invalid unpack in the form')
             else:
                 has_unpack = True
-                t[i] = ['UNPACK', var[1]]
+                t[i] = ['UNPACK', var]
                 yield var[1]
 
         else:
@@ -666,7 +637,7 @@ def FORM(tr, env, _nested=False):
                 t[i] = FORM(item, env, _nested=True)
                 yield from t[i].vars
             else:
-                t[i] = eval_tree(item, env)
+                t[i] = ['EXP', eval_tree(item, env)]
 
     def form_vars(form):
         for i in range(1, len(form)):
@@ -685,7 +656,7 @@ def FORM(tr, env, _nested=False):
 
         
 def field_attr(tr, env):
-    if is_name(tr[1]):
+    if type(tr[1]) is str:
         parent, attr = env, tr[1]
     else:
         parent, attr = tr[:-1], tr[-1][1]
@@ -706,19 +677,22 @@ def PHRASE(tr):
                 rt = convert_shortcirc(phrase[i+1:])
                 return [op.upper(), lt, rt]
         return ['ITEMS'] + phrase
-
-    unknowns = set()
-    for i, t in enumerate(tr):
-        if tree_tag(t) == 'UNKNOWN':
-            var = t[1]
-            if var != '?':
-                # '?' must be the only unknown
-                assert '?' not in unknowns
-                if not var[1:].isdigit():  # a keyword variable
-                    var = var[1:]  # remove the preceding '?'
-            unknowns.add(var)
-            tr[i] = ['NAME', var]
-    if unknowns:
+    
+    def match_unknowns():
+        unknowns = set()
+        for i, t in enumerate(tr):
+            if tree_tag(t) == 'UNKNOWN':
+                var = t[1]
+                if var != '?':
+                    assert '?' not in unknowns
+                    # '?' must be the only unknown
+                    if not var[1:].isdigit():  # a keyword variable
+                        var = var[1:]  # remove the preceding '?'
+                unknowns.add(var)
+                tr[i] = ['NAME', var]
+        return unknowns
+        
+    def convert_unknown():
         if '?' in unknowns:
             form = ['NAME', '?']
         else:
@@ -727,7 +701,15 @@ def PHRASE(tr):
             form = ['LIST'] + [['NAME', x] for x in sorted(unknowns)]
         return ['MAP', form, tr]
 
-    return convert_shortcirc(tr[1:])
+    unknowns = match_unknowns()
+    
+    if unknowns:
+        return convert_unknown()
+    else:
+        return convert_shortcirc(tr[1:])
+    
+def UNKNOWN(tr):
+    return PHRASE(['PHRASE', tr])
 
 
 # calc commands
@@ -821,17 +803,17 @@ def EXIT(tr): raise KeyboardInterrupt
 def PYTHON(tr): interact()
     
     
-def hold_tree(eval):
-    @wraps(eval)
-    def wrapped(tree, env=None, *args, **kwds):
-        try:
-            return eval(tree, env, *args, **kwds)
-        except NameError:
-            if env is None: return tree
-            else: raise
-    return wrapped
+# def hold_tree(eval):
+#     @wraps(eval)
+#     def wrapped(tree, env=None, *args, **kwds):
+#         try:
+#             return eval(tree, env, *args, **kwds)
+#         except NameError:
+#             if env is None: return tree
+#             else: raise
+#     return wrapped
 
-@hold_tree
+# @hold_tree
 def eval_tree(tree, env=None, inplace=True):
     if not is_tree(tree):
         return tree
@@ -844,6 +826,7 @@ def eval_tree(tree, env=None, inplace=True):
         tree = macro_rules[tag](tree)
         return eval_tree(tree, env)
     
+    # simplify subtrees not containing unbound names
     if tag not in eval_rules:
         partial_flag = 0
         for i, t in enumerate(tree):
@@ -861,6 +844,7 @@ def eval_tree(tree, env=None, inplace=True):
         return exec_rules[tag](tree)
     else:
         return tree
+        # raise TypeError('unknown syntax tree type')
 
 
 NAME.force_symbol = False
@@ -876,11 +860,11 @@ exec_rules = {name: eval(name) for name in [
 ]}
 
 macro_rules = {name: eval(name) for name in [
-    'PHRASE'
+    'PHRASE',   'UNKNOWN'
 ]}
 
-# subs rules that allow application when there is partial evaluation
-delayed_rules = {'LIST', 'ITEMS', 'LINE'}
+# subs rules that allow application when the evaluation is partial
+delayed_rules = {'LIST', 'LINE'}
 
 all_rules = {name: rule for name, rule in
              globals().items() if name.isupper()}

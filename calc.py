@@ -85,11 +85,11 @@ def run(filename=None, test=False, start=0, verbose=True):
 
             result = calc_eval(line)
             comment = LINE.comment
+
+            if result is None: continue
             
             if test and comment:
                 verify_answer(line, result, comment)
-
-            if result is None: continue
             
             if verbose:  # print output
                 prefix = make_prompt('out')
@@ -112,9 +112,7 @@ def run(filename=None, test=False, start=0, verbose=True):
                 print(error_prompt, e) # print('Error:', e)
             else:
                 print('Aborted due to an exception.')
-            if config.debug:
-                traceback.print_exc()
-                raise
+            if config.debug: traceback.print_exc()
             if test: raise
             
     if test:
@@ -128,6 +126,8 @@ def load_mods():
     from funcs import eq
     
     LOAD.run = run
+    log.format = calc_format
+    
     globals().update(locals())
 
 # start another thread to speed up the startup
@@ -137,6 +137,7 @@ loading_thread.start()
 
 if debug:
     sys.argv.remove('-d')
+    print('(debug mode)')
     
 if test:
     sys.argv.remove('-t')

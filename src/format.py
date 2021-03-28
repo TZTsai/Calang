@@ -5,7 +5,7 @@ from funcs import Rational, Fraction, Array, Matrix, \
 from objects import Range, Env, Function
 from parse import deparse
 from utils.debug import log
-from utils.funcs import is_tree, tree_tag
+from utils.funcs import is_tree, tree_tag, indexable
 from functools import wraps
 import config, objects
 
@@ -133,12 +133,12 @@ class Formatter:
                 return str(val)
             elif type(val) is str:
                 return f'"{val}"'
-            elif type(val) is tuple:
-                return self.format_list(val)
-            elif is_array(val):
-                return self.format_array(val)
             elif is_number(val):
                 return self.format_number(val) 
+            elif is_array(val):
+                return self.format_array(val)
+            elif indexable(val):
+                return self.format_list(val)
             elif callable(val):
                 return self.format_func(val)
             elif isinstance(val, Env):
@@ -153,7 +153,6 @@ class Formatter:
 calc_formatter = Formatter()
 calc_format = calc_formatter.format
 
-log.format = calc_format
 objects.deparse = deparse
 
 init_printing(str_printer=calc_format, use_unicode=True)
