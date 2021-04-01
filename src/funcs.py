@@ -9,7 +9,7 @@ import numpy as np
 from sympy import (
     S, E, pi, nan, oo,
     Symbol, Array, Matrix, Eq, Integer, Float, Expr,
-    floor, ceiling, sqrt, log, exp, gamma,
+    floor, ceiling, sqrt, log as ln, exp, gamma,
     factorial, expand, factor, solve, summation, product,
     gcd, factorint, binomial,
     sin, cos, tan, asin, acos, atan, cosh, sinh, tanh,
@@ -48,9 +48,11 @@ class IsInstance:
         else:
             self.ns = ns
             
-    def __getattr__(self, type):
+    def __getattribute__(self, type):
         ns = super().__getattribute__('ns')
-        type = eval(type, ns)
+        try: type = eval(type, ns)
+        except NameError: return
+        
         if hasattr(type, '__package__'):
             return IsInstance(type.__dict__)
         else:
@@ -154,6 +156,9 @@ def in_(x, y):
         return isinstance(x, y)
     else:
         return x in y
+    
+    
+band, bor = and_, or_  # builtin binary boolean operators
 
 def and_(x, y):
     """
@@ -214,13 +219,13 @@ def not_(x):
     return 0 if x else 1
 
 def eq(x, y):
-    return Eq(x, y)
+    try:
+        return abs(x - y) < config.tolerance
+    except:
+        return Eq(x, y)
 
 def neq(x, y):
     return not eq(x, y)
-    
-def empty(x, y):
-    raise Exception  # should not be called
     
 def exclaim(x):
     if callable(x):
@@ -232,8 +237,8 @@ def exclaim(x):
     else:
         return factorial(x)
 
-def log2(x): return log(x, 2)
-def log10(x): return log(x, 10)
+def log2(x): return ln(x, 2)
+def log10(x): return ln(x, 10)
 def sum_(*x): return reduce(add, x, 0)
 def prod(*x): return reduce(dot, x, 1)
 def deg(x): return x / 180 * pi

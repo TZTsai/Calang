@@ -102,6 +102,7 @@ def run(filename=None, test=False, start=0, verbose=True):
             
             if test and comment:
                 verify_answer(line, result, comment)
+                LINE.comment = None
             
             count += 1
 

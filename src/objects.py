@@ -18,7 +18,7 @@ class stack(list):
 class SyntaxTree(list):
     tag_pattern = re.compile('[A-Z_:]+')
     
-    def __new__(cls, tree):
+    def __new__(cls, tree=None):
         if isinstance(tree, cls):
             return tree
         else:
@@ -38,13 +38,7 @@ class SyntaxTree(list):
             self.append(SyntaxTree(t) if type(t) is list else t)
     
     @property
-    def tag(self):
-        return self[0]
-
-    def __setitem__(self, key, value):
-        if key == 0:
-            raise IndexError('cannot change the tag of a syntax tree')
-        super().__setitem__(key, value)
+    def tag(self): return self[0]
         
     def __repr__(self):
         return '%s[%s]' % (self.tag, ', '.join(map(str, self[1:])))
@@ -96,14 +90,14 @@ class Op(Function):
         else:
             return object.__new__(cls)
     
-    def __init__(self, *args, amb=None):
+    def __init__(self, *args):
         if len(args) == 1: return
         type, symbol, function, priority = args
         super().__init__(function)
         self.type = type
         self.symbol = symbol
         self.priority = priority
-        self.amb = amb
+        self.amb = None
         
     def __call__(self, *args):
         try:
@@ -113,7 +107,7 @@ class Op(Function):
                 assert len(args) == 1
         except:
             if self.amb:
-                return Function.__call__(self.amb, *args)
+                return self.amb(*args)
             else:
                 raise TypeError('incorrect number of arguments')
         return super().__call__(*args)
@@ -135,9 +129,9 @@ class Builtin(Function):
         
     def __call__(self, val):
         try:
-            return super()(*val)
+            return super().__call__(*val)
         except:
-            return super()(val)
+            return super().__call__(val)
         
     
 deparse = lambda tree: NotImplemented

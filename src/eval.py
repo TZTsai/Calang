@@ -29,10 +29,9 @@ About the application of these rules:
 from functools import wraps
 from copy import deepcopy
 import re, json, inspect
-from my_utils.utils import interact
 
 from parse import calc_parse, semantics, Parser
-from builtin import operators, binary_ops, builtins, shortcircuit_ops, amb_ops
+from builtin import operators, binary_ops, builtins, shortcircuit_ops
 from funcs import Is, iterable, indexable, eq, get_attr, partial
 from sympy import Expr, Symbol, Array, Matrix, Eq, solve
 from objects import *
@@ -201,6 +200,10 @@ def ITEMS(tr):
                     x = stk.vls.pop()
                     
                 assert stk.ops.pop().symbol == ''
+                
+                while top_is_op('ROP'):
+                    squeeze()
+                    
                 x2, x1 = x, stk[-1]
                 
                 if Is.Attr(x2):
@@ -237,12 +240,18 @@ def LIST(tr):
             lst.append(it)
     return _conv_lst_if_has_kwds(lst)
 
+
 def _conv_lst_if_has_kwds(lst):
     kwds, items = fsplit(lambda t: tree_tag(t) == 'KWD', lst)
     if kwds:
         return Args(tuple(items), kwds)
     else:
         return tuple(items)
+    
+
+def tree_tag(tr):
+    if isinstance(tr, list) and tr and type(tr[0]) is str:
+        return tr[0]
 
 
 def ARRAY(tr):
@@ -608,7 +617,10 @@ def PHRASE(tr):
                 lt = convert_seq(seq[:i])
                 rt = convert_seq(seq[i+1:])
                 return [op.upper(), lt, rt]
-        return ['ITEMS'] + parse_op(seq)
+            
+        seq = parse_op(seq)
+        if is_tree(seq): seq = [seq]
+        return ['ITEMS'] + seq
     
     def match_unknowns():
         unknowns = set()
@@ -647,27 +659,26 @@ def UNKNOWN(tr):
 
 class OpParser(Parser):
     grammar = semantics
-    tests = {'ITEM': lambda tr: tr.tag not in semantics and tr.tag != 'OP'}
+    tests = {'ITEM': lambda tr: tr.tag != 'OP'}
     
     def __init__(self):
         super().__init__()
         for op in ['LOP', 'BOP', 'ROP']:
-            self.tests[op] = parital(self.op_test, op)
+            self.tests[op] = partial(self.op_test, op)
             
     def op_test(self, op, tr):
         return tr.tag == 'OP' and tr[1] in operators[op]
     
     def parse_atom(self, _tag, tag, phrase):
         if tag == '':
-            return ['BOP', binary_ops['']], phrase
+            return binary_ops[''], phrase
         elif tag in self.tests:
             tr = phrase[0]
             if self.tests[tag](tr):
-                if tr.tag == 'OP':
-                    op = operators[tag][tr[1]]
-                    return [tag, op], phrase[1:]
-                else:
-                    return tr, phrase[1:]
+                if tr.tag == 'OP' and \
+                    (op := operators[tag].get(tr[1], 0)):
+                        tr = op
+                return tr, phrase[1:]
             else:
                 return self.failed
         else:
@@ -682,11 +693,11 @@ def parse_op(seq):
     hidden binary operators if necessary (representing multiplication etc.).
     """
     def flatten(tree):
-        if tree.tag in semantics:
-            assert tag in ['SEQ', 'TERM']
+        tag = tree_tag(tree)
+        if tag in semantics or tag in OpParser.tests:
             return cat(*map(flatten, tree[1:]))
         else:
-            return [tree]
+            return tree
 
     def cat(*args):
         l = []
@@ -873,5 +884,9 @@ for tag, rule in all_rules.items():
 
 
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+    # import doctest
+    # doctest.testmod()
+    
+    while 1:
+        exp = input()
+        print(calc_eval(exp))

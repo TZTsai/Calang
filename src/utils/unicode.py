@@ -58,7 +58,7 @@ extra_mappings = {
     'gu': 'upsilon',
     'deg': '°',
     'ang': '∠',
-    'dee': '∂',
+    'd': '∂',
     'E': 'exists',
     'A': 'forall',
     'grin': '😁',

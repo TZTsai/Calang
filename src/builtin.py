@@ -8,11 +8,14 @@ binary_ops = {
     '==': (eq, 0), '~=': (neq, 0), '<': (lt, 0), '>': (gt, 0), '<=': (le, 0), '>=': (ge, 0), 
     'in': (in_, -2), ':': (range_, 4), '.': (index, 16), '⋅': (dot, 10),
     '<-': (substitute, 7.5), '∠': (polar, 22), '=>': (reduce, 14),
-    '(get)': (get_attr, 30), '(app)': (call, 28), '': (empty, -99)
+    '(get)': (get_attr, 30), '(app)': (call, 28),
+    
+    # operations having special evaluation rules
+    '': (lambda x,y: None, oo), 'if': (None, oo), 'and': (None, oo), 'or': (None, oo)
 }
 
 unary_l_ops = {
-    '-': (neg, 10), '~': (not_, 9)
+    '-': (neg, 10), '~': (not_, 9), 'not': (not_, -8)
 }
 
 unary_r_ops = {
@@ -26,9 +29,12 @@ broadcast_ops = {
 
 operators = {'BOP': binary_ops, 'LOP': unary_l_ops, 'ROP': unary_r_ops}
 
+shortcircuit_ops = ['or', 'if', 'and']  # precedences from low to high
+
 
 def construct_ops(op_dict, type):
     for op in op_dict:
+        if op in shortcircuit_ops: continue
         fun, pri = op_dict[op]
         op_dict[op] = obj = Op(type, op, fun, pri)
         if op in broadcast_ops:
@@ -40,9 +46,9 @@ for op_type, op_dict in operators.items():
 op_symbols = set.union(*map(set, operators.values()))
 
 all_op_dict = dict()
-amb_ops = set()  # ops that can be either binary or unary like '-'
 
 for sym in op_symbols:
+    if sym in shortcircuit_ops: continue
     bound = False
     for op_type, op_dict in operators.items():
         if sym in op_dict:
@@ -51,14 +57,8 @@ for sym in op_symbols:
                 bound = True
             else:
                 all_op_dict[sym].amb = op_dict[sym]
-                amb_ops.add(sym)
             
 Op.bindings = all_op_dict
-
-
-# only a list of keywords; the operations are defined in eval.py
-shortcircuit_ops = ['or', 'if', 'and', 'not']
-op_symbols.update(shortcircuit_ops)
 
 
 builtins = {
@@ -80,7 +80,7 @@ builtins = {
     # array functions
     'matrix': Matrix, 'shape': shape, 'depth': depth, 'transp': transpose, 'flatten': flatten,
     # real valued functions
-    'exp': exp, 'log': log, 'ln': log, 'lg': log10, 'log2': log2,
+    'exp': exp, 'log': ln, 'ln': ln, 'lg': log10, 'log2': log2,
     # higher order functions
     'compose': compose, 'reduce': reduce, 'filter': filter, 'map': map, 'deepmap': deepmap,
     # triangular functions

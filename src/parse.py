@@ -111,8 +111,11 @@ class Parser:
             tr, _rem = self.parse_tree(item, rem)
             if _rem is None: break
             if tr:
-                if type(tr[0]) is list: seq.extend(tr)
-                else: seq.append(tr)
+                if isinstance(tr, list) and \
+                    isinstance(tr[0], list):
+                        seq.extend(tr)
+                else:
+                    seq.append(tr)
             rem = _rem
             rep += 1
 
@@ -124,7 +127,7 @@ class Parser:
         elif op == '-':
             seq = []
 
-        self.to_merge.append(seq)
+        if seq: self.to_merge.append(seq)
         return seq, rem
     
     # @trace
@@ -204,11 +207,12 @@ class CalcParser(Parser):
         
     def parse_atom(self, tag, pattern, text):
         text = self.lstrip(text)
-        tree, rem = super().parse_atom(tag, pattern, text)
-        if type(tree) is str and tree in self.keywords:
+        atom, rem = super().parse_atom(tag, pattern, text)
+        if type(atom) is str and atom in self.keywords:
             return self.failed
         else:
-            return tree, rem
+            if atom: atom = atom.strip()
+            return atom, rem
         
     def parse_op(self, item, op, text):
         tree, rem = super().parse_op(item, op, text)
