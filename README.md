@@ -1,8 +1,8 @@
-# Calc: my calculator
+# Calang: my simple functional programming language
 
 Dependencies: python 3.8+, sympy package
 
-Run `python calc.py` to start the program.
+Run `python cal.py` to start the program.
 
 Check "builtin.py" to see the available built-in operations and functions.
 
@@ -199,7 +199,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   An environment is a collection of name-value bindings. Actually normally we are evaluating in the *Global* environment. When you create an environment yourself, it will set its parent to the current environment it is being evaluated.
 
-  The evaluation rule within an environment: when a name is evaluated in an environment, Calc will first check whether it is bound in this environment; if not, Calc will go up to look up its value in its parent environment; this procedure will continue recursively until it reaches the *Global* environment - if it is still unbound, it will be evaluated as a Symbol or an NameError will be raised dependent on the user config.
+  The evaluation rule within an environment: when a name is evaluated in an environment, Calang will first check whether it is bound in this environment; if not, Calang will go up to look up its value in its parent environment; this procedure will continue recursively until it reaches the *Global* environment - if it is still unbound, it will be evaluated as a Symbol or an NameError will be raised dependent on the user config.
 
   **Syntax**:  
   * To create an environment:  
@@ -315,7 +315,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
 * Load scripts  
 
-  Use the keyword `load` followed by a Calc script name (located in "scripts") to load these files.  
+  Use the keyword `load` followed by a Calang script name (located in "scripts") to load these files.  
   The calculator will run through the loaded script and load its definitions into the current environment. However, the current calculation history will not be affected.  
   The loading command has two extra options: verbose and test. To turn on the verbose option, add `-v` in your command; to turn on the test option, add `-t` in your command. The testing process will be explained in the next section.  
   
@@ -337,12 +337,12 @@ Check "builtin.py" to see the available built-in operations and functions.
     `#TEST`  
     `f[a] #2`  
 
-    (in Calc)  
+    (in Calang)  
     `load example -v -t`  (will display the test result)  
 
 * Import python files
 
-  Calc can also import definitions from python files inside the "modules" directory. Use the keyword `import` followed by the name of a python file (located in "modules"). To create such an importable file, you must define a *dict* `definitions`, containing the definitions you want to export (Calc will only import `definitions`).  Besides, Calc allows you to directly import anything from *sympy*.  
+  Calang can also import definitions from python files inside the "modules" directory. Use the keyword `import` followed by the name of a python file (located in "modules"). To create such an importable file, you must define a *dict* `definitions`, containing the definitions you want to export (Calang will only import `definitions`).  Besides, Calang allows you to directly import anything from *sympy*.  
 
   **Example**:  
   * `import gauss_jordan`  
@@ -352,7 +352,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
 * Logging
   
-  Use \`\` to wrap around text to let Calc print some information when evaluating the expression.  
+  Use \`\` to wrap around text to let Calang print some information when evaluating the expression.  
   Like python f-string, inside \`\`, you can wrap an expression with `{}` to evaluate it.
 
   **Examples**:  
@@ -378,7 +378,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   `Ctrl-C` or a single command `exit`
 
-You can find the detailed grammar of Calc in "grammar.txt". You can also find more examples in the "scripts/examples" folder.
+You can find the detailed grammar of Calang in "grammar.txt". You can also find more examples in the "scripts/examples" folder.
 
 ## UPDATES
 

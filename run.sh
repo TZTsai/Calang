@@ -1,1 +1,1 @@
-ipython calc.py
+ipython cal.py

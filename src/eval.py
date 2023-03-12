@@ -3,7 +3,7 @@ There are four types of rules: substitution, evaluation, execution and macro.
 
 A substitution maps a list of values to another value, not requiring an Env.
 An evaluation evaluates a syntax tree to a value, requiring an Env.
-An execution is a special rule to control or query the state of the calc.
+An execution is a special rule to control or query the state of evaluator.
 A macro transforms the syntax tree before evaluation.
 
 Definitions of these rule must adopt the following signatures:

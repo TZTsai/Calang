@@ -392,7 +392,7 @@ class Range:
     def __getitem__(self, i):
         return self.first + i * self.step
     
-    def __hasitem__(self, x):
+    def __contains__(self, x):
         if self.step > 0:
             if x < self.first or x > self.last:
                 return False
