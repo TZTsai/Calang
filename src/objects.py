@@ -1,55 +1,122 @@
+import re
 from sympy import Symbol
-from utils.deco import log, trace
+from utils.debug import log, trace
+from utils.funcs import *
 import config
 
 
 class stack(list):
+    
     def push(self, obj):
         self.append(obj)
+        
     def peek(self, i=-1):
         try: return self[i]
         except: return None
         
         
+class SyntaxTree(list):
+    tag_pattern = re.compile('[A-Z_:]+')
+    
+    def __new__(cls, tree=None):
+        if isinstance(tree, cls):
+            return tree
+        else:
+            return list.__new__(cls)
+
+    def __init__(self, tree):
+        if isinstance(tree, SyntaxTree):
+            return  # the same object
+        
+        assert type(tree) in [list, tuple]
+        assert tree and type(tree[0]) is str
+        assert self.tag_pattern.match(tree[0])
+        
+        self[:] = [tree[0]]
+        for i, t in enumerate(tree):
+            if i == 0: continue
+            self.append(SyntaxTree(t) if type(t) is list else t)
+    
+    @property
+    def tag(self): return self[0]
+        
+    def __repr__(self):
+        return '%s[%s]' % (self.tag, ', '.join(map(str, self[1:])))
+        
+    
+def is_tree(obj):
+    return isinstance(obj, SyntaxTree)
+
+def tree_tag(obj):
+    return obj.tag if is_tree(obj) else None
+
+
 class Function:
     broadcast = lambda f: NotImplemented
-    compose = lambda f, g: NotImplemented
+    proc_in = lambda x: NotImplemented
+    proc_out = lambda y: NotImplemented
 
     def __init__(self, func):
         self._func = func
+        self.broadcast = False
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
                 
     def __repr__(self):
         return self.__name__
     
+    def func(self, *args):
+        args = Function.proc_in(args)
+        ret = self._func(*args)
+        return Function.proc_out(ret)
+    
     def __call__(self, *args):
-        try: return self._func(*args)
-        except TypeError: return self._func(args)
-        
+        try:
+            return self.func(*args)
+        except TypeError:
+            if not self.broadcast: raise
+        try:
+            return Function.broadcast(self.func)(*args)
+        except ValueError:
+            return deepmap(self.func, args)
     
     
 class Op(Function):
-    def __init__(self, type, symbol, function, priority):
+    bindings = {}
+    
+    def __new__(cls, *args, **kwds):
+        if len(args) == 1 and not kwds:
+            return cls.bindings[args[0]]
+        else:
+            return object.__new__(cls)
+    
+    def __init__(self, *args):
+        if len(args) == 1: return
+        type, symbol, function, priority = args
         super().__init__(function)
         self.type = type
         self.symbol = symbol
         self.priority = priority
-        self.nested = True
+        self.amb = None
         
     def __call__(self, *args):
         try:
-            return super().__call__(*args)
-        except TypeError:
-            if not self.nested: raise
-        call = self.__call__
-        try: return tuple(map(call, *args))
-        except TypeError: pass
-        try: return Function.broadcast(call)(*args)
-        except TypeError: raise OperationError
+            if self.type == 'BOP':
+                assert len(args) == 2
+            else:
+                assert len(args) == 1
+        except:
+            if self.amb:
+                return self.amb(*args)
+            else:
+                raise TypeError('incorrect number of arguments')
+        return super().__call__(*args)
 
     def __repr__(self):
         return f"{self.type}({self.symbol}, {self.priority})"
+    
+    def __eq__(self, other):
+        return isinstance(other, Op) and self.__dict__ == other.__dict__
 
     def __str__(self):
         return self.symbol
@@ -59,140 +126,221 @@ class Builtin(Function):
     def __init__(self, func, name):
         super().__init__(func)
         self.__name__ = name
-
-    def __repr__(self):
-        return f'<builtin: {self.__name__}>'
-
+        
+    def __call__(self, val):
+        try:
+            return super().__call__(*val)
+        except:
+            return super().__call__(val)
+        
     
-tree2str = NotImplemented
-# a function to restore syntax tree to an expression
-# ASSIGN it in format.py
+deparse = lambda tree: NotImplemented
+# assign it in format.py
 
 class Map(Function):
-    match = lambda val, form, parent: NotImplemented
-    eval = lambda tree, parent, mutable: NotImplemented
-    builtins = None
+    bind = lambda form, val, env: NotImplemented
+    eval = lambda tree, env, inplace: NotImplemented
 
     def __init__(self, tree, env):
         _, form, body = tree
-        form = Map.eval(form, env)      # eval opt-pars
-        if body[0] == 'INHERIT':
-            self.inherit = body[1]
-            body = ['CLOSURE', ..., body[2]]
-        else:
-            self.inherit = None
-            body = Map.eval(body, None)  # simplify the body
+        if tree_tag(form) != 'FORM':  # ensure it is evaluated as a form
+            form = ['FORM', form]
             
-        self.form = form
-        self.body = body
-        self.parent = env
+        self.form = Map.eval(form, env)
+        self.body = Map.eval(body, None)
+        self.env = env
         self._pars = form[-1]
-        self._repr = tree2str(tree)
+        self._memo = {} if self.check_local() else None
         self.__name__ = None
-        self.__doc__ = self._repr
-        self._memo = NotImplemented
-
+        self.__doc__ = None
+        
+        if self.form[0] not in ['LIST', 'NAME']:
+            self._form_repr = f'({repr(self.form)})'
+        else:
+            self._form_repr = repr(self.form)
+        self._body_repr = deparse(self.body)
+        
     @trace
     def _func(self, val):
-        try:  # try to return the memoized result
-            return self._memo[val]
-        except:
-            if self._memo is NotImplemented:
-                try:
-                    self._memo = {}
-                    result = self.check_local(val)
-                    assert type(result) not in [Env, Map]
-                    return result
-                except (UnboundName, AssertionError):
-                    self._memo = None
+        try: return self._memo[val]
+        except: pass
         
-        local = self.parent.child()
-        Map.match(self.form, val, local)
-                
-        if self.inherit:
-            upper = Map.eval(self.inherit, local, mutable=False)
-            assert isinstance(upper, Env), "@ not applied to an Env"
-            self.body[1] = local
-            env = upper
-        else:
-            env = local
+        local = self.env.child()
+        Map.bind(self.form, val, local)
+        result = Map.eval(self.body, local, inplace=False)
             
-        result = Map.eval(self.body, env, mutable=False)
-        if self.inherit and isinstance(result, Env):
-            result.parent = upper
-            result.cls = str(self)
-            
-        # try to memoize result
         try: self._memo[val] = result
         except: pass
         return result
     
-    def check_local(self, val):
-        "Try to apply on $val to test if self does not depend on outside variables."
-        local = Map.builtins.child()
-        local[self.__name__] = self
-        Map.match(self.form, val, local)
-        if self.inherit: self.body[1] = local
-        return Map.eval(self.body, local, False)
+    def check_local(self):
+        "Check whether the map depends on outside variables."
+        def collect_vars(tr):
+            if is_tree(tr):
+                if tr.tag == 'NAME':
+                    vars.add(tr[1])
+                else:
+                    for t in tr[1:]:
+                        collect_vars(t)
+        vars = set()
+        collect_vars(self.body)
+        return vars.issubset(self.form.vars)
     
     def __str__(self):
-        path = self.parent.dir()
-        if path[0] == '_':  # hidden
-            where = ''
-        else:
-            where = ' in %s' % path
-        return '<map%s: %s>' % (where, self._repr)
-    
+        return '%s → %s' % (self._form_repr, self._body_repr)
+
     def __repr__(self):
         if self.__name__:
-            return self.__name__
+            return self._path_repr()
         else:
-            return '(%s)' % self._repr
+            return f'({self})'
     
-    def compose(self, func):
-        "Enable arithmetic ops on Map."
-        return Map(self.form, ['SEQ', func, self.body])
-
+    def _path_repr(self):
+        if self.env.name[0] == '_':
+            path = ''
+        else:
+            path = self.env.dir()
+        if self.__name__:
+            if path: path += '.'
+            path += self.__name__
+        elif path:
+            path = '@' + path
+        return path
+    
+    
+class Form(list):
+    def __init__(self, form, vars):
+        self[:] = form
+        self.vars = vars
+        self.unpack_pos = self.find_first_tag('UNPACK')
+        self.kwd_start = self.find_first_tag('KWD')
+        self._repr = None
+        
+    def find_first_tag(self, tag):
+        if self[0] == 'LIST':
+            for i, item in enumerate(self[1:]):
+                if tree_tag(item) == tag:
+                    return i
+        return None
+    
+    def __repr__(self):
+        return deparse(self) if self._repr is None else self._repr
+    
 
 class Env(dict):
-    def __init__(self, val=None, parent=None, name=None, binds=None):
-        if val is not None:
-            self.val = val
-        self.parent = parent
-        self.name = name
-        if binds: self.update(binds)
-        self.cls = 'env'
+    default_name = '(env)'
+    
+    def __init__(self, val=None, parent=None, name=None,
+                 binds=None, hide_parent=True):
+        self.val = val
+        if parent:
+            if name: parent[name] = self
+            self.parent = parent
+        else:
+            self.parent = None
+        if name:
+            self.name = name
+        else:
+            self.name = self.default_name
+        if binds:
+            self.update(binds)
     
     def __getitem__(self, name):
+        if isinstance(name, Symbol):
+            name = str(name)
         if name in self:
             return super().__getitem__(name)
+        if name == 'upper':
+            return self.parent
         if self.parent:
             return self.parent[name]
         raise KeyError('unbound name: ' + name)
-
+    
+    def __iter__(self):
+        raise TypeError('Env is not iterable')
+    
+    def all_items(self):
+        yield from self.items()
+        if self.parent:
+            yield from self.parent.all_items()
+    
     def dir(self):
-        prefix = '' if not self.parent or not self.parent.name \
-            else self.parent.dir() + '.'
-        suffix = self.name if self.name else '(%s)' % ', '.join(
-            f'{log.format(k)} = {log.format(v)}' for k, v in self.items())
-        return prefix + suffix
-
+        try:
+            assert self.parent.name[0] != '_'
+            return self.parent.dir() + '.' + self.name
+        except:
+            return self.name
+    
     def delete(self, name):
         try: self.pop(name)
         except: print('%s is unbound' % name)
 
     def child(self, val=None, name=None, binds=None):
-        env = Env(val, self, name, binds)
-        return env
+        return Env(val, self, name, binds)
 
     def __str__(self):
-        return '<%s: %s>' % (self.cls, self.dir())
+        return '(%s)' % ', '.join(f'{k} = {log.format(v)}'
+                                  for k, v in self.items())
     
     def __repr__(self):
-        return self.dir().rsplit('.', 1)[-1]
+        return self.dir()
     
     def __bool__(self):
         return True
+    
+    
+class Args(Env):
+    
+    def __init__(self, args, kwds=None):
+        if kwds is None: kwds = {}
+        self._vars = set()
+        super().__init__(val=args, binds=kwds)
+        
+    def match(self, form: Form):
+        vars = form[1:]
+        args = self.val
+        
+        kwd_start = form.kwd_start or len(vars)
+        min_items = kwd_start
+            
+        if (k := form.unpack_pos) is not None:
+            min_items -= 1
+            unpack_len = len(args) - max(min_items, k)
+        else: k = -1
+        
+        if min_items > len(args):
+            raise TypeError('not enough arguments')
+        
+        # remove the unbound vars in self._vars after each yield
+        self._vars.update(form.vars)
+        
+        i = j = 0  # index of the current var and current arg
+        
+        while j < len(args) or i <= k:
+            if i == k:  # UNPACK
+                j = i + unpack_len
+                yield vars[i][1], args[i:j]
+            else:  # NAME or LIST
+                yield vars[i], args[j]
+                j += 1
+            i += 1
+        
+        # bind default keywords if necessary
+        for kwd in vars[kwd_start:]:
+            _, var, defval = kwd  # not good: leaky abstraction
+            if var in self._vars:
+                yield kwd, defval
+                
+        if self._vars:
+            if len(self._vars) == 1:
+                raise NameError("unbound variable %s in the list form" % self._vars.pop())
+            else:
+                raise NameError("unbound variables %s in the list form" % self._vars)
+
+
+class Type(type):
+    def __init__(self, object_or_name, bases, dict):
+        super().__init__(object_or_name, bases, dict)
     
 
 class Attr:
@@ -202,29 +350,26 @@ class Attr:
     def __repr__(self):
         return '.'+self.name
 
-    def getFrom(self, env):
-        if isinstance(env, Env):
-            return env[self.name]
-        else:
-            return getattr(env, self.name)
-        
 
 class Range:
     def __init__(self, first, last, step=None, second=None):
         self.first = first
+        self.second = second
         self.last = last
-        self.iterable = None
+        self._step = step
         
-        if second:
-            self.step = second - first
-        elif step is None:
-            self.step = 1 if first <= last else -1
-        else:
-            self.step = step
-            
         # some checks
-        if self.step == 0:
-            raise ValueError('range step is 0')
+        assert step is None or second is None
+        if self.step == 0: raise ValueError('range step is 0')
+        
+    @property
+    def step(self):
+        if self.second:
+            return self.second - self.first
+        elif self._step is None:
+            return 1 if self.first < self.last else -1
+        else:
+            return self._step
         
     def __new__(cls, first, last, step=None, second=None):
         obj = super().__new__(cls)
@@ -232,7 +377,6 @@ class Range:
         if (obj.last - obj.first) * obj.step <= 0:
             return ()  # empty range
         else:
-            obj.iterable = range(obj.first, obj.last + obj.step, obj.step)
             return obj
 
     def __repr__(self):
@@ -241,32 +385,27 @@ class Range:
         return ':'.join(map(str, items))
         
     def __iter__(self):
-        return iter(self.iterable)
+        step = self.step
+        first, stop = self.first, self.last + step
+        return iter(range(first, stop, step))
+    
+    def __getitem__(self, i):
+        return self.first + i * self.step
+    
+    def __contains__(self, x):
+        if self.step > 0:
+            if x < self.first or x > self.last:
+                return False
+        else:
+            if x > self.first or x < self.last:
+                return False
+        return (x - self.first) % self.step == 0
 
     def __eq__(self, other):
         if not isinstance(other, Range): return False
         return all(getattr(self, a) == getattr(other, a)
                    for a in ['first', 'last', 'step'])
-        
 
-class Enum:
-    def __init__(self, iterable):
-        self.it = iterable
-        
-    def __iter__(self):
-        return enumerate(self.it)
-    
-    def __repr__(self):
-        return '<enum: %s>' % self.it
-
-
-class UnboundName(NameError):
-    "An error to indicate that a name is not bound in the environment."
-    
-class OperationError(RuntimeError):
-    "An error to indicate that the interpreted operation cannot be applied."
-        
-        
 
 if __name__ == "__main__":
     # interact()

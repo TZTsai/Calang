@@ -1,11 +1,10 @@
 from pprint import pprint
 import re
 import json
-from builtin import binary_ops, unary_l_ops, unary_r_ops
-from utils.deco import memo, trace, disabled
-from utils.debug import check_record
-
-trace = disabled
+from builtin import op_symbols
+from utils.funcs import memo
+from utils.debug import check_record, trace
+import config
 
 
 def split(text: str, sep=None, maxsplit=-1):
@@ -26,7 +25,7 @@ OP      := [*?!/+-](?=\s|$)
 ITEM    := GROUP | MACRO | ATOM
 ITEMS   := ITEM ITEMS | ITEM
 GROUP   := [(] EXP [)]
-ATOM    := PAR | OBJ | STR | RE | CHARS | VAR | MARK
+ATOM    := PAR | OBJ | STR | RE | VAR | MARK
 STR     := ".*?"
 RE      := /.*?/
 MARK    := [^>|)\s]\S*
@@ -49,15 +48,16 @@ MARK    := [^>|)\s]\S*
 # MACRO:    a macro will be substituted by its evaluated expression 
 
 
-GrammarStr = open('src/grammar.txt', 'r').read()
-GrammarStr = GrammarStr.split('#####', 1)[0]   # remove the comment below
-Grammar = split(GrammarStr, '\n')
-# add syntax for operations
-bin_op, unl_op, unr_op = ['"' + '" | "'.join(sorted(ops, reverse=1, key=len)) + '"' 
-                          for ops in (binary_ops, unary_l_ops, unary_r_ops)]
-Grammar.append('BOP := ' + bin_op)
-Grammar.append('LOP := ' + unl_op)
-Grammar.append('ROP := ' + unr_op)
+Grammar = open('grammar.txt', 'r', encoding='utf8').read().splitlines()
+Semantics = open('semantics.txt', 'r').read().splitlines()
+
+# add the grammar rule of operators
+ops = sorted(op_symbols, reverse=1, key=len)
+
+for i, op in enumerate(ops):  # prevent ambiguity with other names
+    if op.isalpha(): ops[i] += ' '
+    
+Grammar.append('OP := "%s"' % '" | "'.join(ops))
 
 
 def simple_grammar(rules, whitespace=r'\s+'):
@@ -100,7 +100,7 @@ def parse_grammar(type_, text, grammar=metagrammar):
     return parse_atom(type_, ' '+text)
 
 
-def calc_grammar(rules, whitespace=r'\s*'):
+def calc_grammar(rules, whitespace=config.whitespace):
     G = {' ': whitespace}
     M = {}
     for rule in rules:
@@ -124,13 +124,14 @@ def prune(tree):
             tree[:] = tree[2]
         if tree[0] == 'EXP' and len(tree) > 2:  # pop '|'
             tree.pop(2)
+        elif tree[0] in ('STR', 'RE'):
+            tree[1] = tree[1][1:-1]
         for t in tree: prune(t)
 
 def flatten_nested(tree):
     if type(tree) is list:
-        while tree[-1][0] == tree[0]:
-            last = tree.pop(-1)
-            tree.extend(last[1:])
+        while type(tree[-1]) is list and tree[-1][0] == tree[0]:
+            tree.extend(tree.pop(-1)[1:])
         for t in tree: flatten_nested(t)            
 
 # @trace
@@ -176,7 +177,7 @@ def post_process(grammar, macros):
         elif tree[0] == 'MACRO':
             return apply_macro(tree)
         elif tree[0] in ('OBJ', 'PAR'):
-            tag = tree[1].split(':')[0]
+            tag = tree[1].split(':')[-1]
             if tag not in grammar:
                 return 'MARK', tree[1]
             else:
@@ -189,11 +190,14 @@ def post_process(grammar, macros):
 
 
 grammar = calc_grammar(Grammar)
-json.dump(grammar, open('src/utils/grammar.json', 'w', 
-                        encoding='utf8'), indent=2)
+semantics = calc_grammar(Semantics)
+del semantics[' ']
+
+json.dump(grammar, open('utils/grammar.json', 'w', encoding='utf8'), indent=2)
+json.dump(semantics, open('utils/semantics.json', 'w'), indent=2)
 
 
 if __name__ == "__main__":
     pprint(grammar)
     for func in [parse_grammar, calc_grammar, refactor_tree]:
-        check_record('src/utils/syntax_tests.json', func)
+        check_record('utils/syntax_tests.json', func)

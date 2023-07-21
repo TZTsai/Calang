@@ -1,0 +1,65 @@
+[a,b,c] is a list
+{a,b,c} is a set
+<<a,b,c>> is a vector
+<<a,b;c,d>> is a matrix
+a;b;c evaluates expression sequentially and returns the last value
+a,b,c evaluates expressions sequentially until it meets a false value and returns it, or it returns the last value
+(...) are always used to group expressions
+(a,b,c) is not a tuple but it returns the first false value or the last value
+a|b|c evaluates expressions sequentially and returns the first true value or the last value
+a,b|c,d|e is like "a and b or c and d or e" in Python, or "b if a else d if c else e"
+
+a=2 binds a name to a value in the current env and returns the env, except the global env
+if a binding like a=2 appears in a pair of parentheses, then a local env is created in these parentheses
+I can do (a=2;b=3;a+b), then it evaluates each subexpr sequentially and returns the value of a+b
+An env is a true if it has names in it. So (a=2,b=3,a+b) also return 2+3 since a=2 and b=3 both returns the local env itself, which contains bindings of 'a' (after a=2) and 'b' (after b=3). But be careful with (a=2,b=-2,a+b,a-b),which returns 0.
+(a=2;b=3) returns the last value, which is the local env in the parens
+If I type newlines in the parentheses, each line of expression is also evaluated sequentially:
+1 + (f(x) = x*2
+        y = f(2)
+        f(y) - f(1))
+Exactly the same as that separated by semicolons.
+I should use more operators to avoid heavily nested parens (like Lisp)
+
+e = (x=1) an env can also be bound to a name
+e.x retrieves the value bound to name 'x' in the env 'e', so it returns 1
+e.x = 2 rebinds e.x to 2
+a := 2b binds 'a' to the right-hand expression lazily - it gets evaluated every time it appears
+??? a=1;a.b=2 any name can have fields. The value of 'a' does not change. We still have a+1 == 2.
+In any env there is a special name '$' that binds to the env itself. That means a.$ == a.
+a=1; a.b=1; a.c = $.b*2 binds a.c to 2. Here a.c is fixed to the number 2.
+a=1; a.b=1; a.c := $.b*2 dynamically binds a.c to a.b*2. If I set a.b=2, then a.c will be 4.
+1:10 is a range of integers from 1 to 10 (inclusively)
+1:10:0.5 specifies the step size to be 0.5
+
+Domain settings: use <- or ∈ to set the domain of a name or symbol.
+If in a sequence a<-1:100, b=3, a%b==0, ..., it generates values of a in its domain and passes it to the subsequent expressions. All values of a that make any of the subsequent expressions false will be filtered out. The whole expression act as a generator of values. "a<-1:100,b=3,a%b==0; a*2" means "the value of a*2 for all a in 1:100 s.t. b=3 and a%b==0". Again you can bind it to a name:
+g = (a<-1:100,b=3,a%b==0; a*2)
+
+Semicolons can be used in a list: the part before the first semicolon are the items in the list. After the semicolon there may be bindings (creates a local env if one binding appears), expressions (filter the items in the list for which the values of these expr are true), and domain settings ()
+[a+b; a <- 1:10, b <- 2:8, c = 3, a<b+c, a%2==1] is a list generator, it equals to the list that contains "all values of 'a+b' enumerated by 'a in 1:10' and 'b in 2:8' where the value of the expression on the right side of | holds true". It is nice that the range specifications and the binding 'c=3' all look like constraints like 'a<b+c' and 'a%2==1'. In this way I combined list comprehension, map and filter together. In evaluation the comma-seperated expressions are evaluated from left to right and a possible pair of values of 'a' and 'b' gets dropped as soon as it gets a false value, coherent with the usual evaluation rule of (a,b,c).
+
+a -> 2a creates an operation (op)
+f a = 2a names the op as 'f'; the same as f = a -> 2a
+A named op is always a left-unary op, which means there is a single operand on the right.
+Op bindings are always dynamic, so 'f a := 2a' has no difference.
+
+Binding also supports pattern matching.
+[a,b=2,c..] = [1] binds the variables as a=1, b=2 and c=[].
+[a,b=2,c..] = [1,3,5] binds the variables as a=1,b=3 and c=[5].
+[a,[b,c]] = [1,[2,3]] is also allowed.
+To apply an op, there is also a pattern matching between the form of the operand and the value of the operand.
+f [a,b] = a+b When apply f to [1,2], a matching of [a,b] = [1,2] is done to create a local env where the body 'a+b' is evaluated to 3.
+f [a,b..] = [a,b..,b,a] '..' is used to merge a sublist into its enclosing list. Now f[1,2,3] == [1,2,3,[2,3],1].
+f [a,b=2] = a+b default list item is allowed, so f[1] = 3 and f[1,1]=2.
+Maybe binding can even support equation solving?
+[a+b, a-b] = [4,2] binds a=3 and b=1.
+Implementation: first do pattern matching to get a list of 'exp = val' equations and use some package like sympy to try to solve it.
+A list following another list is used to index the preceeding list. The indexing rule is just like numpy.
+[1,2,3][2:-1] == [2,3] I use index from 1, negative index starts from the end
+Lists has builtin methods (maps bound in its sub env).
+[1,-2,3].map abs == [1,2,3]
+[1,-2,3].select(a -> a%2) == [1,3]
+
+A symbol is created by appending ? to a name. a? is a symbol. I can also declare symbols by "symbols a b c", which binds a=a?, b=b?, c=c?.
+An expression containing symbols can be processed by sympy. I can also write a symbolic expr by (a+b*2)? , which makes the all names in the expression symbols. Perhaps I can Use (a+$b*2)? to make b a name in the env again. To substitute symbols in an expr, I can apply the expr to an env: (a+b*2)? (a=1;b=2).

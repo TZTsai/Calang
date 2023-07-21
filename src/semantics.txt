@@ -1,0 +1,4 @@
+SEQ     := TERM ( MID TERM ) *
+MID     := BOP | EMP
+EMP     := //
+TERM    := LOP * ITEM ROP *

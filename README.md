@@ -1,8 +1,8 @@
-# Calc: my calculator
+# Calang: my simple functional programming language
 
 Dependencies: python 3.8+, sympy package
 
-Run `python calc.py` to start the program.
+Run `python cal.py` to start the program.
 
 Check "builtin.py" to see the available built-in operations and functions.
 
@@ -37,7 +37,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 * Conditional expression  
 
   **Syntax 1**:  
-  `_exp1_ if _cond_ else _exp2_`  
+  `{exp1} if {cond} else {exp2}`  
   Variables wrapped by `_` should be replaced by the corresponding expressions.
 
   **Note**:  
@@ -49,10 +49,10 @@ Check "builtin.py" to see the available built-in operations and functions.
   * `ramp[x] = 0 if x<0 else x`
 
   **Syntax 2**:  
-  `when(_cond1_: _exp1_, _cond2_: _exp2_, ... , _default_)`  
+  `when({cond1}: {exp1}, {cond2}: {exp2}, ... , {default})`  
 
   **Note**:  
-  The `default` part does not have a condition preceding it. This is completely equivalent to `_exp1_ if _cond1_ else _exp2_ if _cond2_ else ... else _default_`.
+  The `default` part does not have a condition preceding it. This is completely equivalent to `{exp1} if {cond1} else {exp2} if {cond2} else ... else {default}`.
 
   **Examples**:  
 
@@ -66,7 +66,7 @@ Check "builtin.py" to see the available built-in operations and functions.
   Thanks sympy, variable names that are greek letters will be displayed by the corresponding unicode characters. For instance, `pi` will be printed as π, `Sigma` as Σ, `alpha1` as α₁ and `gamma_i` as γᵢ. Note that `pi` is regarded as a symbol - for the constant value of π, use `PI`.  
   As a short hand, you can add a backslash `\` at the start of an English letter (with the exception of `\th`: θ and `\ps`: ψ) to convert it into its corresponding Greek letter.
 
-  **Syntax**:  `_var_ = _exp_`  
+  **Syntax**:  `{var} = {exp}`  
 
   **Examples**: `x = 1`; `alpha = 0.05`; `g = x > 2`; `\a = 1.2`
 
@@ -82,7 +82,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   A map maps a parameter list to an expression. To apply a map to a list of values, precede the list with this map.
   
-  **Syntax**: `_par_ => _exp_`
+  **Syntax**: `{par} => {exp}`
 
   **Note**:  
   * `par` can be a single parameter or a list of parameters. For a single parameter `x`, it has no difference between `x => ...` and `[x] => ...`.
@@ -107,7 +107,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   A variable can be bound to a map like any other types of values. But as a shorthand, you can define the map by
   
-  **Syntax**: `_name_ _par_ = _exp_`
+  **Syntax**: `{name} {par} = {exp}`
 
   **Examples**:  
 
@@ -124,7 +124,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 * List  
 
   **Syntax**:
-  `[_exp1_, _exp2_, ...]`
+  `[{exp1}, {exp2}, ...]`
 
   **Note**: For lists, operations can be automatically broadcasted. The operation `in` allows you to check whether a value is an item of a list. The operation `&` finds common items between two lists and `|` concatenates two lists together. Besides, you can use `~` to unpack a list into its outer list (if it is not nested in a list, this will be an error).
 
@@ -138,7 +138,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
 * List subscription  
 
-  **Syntax**: `_list_[_i1_, ..., _in_]`  
+  **Syntax**: `{list}[{i1}, ..., {in}]`  
   The list is sequentially subscripted by `i1`, ..., `in`. Each of the indices is an integer. If an index is negative, it will subscribe from the end, like python.
 
   **Examples**:
@@ -149,7 +149,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
 * List slicing  
 
-  **Syntax**: `_list_[_start_:_end_(:_step_)]`  
+  **Syntax**: `{list}[{start}:{end}(:{step})]`  
   This syntax is identical to the list slicing syntax in python.  
   The second colon can be omitted, where `step` is 1 as default.  
   When `start` is omitted, it is set to 0; when `end` is omitted, it is set to the end of the list.  
@@ -165,14 +165,14 @@ Check "builtin.py" to see the available built-in operations and functions.
   A range is a different type from list. It is useful to represent a wide range of numbers, eg. `1..1000`. For such a range, the calculation of each item is delayed, thus saving time and memory.  
 
   **Syntax**:
-  * `_start_.._end_`  
-  This evaluates to a range including all integers from `_start_` to `_end_`.  
-  * `_start_.._next_.._end_`  
-  This creates an arithmetic sequence that begins with `_start_` **followed** by `_next_` and ends with `_end_` (if `_end_` is not included in this sequence, then it ends before `_end_`).  
-  * `_start_.._step_+.._end_`  
-  This creates an arithmetic sequence that has a step of `_step_`.  
-  * `_start_.._step_-.._end_`  
-  This is equivalent to `_start_..-_step_+.._end_` (the step is the negative of `_step_`).
+  * `{start}..{end}`  
+  This evaluates to a range including all integers from `{start}` to `{end}`.  
+  * `{start}..{next}..{end}`  
+  This creates an arithmetic sequence that begins with `{start}` **followed** by `{next}` and ends with `{end}` (if `{end}` is not included in this sequence, then it ends before `{end}`).  
+  * `{start}..{step}+..{end}`  
+  This creates an arithmetic sequence that has a step of `{step}`.  
+  * `{start}..{step}-..{end}`  
+  This is equivalent to `{start}..-{step}+..{end}` (the step is the negative of `{step}`).
 
   **Examples**:  
   * `r = 1..4`  
@@ -184,7 +184,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 * List comprehension  
 
   **Syntax**:  
-    `[_exp_ for _arg1_ in _range1_ (if _cond1_) for _arg2_ in _range2_ (if _cond2_) ...]`  
+    `[{exp} for {arg1} in {range1} (if {cond1}) for {arg2} in {range2} (if {cond2}) ...]`  
     The `if` parts are optional.
 
   **Examples**:
@@ -199,21 +199,21 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   An environment is a collection of name-value bindings. Actually normally we are evaluating in the *Global* environment. When you create an environment yourself, it will set its parent to the current environment it is being evaluated.
 
-  The evaluation rule within an environment: when a name is evaluated in an environment, Calc will first check whether it is bound in this environment; if not, Calc will go up to look up its value in its parent environment; this procedure will continue recursively until it reaches the *Global* environment - if it is still unbound, it will be evaluated as a Symbol or an UnboundName error will be raised dependent on the user config.
+  The evaluation rule within an environment: when a name is evaluated in an environment, Calang will first check whether it is bound in this environment; if not, Calang will go up to look up its value in its parent environment; this procedure will continue recursively until it reaches the *Global* environment - if it is still unbound, it will be evaluated as a Symbol or an NameError will be raised dependent on the user config.
 
   **Syntax**:  
   * To create an environment:  
-    `(_par1_=_val1_, _par2_=_val2_, ...)`  
+    `({par1}={val1}, {par2}={val2}, ...)`  
     pars must be names, not numbers
   * To evaluate an expression in an environment:  
-    * `(_par1_=_val1_, ...) _exp_`
-    * `@_env_ _exp_` (`_env_` is a variable of environment)
+    * `({par1}={val1}, ...) {exp}`
+    * `@{env} {exp}` (`{env}` is a variable of environment)
   * To retrieve the bound value of a name in the environment:  
-    `_env_._name_`  
-    here `_env_` should be a variable of environment not a bracketed environment
+    `{env}.{name}`  
+    here `{env}` should be a variable of environment not a bracketed environment
 
   **Note**:
-  Use `dir _env_` to display the bindings in `_env_`. You can also use `dir` to display global bindings.
+  Use `dir {env}` to display the bindings in `{env}`. You can also use `dir` to display global bindings.
 
   **Examples**:  
 
@@ -250,12 +250,15 @@ Check "builtin.py" to see the available built-in operations and functions.
     `y = g[4]`  
     `[y.val, y.sq, y.double]` (return: [4, 16, 8])
 
+* String
+  
+
 * Parameter matching
 
   Instead of explicitly create an environment, you can also match a parameter (list) to a value.  
   Actually, when you apply a function, it will automatically do a matching to bind the parameters with the input arguments and create a local environment.
 
-  **Syntax**: `_par(s)_ :: _exp_`
+  **Syntax**: `{par(s)} :: {exp}`
 
   **Examples**:
   * `x::2` (return: (x = 2))
@@ -312,7 +315,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
 * Load scripts  
 
-  Use the keyword `load` followed by a Calc script name (located in "scripts") to load these files.  
+  Use the keyword `load` followed by a Calang script name (located in "scripts") to load these files.  
   The calculator will run through the loaded script and load its definitions into the current environment. However, the current calculation history will not be affected.  
   The loading command has two extra options: verbose and test. To turn on the verbose option, add `-v` in your command; to turn on the test option, add `-t` in your command. The testing process will be explained in the next section.  
   
@@ -334,12 +337,12 @@ Check "builtin.py" to see the available built-in operations and functions.
     `#TEST`  
     `f[a] #2`  
 
-    (in Calc)  
+    (in Calang)  
     `load example -v -t`  (will display the test result)  
 
 * Import python files
 
-  Calc can also import definitions from python files inside the "modules" directory. Use the keyword `import` followed by the name of a python file (located in "modules"). To create such an importable file, you must define a *dict* `definitions`, containing the definitions you want to export (Calc will only import `definitions`).  Besides, Calc allows you to directly import anything from *sympy*.  
+  Calang can also import definitions from python files inside the "modules" directory. Use the keyword `import` followed by the name of a python file (located in "modules"). To create such an importable file, you must define a *dict* `definitions`, containing the definitions you want to export (Calang will only import `definitions`).  Besides, Calang allows you to directly import anything from *sympy*.  
 
   **Example**:  
   * `import gauss_jordan`  
@@ -349,7 +352,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
 * Logging
   
-  Use \`\` to wrap around text to let Calc print some information when evaluating the expression.  
+  Use \`\` to wrap around text to let Calang print some information when evaluating the expression.  
   Like python f-string, inside \`\`, you can wrap an expression with `{}` to evaluate it.
 
   **Examples**:  
@@ -366,8 +369,26 @@ Check "builtin.py" to see the available built-in operations and functions.
   * `fact[n] = 1 if n <= 1 else n*fact[n-1] "factorial of an integer"`
     `help[fact]`
 
+* Hotkeys
+  * `Ctrl-C`/`Ctrl-D`: exit
+  * `Ctrl-Z`: cancel current input
+  * `Ctrl-N`: 
+
 * Exit  
 
-  Ctrl+C or a single command `exit`
+  `Ctrl-C` or a single command `exit`
 
-You can find the detailed grammar of Calc in "grammar.txt". You can also find more examples in the "scripts/examples" folder.
+You can find the detailed grammar of Calang in "grammar.txt". You can also find more examples in the "scripts/examples" folder.
+
+## UPDATES
+
+* map: `{f}! {lst}`
+  * `abs! [1, -2, 3]` => `[1,2,3]`
+  * if an fn has no argument, then `f!` == `f()`
+* filter: `{f} & {lst}` or `{lst} & {f}`
+  * `(? % 2) & [1,2,3]` => `[1,3]`
+* reduce: `{f} => {lst}`
+  * `(?1 * ?2) => [1,2,3]` => 6
+* subs: `{expr} <- {binds}`
+  * `'x'^3 <- (x=2)` => 8
+  

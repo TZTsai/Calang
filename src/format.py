@@ -1,117 +1,158 @@
-from sympy import latex, pretty
+from sympy import latex, pretty, init_printing
 from re import sub as translate
-from builtin import Rational, Fraction, Matrix, is_number, is_function, is_env, is_matrix, floor, inf, log
-from objects import Range, Env, Function
-from parse import rev_parse
+from functools import wraps
+from funcs import Rational, Fraction, Array, Matrix, \
+    is_number, is_array, floor, oo, log, likematrix
+from objects import *
+from parse import deparse
 from utils.debug import log
-from utils.backslash import gr_to_tex
+from utils.funcs import indexable
 import config, objects
 
 
-depth = 0  # recursion depth
-indent_width = 1
-indent_level = 0
-line_sep_space = '\n'
-options = {}
+sympy_matrix_box = '⎡⎤⎢⎥⎣⎦'
+matrix_box = '┌┐││└┘'  # or "╭╮  ╰╯"
+map_matrix_box = str.maketrans(sympy_matrix_box, matrix_box)
+supscripts = '⁰¹²³⁴⁵⁶⁷⁸⁹'
 
 
-def calc_format(val, linesep='\n', **opts):
-    global options, depth, indent_level, line_sep_space
+class Formatter:
+    indent = ' '
+    options = {'tex': config.latex, 'sci': 0, 'bin': 0, 'hex': 0}
     
-    if isinstance(val, str):
-        return val
-    
-    if opts:
-        options = opts
-    else:
-        if depth == 0:
-            options = {'tex': config.latex, 'sci': 0, 'bin': 0, 'hex': 0}
-        opts = options
+    def __init__(self):
+        self.depth = 0
+        self.opts = None
         
-    if config.latex or opts['tex']:
-        s = latex(Matrix(val) if is_matrix(val) else val)
-        # substitute the Greek letters to tex representations
-        return translate(r'[^\x00-\x7F]', lambda m: gr_to_tex(m[0]), s)
-    
-    if linesep != '\n':
-        line_sep_space = linesep
-    else:
-        linesep = line_sep_space
+    def format(self, val, linesep='\n', **opts):
+        self.opts = opts if opts else self.options
 
-    def format_float(x):
+        if config.latex or self.opts['tex']:
+            s = latex(val)
+        else:
+            s = self.fmt(val)
+            
+        return s.replace('\n', linesep)
+    
+    def format_float(self, x):
         prec = config.precision
         return float(f'%.{prec}g' % x)
-    
-    def format_scinum(x):
+
+    def format_scinum(self, x):
+        def pos_supscript(n):
+            return ''.join([supscripts[int(i)] for i in str(n)])
+        def supscript(n):
+            return '⁻' + pos_supscript(-n) if n < 0 else pos_supscript(n)
         def positive_case(x):
-            supscripts = '⁰¹²³⁴⁵⁶⁷⁸⁹'
             e = floor(log(x)/log(10))
-            b = format_float(x/10**e)
-            supscript_pos = lambda n: ''.join([supscripts[int(i)] for i in str(n)])
-            supscript = lambda n: '⁻' + supscript_pos(-n) if e < 0 else supscript_pos(n)
+            b = self.format_float(x/10**e)
             return f"{b}×10{supscript(e)}"
-        if x == 0: return '0'
-        return positive_case(x) if x > 0 else '-' + positive_case(-x)
+        if x == 0:
+            return '0'
+        elif x > 0:
+            return positive_case(x)
+        else:
+            return '-' + positive_case(-x)
     
-    def format_matrix(mat):
-        def row_str(row, start, end, sep='  '):
-            return f"{start}{sep.join([s.ljust(space) for s in row])}{end}"
-        mat = [[format(x) for x in row] for row in mat]
-        space = max([max([len(s) for s in row]) for row in mat])
-        col_num = len(mat[0])
-        return f'{linesep}{indent}'.join(
-            [row_str(['']*col_num, '╭', '╮')] +
-            [row_str(row, ' ', ' ', ', ') for row in mat] +
-            [row_str(['']*col_num, '╰', '╯')])
+    def format_list(self, val):
+        if self.depth > 4: return '[...]'
         
-    def format_atom(val):
-        if is_number(val):
-            mag = abs(val)
-            if type(val) is complex:
-                re, im = format_float(val.real), format_float(val.imag)
-                return f"{re} {'-' if im<0 else '+'} {abs(im)}ⅈ"
-            elif mag == inf:
-                return '∞'
-            elif isinstance(val, Rational) and not opts['sci']:
-                if type(val) is Fraction:
-                    val.limit_denominator(10**config.precision)
-                if opts['bin']: return bin(val)
-                elif opts['hex']: return hex(val)
-                else: return str(val)
-            elif mag <= 0.001 or mag >= 10000:
-                return format_scinum(val)
-            else: 
-                return str(format_float(val))
-        elif is_function(val):
-            return str(val) if depth == 1 else repr(val)
-        elif is_env(val):
-            if hasattr(val, 'val'):
-                return calc_format(val.val)
+        def row_str(row, start, end, sep='  '):
+            return f"{start}{sep.join([s.ljust(space) for s in row])}{end}\n"
+        def empty_row_str(start, end):
+            return row_str([''] * col_num, start, end)
+        
+        if likematrix(val):
+            sm = [[self.fmt(x) for x in row] for row in val]
+            space = max([max([len(s) for s in row]) for row in sm])
+            col_num = len(sm[0])
+            return (empty_row_str(*matrix_box[:2]) +
+                    empty_row_str(*matrix_box[2:4]).join(
+                        row_str(row, *matrix_box[2:4], ', ') for row in sm) +
+                    empty_row_str(*matrix_box[4:]))
+            
+        sl = list(map(self.fmt, val))
+        if any('\n' in s for s in sl):
+            s = f',\n'.join(sl).replace('\n', '\n' + self.indent)
+            return f'[\n{self.indent}{s}\n]'
+        else:
+            return '[%s]' % ', '.join(map(self.fmt, val))
+    
+    def format_array(self, val):
+        if self.depth > 3: return '[...]'
+        
+        s = pretty(val)
+        if sympy_matrix_box[0] not in s:
+            return s
+        
+        s = s.translate(map_matrix_box)
+        ul, ur, ml, mr, ll, lr = matrix_box  # upper left, upper right ...
+        sw = len(s.split('\n', 1)[0])  # line width
+        
+        start = ul + ' ' * (sw - 2) + ur + '\n'
+        end = '\n' + ll + ' ' * (sw - 2) + lr
+        
+        s = s.replace(ul,ml).replace(ll,ml).replace(ur,mr).replace(lr,mr)
+        return start + s + end
+        
+    def format_number(self, val):
+        mag = abs(val)
+        if type(val) is complex:
+            re = self.format_float(val.real)
+            im = self.format_float(val.imag)
+            return f"{re} {'-' if im<0 else '+'} {abs(im)}ⅈ"
+        elif mag == oo:
+            return '∞'
+        elif isinstance(val, Rational) and not self.opts['sci']:
+            if type(val) is Fraction:
+                val.limit_denominator(10**config.precision)
+            if self.opts['bin']:
+                return bin(val)
+            elif self.opts['hex']:
+                return hex(val)
             else:
-                return str(val) if depth == 1 else repr(val)
-        elif isinstance(val, Range):
-            return str(val)
+                return str(val)
+        elif mag <= 0.001 or mag >= 10000:
+            return self.format_scinum(val)
         else:
-            return pretty(val, use_unicode=True)
-
-    depth += 1
-    indent = ' ' * indent_width * indent_level
-    s = indent
-    if type(val) is tuple:
-        if any(map(is_matrix, val)):
-            indent_level += 1
-            items = f',{linesep}'.join(map(calc_format, val))
-            s += '[{0}{1}{0}{2}]'.format(linesep, items, indent)
-            indent_level -= 1
-        elif is_matrix(val):
-            s += format_matrix(val)
+            return str(self.format_float(val))
+        
+    def format_func(self, val):
+        return str(val) if self.depth == 1 else repr(val)
+        
+    def format_env(self, val):
+        if val.val is not None:
+            return self.fmt(val.val)
         else:
-            s += '[%s]' % ', '.join(map(calc_format, val))
-    else:
-        s += format_atom(val)
-    depth -= 1
-    return s
+            return str(val) # if depth == 1 else repr(val)
+
+    def fmt(self, val):
+        try:
+            self.depth += 1
+            if is_tree(val):  # not fully evaluated
+                return str(val)
+            elif type(val) is str:
+                return f'"{val}"'
+            elif is_number(val):
+                return self.format_number(val) 
+            elif is_array(val):
+                return self.format_array(val)
+            elif indexable(val):
+                return self.format_list(val)
+            elif callable(val):
+                return self.format_func(val)
+            elif isinstance(val, Env):
+                return self.format_env(val)
+            else:
+                try: return pretty(val)
+                except: return str(val)
+        finally:
+            self.depth -= 1
 
 
-log.format = calc_format
-objects.tree2str = rev_parse
+calc_formatter = Formatter()
+calc_format = calc_formatter.format
+
+objects.deparse = deparse
+
+init_printing(str_printer=calc_format, use_unicode=True)

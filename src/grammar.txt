@@ -1,55 +1,55 @@
-LINE    := @SEQ ( CMD | DEF | EXP | EMPTY ) ;
-EMPTY   := /\s*/
+LINE    := ( CMD | EVAL ) ? COMMENT ?
+COMMENT := # /.*/
 
-CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | EXIT
+CMD     := CONF | DIR | INFO | DEL | LOAD | IMPORT | PYTHON | EXIT
+
 CONF    := config /\w+/ ( NUM | /on|off/ ) ?
-DIR     := dir FIELD ?
-DEL     := del @SEQ FIELD ,
+DIR     := dir VAR ? "*" ?
+DEL     := del @SEQ VAR ,
 LOAD    := load /[\w\.]+/ /-[tvw]/ *
 IMPORT  := import /[\w\.]+/ /-[vw]/ *
-INFO    := info FIELD ?
+INFO    := info VAR ?
+PYTHON  := %%    ## starts a python REPL session
 EXIT    := exit
 
-DEF     := NM_SP ? BIND
-NM_SP   := ( NAME . ) +     ## name space
-BIND    := ( FUNC | VAR_ ) AT:PARENT ? = EXP DOC ?  ## Delay this
-FUNC    := NAME:VAR FORM
-VAR_    := VARS | NAME:VAR
-VARS    := [ ( @SEQ VAR_ , ) ]
-DOC     := /".*"/
+EVAL    := ( @SEQ EXPR ; ) ";" ?
+EXPR    := BIND | EXP
+BIND    := NS ? FORM = EXPR DOC:COMMENT ?
+NS      := @ ITEM    ## namespace
+FORM    := VAR ARG | PHRASE
+VAR     := NAME ATTR *
+ARG     := NAME | LIST
+NAME    := /[^\W\d]\w*/  ## /([^\W\d]|[\u0080-\U00100000])[\w\u0080-\U00100000]*/
+ATTR    := . / ATTR:NAME
+EXP     := MAP | AT | PHRASE
 
-FIELD   := NAME ATTR *
-NAME    := /[^\W\d][\w]*'*/
-ATTR    := . / NAME:ATTR                            ## '/' forces no space in between
+MAP     := FORM:ITEM -> EXP
+AT      := @ ITEM EXP
+PHRASE  := ITEM +
 
-FORM    := PAR_IT
-PAR_IT  := PAR_LST | NAME:PAR
-PAR_LST := [ ( _PARS ( , _OPTS ) ? ( , _EXT ) ? |  _OPTS ( , _EXT ) ? | _EXT ? ) ]
-_PARS   := @SEQ ( BIND ! PAR_IT .. ! ) ,             ## '!' forbids the match
-_OPTS   := @SEQ ( BIND:OPTPAR .. ! ) ,
-_EXT    := NAME:EXTPAR ..
-
-EXP     := MAP | CLOSURE | ENV | BODY
-
-MAP     := FORM -> EXP                              ## Delay this
-CLOSURE := @ ITEM EXP                               ## Delay this
-DICT    := @GRP @SEQ BIND ,                         ## Delay this
-
-BODY    := PRINT ? ( IF_ELSE | SEQ ) PRINT ?
-IF_ELSE := SEQ if SEQ else EXP                      ## Delay this
-SEQ     := _TERM ( BOP ? _TERM ) *
-_TERM   := LOP ? ITEM ATTR ? ROP ?
-
-STR     := /".*?"/
-PRINT   := /f".*?"/
-ITEM    := GROUP | MACRO | ATOM | LIST
+ITEM    := ENV | GROUP | QUOTE | UNQUOTE | GENER | GENLS | LIST | ARRAY | ATOM
+ENV     := @GRP @SEQ_ BIND ,
 GROUP   := @GRP EXP
-MACRO   := & / NAME VAL_LST
+QUOTE   := ' EXP '
+UNQUOTE := { EXP }
 
-ATOM    := FIELD | UNKNOWN | ' SYM | ANS | NUM
+GENER   := @GRP ( EXP @ _CSTS )
+GENLS   := [ EXP @ _CSTS ]
+_CSTS   := @SEQ CST ,    ## constraints
+CST     := DOM | EXPR
+DOM     := ARG in EXP    ## domain
+LIST    := [ ( @SEQ_ LSITEM , ) ]
+LSITEM  := KWD | UNPACK | EXP
+KWD     := NAME = EXP
+UNPACK  := ITEM ..
+ARRAY   := ⟨ ( @SEQ LIST:SEQ ; ) ⟩
+SEQ     :=  @SEQ EXP ,
+
+ATOM    := ATTR | ANS | STR | OP | NUM | UNKNOWN | VAR
+ANS     := /\$(\d+|\$*)/
+STR     := /[a-z]?"(?:[^"\\]|\\.)*"/
+OP      := ???    ## define it in 'grammar.py'
 UNKNOWN := /\?\w*/
-SYM     := /[^\W\d]([\w?]+|{\w*?})*/
-ANS     := /%(\d+|%*)/
 
 NUM     := BIN | HEX | COMPLEX | REAL
 COMPLEX := REAL /[+-]/ REAL I
@@ -57,17 +57,8 @@ REAL    := /-?\d+(\.\d+)?/ ( /[eE]/ - /-?\d+/ ) ?
 BIN     := /0b[01]+/
 HEX     := /0x[0-9a-fA-F]+/
 
-LIST    := ' SYM_LST | GEN_LST | IDC_LST | VAL_LST
-SYM_LST := @LST ( UNQUOTE | SYM_LST | SYM ) ,
-UNQUOTE := $ ITEM                                   ## convert the item back to a value
-GEN_LST := [ ( EXP ( for CONSTR ) + ) ]             ## Delay this
-CONSTR  := FORM in EXP WITH ? COND ?
-WITH    := with ( DICT | BIND )
-COND    := if EXP
-VAL_LST := @LST EXP , | @LST SUB_LST:VAL_LST ;
-SUB_LST := @SEQ EXP ,
 
-### MACROS ###
-@LST $ITM $SEP  := [ ( @SEQ $ITM $SEP ? ) ]
+## MACROS ##
 @GRP $EXP       := "(" - $EXP ")" -
 @SEQ $ITM $SEP  := $ITM ( $SEP $ITM ) *
+@SEQ_ $ITM $SEP := ( @SEQ $ITM $SEP ) ?

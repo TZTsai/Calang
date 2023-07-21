@@ -1,0 +1,71 @@
+{
+  "SEQ": [
+    "ALT",
+    [
+      "OBJ",
+      "TERM"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "ALT",
+        [
+          "OBJ",
+          "MID"
+        ],
+        [
+          "OBJ",
+          "TERM"
+        ]
+      ],
+      [
+        "OP",
+        "*"
+      ]
+    ]
+  ],
+  "MID": [
+    "EXP",
+    [
+      "MARK",
+      "BOP"
+    ],
+    [
+      "OBJ",
+      "EMP"
+    ]
+  ],
+  "EMP": [
+    "RE",
+    ""
+  ],
+  "TERM": [
+    "ALT",
+    [
+      "ITEM_OP",
+      [
+        "MARK",
+        "LOP"
+      ],
+      [
+        "OP",
+        "*"
+      ]
+    ],
+    [
+      "MARK",
+      "ITEM"
+    ],
+    [
+      "ITEM_OP",
+      [
+        "MARK",
+        "ROP"
+      ],
+      [
+        "OP",
+        "*"
+      ]
+    ]
+  ]
+}
