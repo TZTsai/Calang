@@ -97,7 +97,7 @@ Check "builtin.py" to see the available built-in operations and functions.
     `f[]` (return: [1, 2])
   * `f = [a, b] => x => a*x + b`  
     `g = f[2, 3]`  
-    `g[4]` (return: 11)
+    `g 4` (return: 11)
   * `f = [a, [b, c], d~] => [a, b, c, d]`  
     `f[1, [2, 3], 4, 5]` (return: [1, 2, 3, [4, 5]])
   * `f = [x='none] => [] if x is 'none else [x]`  
@@ -112,12 +112,12 @@ Check "builtin.py" to see the available built-in operations and functions.
   **Examples**:  
 
   * `f[x, y] = 2x + y`
-  * `f[3, 2]`
-  * `cot[x] = 1/tan[x]`
-  * `fact[n] = 1 if n==0 else n*fact[n-1]`
+  * `f[3, 2]` (return: 8)
+  * `cot x = 1 / tan x`
+  * `fact n = 1 if n == 0 else n * fact (n-1)`
   * `g[x, y=1, z=2] = [x,y,z]` (default parameters)
   * `[g[3], g[3,-1]]` (return: [[3,1,2], [3,-1,2]])
-  * `h[[x, y], z~] = [x, y, z]` (extra parameter)  
+  * `h[[x, y], z~] = [x, y, z]` (extra parameters)  
     `h[[1, 2], 3]` (return: [1, 2, [3]])  
     `h[[1, [2]], 3, 4]` (return: [1, [2], [3, 4]])
   
@@ -176,9 +176,9 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   **Examples**:  
   * `r = 1..4`  
-    `list[r]` (return: [1, 2, 3, 4]; `list` converts a range to a list)
-  * `list[1..3..9]` (return: [1, 3, 5, 7, 9])
-  * `list[1..3+..9]` (return: [1, 4, 7])
+    `list r` (return: [1, 2, 3, 4]; `list` converts a range to a list)
+  * `list (1..3..9)` (return: [1, 3, 5, 7, 9])
+  * `list (1..3+..9)` (return: [1, 4, 7])
   * `sum[i^2 for i in 1..10]`
 
 * List comprehension  
@@ -190,9 +190,9 @@ Check "builtin.py" to see the available built-in operations and functions.
   **Examples**:
   * `[i for i in 1..5 and i%2]` (return: [1, 3, 5])
   * `[i for i in 1..100 if i%3==2 and i%7==4 and i%11==9]` (return: [53])
-  * `f[n] = [[i, j] for i in 0..n for j in 0..i-1 if i+j == n]`  
-    `f[6]` (return: [[4, 2], [5, 1], [6, 0]])
-  * `diff_poly[coeffs~] = [coeffs[i]*i for i in 1..len[coeffs]-1]`
+  * `f n = [[i, j] for i in 0..n for j in 0..i-1 if i+j == n]`  
+    `f 6` (return: [[4, 2], [5, 1], [6, 0]])
+  * `diff_poly coeffs = [coeffs[i]*i for i in 1..len[coeffs]-1]`
     `diff_poly[1,2,3]` (return: [2, 6])
 
 * Environment  
@@ -206,8 +206,7 @@ Check "builtin.py" to see the available built-in operations and functions.
     `({par1}={val1}, {par2}={val2}, ...)`  
     pars must be names, not numbers
   * To evaluate an expression in an environment:  
-    * `({par1}={val1}, ...) {exp}`
-    * `@{env} {exp}` (`{env}` is a variable of environment)
+    `@{env} {exp}`
   * To retrieve the bound value of a name in the environment:  
     `{env}.{name}`  
     here `{env}` should be a variable of environment not a bracketed environment
@@ -219,11 +218,11 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   * `person = (age = 21, gender = 'male, major = 'CS)`  
     `person.age < 30 and person.major == 'CS`
-  * `(r=sqrt[x^2+y^2], t=acos[x/r]) r*sin[t]` (bindings are evaluated sequentially and later bindings can make use of previous bindings)
+  * `@(r=sqrt[x^2+y^2], t=acos[x/r]) r*sin[t]` (bindings are evaluated sequentially and later bindings can make use of previous bindings)
   * `binomial[n, m] = 1 if (n==0 or m==0 or m==n) else (b1=binomial[n-1, m-1], b2=binomial[n-1, m]) b1 + b2`  
-  * `d[f, d=e-5] = x => (f[x+d]-f[x])/d`  
-    `root_newton[f, x=0, thr=1e-5] = (df=d[f], update[x]=f[x]/df[x]) x if abs[f[x]] < thr else root_newton[f, update[x]]`  
-    `root_newton[sin, 3]`  (return: 3.1416; note that `update[x]= ...` is allowed as a binding and it is the same as `update = x=>...`)
+  * `d[f, d=e-5] = x => (f(x+d)-f(x))/d`  
+    `root_newton[f, x=0, thr=1e-5] = @(df=d[f], update(x)=f(x)/df(x)) x if abs f x < thr else root_newton[f, update x]`
+    `root_newton[sin, 3]`  (return: 3.1416)
 
 * Attribute
 
@@ -242,12 +241,12 @@ Check "builtin.py" to see the available built-in operations and functions.
     `x` (return: 2)  
     `x + 3` (return: 5)  
     `x.neg + 3` (return: 1)
-  * `f[x] = (val=x, sq=x^2, sqrt=sqrt[x])`  
-    `x = f[4]`  
+  * `f x = (val=x, sq=x^2, sqrt=sqrt(x))`  
+    `x = f 4`
     `x.sqrt` (return: 2)  
-    `@f[4] sqrt` (return: 2)  
-    `g[x] = @f[x] (double = 2*val)`  
-    `y = g[4]`  
+    `@f(4) sqrt` (return: 2)  
+    `g x = @f(x) (double = 2*val)`
+    `y = g 4`  
     `[y.val, y.sq, y.double]` (return: [4, 16, 8])
 
 * String
@@ -262,7 +261,7 @@ Check "builtin.py" to see the available built-in operations and functions.
 
   **Examples**:
   * `x::2` (return: (x = 2))
-  * `[x, y]::[2, 3] x+y` (return: 5)
+  * `@[x, y]::[2, 3] x+y` (return: 5)
   * `m = [a, [b, c]] :: [2, [[1, 0], 3]]`  
     `[m.a, m.b, m.c]` (return: [2, [1, 0], 3])
 
