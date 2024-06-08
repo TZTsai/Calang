@@ -1,4 +1,4 @@
-# Calang: my simple functional programming language
+# Calang: my DIY programming language
 
 Dependencies: python 3.8+, sympy package
 
